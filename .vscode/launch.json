@@ -1,0 +1,17 @@
+{
+	"configurations": [
+		{
+			"type": "gdb",
+			"request": "attach",
+			"name": "Debug raspi 3",
+			"gdbpath": "${workspaceRoot}/tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gdb",
+			"executable": "${workspaceRoot}/build/raspi3/kernel8.img",
+			"target": ":1234",
+			"remote": true,
+			"cwd": "${workspaceRoot}/kernel",
+			"valuesFormatting": "parseText",
+			"preLaunchTask": "Remote debug raspi 3"
+		}
+	]
+	
+}

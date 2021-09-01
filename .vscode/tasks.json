@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Remote debug raspi 3",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "kernel",
+			},
+			"isBackground": true,
+			"args": [
+				"remote-debug",
+				"RASPI_MODEL=3"
+			]
+		}
+	]
+}

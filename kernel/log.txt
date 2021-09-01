@@ -1,0 +1,67 @@
+
+qemu-system-aarch64 -no-reboot -M raspi3 -serial stdio -kernel ../build/kernel8.img -usb -device usb-kbd -device usb-mouse
+arch::arm::raspi::serial::init... OK
+
+kernel::arch::arm::raspi startup[0m
+  arch::arm::raspi::atags::init...[0m
+    tag: 1413545985[0m
+    unknown tag: 1413545985[0m
+  OK
+[0m
+  memory::arch::arm::raspi::init...[0m
+    [31;1mWarning: No memory size specified. Assuming 1024MB[0m
+    kernel stack: 4KB[0m
+    page size: 4KB[0m
+    pages: 262144[0m
+    2770 kernel pages[0m
+    259374 user pages[0m
+  OK
+[0m
+  libc::init[0m
+    ......[0m
+  OK
+[0m
+  framebuffer::arch::arm::raspi::init...[0m
+    arm::raspi::framebuffer::set_mode(0, 800x600, 16bit colour)...[0m
+    OK
+[0m
+  OK
+[0m
+  arch::arm::raspi::usb::init...[0m
+    Error: Unrecognised vendor id (0x4F54294A)[0m
+    User Id: 0x0[0m
+  OK
+[0m
+  exceptions::arch::arm::raspi3::init...[0m
+    irq::arch::arm::raspi::init...[0m
+    OK
+[0m
+  OK
+[0m
+  timer::arch::arm::raspi::init...[0m
+    timer control: 0[0m
+    timer prescaler: 0[0m
+  OK
+[0m
+OK
+[0m
+kernel::arch::arm startup[0m
+  scheduler::arch::arm::init...[0m
+    allocating main process...[0m
+    managed by timer::arch::arm::raspi[0m
+  OK
+[0m
+OK
+[0m
+kernel startup[0m
+                                                                                                                                                                                                                                                                                                                 arch::arm::raspi::serial::init... OK
+
+kernel::arch::arm::raspi startup[0m
+  arch::arm::raspi::atags::init...[0m
+    tag: 1413545985[0m
+    unknown tag: 1413545985[0m
+  OK
+[0m
+  memory::arch::arm::raspi::init...[0m
+    [31;1mWarning: No memory size specified. Assuming 1024MB[0m
+    kernel stack: 4K

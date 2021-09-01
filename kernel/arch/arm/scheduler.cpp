@@ -1,0 +1,217 @@
+#include "scheduler.hpp"
+
+#include <kernel/Thread.hpp>
+#include <kernel/stdio.hpp>
+#include <kernel/memory.hpp>
+#include <kernel/exceptions.hpp>
+#include <atomic>
+
+#if defined(ARCH_RASPI)
+	#include "../raspi/timer.hpp"
+#else
+	#error "Unsupported architecture"
+#endif
+
+namespace timer {
+	using namespace timer::arch::raspi;
+}
+
+namespace thread {
+	extern LList<Thread> activeThreads;
+	extern LList<Thread> sleepingThreads;
+	extern LList<Thread> pausedThreads;
+	extern LList<Thread> freedThreads;
+}
+
+namespace scheduler {
+	namespace arch {
+		namespace arm {
+			std::atomic<unsigned> lock_depth = 0;
+
+			U32 interval = 2000; //2ms
+			U32 slowInterval = interval*3;
+
+			U64 lastSchedule = 0;
+			U64 lastPing = 0;
+			U32 deferredYields = 0;
+			
+			Spinlock threadLock("scheduler threadLock");
+
+			void init() {
+				stdio::Section section("scheduler::arch::arm::init...");
+
+				stdio::print_info("allocating main process...");
+				auto mainProcess = new Process("kernel");
+
+				auto mainThread = new Thread(*mainProcess);
+				mainThread->state = Thread::State::active;
+				
+				thread::activeThreads.push_back(*mainThread);
+				::thread::currentThread = mainThread;
+
+				#if defined(ARCH_RASPI)
+					stdio::print_info("managed by timer::arch::raspi");
+					timer::set_timer(timer::Timer::cpu_scheduler, interval);
+					timer::set_timer(timer::Timer::cpu_slow_scheduler, interval);
+
+				#else
+					#error "Unsupported architecture"
+				#endif
+			}
+
+			void on_timer() {
+				yield();
+			}
+
+			std::atomic<const char*> inYield = nullptr;
+
+			std::atomic<U32> scheduledTime = 0;
+
+			void on_slow_timer() {
+				threadLock.lock("on_slower_timer() threadLock");
+
+				const auto now = timer::now();
+
+				// stdio::print("ping ", now, "\n");
+
+				Thread *thread;
+
+				while((thread = thread::sleepingThreads.head)&&(now>=thread->sleep_wake_time&&now-thread->sleep_wake_time<10000000)){
+					thread->state = Thread::State::active;
+					thread::sleepingThreads.pop_front();
+					thread::activeThreads.push_front(*thread);
+				}
+
+				threadLock.unlock(false);
+
+				timer::set_timer(timer::Timer::cpu_slow_scheduler, slowInterval);
+			}
+		}
+	}
+
+	using namespace arch::arm;
+
+	void yield() {
+		if(lock_depth>0){
+			deferredYields++;
+			return;
+		}
+
+		// bool exceptionsWereActive = exceptions::_is_active();
+
+		lock();
+		exceptions::lock();
+
+		auto now = timer::now();
+
+		if(inYield){
+			auto lastScheduledTime = scheduledTime.load();
+			stdio::print_error("Error: still in yield (", inYield.load(), ") @ ", now, ", when it was last scheduled at ", lastScheduledTime, " (", now-lastScheduledTime, " later)");
+		}
+		
+		inYield.store("beginning");
+		
+		// if(now-lastSchedule<interval*3/4){
+		// 	stdio::print("fast: ", now-lastSchedule,"\n");
+		// }else if(now-lastSchedule>interval*2/3){
+		// 	stdio::print("slow: ", now-lastSchedule,"\n");
+		// }
+		lastSchedule = now;
+
+		// stdio::print(lastSchedule, "\n");
+
+		threadLock.lock("yield() threadlock");
+
+		// stdio::print("threads: ", thread::activeThreads.size, "\n");
+
+		auto &oldThread = *::thread::currentThread;
+
+		if(thread::activeThreads.size==0||thread::activeThreads.size==1&&thread::activeThreads.head==&oldThread){
+			//if no other threads to switch to, we can ease up on the scheduling a bit..
+
+			// stdio::print_info("no active other threads\n");
+			threadLock.unlock(false);
+			timer::set_timer(timer::Timer::cpu_scheduler, interval*4);
+			inYield.store(nullptr);
+			unlock();
+			exceptions::unlock();
+
+		}else{
+			// if the current thread has been scheduled again, then put it at back of the queue and we're done. Nothing to swap
+			if(thread::activeThreads.head==&oldThread){
+				thread::activeThreads.push_back(*thread::activeThreads.pop_front());
+
+				threadLock.unlock(false);
+				timer::set_timer(timer::Timer::cpu_scheduler, interval);
+				inYield.store(nullptr);
+				unlock();
+				exceptions::unlock();
+
+				return;
+			}
+
+			auto &newThread = *thread::activeThreads.pop_front();
+
+			if(newThread.state==Thread::State::active){
+				thread::activeThreads.push_back(newThread);
+			}
+
+			::thread::currentThread = &newThread;
+
+			threadLock.unlock(false, false);
+			// exceptions::unlock(false);
+			// exceptions::_activate();
+			inYield.store("end");
+			if(exceptions::_is_active()){
+				inYield.store("setting timer with exceptions active");
+			}else{
+				inYield.store("setting timer with exceptions inactive");
+			}
+			scheduledTime = timer::now();
+			timer::set_timer(timer::Timer::cpu_scheduler, interval);
+			inYield.store("after set_timer");
+
+			// if(::thread::currentThread->name){
+			// 	stdio::print("schedule ", ::thread::currentThread->name, "\n");
+			// }else{
+			// 	stdio::print("schedule ", ::thread::currentThread, "\n");
+			// }
+
+			deferredYields = 0; //nothing was missed as we've just left, do not auto fire any on unlock()
+			inYield.store("after set_timer and interrupt unlock");
+			unlock();
+
+			inYield.store(nullptr);
+
+			asm volatile("" ::: "memory");
+
+			Thread::swap_state(oldThread, newThread);
+
+			exceptions::unlock();
+		}
+	}
+
+	void lock() {
+		lock_depth.fetch_add(1);
+	}
+
+	void unlock() {
+		if(lock_depth.fetch_sub(1)==1){
+			if(deferredYields>0){
+				deferredYields = 0;
+				yield();
+			}
+		}
+	}
+
+	U32 get_total_thread_count() {
+		Spinlock_Guard lock(threadLock, "get_total_thread_count");
+		return thread::activeThreads.size + thread::sleepingThreads.size + thread::pausedThreads.size;
+	}
+
+	U32 get_active_thread_count() {
+		Spinlock_Guard lock(threadLock, "get_active_thread_count");
+		return thread::activeThreads.size;
+	}
+
+}

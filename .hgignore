@@ -1,0 +1,7 @@
+syntax: glob
+build
+*.o
+node_modules
+
+syntax: regexp
+^tools/
