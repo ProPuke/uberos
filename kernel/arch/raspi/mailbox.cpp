@@ -20,6 +20,13 @@ namespace arch {
 
 			unsigned get_PropertyTag_size(PropertyTag tag) {
 				switch(tag){
+					case PropertyTag::get_board_revision:
+						return 4;
+
+					case PropertyTag::get_arm_memory:
+					case PropertyTag::get_vc_memory:
+						return 8;
+
 					case PropertyTag::set_clock_rate:
 						return 12;
 
@@ -72,13 +79,19 @@ namespace arch {
 					message->tags[i] = 0;
 				}
 
-				asm volatile("" ::: "memory"); //ensure message is written to
+				// asm volatile("" ::: "memory"); //ensure message is written to
 
-				send(Channel::property, ((size_t)message)>>4);
+				{
+					mmio::PeripheralWriteGuard _guard;
+					send(Channel::property, ((size_t)message)>>4);
+				}
 
-				if(read(Channel::property, 0xffffffff) == 0xffffffff){
-					stdio::print_info("Error: Mailbox did not respond");
-					return false;
+				{
+					mmio::PeripheralReadGuard _guard;
+					if(read(Channel::property, 0xffffffff) == 0xffffffff){
+						stdio::print_info("Error: Mailbox did not respond");
+						return false;
+					}
 				}
 
 				if(message->req_res_code==BufferReqResCode::request){

@@ -10,13 +10,13 @@
 
 extern "C" void memset(U8 *address, U8 value, unsigned int size) {
 	#ifdef MEMORY_CHECKS
-		stdio::print("memset ", (void*)address, size, "\n");
+		stdio::print_debug("memset ", (void*)address, size, "\n");
 	#endif
 	while(--size) *address++ = value;
 }
 
 namespace memory {
-	size_t totalMemory = 0;
+	U64 totalMemory = 0;
 	Page *pageData = nullptr;
 	size_t pageDataSize = 0;
 
@@ -112,7 +112,7 @@ namespace memory {
 		Spinlock_Guard _lock(lock, __FUNCTION__);
 
 		#ifdef MEMORY_CHECKS
-			stdio::Section section("kmalloc ", size, "\n");
+			stdio::Section section("kmalloc ", size);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks in kmalloc 0");
 		#endif
 
@@ -126,7 +126,7 @@ namespace memory {
 		}
 
 		#ifdef MEMORY_CHECKS
-			stdio::print("kmalloc ", size, " @ ", address, "\n");
+			stdio::print_debug("kmalloc ", size, " @ ", address, "\n");
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
@@ -140,7 +140,7 @@ namespace memory {
 		Spinlock_Guard _lock(lock, __FUNCTION__);
 
 		#ifdef MEMORY_CHECKS
-			stdio::print("kfree ", address, "\n");
+			stdio::print_debug("kfree ", address, "\n");
 		#endif
 
 		if(!address) return;
@@ -157,3 +157,9 @@ namespace memory {
 		}
 	}
 }
+
+void* operator new(size_t size) noexcept { return memory::kmalloc(size); }
+void* operator new[](size_t size) noexcept { return memory::kmalloc(size); }
+
+void operator delete(void* p) noexcept { memory::kfree(p); }
+void operator delete(void* p, size_t) noexcept { memory::kfree(p); }

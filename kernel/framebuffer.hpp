@@ -11,7 +11,7 @@ namespace framebuffer {
 
 	extern U32 default_resolution[2];
 
-	bool set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format);
+	bool set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion = true);
 
 	bool detect_default_resolution();
 }

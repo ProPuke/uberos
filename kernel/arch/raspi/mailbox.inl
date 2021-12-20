@@ -5,6 +5,10 @@
 #include "mmio.hpp"
 #include <common/types.hpp>
 
+namespace mmio {
+	using namespace arch::raspi;
+}
+
 namespace arch {
 	namespace raspi {
 		namespace mailbox {
@@ -12,12 +16,6 @@ namespace arch {
 				empty = 0x40000000,
 				full = 0x80000000,
 			};
-
-			namespace mmio {
-				static volatile U32 &mail0_read = *(U32*)raspi::mmio::Address::mail0_read;
-				static volatile U32 &mail0_status = *(U32*)raspi::mmio::Address::mail0_status;
-				static volatile U32 &mail0_write = *(U32*)raspi::mmio::Address::mail0_write;
-			}
 
 			union Message {
 				struct {
@@ -33,13 +31,13 @@ namespace arch {
 				
 				while(true){
 					U32 waits = 0;
-					while(mmio::mail0_status & Status::empty){
+					while(mmio::read(mmio::Address::mail0_status) & Status::empty){
 						if(++waits>1<<25){
 							return defaultValue;
 						}
 					}
 
-					message.as_int = mmio::mail0_read;
+					message.as_int = mmio::read(mmio::Address::mail0_read);
 					if(message.channel==channel) break;
 				};
 
@@ -49,9 +47,9 @@ namespace arch {
 			inline void send(Channel channel, U32 data) {
 				Message message = {channel, data};
 
-				while(mmio::mail0_status & Status::full);
+				while(mmio::read(mmio::Address::mail0_status) & Status::full);
 
-				mmio::mail0_write = message.as_int;
+				mmio::write(mmio::Address::mail0_write, message.as_int);
 			}
 		}
 	}

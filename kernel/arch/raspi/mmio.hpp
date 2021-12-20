@@ -3,9 +3,27 @@
 #include <common/types.hpp>
 #include <common/stdlib.hpp>
 
-namespace arch {
-	namespace raspi {
-		namespace mmio {
+#if defined(ARCH_ARM32)
+	#include <kernel/arch/arm32/mmio/barrier.hpp>
+#elif defined(ARCH_ARM64)
+	#include <kernel/arch/arm64/mmio/barrier.hpp>
+#else
+	#error "Unsupported architecture"
+#endif
+
+namespace mmio {
+	// #if defined(ARCH_ARM32)
+	// 	using namespace arch::arm32;
+	// #elif defined(ARCH_ARM64)
+	// 	using namespace arch::arm64;
+	// #else
+	// 	#error "Unsupported architecture"
+	// #endif
+}
+
+namespace mmio {
+	namespace arch {
+		namespace raspi {
 			enum struct Address: U32 {
 				#if defined(ARCH_RASPI1)
 					peripheral_base = 0x20000000,
@@ -17,8 +35,8 @@ namespace arch {
 					peripheral_base = 0x3F000000,
 					peripheral_length = 0x01000000, //might be wrong?
 				#elif defined(ARCH_RASPI4)
-					peripheral_base = 0x3F000000, //might be wrong?
-					peripheral_length = 0x01000000, //might be wrong?
+					peripheral_base = 0xFE000000,
+					peripheral_length = 0x01800000, //might be wrong?
 				#else
 					#error "Unknown model"
 				#endif
@@ -31,6 +49,7 @@ namespace arch {
 				wdog               = peripheral_base + 0x100024,
 				gpio_base          = peripheral_base + 0x200000,
 				uart0_base         = peripheral_base + 0x201000,
+				uart1_base         = peripheral_base + 0x215000,
 				emmc_base          = peripheral_base + 0x300000,
 				usb_base           = peripheral_base + 0x980000,
 
@@ -42,8 +61,24 @@ namespace arch {
 				mail0_status  = mail0_base + 0x18,
 				mail0_write   = mail0_base + 0x20,
 
+				gpfsel0       = gpio_base + 0x00,
+				gpfsel1       = gpio_base + 0x04,
+				gpfsel2       = gpio_base + 0x08,
+				gpfsel3       = gpio_base + 0x0C,
+				gpfsel4       = gpio_base + 0x10,
+				gpfsel5       = gpio_base + 0x14,
+				gpset0        = gpio_base + 0x1C,
+				gpset1        = gpio_base + 0x20,
+				gpclr0        = gpio_base + 0x28,
+				gplev0        = gpio_base + 0x34,
+				gplev1        = gpio_base + 0x38,
+				gpeds0        = gpio_base + 0x40,
+				gpeds1        = gpio_base + 0x44,
+				gphen0        = gpio_base + 0x64,
+				gphen1        = gpio_base + 0x68,
 				gppud         = gpio_base + 0x94,
 				gppudclk0     = gpio_base + 0x98,
+				gppudclk1     = gpio_base + 0x9C,
 
 				uart0_dr      = uart0_base + 0x00,
 				uart0_rsrecr  = uart0_base + 0x04,
@@ -63,6 +98,20 @@ namespace arch {
 				uart0_itip    = uart0_base + 0x84,
 				uart0_itop    = uart0_base + 0x88,
 				uart0_tdr     = uart0_base + 0x8C,
+
+				uart1_enable     = uart1_base + 0x04,
+				uart1_mu_io      = uart1_base + 0x40,
+				uart1_mu_ier     = uart1_base + 0x44,
+				uart1_mu_iir     = uart1_base + 0x48,
+				uart1_mu_lcr     = uart1_base + 0x4C,
+				uart1_mu_mcr     = uart1_base + 0x50,
+				uart1_mu_lsr     = uart1_base + 0x54,
+				uart1_mu_msr     = uart1_base + 0x58,
+				uart1_mu_scratch = uart1_base + 0x5C,
+				uart1_mu_cntl    = uart1_base + 0x60,
+				uart1_mu_stat    = uart1_base + 0x64,
+				uart1_mu_baud    = uart1_base + 0x68,
+
 
 				usb_core_base = usb_base,
 				usb_host_base = usb_base + 0x400,
@@ -89,8 +138,6 @@ namespace arch {
 			U32 read(Address reg);
 			void delay(I32 count);
 
-			void barrier();
-
 			struct PeripheralAccessGuard {
 				/**/ PeripheralAccessGuard(){ barrier(); };
 				/**/~PeripheralAccessGuard(){ barrier(); };
@@ -98,18 +145,32 @@ namespace arch {
 				/**/ PeripheralAccessGuard(const PeripheralAccessGuard&) = delete;
 				PeripheralAccessGuard& operator=(const PeripheralAccessGuard&) = delete;
 			};
+
+			struct PeripheralReadGuard {
+				/**/ PeripheralReadGuard(){ barrier(); };
+				/**/~PeripheralReadGuard(){ barrier(); };
+
+				/**/ PeripheralReadGuard(const PeripheralReadGuard&) = delete;
+				PeripheralReadGuard& operator=(const PeripheralReadGuard&) = delete;
+			};
+
+			struct PeripheralWriteGuard {
+				/**/ PeripheralWriteGuard(){ barrier(); };
+				/**/~PeripheralWriteGuard(){ barrier(); };
+
+				/**/ PeripheralWriteGuard(const PeripheralWriteGuard&) = delete;
+				PeripheralWriteGuard& operator=(const PeripheralWriteGuard&) = delete;
+			};
 		}
 	}
 }
 
 #include "mmio.inl"
 
-#if defined(ARCH_RASPI1) or defined(ARCH_RASPI2)
-	#include "armv7/mmio/barrier.inl"
-
-#elif defined(ARCH_RASPI3) or defined(ARCH_RASPI4)
-	#include "armv8/mmio/barrier.inl"
-
+#if defined(ARCH_ARM32)
+	#include <kernel/arch/arm32/mmio/barrier.hpp>
+#elif defined(ARCH_ARM64)
+	#include <kernel/arch/arm64/mmio/barrier.hpp>
 #else
 	#error "Unsupported architecture"
 #endif

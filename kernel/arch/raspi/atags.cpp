@@ -3,6 +3,7 @@
 #include <common/types.hpp>
 #include <common/stdlib.hpp>
 #include <kernel/stdio.hpp>
+#include <kernel/memory.hpp>
 
 namespace arch {
 	namespace raspi {
@@ -18,14 +19,17 @@ namespace arch {
 					stdio::print_warning("Warning: No atag information provided");
 				}
 
+				auto aborted = false;
+
 				for(;tag->tag!=Tag::none; tag=(Atag*)((U32*)tag)+tag->tag_size){
-					stdio::print_info("tag: ", (U32)tag->tag);
+					// stdio::print_info("tag: ", (U32)tag->tag);
 
 					switch(tag->tag){
-						case Tag::mem:
-							mem_size = tag->memory.size;
-							stdio::print_info("memory: ", mem_size/1024/1024, "MB");
-						break;
+						case Tag::mem: {
+							const U64 totalMemory = tag->memory.size;
+							stdio::print_info("memory: ", totalMemory/1024/1024, "MB");
+							memory::totalMemory = totalMemory;
+						} break;
 						case Tag::videotext:
 						case Tag::ramdisk:
 						case Tag::initrd2:
@@ -42,9 +46,12 @@ namespace arch {
 							//TODO
 						break;
 						default:
-							stdio::print_info("unknown tag: ", (U32)tag->tag);
+							stdio::print_error("unknown tag: ", (U32)tag->tag);
+							aborted = true;
 						break;
 					}
+
+					if(aborted) break;
 				}
 			}
 		}

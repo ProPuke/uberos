@@ -317,7 +317,7 @@ namespace graphics2d {
 		}
 
 		Font roboto_Mono = {
-			{bufferData, 134832, 212, 212, FramebufferFormat::rgb8},
+			{bufferData, 134832, 212*3, 212, 212, FramebufferFormat::rgb8},
 			32,
 			1.31884765625,
 			1.0478515625,

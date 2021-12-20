@@ -123,6 +123,45 @@ namespace graphics2d {
 		}
 	}
 
+	inline void Buffer::scroll(I32 scrollX, I32 scrollY) {
+		if(!scrollX&&!scrollY) return;
+		if(abs(scrollX)>=width||abs(scrollY)>=height) return;
+
+		const auto bpp = framebufferFormat::size[(U8)format];
+		U32 x1, x2;
+		U32 width;
+		if(scrollX>=0){
+			x1 = scrollX*bpp;
+			x2 = 0;
+			width = stride-scrollX*bpp;
+		}else{
+			x1 = 0;
+			x2 = -scrollX*bpp;
+			width = stride+scrollX*bpp;
+		}
+
+		if(scrollY==0){
+			if(scrollX>0){
+				for(U32 y=0;y<height+scrollY;y++){
+					memcpy_backwards(&address[y*stride+x1], &address[y*stride+x2], width);
+				}
+			}else{
+				for(U32 y=0;y<height+scrollY;y++){
+					memcpy_forwards(&address[y*stride+x1], &address[y*stride+x2], width);
+				}
+			}
+
+		}else if(scrollY>0){
+			for(U32 y=height-1;y>(U32)scrollY;y--){
+				memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+			}
+		}else{
+			for(U32 y=0;y<height+scrollY;y++){
+				memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+			}
+		}
+	}
+
 	inline U32 blend_rgb(U32 a, U32 b, float phase) {
 		return
 			 ((U32)(((a&0xff0000)>>16)*(1-phase) + ((b&0xff0000)>>16)*(0+phase)))<<16
@@ -138,5 +177,4 @@ namespace graphics2d {
 			|((U32)(((a&0x0000ff)>> 0)*(255-phase)/255 + ((b&0x0000ff)>> 0)*(0+phase)/255))<< 0
 		;
 	}
-
 }

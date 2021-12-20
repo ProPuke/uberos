@@ -11,11 +11,17 @@
 namespace memory {
 	struct Page;
 	
-	extern size_t totalMemory;
+	extern U64 totalMemory;
 	extern Page *pageData;
 	extern size_t pageDatasize;
 
-	static inline const size_t pageSize = 4096;
+	#if defined(ARCH_ARM32)
+		static inline const size_t pageSize = 4*1024; //4KB
+	#elif defined(ARCH_ARM64)
+		static inline const size_t pageSize = 64*1024; //64KB
+	#else
+		#error Unsupported architecture
+	#endif
 	// extern MemoryPool<32> *heap;
 
 	void is_dangerous_address(void *from, void *to);
@@ -41,13 +47,18 @@ namespace memory {
 }
 
 #include <cstddef>
-
-inline void* operator new(size_t size) noexcept { return memory::kmalloc(size); }
-inline void* operator new[](size_t size) noexcept { return memory::kmalloc(size); }
+// void* operator new(size_t size) noexcept;
+// void* operator new[](size_t size) noexcept;
 inline void* operator new(size_t size, size_t align) = delete;
 inline void* operator new[](size_t size, size_t align) = delete;
 
-inline void operator delete(void* p) noexcept { memory::kfree(p); }
-inline void operator delete(void* p, size_t) noexcept { memory::kfree(p); }
+// void operator delete(void* p) noexcept;
+// void operator delete(void* p, size_t) noexcept;
+
+void* operator new(size_t size) noexcept;
+void* operator new[](size_t size) noexcept;
+
+void operator delete(void* p) noexcept;
+void operator delete(void* p, size_t) noexcept;
 
 #include "memory.inl"

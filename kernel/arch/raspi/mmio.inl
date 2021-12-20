@@ -4,9 +4,9 @@
 
 #include <common/types.hpp>
 
-namespace arch {
-	namespace raspi {
-		namespace mmio {
+namespace mmio {
+	namespace arch {
+		namespace raspi {
 			inline void write(Address reg, U32 data) {
 				*(volatile U32*)reg = data;
 			}

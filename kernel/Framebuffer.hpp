@@ -28,7 +28,7 @@ struct Framebuffer {
 	U32 index;
 	U8 *address;
 	U32 size;
-	U32 width;
+	U32 width __attribute__ ((aligned (8)));
 	U32 height;
 	FramebufferFormat format;
 
@@ -40,7 +40,7 @@ struct Framebuffer {
 	void set_rgb8(U32 x, U32 y, U32 colour);
 	void set_rgba8(U32 x, U32 y, U32 colour);
 
-	bool set_mode(U32 width, U32 height, FramebufferFormat format = FramebufferFormat::rgb565);
+	bool set_mode(U32 width, U32 height, FramebufferFormat format);
 };
 
 #include <common/stdlib.hpp>

@@ -10,6 +10,10 @@
 
 	https://s-matyukevich.github.io/raspberry-pi-os/
 
+	https://rpi4os.com/
+
+	https://github.com/LdB-ECM/Raspberry-Pi
+
 # kernel references:
 	https://github.com/xinu-os/xinu/tree/master/system/arch/arm
 

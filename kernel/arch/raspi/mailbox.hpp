@@ -14,7 +14,26 @@ namespace arch {
 			enum struct PropertyTag: U32 {
 				null_tag = 0,
 
+				// get_firmware_revision = 0x00001,
+				// set_cursor_info = 0x08010,
+				// set_cursor_state = 0x08011,
+				// get_board_model = 0x10001,
+				get_board_revision = 0x10002,
+				// get_mac_address = 0x10003,
+				// get_board_serial = 0x10004,
+				get_arm_memory = 0x10005,
+				get_vc_memory = 0x10006,
+				// set_power_state = 0x28001,
+				// get_clock_rate = 0x30002,
+				// get_max_clock_rate = 0x30004,
+				// get_temperature = 0x30006,
+				// get_min_clock_rate = 0x30007,
+				// get_turbo = 0x30009,
+				// get_max_temperature = 0x3000A,
+				// get_edid_block = 0x30020,
 				set_clock_rate = 0x38002,
+				// set_turbo = 0x38009,
+				// set_set_gpio_state = 0x38041,
 
 				allocate_buffer = 0x40001,
 				release_buffer  = 0x48001,
@@ -28,10 +47,13 @@ namespace arch {
 				get_bytes_per_row = 0x40008
 			};
 
-			struct __attribute__((packed)) PropertyMessage {
+			// struct __attribute__((packed)) PropertyMessage {
+			struct PropertyMessage {
 				PropertyTag tag;
 
 				union {
+					U32 boardRevision;
+
 					struct {
 						U32 clockId;
 						U32 rate; //hz
@@ -40,9 +62,14 @@ namespace arch {
 
 					U32 allocate_align;
 					struct {
-						void * fb_addr;
+						U32 fb_addr;
 						U32 fb_size;
 					} allocate_res;
+
+					struct {
+						U32 address;
+						U32 size;
+					} memory;
 
 					struct {
 						U32 width;

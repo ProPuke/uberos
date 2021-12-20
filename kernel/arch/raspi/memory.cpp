@@ -23,13 +23,15 @@ namespace atags {
 	using namespace arch::raspi::atags;
 }
 
+namespace systemInfo {
+	using namespace arch::raspi;
+}
+
 namespace memory {
 	namespace arch {
 		namespace raspi {			
 			void init() {
 				stdio::Section section("memory::arch::raspi::init...");
-
-				totalMemory = atags::mem_size;
 
 				if(!totalMemory){
 					#if defined(ARCH_RASPI1)
@@ -51,6 +53,7 @@ namespace memory {
 					stdio::print_warning("Warning: No memory size specified. Assuming ", totalMemory/1024/1024, "MB");
 				}
 
+				stdio::print_info("total memory: ", totalMemory/1024/1024, "MB");
 				stdio::print_info("kernel stack: ", stackSize/1024, "KB");
 				// stdio::print("kernel heap: ", heapSize/1024, "KB\n");
 
@@ -75,6 +78,9 @@ namespace memory {
 
 				if(kernelPageCount>pageCount) pageCount = kernelPageCount;
 				auto userPageCount = pageCount-kernelPageCount;
+
+				stdio::print_debug("kernel start @ ", &__end);
+				stdio::print_debug("kernel end @ ", kernelEnd);
 
 				stdio::print_info("pages: ", pageCount);
 				stdio::print_info(kernelPageCount, " kernel pages");

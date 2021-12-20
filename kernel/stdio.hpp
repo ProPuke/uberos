@@ -20,6 +20,7 @@ namespace stdio {
 
 	enum struct PrintType {
 		info,
+		debug,
 		warning,
 		error
 	};
@@ -43,17 +44,21 @@ namespace stdio {
 			switch(type){
 				case PrintType::info:
 				break;
+				case PrintType::debug:
+					_print("\x1b[33;1m");
+				break;
 				case PrintType::warning:
 					_print("\x1b[31;1m");
 				break;
 				case PrintType::error:
-					_print("\x1b[37;41;1m");
+					_print("\x1b[30;41;1m");
 				break;
 			}
 		#endif
 	}
 
 	inline void print_info_start() { return print_start(PrintType::info); }
+	inline void print_debug_start() { return print_start(PrintType::debug); }
 	inline void print_warning_start() { return print_start(PrintType::warning); }
 	inline void print_error_start() { return print_start(PrintType::error); }
 
@@ -74,6 +79,8 @@ namespace stdio {
 
 	template<typename ...Params>
 	void print_info(Params ...params){ return print(PrintType::info, params...); }
+	template<typename ...Params>
+	void print_debug(Params ...params){ return print(PrintType::debug, params...); }
 	template<typename ...Params>
 	void print_warning(Params ...params){ return print(PrintType::warning, params...); }
 	template<typename ...Params>

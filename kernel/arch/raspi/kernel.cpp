@@ -4,13 +4,18 @@
 #include "atags.hpp"
 #include "timer.hpp"
 #include "framebuffer.hpp"
+#include "hwquery.hpp"
 #include "../arm/kernel.hpp"
 
-#if defined(ARCH_RASPI1) or defined(ARCH_RASPI2)
-	#include "armv7/exceptions.hpp"
-#elif defined(ARCH_RASPI3) or defined(ARCH_RASPI4)
-	#include "armv8/exceptions.hpp"
+#if defined(ARCH_ARM32)
+	#include <kernel/arch/arm32/exceptions.hpp>
+	#include <kernel/arch/arm32/mmu.hpp>
+#elif defined(ARCH_ARM64)
+	#include <kernel/arch/arm64/exceptions.hpp>
+	#include <kernel/arch/arm64/mmu.hpp>
 #endif
+
+#include <kernel/Spinlock.hpp>
 
 #include <kernel/libc.hpp>
 #include <kernel/stdio.hpp>
@@ -28,10 +33,18 @@ namespace serial {
 }
 
 namespace exceptions {
-	#if defined(ARCH_RASPI1) or defined(ARCH_RASPI2)
-		using namespace exceptions::arch::raspi::armv7;
-	#elif defined(ARCH_RASPI3) or defined(ARCH_RASPI4)
-		using namespace exceptions::arch::raspi::armv8;
+	#if defined(ARCH_ARM32)
+		using namespace arch::arm32;
+	#elif defined(ARCH_ARM64)
+		using namespace arch::arm64;
+	#endif
+}
+
+namespace mmu {
+	#if defined(ARCH_ARM32)
+		using namespace arch::arm32;
+	#elif defined(ARCH_ARM64)
+		using namespace arch::arm64;
 	#endif
 }
 
@@ -40,14 +53,22 @@ namespace timer {
 }
 
 namespace usb {
-	using namespace arch::raspi::usb;
+	using namespace arch::raspi;
 }
 
 namespace memory {
 	using namespace arch::raspi;
 }
 
+namespace hwquery {
+	using namespace arch::raspi;
+}
+
 namespace framebuffer {
+	using namespace arch::raspi;
+}
+
+namespace systemInfo {
 	using namespace arch::raspi;
 }
 
@@ -56,21 +77,21 @@ namespace kernel {
 		namespace arm {
 			namespace raspi {
 				extern "C" void kernel_main(size_t _atags) {
-					auto atags = (atags::Atag*) _atags;
+					// auto atags = (atags::Atag*) _atags;
 
 					serial::init();
 
 					{
 						stdio::Section section("kernel::arch::raspi startup");
 
-						atags::init(atags);
-						memory::init();
 						libc::init();
-
-						framebuffer::init();
-
-						usb::init();
+						// atags::init(atags);
 						exceptions::init();
+						hwquery::init();
+						memory::init();
+						mmu::init();
+						framebuffer::init();
+						usb::init();
 						timer::init();
 					}
 

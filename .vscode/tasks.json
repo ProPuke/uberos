@@ -5,12 +5,26 @@
 			"label": "Remote debug raspi 3",
 			"type": "shell",
 			"command": "make",
+			"group": "test",
 			"options": {
 				"cwd": "kernel",
 			},
 			"isBackground": true,
 			"args": [
 				"remote-debug",
+				"RASPI_MODEL=3"
+			]
+		},
+		{
+			"label": "Build raspi 3",
+			"type": "shell",
+			"command": "make",
+			"group": "build",
+			"options": {
+				"cwd": "kernel",
+			},
+			"args": [
+				"debug",
 				"RASPI_MODEL=3"
 			]
 		}

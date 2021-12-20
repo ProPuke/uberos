@@ -317,7 +317,7 @@ namespace graphics2d {
 		}
 
 		Font openSans = {
-			{bufferData, 134832, 212, 212, FramebufferFormat::rgb8},
+			{bufferData, 134832, 212*3, 212, 212, FramebufferFormat::rgb8},
 			32,
 			1.36181640625,
 			1.06884765625,

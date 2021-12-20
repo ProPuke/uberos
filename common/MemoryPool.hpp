@@ -37,7 +37,7 @@ struct MemoryPool {
 
 	void* malloc(size_t size) {
 		#ifdef MEMORY_CHECKS
-			stdio::Section section("malloc ", size, "\n");
+			stdio::Section section("malloc ", size);
 
 			debug_llist(availableBlocks, "availableBlocks in malloc 0");
 		#endif
@@ -107,7 +107,7 @@ struct MemoryPool {
 
 	void claim_block(MemoryPoolBlock &reclaim){
 		#ifdef MEMORY_CHECKS
-			stdio::Section section("claim block ", &reclaim, " of size ", reclaim.size, "\n");
+			stdio::Section section("claim block ", &reclaim, " of size ", reclaim.size);
 			debug_llist(availableBlocks, "availableBlocks before");
 		#endif
 

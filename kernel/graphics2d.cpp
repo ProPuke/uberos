@@ -10,7 +10,7 @@
 	#include <kernel/arch/raspi/mmio.hpp>
 
 	namespace mmio {
-		using namespace arch::raspi::mmio;
+		using namespace arch::raspi;
 	}
 #endif
 
@@ -36,7 +36,7 @@ namespace graphics2d {
 		scheduler::Guard guard;
 
 		#ifdef DEBUG_MEMORY
-			stdio::Section section("create_view ", x, ", ", y, " ", width, "x", height, "\n");
+			stdio::Section section("create_view ", x, ", ", y, " ", width, "x", height);
 		#endif
 
 		auto &framebuffer = framebuffer::framebuffers[0];
@@ -253,6 +253,12 @@ namespace graphics2d {
 				}
 			}
 		}
+	}
+
+	Buffer get_screen_buffer(U32 framebuffer_id, Rect rect) {
+		const auto &framebuffer = ::framebuffer::framebuffers[framebuffer_id];
+		const auto bpp = framebufferFormat::size[(U8)framebuffer.format];
+		return Buffer(framebuffer.address, framebuffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.format);
 	}
 
 	void View::Handle_thread_deleted::call(void *data) {

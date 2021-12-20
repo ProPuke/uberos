@@ -122,8 +122,6 @@
 		"ARCH_ARM_RASPI3"
 	],
 	"C_Cpp.commentContinuationPatterns": [
-
-
 		"/**"
 	]
 }

@@ -40,14 +40,54 @@ namespace scheduler {
 			void init() {
 				stdio::Section section("scheduler::arch::arm::init...");
 
+				stdio::print_debug("installing interrupt timer...");
+				{
+					stdio::print_debug("creating test spinlock");
+					Spinlock testlock("testlock");
+					Spinlock *testlock2 = (Spinlock*)0xdf000;
+					stdio::print_debug("spinlock @ ", &testlock);
+					stdio::print_debug("spinlock2 @ ", testlock2);
+					testlock2->_lock = 0;
+					stdio::print_debug("testing test spinlock 2");
+					{
+						Spinlock_Guard _guard(*testlock2, "testlock tester", true);
+
+						stdio::print_debug("mid test 2");
+					}
+					stdio::print_debug("testing test spinlock 1");
+					{
+						Spinlock_Guard _guard(testlock, "testlock tester", true);
+
+						stdio::print_debug("mid test 1");
+					}
+					stdio::print_debug("tested test spinlock");
+				}
+				timer::set_timer(timer::Timer::cpu_scheduler, 1);
+				stdio::print_debug("installed 1");
+				timer::udelay(2000000);
+				stdio::print_debug("installed 2");
+				//8436924000
+				//8440321000
+
+				while(true);
+
+				// stdio::print_info("test kmalloc");
+				// memory::kmalloc(123);
+
 				stdio::print_info("allocating main process...");
 				auto mainProcess = new Process("kernel");
 
+				stdio::print_info("1");
+
 				auto mainThread = new Thread(*mainProcess);
 				mainThread->state = Thread::State::active;
+
+				stdio::print_info("2");
 				
 				thread::activeThreads.push_back(*mainThread);
 				::thread::currentThread = mainThread;
+
+				stdio::print_info("3");
 
 				#if defined(ARCH_RASPI)
 					stdio::print_info("managed by timer::arch::raspi");

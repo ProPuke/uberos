@@ -10,10 +10,11 @@ namespace graphics2d {
 	struct Font;
 
 	struct Buffer {
-		/**/ Buffer(U8 *address, U32 size, U32 width, U32 height, FramebufferFormat format):
+		/**/ Buffer(U8 *address, U32 size, U32 stride, U32 width, U32 height, FramebufferFormat format):
 			format(format),
 			address(address),
 			size(size),
+			stride(stride),
 			width(width),
 			height(height)
 		{}
@@ -21,6 +22,7 @@ namespace graphics2d {
 		FramebufferFormat format;
 		U8 *address;
 		U32 size;
+		U32 stride;
 		U32 width, height;
 
 		void set(U32 x, U32 y, U32 colour);
@@ -36,6 +38,8 @@ namespace graphics2d {
 		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour);
 		void draw_msdf(I32 x, I32 y, U32 width, U32 height, Buffer &source, U32 source_x, U32 source_y, U32 source_width, U32 source_height, U32 colour);
 		void draw_text(Font &font, const char *text, I32 x, I32 y, U32 size, U32 colour);
+
+		void scroll(I32 x, I32 y);
 	};
 
 	U32 blend_rgb(U32 from, U32 to, float phase);
@@ -47,12 +51,12 @@ namespace graphics2d {
 	};
 
 	struct View: LListItem<View> {
-		/**/ View(Thread &thread, U8 *address, U32 size, FramebufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
+		/**/ View(Thread &thread, U8 *address, U32 size, FramebufferFormat format, U32 stride, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
 			thread(thread),
 			x(x),
 			y(y),
 			scale(scale),
-			buffer(address, size, width, height, format),
+			buffer(address, size, stride, width, height, format),
 			mode(mode)
 		{}
 
@@ -96,6 +100,8 @@ namespace graphics2d {
 	void update_area(Rect rect, View *below = nullptr);
 	void update_view(View &view);
 	void update_view_area(View &view, Rect rect);
+
+	Buffer get_screen_buffer(U32 framebuffer, Rect rect);
 }
 
 #include "graphics2d.inl"

@@ -16,3 +16,11 @@ typedef double F64;
 typedef char     C8;
 typedef char16_t C16;
 typedef char32_t C32;
+
+#if defined(ARCH_ARM32)
+	typedef U32 Reg;
+#elif defined(ARCH_ARM64)
+	typedef U64 Reg;
+#else
+	#error Unsupported architecture
+#endif

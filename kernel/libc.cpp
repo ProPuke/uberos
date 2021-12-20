@@ -1,6 +1,8 @@
 #include "libc.hpp"
 
 #include "stdio.hpp"
+#include <cstddef>
+#include "framebuffer.hpp"
 
 extern void (*__init_array_start []) (void) __attribute__((weak));
 extern void (*__init_array_end []) (void) __attribute__((weak));

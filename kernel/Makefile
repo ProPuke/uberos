@@ -10,6 +10,14 @@ ifndef RASPI_MODEL
 	RASPI_MODEL := 2
 endif
 
+ifndef RASPI_UART
+	RASPI_UART := 1
+endif
+
+CFLAGS   := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2
+CXXFLAGS := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2 -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions
+LFLAGS := -O2 -nostdlib -nostartfiles
+
 ifeq ($(RASPI_MODEL),1)
 	OUTPUTDIR := $(OUTPUTDIR)/raspi1
 	GCC_CPU := arm1176jzf-s
@@ -44,7 +52,7 @@ ifeq ($(RASPI_MODEL),2)
 	GCC_CPU := generic-armv7-a
 	DIRECTIVES := -D ARCH_ARM -D ARCH_ARM32 -D ARCH_RASPI -D ARCH_RASPI2
 	QEMU := qemu-system-arm
-	QEMU_MODEL := raspi2
+	QEMU_MODEL := raspi2b
 	# QEMU_DTB := ../tools/firmware/bcm2709-rpi-2-b.dtb
 	KERNEL_FILENAME := kernel7.img
 
@@ -71,9 +79,10 @@ ifeq ($(RASPI_MODEL),3)
 	# GCC_CPU := cortex-a53
 	CLANG_CPU := cortex-a53+nosimd
 	# CLANG_TARGET := aarch64-elf
+	GCC_ARCH := armv8-a
 	DIRECTIVES := -D ARCH_ARM -D ARCH_ARM64 -D ARCH_RASPI -D ARCH_RASPI3
 	QEMU := qemu-system-aarch64
-	QEMU_MODEL := raspi3
+	QEMU_MODEL := raspi3b
 	# QEMU_DTB := ../tools/firmware/bcm2709-rpi-2-b.dtb
 	KERNEL_FILENAME := kernel8.img
 
@@ -88,6 +97,10 @@ ifeq ($(RASPI_MODEL),3)
 
 	KERNEL_SRCS    := $(KERNEL_SRCS)    $(shell find arch/raspi/armv8 -name "*.S" -or -name "*.cpp" -or -name "*.c")
 	KERNEL_HEADERS := $(KERNEL_HEADERS) $(shell find arch/raspi/armv8 -name "*.hpp" -or -name "*.inl")
+
+	CFLAGS   := $(CFLAGS) -mstrict-align
+	CXXFLAGS := $(CXXFLAGS) -mstrict-align
+	LFLAGS   := $(LFLAGS) -mstrict-align
 
 	CC  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
 	CXX := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-g++
@@ -101,9 +114,10 @@ ifeq ($(RASPI_MODEL),4)
 	# GCC_CPU := cortex-a72
 	CLANG_CPU := cortex-a72+nosimd
 	# CLANG_TARGET := aarch64-elf
+	GCC_ARCH := armv8-a
 	DIRECTIVES := -D ARCH_ARM -D ARCH_ARM64 -D ARCH_RASPI -D ARCH_RASPI4
 	QEMU := qemu-system-aarch64
-	QEMU_MODEL := raspi3
+	QEMU_MODEL := raspi3b
 	# QEMU_DTB := ../tools/firmware/bcm2709-rpi-2-b.dtb
 	KERNEL_FILENAME := kernel8.img
 
@@ -119,6 +133,10 @@ ifeq ($(RASPI_MODEL),4)
 	KERNEL_SRCS    := $(KERNEL_SRCS)    $(shell find arch/raspi/armv8 -name "*.S" -or -name "*.cpp" -or -name "*.c")
 	KERNEL_HEADERS := $(KERNEL_HEADERS) $(shell find arch/raspi/armv8 -name "*.hpp" -or -name "*.inl")
 
+	CFLAGS   := $(CFLAGS) -mstrict-align
+	CXXFLAGS := $(CXXFLAGS) -mstrict-align
+	LFLAGS   := $(LFLAGS) -mstrict-align
+
 	CC  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
 	CXX := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-g++
 	LD  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
@@ -126,11 +144,11 @@ ifeq ($(RASPI_MODEL),4)
 	CPY := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-objcopy
 endif
 
-# DIRECTIVES := $(DIRECTIVES) D MEMORY_CHECKS
+DIRECTIVES := $(DIRECTIVES) -D MEMORY_CHECKS
+DIRECTIVES := $(DIRECTIVES) -D ARCH_RASPI_UART$(RASPI_UART)
 
-CFLAGS   := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2 $(DIRECTIVES)
-CXXFLAGS := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2 -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions $(DIRECTIVES)
-LFLAGS := -O2 -nostdlib -nostdlib -nostartfiles
+CFLAGS   := $(CFLAGS) $(DIRECTIVES)
+CXXFLAGS := $(CXXFLAGS) $(DIRECTIVES)
 
 CC  := $(CC)  -I ../ $(CFLAGS)
 CXX := $(CXX) -I ../ $(CXXFLAGS)
@@ -139,6 +157,11 @@ ifdef GCC_CPU
 	CC  := $(CC)  -mcpu=$(GCC_CPU)
 	CXX := $(CXX) -mcpu=$(GCC_CPU)
 	LD  := $(LD)  -mcpu=$(GCC_CPU)
+endif
+ifdef GCC_ARCH
+	CC  := $(CC)  -march=$(GCC_ARCH)
+	CXX := $(CXX) -march=$(GCC_ARCH)
+	LD  := $(LD)  -march=$(GCC_ARCH)
 endif
 ifdef CLANG_TARGET
 	CC  := $(CC)  --target=$(CLANG_TARGET) -mcpu=$(CLANG_CPU)
@@ -160,6 +183,7 @@ deploy: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
 	@cp $(OUTPUTDIR)/boot/$(KERNEL_FILENAME) /media/propuke/boot/
 	@umount /media/propuke/boot
+	@echo "boot unmounted"
 
 debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
@@ -168,7 +192,8 @@ debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 
 remote-debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
-	$(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
+# $(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
+	$(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 
 
 $(OUTPUTDIR):
@@ -192,6 +217,7 @@ fonts:
 %.cpp.o: %.cpp Makefile $(KERNEL_HEADERS) $(COMMON_HEADERS)
 	@echo "CPP  " $<
 	@$(CXX) -c $< -o $@
+	@$(CXX) -Wa,-adhln -c $< -o $@ > $<.output
 
 ifeq ($(RASPI_MODEL),1)
 $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) linker.ld Makefile

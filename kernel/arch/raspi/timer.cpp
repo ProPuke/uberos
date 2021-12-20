@@ -6,29 +6,31 @@
 #include <common/types.hpp>
 #include <kernel/stdio.hpp>
 
-#if defined(ARCH_RASPI1) or defined(ARCH_RASPI2)
-	#include "armv7/exceptions.hpp"
+#if defined(ARCH_ARM32)
+	#include <kernel/arch/arm32/exceptions.hpp>
 
 	namespace exceptions {
-		using namespace exceptions::arch::raspi::armv7;
+		using namespace exceptions::arch::arm32;
 	}
 
-#elif defined(ARCH_RASPI3) or defined(ARCH_RASPI4)
-	#include "armv8/exceptions.hpp"
+#elif defined(ARCH_ARM64)
+	#include <kernel/arch/arm64/exceptions.hpp>
 
 	namespace exceptions {
-		using namespace exceptions::arch::raspi::armv8;
+		using namespace exceptions::arch::arm64;
 	}
 	
 #else
 	#error "Unsupported architecture"
 #endif
 
-namespace irq {
-	using namespace irq::arch::raspi;
+namespace mmio {
+	using namespace arch::raspi;
 }
 
-using namespace arch::raspi;
+namespace irq {
+	using namespace arch::raspi;
+}
 
 namespace timer {
 	namespace arch {
@@ -118,6 +120,7 @@ namespace timer {
 					break;
 					case Timer::cpu_scheduler:
 						// irq::disable(irq::Irq::system_timer_1); //no point? ¯\_(ツ)_/¯
+						stdio::print_debug("scheduler fired");
 						scheduler::arch::arm::on_timer();
 					break;
 					case Timer::gpu1:

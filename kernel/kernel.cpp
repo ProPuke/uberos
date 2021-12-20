@@ -271,7 +271,7 @@ namespace kernel {
 		// while(true){
 		// 	thread::currentThread->sleep(1000000);
 		// 	{
-		// 		stdio::Section section("Status:\n");
+		// 		stdio::Section section("Status:");
 
 		// 		stdio::print("Active threads: ", scheduler::get_active_thread_count()-1 /* exclude self since we were sleeping throughout */, '/', scheduler::get_total_thread_count(), "\n");
 		// 		stdio::print("VRAM: ", vramWrites, " writes/sec\n");
