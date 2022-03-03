@@ -11,6 +11,8 @@
 #include "arch/raspi/timer.hpp"
 #include "Process.hpp"
 #include "Thread.hpp"
+#include "scheduler.hpp"
+#include "exceptions.hpp"
 #include <common/stdlib.hpp>
 #include <common/debugUtils.hpp>
 
@@ -28,11 +30,37 @@ namespace arm {
 	}
 }
 
+#include <kernel/arch/raspi/kernel.hpp>
+
+namespace libc {
+	void init();
+}
+
+namespace exceptions {
+	void init();
+}
+
+namespace scheduler {
+	void init();
+}
+
 U64 vramWrites = 0;
 U64 ramWrites = 0;
 
 namespace kernel {
-	void init() {
+	void init(void(*preinit)(), void(*init)(), void(*postinit)()) {
+		if(preinit) preinit();
+
+		libc::init();
+
+		{ stdio::Section section("kernel init");
+			exceptions::init();
+	
+			if(init) init();
+
+			scheduler::init();
+		}
+
 		{ stdio::Section section("kernel startup");
 
 			graphics2d::init();
@@ -58,6 +86,8 @@ namespace kernel {
 
 			stdio::print_info("Startup complete.");
 		}
+
+		if(postinit) postinit();
 
 		#ifdef MEMORY_CHECKS
 			debug_llist(memory::kernelHeap.availableBlocks, "availableBlocks 1");

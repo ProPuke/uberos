@@ -63,28 +63,22 @@ namespace memory {
 		if(count<1) return nullptr;
 		if(count==1) return _allocate_page();
 
-		// stdio::print("gonna search\n");
-
 		for(auto page=freePages.head; page; page=page->next){
 			U32 needed = count-1;
-			// stdio::print("search\n");
 			for(auto checkPage=page; needed&&checkPage->hasNextPage&&!(checkPage+1)->isAllocated; checkPage++,needed--);
 			// stdio::print("searched\n");
 
 			if(needed==0){
 				U32 needed = count;
 				U32 popped = 0;
-				// stdio::print("found. marking...\n");
+
 				for(auto reservePage=page; needed; reservePage++, needed--){
-					// stdio::print("mark... ", reservePage, ", ", reservePage->physicalAddress, "\n");
 					popped++;
 					freePages.pop(*reservePage);
 					reservePage->isAllocated = true;
 					reservePage->clear();
-					// stdio::print("...marked\n");
 				}
-				// stdio::print("marked\n");
-				// stdio::print("got pages\n");
+
 				return page;
 			}
 		}
@@ -106,6 +100,10 @@ namespace memory {
 		
 		freePages.push_back(page);
 	}
+
+	//TODO
+	// Page* get_memory_page(void *address) {
+	// }
 
 	void* kmalloc(size_t size) {
 		// stdio::Section section("kmalloc");
@@ -130,7 +128,7 @@ namespace memory {
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
-		is_dangerous_address(address, (U8*)address+size-1);
+		check_dangerous_address(address, (U8*)address+size-1);
 
 		return address;
 	}
@@ -149,7 +147,7 @@ namespace memory {
 		// heap->free(address);
 	}
 
-	void is_dangerous_address(void *from, void *to) {
+	void check_dangerous_address(void *from, void *to) {
 		for(auto block=kernelHeap.availableBlocks.head; block; block=block->next) {
 			if(to>block&&from<&block->_data+block->size){
 				stdio::print_error("Error: DANGEROUS ADDRESS ", from, " -> ", (U8*)to-1, " overlaps block ", block, " -> ", &block->_data+block->size-1);

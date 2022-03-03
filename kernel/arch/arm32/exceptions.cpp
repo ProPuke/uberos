@@ -58,4 +58,8 @@ namespace exceptions {
 			}
 		}
 	}
+
+	void init() {
+		arch::arm32::init();
+	}
 }

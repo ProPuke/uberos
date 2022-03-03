@@ -1,5 +1,3 @@
-#include "libc.hpp"
-
 #include "stdio.hpp"
 #include <cstddef>
 #include "framebuffer.hpp"

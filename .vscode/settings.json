@@ -118,10 +118,16 @@
 		"ARCH_ARM",
 		"ARCH_ARM64",
 		"ARCH_RASPI",
-		"ARCH_ARM_RASPI",
-		"ARCH_ARM_RASPI3"
+		"ARCH_RASPI4"
 	],
 	"C_Cpp.commentContinuationPatterns": [
 		"/**"
-	]
+	],
+	"C_Cpp.default.includePath": [
+		"./"
+	],
+	"docwriter.progress.trackFunctions": false,
+	"docwriter.progress.trackMethods": false,
+	"docwriter.progress.trackClasses": false,
+	"docwriter.progress.trackTypes": false
 }

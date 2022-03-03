@@ -7,7 +7,7 @@ COMMON_SRCS    := $(shell find ../common -name "*.S" -or -name "*.cpp" -or -name
 COMMON_HEADERS := $(shell find ../common -name "*.hpp" -or -name "*.inl")
 
 ifndef RASPI_MODEL
-	RASPI_MODEL := 2
+	RASPI_MODEL := 4
 endif
 
 ifndef RASPI_UART
@@ -173,23 +173,29 @@ KERNEL_OBJS := $(KERNEL_SRCS:%=%.o)
 COMMON_OBJS := $(COMMON_SRCS:%=%.o)
 MSDF_ATLAS_GEN := ../tools/msdf-atlas-gen/bin/msdf-atlas-gen
 
+.PHONY: all
 all: kernel
 
+.PHONY: test
 test: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
 	$(QEMU) -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
 
+.PHONY: deploy
 deploy: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
 	@cp $(OUTPUTDIR)/boot/$(KERNEL_FILENAME) /media/propuke/boot/
+	@cp $(OUTPUTDIR)/boot/config.txt /media/propuke/boot/
 	@umount /media/propuke/boot
 	@echo "boot unmounted"
 
+.PHONY: debug
 debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
 	$(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse &
 	$(GDB) $(OUTPUTDIR)/$(KERNEL_FILENAME) --eval-command="target remote localhost:1234"
 
+.PHONY: remote-debug
 remote-debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
 	@echo
 # $(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
@@ -217,7 +223,7 @@ fonts:
 %.cpp.o: %.cpp Makefile $(KERNEL_HEADERS) $(COMMON_HEADERS)
 	@echo "CPP  " $<
 	@$(CXX) -c $< -o $@
-	@$(CXX) -Wa,-adhln -c $< -o $@ > $<.output
+# @$(CXX) -Wa,-adhln -c $< -o $@ > $<.output
 
 ifeq ($(RASPI_MODEL),1)
 $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) linker.ld Makefile
@@ -237,6 +243,8 @@ $(OUTPUTDIR)/boot:
 	@mkdir -p $@
 	@echo "CP   " "../tools/firmware"
 	@cp -r ../tools/firmware/* $(OUTPUTDIR)/boot
+	@echo "CP   " "../assets/boot"
+	@cp -r ../assets/boot/* $(OUTPUTDIR)/boot
 	@rm $(OUTPUTDIR)/boot/*.linux
 	@rm $(OUTPUTDIR)/boot/kernel*.img
 	@rm $(OUTPUTDIR)/boot/README.*
@@ -255,6 +263,8 @@ $(OUTPUTDIR)/boot:
 	@mkdir -p $@
 	@echo "CP   " "../tools/firmware"
 	@cp -r ../tools/firmware/* $(OUTPUTDIR)/boot
+	@echo "CP   " "../assets/boot"
+	@cp -r ../assets/boot/* $(OUTPUTDIR)/boot
 	@rm $(OUTPUTDIR)/boot/*.linux
 	@rm $(OUTPUTDIR)/boot/kernel*.img
 	@rm $(OUTPUTDIR)/boot/README.*
@@ -275,7 +285,9 @@ endif
 clean:
 	@$(RM) -rf ../build
 	@find . -type f -name '*.o' -delete
+	@find . -type f -name '*.cpp.output' -delete
 	@find ../common -type f -name '*.o' -delete
+	@find ../common -type f -name '*.cpp.output' -delete
 
 .PHONY: kernel
 kernel: $(OUTPUTDIR)/$(KERNEL_FILENAME)

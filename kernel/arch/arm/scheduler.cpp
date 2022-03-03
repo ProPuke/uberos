@@ -4,6 +4,7 @@
 #include <kernel/stdio.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/exceptions.hpp>
+#include <kernel/mmu.hpp>
 #include <atomic>
 
 #if defined(ARCH_RASPI)
@@ -131,6 +132,10 @@ namespace scheduler {
 
 	using namespace arch::arm;
 
+	void init() {
+		arch::arm::init();
+	}
+
 	void yield() {
 		if(lock_depth>0){
 			deferredYields++;
@@ -224,6 +229,8 @@ namespace scheduler {
 			inYield.store(nullptr);
 
 			asm volatile("" ::: "memory");
+
+			mmu::set_userspace_mapping(newThread.process.memoryMapping);
 
 			Thread::swap_state(oldThread, newThread);
 

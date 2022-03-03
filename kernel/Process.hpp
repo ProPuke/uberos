@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProcessLog.hpp"
+#include "mmu.hpp"
 #include <common/LList.hpp>
 #include <common/ListUnordered.hpp>
 
@@ -17,6 +18,7 @@ struct Process: LListItem<Process> {
 
 	const char *name;
 	ProcessLog log;
+	mmu::MemoryMapping memoryMapping;
 
 	ListUnordered<Thread> threads;
 

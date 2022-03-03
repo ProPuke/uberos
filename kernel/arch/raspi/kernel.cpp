@@ -5,7 +5,6 @@
 #include "timer.hpp"
 #include "framebuffer.hpp"
 #include "hwquery.hpp"
-#include "../arm/kernel.hpp"
 
 #if defined(ARCH_ARM32)
 	#include <kernel/arch/arm32/exceptions.hpp>
@@ -17,10 +16,10 @@
 
 #include <kernel/Spinlock.hpp>
 
-#include <kernel/libc.hpp>
 #include <kernel/stdio.hpp>
 #include <common/stdlib.hpp>
 #include <common/types.hpp>
+#include <kernel/kernel.hpp>
 
 extern U8 __end;
 
@@ -74,29 +73,29 @@ namespace systemInfo {
 
 namespace kernel {
 	namespace arch {
-		namespace arm {
-			namespace raspi {
-				extern "C" void kernel_main(size_t _atags) {
-					// auto atags = (atags::Atag*) _atags;
+		namespace raspi {
+			extern "C" void kernel_main(size_t _atags) {
+				// auto atags = (atags::Atag*) _atags;
 
-					serial::init();
+				kernel::init(
+					[] {
+						serial::init();
+					},
 
-					{
-						stdio::Section section("kernel::arch::raspi startup");
-
-						libc::init();
+					[] {
 						// atags::init(atags);
-						exceptions::init();
 						hwquery::init();
 						memory::init();
 						mmu::init();
 						framebuffer::init();
 						usb::init();
 						timer::init();
-					}
+					},
 
-					kernel::arch::arm::init();
-				}
+					[] {
+						;
+					}
+				);
 			}
 		}
 	}

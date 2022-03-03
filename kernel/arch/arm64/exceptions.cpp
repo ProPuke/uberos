@@ -278,4 +278,8 @@ namespace exceptions {
 			}
 		}
 	}
+
+	void init() {
+		arch::arm64::init();
+	}
 }

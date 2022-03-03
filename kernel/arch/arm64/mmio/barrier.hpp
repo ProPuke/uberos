@@ -2,6 +2,6 @@
 
 namespace mmio {
 	inline void barrier() {
-		asm volatile("dmb sy");
+		asm volatile("dmb sy" ::: "memory");
 	}
 }

@@ -18,13 +18,13 @@ namespace memory {
 	#if defined(ARCH_ARM32)
 		static inline const size_t pageSize = 4*1024; //4KB
 	#elif defined(ARCH_ARM64)
-		static inline const size_t pageSize = 64*1024; //64KB
+		static inline const size_t pageSize = 16*1024; //16KB
 	#else
 		#error Unsupported architecture
 	#endif
 	// extern MemoryPool<32> *heap;
 
-	void is_dangerous_address(void *from, void *to);
+	void check_dangerous_address(void *from, void *to);
 
 	// threadsafe variants
 	Page* allocate_page();

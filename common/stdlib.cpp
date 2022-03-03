@@ -25,9 +25,28 @@ extern "C" void memmove(void *dest, void *src, unsigned bytes) {
 	}
 }
 
+extern "C" int memcmp(const void *a, const void *b, unsigned bytes) {
+	while(bytes){
+		const auto diff = *(C8*)a-*(C8*)b;
+		if(diff){
+			return diff;
+		}
+	}
+	return 0;
+}
+
 extern "C" void bzero(void *dest, unsigned bytes) {
 	char *d = (char*)dest;
 	while(bytes--) *d++ = 0;
+}
+
+extern "C" unsigned strlen(const C8 *str) {
+	U64 length = 0;
+	while(str){
+		length++;
+		str++;
+	}
+	return length;
 }
 
 constexpr unsigned digits_binary(unsigned bits, bool isSigned){

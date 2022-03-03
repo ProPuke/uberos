@@ -5,6 +5,7 @@
 #include <kernel/arch/raspi/mailbox.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/stdio.hpp>
+#include <kernel/arch/arm64/systemRegisters.hpp>
 
 namespace mailbox {
 	using namespace arch::raspi::mailbox;
@@ -18,275 +19,312 @@ namespace mmu {
 	namespace arch {
 		namespace arm64 {
 			namespace {
-				const inline U32 tlb_alignment = 4096; //4KB (16384KB on arm32)
-				const U32 level1_blocksize = 1 << 21; //Each Block is 2Mb in size (1MB for arm32)
-				const U32 pageTableEntryCount = 8192;
-
-				enum struct MemoryAttribute {
-					device_ngnrne,
-					device_ngnre,
-					device_gre,
-					normal_nc,
-					normal
+				enum struct Granularity {
+					_4kb,
+					_16kb,
+					_64kb
 				};
 
-				//arm32
-				// enum struct MemoryAttribute {
-				// 	device_ns = 0x10412, // device no share (strongly ordered)
-				// 	device    = 0x10416, // device + shareable
-				// 	normal    = 0x1040E, // normal cache + shareable
-				// 	normal_ns = 0x1040A, // normal cache no share
-				// 	normal_xn = 0x1041E  // normal cache + shareable and execute never
-				// };
-
-				enum struct EntryType {
-					none,
-					blockTable,
-					pageTable
+				struct __attribute__((packed)) TableDescriptor {
+					U64 validityDescriptor:1;
+					U64 tableDescriptor:1;
+					U64 mairIndex:3;
+					U64 security:1;
+					U64 accessPermission:2;
+					U64 sharable:2;
+					U64 accessFlag:1;
+					U64 _reserved1:1;
+					U64 address:42;
+					U64 _reserved2:1;
+					U64 privilegedExecuteNever:1;
+					U64 unprivilegedExecuteNever:1;
+					U64 softwareUse:4;
+					U64 _reserved3:1;
 				};
+				static_assert(sizeof(TableDescriptor)==8);
 
-				union VmsaV8_64Descriptor {
-					enum struct Stage2S2ap {
-						none,
-						noread_el0, // no read access for EL0
-						no_write,   // no write access
-					};
-					enum struct Stage2Sh {
-						none,
-						unpredictable,
-						outer,
-						inner,
-					};
-					enum struct ApTable {
-						allAccess,
-						no_el0,                            // Access at EL0 not permitted, regardless of permissions in subsequent levels of lookup
-						no_write,                          // Write access not permitted, at any Exception level, regardless of permissions in subsequent levels of lookup
-						no_write_el0_read                  // Write access not permitted,at any Exception level, Read access not permitted at EL0.
-					};
-					struct {
-						EntryType entryType : 2;                     // @0-1 1 for a block table, 3 for a page table
-							
-							// These are only valid on BLOCK DESCRIPTOR
-							MemoryAttribute memAttr : 4;       // @2-5
-							Stage2S2ap s2ap : 2;               // @6-7
-							Stage2Sh sh : 2;                   // @8-9
-							U64 af : 1;                        // @10 Accessable flag
-
-						U64 _reserved11 : 1;                   // @11 Set to 0
-						U64 address : 36;                      // @12-47 36 Bits of address
-						U64 _reserved48_51 : 4;                // @48-51 Set to 0
-						U64 contiguous : 1;                    // @52 Contiguous
-						U64 pxn : 1;                           // @53 Set to 0
-						U64 uxn : 1;                           // @54 No execute if bit set
-						U64 _reserved55_58 : 4;                // @55-58 Set to 0
-						
-						U64 pxnTable : 1;                      // @59 Never allow execution from a lower EL level 
-						U64 uxnTable : 1;                      // @60 Never allow translation from a lower EL level
-						ApTable apTable : 2;                   // @61-62 AP Table control .. see enumerate options
-						U64 nsTable : 1;                       // @63 Secure state, for accesses from Non-secure state this bit is RES0 and is ignored
-					};
-
-					U64 raw;                                  // @0-63 Raw access to all 64 bits via this union
-				};
-
-				/* First Level Page Table for 1:1 mapping */
-				// static Reg pageTable1to1[pageTableEntryCount] = { 0 };
-				// static Reg __attribute__((aligned(tlb_alignment))) pageTable1to1[pageTableEntryCount] = { 0 };
-				/* First Level Page Table for virtual mapping */
-				static Reg __attribute__((aligned(tlb_alignment))) page_table_virtualmap[pageTableEntryCount] = { 0 };
-				/* First Level Page Table for virtual mapping */
-				static Reg __attribute__((aligned(tlb_alignment))) stage2virtual[512] = { 0 };
-
-				static VmsaV8_64Descriptor *stage2map1to1 = nullptr;
-				static VmsaV8_64Descriptor *stage3virtual = nullptr;
-
-				void enable_mmu_tables(VmsaV8_64Descriptor *translationTable0, VmsaV8_64Descriptor *translationTable1 = nullptr) {
-					asm volatile("dsb sy");
-
-					asm volatile("msr mair_el1, %0" : : "r" (0
-						| (0x00ul << ((U64)MemoryAttribute::device_ngnrne * 8))
-						| (0x04ul << ((U64)MemoryAttribute::device_ngnre * 8))
-						| (0x0cul << ((U64)MemoryAttribute::device_gre * 8))
-						| (0x44ul << ((U64)MemoryAttribute::normal_nc * 8))
-						| (0xfful << ((U64)MemoryAttribute::normal * 8))
-					));
-					asm volatile("msr ttbr0_el1, %0" : : "r" (translationTable0));
-					if(translationTable1){
-						asm volatile("msr ttbr1_el1, %0" : : "r" (translationTable1));
-					}
-					asm volatile("isb");
-
-					{
-						const U64 tcrBits = 25; // 512GB per region 2^(64-tcrBits)
-
-						U64 tcr_el1;
-						asm volatile("mrs %0, tcr_el1" : "=r" (tcr_el1));
-						tcr_el1 |= (0b00ll  << 37); // TBI=0, no tagging
-						tcr_el1 |= (0b000ll << 32); // IPS= 32 bit ... 000 = 32bit, 001 = 36bit, 010 = 40bit
-						tcr_el1 |= (0b10ll  << 30); // TG1=4k ... options are 10=4KB, 01=16KB, 11=64KB ... t care differs from TG0
-						tcr_el1 |= (0b11ll  << 28); // SH1=3 inner ... options 00 = Non-shareable, 01 = INVALID, 10 = Outer Shareable1 = Inner Shareable
-						tcr_el1 |= (0b01ll  << 26); // ORGN1=1 write back .. options 00 = Non-cacheable, 01 = Write back cacheable, 10 = Write thru cacheab 11 = Write Back Non-cacheable
-						tcr_el1 |= (0b01ll  << 24); // IRGN1=1 write back .. options 00 = Non-cacheable, 01 = Write back cacheable, 10 = Write thru cacheable, 11 = Write Back Non-cacheable
-						tcr_el1 |= (0b0ll   << 23); // EPD1 ... Translation table walk disable for translations using TTBR1_EL1  0 = walk, 1 = generate fault
-						tcr_el1 |= (tcrBits << 16); // T1SZ
-						tcr_el1 |= (0b00ll  << 14); // TG0=4k  ... options are 00=4KB, 01=64KB, 10=16KB,  ... take c differs from TG1
-						tcr_el1 |= (0b11ll  << 12); // SH0=3 inner ... .. options 00 = Non-shareable, 01 = INVALID, 10 = Outer Shareable1 = Inner Shareable
-						tcr_el1 |= (0b01ll  << 10); // ORGN0=1 write back .. options 00 = Non-cacheable, 01 = Write back cacheable, 10 = Write thru cacheable, = Write Back Non-cacheable
-						tcr_el1 |= (0b01ll  <<  8); // IRGN0=1 write back .. options 00 = Non-cacheable, 01 = Write back cacheable, 10 = Write thru cacheable, 11 = Write Back Non-cacheable
-						tcr_el1 |= (0b0ll   <<  7); // EPD0  ... Translation table walk disable for translations using TTBR0_EL1  0 = walk, 1 = generate fault
-						tcr_el1 |= (tcrBits <<  0); // T0SZ
-						asm volatile("msr tcr_el1, %0" : : "r" (tcr_el1));
-					}
-
-					asm volatile("isb");
-
-					{
-						U64 sctlr_el1;
-						asm volatile("mrs %0, sctlr_el1" : "=r" (sctlr_el1));
-						sctlr_el1 |= (1<<22); // EIS, Exception Entry is Context Synchronizing
-						sctlr_el1 |= (1<<11); // EOS, Exception Exit is Context Synchronizing
-						sctlr_el1 |= (1<<12); // I, instruction cache enable. This is an enable bit for instruction caches at EL0 and EL1
-						// sctlr_el1 |= (1<<4);  // SA0, stack alignment check enable for EL0
-						// sctlr_el1 |= (1<<3);  // SA, stack alignment check enable
-						sctlr_el1 |= (1<<2);  // C, data cache enable. This is an enable bit for data caches at EL0 and EL1
-						// sctlr_el1 |= (1<<1);  // A, alignment check enable bit
-						sctlr_el1 |= (1<<0);  // M, enable MMU
-						asm volatile("msr sctlr_el1, %0" : : "r" (sctlr_el1) : "memory");
+				constexpr size_t get_granularity_size(Granularity granularity){
+					switch(granularity){
+						case Granularity::_4kb: return 4*1024;
+						case Granularity::_16kb: return 16*1024;
+						case Granularity::_64kb: return 64*1024;
 					}
 				}
 
-				void invalidate_tables() {
-					asm volatile("dsb ishst"); //ensure all writes completed
-					asm volatile("tlbi alle0" : : : "memory"); // clear all table cache for exception level 0
-					asm volatile("dsb ish"); // ensure invalidation completed
-					asm volatile("isb"); // sync context
+				const auto granularity = Granularity::_16kb;
+				static_assert(get_granularity_size(granularity)>=memory::pageSize);
+
+				constexpr U8 physicalAddressSize = 36; //up to 48bit on armv8-a (up to 52bit on armv8.2-a). We'll set it to 36, which allows up to 64GB of ram to be addressed
+
+				__attribute__((unused))
+				constexpr U64 get_level_bitmask(U8 level){
+					constexpr U64 mask = bitmask(0, physicalAddressSize-1);
+
+					switch(granularity){
+						case Granularity::_4kb:
+							switch(level){
+								case 0: return mask & 0b00000000'00000001'11111111'00000000'00000000'00000000'00000000'00000000; // 512GB
+								case 1: return mask & 0b00000000'00000000'00000000'11111111'10000000'00000000'00000000'00000000; // 1GB
+								case 2: return mask & 0b00000000'00000000'00000000'00000000'01111111'11000000'00000000'00000000; // 2MB
+								case 3: return mask & 0b00000000'00000000'00000000'00000000'00000000'00111111'11100000'00000000; // 4KB
+								default: return 0;
+							}
+						break;
+						case Granularity::_16kb:
+							switch(level){
+								case 0: return mask & 0b00000000'00000001'00000000'00000000'00000000'00000000'00000000'00000000; // 128TB
+								case 1: return mask & 0b00000000'00000000'11111111'11100000'00000000'00000000'00000000'00000000; // 64GB
+								case 2: return mask & 0b00000000'00000000'00000000'00011111'11111100'00000000'00000000'00000000; // 32MB
+								case 3: return mask & 0b00000000'00000000'00000000'00000000'00000011'11111111'10000000'00000000; // 16KB
+								default: return 0;
+							}
+						break;
+						case Granularity::_64kb:
+							switch(level){
+								case 0: return mask & 0b0;
+								case 1: return mask & 0b00000000'00001111'11111111'00000000'00000000'00000000'00000000'00000000; // 4TB
+								case 2: return mask & 0b00000000'00000000'00000000'11111111'11110000'00000000'00000000'00000000; // 512MB
+								case 3: return mask & 0b00000000'00000000'00000000'00000000'00001111'11111111'00000000'00000000; // 64KB
+								default: return 0;
+							}
+						break;
+					}
 				}
+
+				constexpr unsigned level0Entries = 1<<bit_count(get_level_bitmask(0));
+				constexpr unsigned level1Entries = 1<<bit_count(get_level_bitmask(1));
+				constexpr unsigned level2Entries = 1<<bit_count(get_level_bitmask(2));
+				constexpr unsigned level3Entries = 1<<bit_count(get_level_bitmask(3));
+
+				constexpr U32 tableAlignment = (granularity==Granularity::_4kb?4:granularity==Granularity::_16kb?16:64)*1024;
+
+				alignas(tableAlignment) TableDescriptor initialTableLower[level0Entries>1?level0Entries:level1Entries] = {0};
+				alignas(tableAlignment) TableDescriptor initialTableUpper[level0Entries>1?level0Entries:level1Entries] = {0};
 			}
 
 			void init() {
-				stdio::Section section("mmu::arch::arm64::init");
+				stdio::Section section("mmu::arch::arm64::init...");
 
-				stage2map1to1 = (VmsaV8_64Descriptor*)memory::allocate_page()->physicalAddress;
-				bzero(stage2map1to1, sizeof(stage2map1to1));
-
-				stage3virtual = (VmsaV8_64Descriptor*)memory::allocate_page()->physicalAddress;
-				bzero(stage3virtual, sizeof(stage3virtual));
-
-				mailbox::PropertyMessage tags[4];
-				tags[0].tag = mailbox::PropertyTag::get_arm_memory;
-				tags[1].tag = mailbox::PropertyTag::get_vc_memory;
-				tags[2].tag = mailbox::PropertyTag::null_tag;
-
-				if(!send_messages(tags)){
-					stdio::print_error("Error: Unable to query for arm/vc memory");
-					return;
+				{
+					stdio::Section section("table sizes");
+					
+					stdio::print_debug("0 = ", level0Entries);
+					stdio::print_debug("1 = ", level1Entries);
+					stdio::print_debug("2 = ", level2Entries);
+					stdio::print_debug("3 = ", level3Entries);
 				}
 
-				auto vs_address = tags[1].data.memory.address / level1_blocksize;
-
-				(((addr) >> 16) & 0xFFFFFFFF)
-
-				U32 base = 0;
-
-				// up to vc4 ram start
-				for(;base<vs_address;base++){
-					stage2map1to1[base].address = base << (21-12);
-					stage2map1to1[base].af = 1;
-					stage2map1to1[base].sh = VmsaV8_64Descriptor::Stage2Sh::inner_shareable;
-					stage2map1to1[base].memAttr = MemoryAttribute::normal;
-					stage2map1to1[base].entryType = EntryType::blockTable;
-				}
-
-				for(;base<(U32)mmio::Address::peripheral_base/level1_blocksize;base++){
-					stage2map1to1[base].address = base << (21-12);
-					stage2map1to1[base].af = 1;
-					stage2map1to1[base].memAttr = MemoryAttribute::normal_nc;
-					stage2map1to1[base].entryType = EntryType::blockTable;
-				}
-
-				// peripherals
-				for(;base<((U32)mmio::Address::peripheral_base+(U32)mmio::Address::peripheral_length)/level1_blocksize;base++){
-					stage2map1to1[base].address = base << (21-12);
-					stage2map1to1[base].af = 1;
-					stage2map1to1[base].memAttr = MemoryAttribute::device_ngnrne;
-					stage2map1to1[base].entryType = EntryType::blockTable;
-				}
-
-				// // 2MB for mailboxes (0x40000000)
-				// // shared device, never execute
-				// stage2map1to1[base].address = 512 << (21-12);
-				// stage2map1to1[base].af = 1;
-				// stage2map1to1[base].memAttr = MemoryAttribute::device_ngnrne;
-				// stage2map1to1[base].entryType = EntryType::blockTable;
-
-				// level 1 has just 2 valid entries mapping the each 1GB in stage2 to cover the 2GB
-				// pageTable1to1[0] = (0x8000000000000000) | (uintptr_t)&stage2map1to1[0] | 3;
-				// pageTable1to1[1] = (0x8000000000000000) | (uintptr_t)&stage2map1to1[512] | 3;
-
-
-				// initialize virtual mapping for TTBR1 .. basic 1 page  .. 512 entries x 4K pages
-				// 2MB of ram memory memory  0xFFFFFFFFFFE00000 to 0xFFFFFFFFFFFFFFFF
-
-				// stage2 virtual has just 1 valid entry (the last) of the 512 entries pointing to the Stage3 virtual table
-				// stage 3 starts as all invalid they will be added by mapping call
-				//stage2virtual[511] = (VMSAv8_64_DESCRIPTOR){ .NSTable = 1,.Address = &Stage3virtual[0] >> 12,.EntryType = EntryType.pageTable };
-				stage2virtual[511] = (0x8000000000000000) | (uintptr_t)&stage3virtual[0] | 3;
-
-				// stage1 virtual has just 1 valid entry (the last) of 512 entries pointing to the Stage2 virtual table
-				page_table_virtualmap[511] = (0x8000000000000000) | (uintptr_t)&stage2virtual[0] | 3;
-
-				stdio::print_info(base, " table entries");
-
-				stdio::print_info("Enabling...");
 				enable();
 			}
 		
 			void enable() {
-				// enable_mmu_tables(&stage2map1to1[0], &page_table_virtualmap[0]);
-				enable_mmu_tables(&stage2map1to1[0], &stage2virtual);
+				stdio::Section section("mmu::arch::arm64::enable...");
+
+				const auto virtualAddressSpace = 64 - physicalAddressSize;
+
+				U8 tg0GranuleSize; // NOTE: these two don't match in format cos arm is weird
+				U8 tg1GranuleSize;
+				switch(granularity){
+					case Granularity::_4kb:
+						tg0GranuleSize = 0b00;
+						tg1GranuleSize = 0b10;
+					break;
+					case Granularity::_16kb:
+						tg0GranuleSize = 0b10;
+						tg1GranuleSize = 0b01;
+					break;
+					case Granularity::_64kb:
+						tg0GranuleSize = 0b11;
+						tg1GranuleSize = 0b11;
+					break;
+				}
+
+				U8 ipsBits;
+				switch(physicalAddressSize){
+					case 32: //4GB
+						ipsBits = 0b0000;
+					break;
+					case 36: //64GB
+						ipsBits = 0b0001;
+					break;
+					case 40: //1TB
+						ipsBits = 0b0010;
+					break;
+					case 42: //4TB
+						ipsBits = 0b0011;
+					break;
+					case 44: //16TB
+						ipsBits = 0b0100;
+					break;
+					case 48: //256TB
+						ipsBits = 0b0101;
+					break;
+					case 52: //4PB
+						ipsBits = 0b0110;
+					break;
+					default:
+						stdio::print_error("Invalid physical address size: ", physicalAddressSize);
+						ipsBits = 0b0001; //default to 64Bit
+				}
+
+				{
+					stdio::Section section("tcr_el1");
+
+					Tcr tcr_el1;
+					tcr_el1.load_el1();
+
+					tcr_el1.t0sz = virtualAddressSpace;
+					tcr_el1.t1sz = virtualAddressSpace;
+
+					tcr_el1.ips = ipsBits;
+
+					tcr_el1.tbi0 = 0; //do not ignore first bit of ttbr0 address
+					tcr_el1.tbi1 = 0; //do not ignore first bit of ttbr1 address
+
+					tcr_el1.tg0 = tg0GranuleSize;
+					tcr_el1.tg1 = tg1GranuleSize;
+
+					tcr_el1.irgn0 = 0b01; //normal memory, inner write-back read-allocate write-allocate cacheable
+					tcr_el1.irgn1 = 0b01; //normal memory, inner write-back read-allocate write-allocate cacheable
+
+					tcr_el1.orgn0 = 0b01; //normal memory, outer write-back read-allocate write-allocate cacheable
+					tcr_el1.orgn1 = 0b01; //normal memory, outer write-back read-allocate write-allocate cacheable
+
+					tcr_el1.sh0 = 0b11; // inner sharable
+					tcr_el1.sh1 = 0b11; // inner sharable
+
+					tcr_el1.save_el1();
+				}
+
+				{
+					stdio::Section section("sctlr_el1");
+
+					Sctlr sctlr_el1;
+					sctlr_el1.load_el1();
+
+					sctlr_el1.mmuEnable = true;
+					sctlr_el1.cacheEnable = true;
+					sctlr_el1.exceptionBigEndian = true;
+
+					sctlr_el1.save_el1();
+				}
+
+				{
+					stdio::Section section("ttbr0_el1");
+
+					Ttbr ttbr0_el1;
+					ttbr0_el1.load_br0el1();
+
+					ttbr0_el1.tableBaseAddress = (U64)&initialTableLower[0];
+					ttbr0_el1.commonNotPrivate = false;
+
+					ttbr0_el1.save_br0el1();
+				}
+
+				{
+					stdio::Section section("ttbr1_el1");
+
+					Ttbr ttbr1_el1;
+					ttbr1_el1.load_br1el1();
+
+					ttbr1_el1.tableBaseAddress = (U64)&initialTableUpper[0];
+					ttbr1_el1.commonNotPrivate = false;
+
+					ttbr1_el1.save_br1el1();
+				}
+
+
+				//TODO: MAIR_EL1
 			}
 
 			void disable() {
+				stdio::Section section("mmu::arch::arm64::disable...");
+
 				{
-					U64 sctlr_el1;
-					asm volatile("mrs %0, sctlr_el1" : "=r" (sctlr_el1));
-					sctlr_el1 &= ~(0
-						| (1<<2) // C, data cache enable. Data caches at EL0 and EL1
-						| (1<<0) // M, MMU
-					);
-					asm volatile("msr sctlr_el1, %0" : : "r" (sctlr_el1) : "memory");
+					stdio::Section section("sctlr_el1");
+
+					Sctlr sctlr_el1;
+					sctlr_el1.load_el1();
+
+					sctlr_el1.mmuEnable = false;
+
+					sctlr_el1.save_el1();
 				}
-				
-				asm volatile("dsb sy");
-				asm volatile("isb");
+			}
 
-				//TODO: clean data cache
-				//TODO: invalidate data cache
+			void set_userspace_mapping(MemoryMapping &memoryMapping) {
+				Ttbr ttbr0_el1;
+				ttbr0_el1.load_br0el1();
 
-				asm volatile ("tlbi vmalle1" : : : "memory");
+				ttbr0_el1.tableBaseAddress = (U64)&memoryMapping.initialTable;
+				ttbr0_el1.commonNotPrivate = false;
 
-				asm volatile("dsb sy");
-				asm volatile("isb");
+				ttbr0_el1.save_br0el1();
+			}
+
+			/**/ MemoryMapping:: MemoryMapping():
+				initialTable(memory::allocate_page()->physicalAddress),
+				pageCount(0)
+			{}
+
+			/**/ MemoryMapping::~MemoryMapping(){
+				clear();
+				memory::kfree(initialTable);
+			}
+
+			namespace {
+				inline void _clear_tables(TableDescriptor *table, unsigned size0, unsigned size1 = 0, unsigned size2 = 0, unsigned size3 = 0){
+					for(unsigned i=0;i<size0;i++){
+						auto &entry = table[i];
+						auto *subTable = (TableDescriptor*)(U64)entry.address;
+						if(!subTable) break;
+
+						_clear_tables(subTable, size1, size2, size3);
+
+						memory::free_page(*memory::get_memory_page(subTable));
+
+						entry.address = 0;
+					}
+				}
+			}
+
+			void MemoryMapping::clear() {
+				const auto initialTable = (TableDescriptor*)this->initialTable;
+
+				unsigned size0;
+				unsigned size1;
+				unsigned size2;
+				unsigned size3;
+
+				if(level0Entries>1){
+					size0 = level0Entries;
+					size1 = level1Entries;
+					size2 = level2Entries;
+					size3 = level3Entries;
+				}else{
+					size0 = level1Entries;
+					size1 = level2Entries;
+					size2 = level3Entries;
+					size3 = 0;
+				}
+
+				_clear_tables(initialTable, size0, size1, size2, size3);
+
+				pageCount = 0;
+			}
+
+			bool MemoryMapping::add_pages(U32 count) {
+				// round pagecount up to nearest whole granularity size
+				const auto granSize = get_granularity_size(granularity);
+				count = (count*memory::pageSize+granSize-1)/granSize*memory::pageSize;
+
+				const auto pages = memory::allocate_pages(count);
+				if(!pages) return false;
+
+				//TODO
+
+				return true;
 			}
 		}
 	}
 }
-
-// #if __aarch64__ == 1
-// RegType_t virtualmap (uint32_t phys_addr, uint8_t memattrs) {
-// 	uint64_t addr = 0;
-// 	for (int i = 0; i < 512; i++)
-// 	{
-// 		if (Stage3virtual[i].Raw64 == 0) {							// Find the first vacant stage3 table slot
-// 			uint64_t offset;
-// 			Stage3virtual[i] = (VMSAv8_64_DESCRIPTOR) { .Address = (uintptr_t)phys_addr << (21 - 12), .AF = 1, .MemAttr = memattrs, .EntryType = 3 };
-// 			__asm volatile ("dmb sy" ::: "memory");
-// 			offset = ((512 - i) * 4096) - 1;
-// 			addr = 0xFFFFFFFFFFFFFFFFul;
-// 			addr = addr - offset;
-// 			return(addr);
-// 		}
-// 	}
-// 	return (addr);													// error
-// }
-// #endif

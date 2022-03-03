@@ -1,33 +1,14 @@
+#include <kernel/arch/arm64/systemRegisters.h>
+
 .equ KERNEL_STACK_SIZE, 4096
 
 .section ".text.boot"
-
-#define SCTLR_RESERVED          (3 << 28) | (3 << 22) | (1 << 20) | (1 << 11)
-#define SCTLR_EE_LITTLE_ENDIAN  (0 << 25)
-#define SCTLR_EOE_LITTLE_ENDIAN (0 << 24)
-#define SCTLR_I_CACHE_DISABLED  (0 << 12)
-#define SCTLR_D_CACHE_DISABLED  (0 << 2)
-#define SCTLR_MMU_DISABLED      (0 << 0)
-#define SCTLR_MMU_ENABLED       (1 << 0)
-
-#define HCR_RW                  (1 << 31)
-
-#define SCR_RESERVED            (3 << 4)
-#define SCR_RW                  (1 << 10)
-#define SCR_NS                  (1 << 0)
-
-#define SPSR_MASK_ALL           (7 << 6)
-#define SPSR_EL1h               (5 << 0)
-
-#define CPACR_FPEN_TRAP_0    (1 << 20)
-#define CPACR_FPEN_TRAP_1    (1 << 21)
-#define CPACR_FPEN_TRAP_OFF  (1 << 21) | (1 << 20)
 
 .global _start
 _start:
 	//halt additional cores
 		mrs x1, mpidr_el1
-		and x1, x1, #3
+		and x1, x1, #0xff
 		cbnz x1, halt
 
 	//handle execution level
@@ -44,7 +25,7 @@ _start:
 
 		// level 3
 		3:
-			ldr x0, = (SCTLR_RESERVED | SCTLR_EE_LITTLE_ENDIAN | SCTLR_I_CACHE_DISABLED | SCTLR_D_CACHE_DISABLED | SCTLR_MMU_DISABLED)
+			ldr x0, = (SCTLR_RESERVED | SCTLR_EXCEPT_END_CONTEXT_SYNC | SCTLR_EE_LITTLE_ENDIAN) & (~SCTLR_INSTRUCTION_CACHE) & (~SCTLR_DATA_CACHE) & (~SCTLR_MMU)
 			msr sctlr_el1, x0
 
 			ldr x0, = (HCR_RW)
@@ -67,7 +48,7 @@ _start:
 
 		// level 2
 		2:
-			ldr x0, = (SCTLR_RESERVED | SCTLR_EE_LITTLE_ENDIAN | SCTLR_I_CACHE_DISABLED | SCTLR_D_CACHE_DISABLED | SCTLR_MMU_DISABLED)
+			ldr x0, = (SCTLR_RESERVED | SCTLR_EXCEPT_END_CONTEXT_SYNC | SCTLR_EE_LITTLE_ENDIAN) & (~SCTLR_INSTRUCTION_CACHE) & (~SCTLR_DATA_CACHE) & (~SCTLR_MMU)
 			msr sctlr_el1, x0
 
 			mrs	x0, hcr_el2

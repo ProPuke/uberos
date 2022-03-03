@@ -10,7 +10,7 @@
 
 	https://s-matyukevich.github.io/raspberry-pi-os/
 
-	https://rpi4os.com/
+	https://www.rpi4os.com/
 
 	https://github.com/LdB-ECM/Raspberry-Pi
 

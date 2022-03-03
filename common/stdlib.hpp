@@ -6,10 +6,16 @@ extern "C" void memcpy(void *dest, void *src, unsigned bytes);
 extern "C" void memcpy_forwards(void *dest, void *src, unsigned bytes);
 extern "C" void memcpy_backwards(void *dest, void *src, unsigned bytes);
 extern "C" void memmove(void *dest, void *src, unsigned bytes);
+extern "C" int memcmp(const void *a, const void *b, unsigned length);
 extern "C" void bzero(void *dest, unsigned bytes);
+extern "C" unsigned strlen(const C8 *str);
 
-inline U32 bits(U32 data, U8 start, U8 end){ return (data&((1<<(end-start+1)) - 1) << start) >> start; }
-inline U64 bits(U64 data, U8 start, U8 end){ return (data&((1<<(end-start+1)) - 1) << start) >> start; }
+constexpr inline U32 bits(U32 data, U8 start, U8 end){ return (data&((1<<(end-start+1)) - 1) << start) >> start; }
+constexpr inline U64 bits(U64 data, U8 start, U8 end){ return (data&((1<<(end-start+1)) - 1) << start) >> start; }
+
+constexpr inline U64 bitmask(U8 min, U8 max) { return ((1ll<<(max-min+1))-1)<<min; }
+
+constexpr inline U8 bit_count(U64 i) { U8 bits=0; while(i){ i&=i-1; ++bits; } return bits; }
 
 inline U32 sign_extend(U32 number, U8 numbits){ return number&(1<<(numbits-1))?number|~((1<<numbits)-1):number; }
 inline U64 sign_extend(U64 number, U8 numbits){ return number&(1<<(numbits-1))?number|~((1<<numbits)-1):number; }
