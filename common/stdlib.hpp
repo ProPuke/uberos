@@ -10,8 +10,8 @@ extern "C" int memcmp(const void *a, const void *b, unsigned length);
 extern "C" void bzero(void *dest, unsigned bytes);
 extern "C" unsigned strlen(const C8 *str);
 
-constexpr inline U32 bits(U32 data, U8 start, U8 end){ return (data&((1<<(end-start+1)) - 1) << start) >> start; }
-constexpr inline U64 bits(U64 data, U8 start, U8 end){ return (data&((1<<(end-start+1)) - 1) << start) >> start; }
+constexpr inline U32 bits(U32 data, U8 start, U8 end){ return (data&((((U32)1<<(end-start+1)) - 1) << start)) >> start; }
+constexpr inline U64 bits(U64 data, U8 start, U8 end){ return (data&((((U64)1<<(end-start+1)) - 1) << start)) >> start; }
 
 constexpr inline U64 bitmask(U8 min, U8 max) { return ((1ll<<(max-min+1))-1)<<min; }
 
