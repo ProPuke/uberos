@@ -6,17 +6,12 @@ KERNEL_HEADERS := $(shell find . -type d -name 'arch' -prune -or -name "*.hpp" -
 COMMON_SRCS    := $(shell find ../common -name "*.S" -or -name "*.cpp" -or -name "*.c")
 COMMON_HEADERS := $(shell find ../common -name "*.hpp" -or -name "*.inl")
 
-ifndef RASPI_MODEL
-	RASPI_MODEL := 4
-endif
-
-ifndef RASPI_UART
-	RASPI_UART := 1
-endif
+RASPI_MODEL ?= 4
+RASPI_UART  ?= 0
 
 CFLAGS   := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2
 CXXFLAGS := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2 -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions
-LFLAGS := -O2 -nostdlib -nostartfiles
+LFLAGS   := -O2 -nostdlib -nostartfiles
 
 ifeq ($(RASPI_MODEL),1)
 	OUTPUTDIR := $(OUTPUTDIR)/raspi1
@@ -39,10 +34,7 @@ ifeq ($(RASPI_MODEL),1)
 	KERNEL_SRCS    := $(KERNEL_SRCS)    $(shell find arch/raspi/armv7 -name "*.S" -or -name "*.cpp" -or -name "*.c")
 	KERNEL_HEADERS := $(KERNEL_HEADERS) $(shell find arch/raspi/armv7 -name "*.hpp" -or -name "*.inl")
 
-	CC  := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-gcc
-	CXX := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-g++
-	LD  := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-g++
-	GDB := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-gdb
+	TOOLCHAIN_PREFIX := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-
 endif
 
 ifeq ($(RASPI_MODEL),2)
@@ -68,10 +60,7 @@ ifeq ($(RASPI_MODEL),2)
 	KERNEL_SRCS    := $(KERNEL_SRCS)    $(shell find arch/raspi/armv7 -name "*.S" -or -name "*.cpp" -or -name "*.c")
 	KERNEL_HEADERS := $(KERNEL_HEADERS) $(shell find arch/raspi/armv7 -name "*.hpp" -or -name "*.inl")
 
-	CC  := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-gcc
-	CXX := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-g++
-	LD  := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-g++
-	GDB := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-gdb
+	TOOLCHAIN_PREFIX := ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-
 endif
 
 ifeq ($(RASPI_MODEL),3)
@@ -102,11 +91,7 @@ ifeq ($(RASPI_MODEL),3)
 	CXXFLAGS := $(CXXFLAGS) -mstrict-align
 	LFLAGS   := $(LFLAGS) -mstrict-align
 
-	CC  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
-	CXX := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-g++
-	LD  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
-	GDB := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gdb
-	CPY := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-objcopy
+	TOOLCHAIN_PREFIX := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-
 endif
 
 ifeq ($(RASPI_MODEL),4)
@@ -116,8 +101,9 @@ ifeq ($(RASPI_MODEL),4)
 	# CLANG_TARGET := aarch64-elf
 	GCC_ARCH := armv8-a
 	DIRECTIVES := -D ARCH_ARM -D ARCH_ARM64 -D ARCH_RASPI -D ARCH_RASPI4
-	QEMU := qemu-system-aarch64
-	QEMU_MODEL := raspi3b
+	# QEMU := qemu-system-aarch64
+	QEMU := ~/libs/qemu-patch-raspberry4/build/qemu-system-aarch64
+	QEMU_MODEL := raspi4b2g
 	# QEMU_DTB := ../tools/firmware/bcm2709-rpi-2-b.dtb
 	KERNEL_FILENAME := kernel8.img
 
@@ -137,11 +123,7 @@ ifeq ($(RASPI_MODEL),4)
 	CXXFLAGS := $(CXXFLAGS) -mstrict-align
 	LFLAGS   := $(LFLAGS) -mstrict-align
 
-	CC  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
-	CXX := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-g++
-	LD  := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gcc
-	GDB := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-gdb
-	CPY := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-objcopy
+	TOOLCHAIN_PREFIX := ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-
 endif
 
 DIRECTIVES := $(DIRECTIVES) -D MEMORY_CHECKS
@@ -150,8 +132,11 @@ DIRECTIVES := $(DIRECTIVES) -D ARCH_RASPI_UART$(RASPI_UART)
 CFLAGS   := $(CFLAGS) $(DIRECTIVES)
 CXXFLAGS := $(CXXFLAGS) $(DIRECTIVES)
 
-CC  := $(CC)  -I ../ $(CFLAGS)
-CXX := $(CXX) -I ../ $(CXXFLAGS)
+CC  := $(TOOLCHAIN_PREFIX)gcc -I ../ $(CFLAGS)
+CXX := $(TOOLCHAIN_PREFIX)g++ -I ../ $(CXXFLAGS)
+LD  := $(TOOLCHAIN_PREFIX)gcc
+GDB := $(TOOLCHAIN_PREFIX)gdb
+CPY := $(TOOLCHAIN_PREFIX)objcopy
 
 ifdef GCC_CPU
 	CC  := $(CC)  -mcpu=$(GCC_CPU)
@@ -177,29 +162,31 @@ MSDF_ATLAS_GEN := ../tools/msdf-atlas-gen/bin/msdf-atlas-gen
 all: kernel
 
 .PHONY: test
-test: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
+test: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) $(OUTPUTDIR)/boot/config.txt
 	@echo
 	$(QEMU) -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
 
 .PHONY: deploy
-deploy: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
+deploy: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) $(OUTPUTDIR)/boot/config.txt
 	@echo
+	@echo "Deploy..."
+	@echo "CPY  boot/" $(KERNEL_FILENAME)
+	@echo "CPY  boot/" config.txt
 	@cp $(OUTPUTDIR)/boot/$(KERNEL_FILENAME) /media/propuke/boot/
 	@cp $(OUTPUTDIR)/boot/config.txt /media/propuke/boot/
 	@umount /media/propuke/boot
-	@echo "boot unmounted"
+	@echo "Unmount"
 
 .PHONY: debug
-debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
+debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) $(OUTPUTDIR)/boot/config.txt
 	@echo
 	$(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse &
 	$(GDB) $(OUTPUTDIR)/$(KERNEL_FILENAME) --eval-command="target remote localhost:1234"
 
 .PHONY: remote-debug
-remote-debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
+remote-debug: kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) $(OUTPUTDIR)/boot/config.txt
 	@echo
-# $(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
-	$(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME)
+	$(QEMU) -s -S -no-reboot -M $(QEMU_MODEL) -serial stdio -kernel $(OUTPUTDIR)/$(KERNEL_FILENAME) -usb -device usb-kbd -device usb-mouse
 
 
 $(OUTPUTDIR):
@@ -225,19 +212,6 @@ fonts:
 	@$(CXX) -c $< -o $@
 # @$(CXX) -Wa,-adhln -c $< -o $@ > $<.output
 
-ifeq ($(RASPI_MODEL),1)
-$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) linker.ld Makefile
-	@echo "LD   " $@
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
-endif
-
-ifeq ($(RASPI_MODEL),2)
-$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) linker.ld Makefile
-	@echo "LD   " $@
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
-endif
-
-ifeq ($(RASPI_MODEL),3)
 $(OUTPUTDIR)/boot:
 	@echo "MKDIR" $@
 	@mkdir -p $@
@@ -249,33 +223,17 @@ $(OUTPUTDIR)/boot:
 	@rm $(OUTPUTDIR)/boot/kernel*.img
 	@rm $(OUTPUTDIR)/boot/README.*
 
-$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) $(OUTPUTDIR)/boot linker.ld Makefile
+$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) linker.ld Makefile | $(OUTPUTDIR) $(OUTPUTDIR)/boot
 	@echo "LD   " $@
 	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
+	@echo "DUMP " $@.lst
+	$(TOOLCHAIN_PREFIX)objdump --disassemble --demangle --source $@ > $@.lst
 	@echo "CPY  " $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
 	@$(CPY) -O binary $@ $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
 
-endif
-
-ifeq ($(RASPI_MODEL),4)
-$(OUTPUTDIR)/boot:
-	@echo "MKDIR" $@
-	@mkdir -p $@
-	@echo "CP   " "../tools/firmware"
-	@cp -r ../tools/firmware/* $(OUTPUTDIR)/boot
-	@echo "CP   " "../assets/boot"
-	@cp -r ../assets/boot/* $(OUTPUTDIR)/boot
-	@rm $(OUTPUTDIR)/boot/*.linux
-	@rm $(OUTPUTDIR)/boot/kernel*.img
-	@rm $(OUTPUTDIR)/boot/README.*
-
-$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) $(OUTPUTDIR)/boot linker.ld Makefile
-	@echo "LD   " $@
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
-	@echo "CPY  " $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
-	@$(CPY) -O binary $@ $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
-
-endif
+$(OUTPUTDIR)/boot/config.txt: ../assets/boot/config.txt | $(OUTPUTDIR)/boot
+	@echo "CP   " "../assets/boot/config.txt"
+	@cp ../assets/boot/config.txt $(OUTPUTDIR)/boot/config.txt
 
 # $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) linker.ld Makefile
 # 	@echo "LD   " $@
