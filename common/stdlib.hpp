@@ -16,9 +16,17 @@ constexpr inline U64 bits(U64 data, U8 start, U8 end){ return (data&((((U64)1<<(
 constexpr inline U64 bitmask(U8 min, U8 max) { return ((1ll<<(max-min+1))-1)<<min; }
 
 constexpr inline U8 bit_count(U64 i) { U8 bits=0; while(i){ i&=i-1; ++bits; } return bits; }
+constexpr inline U64 bit_rightmost(U64 i) { return i^(i&(i-1)); }
+constexpr inline U8 bit_rightmost_position(U64 i) { return i==0?0:bit_count(bit_rightmost(i)-1); }
 
 inline U32 sign_extend(U32 number, U8 numbits){ return number&(1<<(numbits-1))?number|~((1<<numbits)-1):number; }
 inline U64 sign_extend(U64 number, U8 numbits){ return number&(1<<(numbits-1))?number|~((1<<numbits)-1):number; }
+
+template <typename T, typename... T2> T min(T x) { return x; }
+template <typename T, typename... T2> T min(T x, T y, T2...others) { return min(x< y?x:y, others...); }
+
+template <typename T, typename... T2> T max(T x) { return x; }
+template <typename T, typename... T2> T max(T x, T y, T2...others) { return max(x>=y?x:y, others...); }
 
 const char* to_string(U16 i);
 const char* to_string(I16 i);

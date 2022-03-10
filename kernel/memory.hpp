@@ -39,7 +39,6 @@ namespace memory {
 	Page* _allocate_page();
 	Page* _allocate_pages(U32 count);
 	void _free_page(Page &page);
-	Page* _get_memory_page(void *address);
 
 	// inline void memset(U8 *address, U8 value, U32 size) {
 	// 	while(--size) *address++ = value;

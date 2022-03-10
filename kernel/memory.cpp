@@ -101,9 +101,9 @@ namespace memory {
 		freePages.push_back(page);
 	}
 
-	//TODO
-	// Page* get_memory_page(void *address) {
-	// }
+	Page* get_memory_page(void *address) {
+		return &pageData[(U64)address/pageSize];
+	}
 
 	void* kmalloc(size_t size) {
 		// stdio::Section section("kmalloc");

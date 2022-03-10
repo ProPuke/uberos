@@ -64,6 +64,9 @@ namespace hwquery {
 			extern MachineModel machineModel;
 			extern Soc soc;
 
+			extern void* videoMemoryStart;
+			extern U64 videoMemory;
+
 			void init();
 		}
 	}

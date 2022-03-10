@@ -4,6 +4,7 @@
 #include <common/LList.hpp>
 #include "atags.hpp"
 #include "memory.hpp"
+#include "hwquery.hpp"
 #include <common/stdlib.hpp>
 #include <kernel/stdio.hpp>
 #include <common/MemoryPool.hpp>
@@ -24,6 +25,10 @@ namespace atags {
 }
 
 namespace systemInfo {
+	using namespace arch::raspi;
+}
+
+namespace hwquery {
 	using namespace arch::raspi;
 }
 
@@ -77,13 +82,15 @@ namespace memory {
 				auto kernelPageCount = ((size_t)kernelEnd+pageDataSize+pageSize-1) / pageSize;
 
 				if(kernelPageCount>pageCount) pageCount = kernelPageCount;
-				auto userPageCount = pageCount-kernelPageCount;
+				auto vramPageCount = (hwquery::videoMemory+pageSize-1) / pageSize;
+				auto userPageCount = pageCount-kernelPageCount-vramPageCount;
 
 				stdio::print_debug("kernel start @ ", &__end);
 				stdio::print_debug("kernel end @ ", kernelEnd);
 
 				stdio::print_info("pages: ", pageCount);
 				stdio::print_info(kernelPageCount, " kernel pages");
+				stdio::print_info(vramPageCount, " vram pages");
 				stdio::print_info(userPageCount, " user pages");
 				stdio::print_info("");
 
@@ -118,10 +125,17 @@ namespace memory {
 
 						for(;i<pageCount;i++) {
 							// stdio::print("user page ", i, "\n");
-							auto page = new (&pageData[i]) Page((void*)(i*pageSize));
+							const auto address = (void*)(i*pageSize);
+							auto page = new (&pageData[i]) Page(address);
 							page->hasNextPage = i+1<pageCount;
 
-							freePages.push_back(*page);
+							if(address>=hwquery::videoMemoryStart&&address<(void*)((U64)hwquery::videoMemoryStart+hwquery::videoMemory)){
+								page->isAllocated = true;
+								page->isKernel = true; //technically vram, not kernel ¯\_(ツ)_/¯
+								
+							}else{
+								freePages.push_back(*page);
+							}
 							// return;
 
 							// stdio::print_inline('.');

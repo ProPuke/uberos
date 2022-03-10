@@ -61,9 +61,9 @@ _start:
 			// ldr x0, = (SPSR_MASK_ALL | SPSR_EL1h)
 			// msr spsr_el2, x0
 
-			// mrs x0, cpacr_el1
-			// orr x0, x0, (CPACR_FPEN_TRAP_OFF)
-			// msr cpacr_el1, x0
+			mrs x0, cpacr_el1
+			orr x0, x0, (CPACR_FPEN_TRAP_OFF)
+			msr cpacr_el1, x0
 
 			//exit into level 1
 			adr x0, 1f

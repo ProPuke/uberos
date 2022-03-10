@@ -2,6 +2,42 @@
 
 #include <common/types.hpp>
 
+// no idea what this shit means. docs are hard -_-
+
+// struct __attribute__((packed)) MairEntry {
+// 	U64 _:4;
+	
+// 	U64 rwPolicy:2;
+// 	enum struct MemoryType {
+// 		transientWriteThrough     = 0b00,
+// 		transientWriteBack        = 0b01,
+// 		nonTranbsientWriteThrough = 0b10,
+// 		nonTranbsientWriteBack    = 0b11,
+// 	} memoryType:2;
+// };
+// static_assert(sizeof(MairEntry)==1);
+
+// typedef MairEntry Mair[8];
+// static_assert(sizeof(Mair)==8);
+
+typedef U8 MairEntry; //just cheat with a U8 for now
+static_assert(sizeof(MairEntry)==1);
+
+struct __attribute__((packed)) Mair {
+	MairEntry entry[8];
+
+	void load_el1() {
+		asm volatile("mrs %0, mair_el1" : "=r" (*(U64*)this));
+	}
+
+	void save_el1() {
+		asm volatile("dsb sy" ::: "memory");
+		asm volatile("msr mair_el1, %0" : : "r" (*(U64*)this));
+		asm volatile("isb");
+	}	
+};
+static_assert(sizeof(Mair)==8);
+
 struct __attribute__((packed)) Tcr {
 	U64 t0sz:6;
 	U64 _reserved1:1;
@@ -56,55 +92,61 @@ struct __attribute__((packed)) Tcr {
 };
 static_assert(sizeof(Tcr)==8);
 
-struct __attribute__((packed)) Sctlr {
-	U64 mmuEnable:1;
-	U64 alignmentChecking:1;
-	U64 cacheEnable:2;
-	U64 sa:3;
-	U64 sa0:1;
-	U64 cp15ben:1;
-	U64 naa:1;
-	U64 itd:1;
-	U64 sed:1;
-	U64 uma:1;
-	U64 enrctx:1;
-	U64 eos:1;
-	U64 i:1;
-	U64 endb:1;
-	U64 dze:1;
-	U64 uct:1;
-	U64 ntwi:1;
-	U64 _reserved1:1;
-	U64 ntwe:1;
-	U64 wxn:1;
-	U64 tscxt:1;
-	U64 iesb:1;
-	U64 eis:1;
-	U64 span:1;
-	U64 e0e:1;
-	U64 exceptionBigEndian:1;
-	U64 uci:1;
-	U64 enda:1;
-	U64 ntlsmd:1;
-	U64 lsmaoe:1;
-	U64 enib:1;
-	U64 enia:1;
-	U64 _reserved2:3;
-	U64 bt0:1;
-	U64 bt1:1;
-	U64 itfsb:1;
-	U64 tcf0:2;
-	U64 tcf:2;
-	U64 ata0:1;
-	U64 ata:1;
-	U64 dssbs:1;
-	U64 tweden:1;
-	U64 _reserved3:4;
-	U64 enasr:1;
-	U64 enas0:1;
-	U64 enals:1;
-	U64 epan:1;
-	U64 _reserved4:6;
+struct Sctlr {
+	union {
+		struct __attribute__((packed)) {
+			U64 mmuEnable:1;
+			U64 alignmentChecking:1;
+			U64 cacheEnable:1;
+			U64 stackAlignmentCheck:1;
+			U64 stackAlignmentCheckEl0:1;
+			U64 cp15ben:1;
+			U64 naa:1;
+			U64 itd:1;
+			U64 sed:1;
+			U64 uma:1;
+			U64 enrctx:1;
+			U64 exceptionExitIsContextSwitching:1;
+			U64 instructionCache:1;
+			U64 endb:1;
+			U64 dze:1;
+			U64 uct:1;
+			U64 ntwi:1;
+			U64 _reserved1:3;
+			U64 ntwe:1;
+			U64 wxn:1;
+			U64 tscxt:1;
+			U64 iesb:1;
+			U64 exceptionEntryIsContextSwitching:1;
+			U64 setPrivilegedAccessNeverOnEl1:1;
+			U64 e0e:1;
+			U64 exceptionBigEndian:1;
+			U64 uci:1;
+			U64 enda:1;
+			U64 ntlsmd:1;
+			U64 lsmaoe:1;
+			U64 enib:1;
+			U64 enia:1;
+			U64 _reserved2:3;
+			U64 bt0:1;
+			U64 bt1:1;
+			U64 itfsb:1;
+			U64 tcf0:2;
+			U64 tcf:2;
+			U64 ata0:1;
+			U64 ata:1;
+			U64 dssbs:1;
+			U64 tweden:1;
+			U64 _reserved3:4;
+			U64 enasr:1;
+			U64 enas0:1;
+			U64 enals:1;
+			U64 epan:1;
+			U64 _reserved4:6;
+		};
+
+		U64 data;
+	};
 
 	void load_el1() {
 		asm volatile("mrs %0, sctlr_el1" : "=r" (*reinterpret_cast<U64*>(this)));
@@ -118,10 +160,24 @@ struct __attribute__((packed)) Sctlr {
 };
 static_assert(sizeof(Sctlr)==8);
 
-struct __attribute__((packed)) Ttbr {
-	U64 commonNotPrivate:1;
-	U64 tableBaseAddress:47;
-	U64 asid:16;
+struct Ttbr {
+	union {
+		struct __attribute__((packed)) {
+			U64 commonNotPrivate:1;
+			U64 tableBaseAddress:47;
+			U64 asid:16;
+		};
+
+		U64 data;
+	};
+
+	void* get_tableAddress(){
+		return (void*)(tableBaseAddress<<1);
+	}
+
+	void set_tableAddress(void *address){
+		tableBaseAddress = bits((U64)address, 1, 47);
+	}
 
 	void load_br0el1() {
 		asm volatile("mrs %0, ttbr0_el1" : "=r" (*reinterpret_cast<U64*>(this)));

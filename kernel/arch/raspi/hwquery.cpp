@@ -69,6 +69,8 @@ namespace hwquery {
 			U32 revisionMajor = 0;
 			U32 revisionMinor = 0;
 			Soc soc = Soc::unknown;
+			void* videoMemoryStart = nullptr;
+			U64 videoMemory = 0;
 
 			void init() {
 				stdio::Section section("hwquery::arch::raspi::init...");
@@ -76,11 +78,12 @@ namespace hwquery {
 				mailbox::PropertyMessage tags[4];
 				tags[0].tag = mailbox::PropertyTag::get_board_revision;
 				tags[0].data.boardRevision = 0;
-
-				tags[1].tag = mailbox::PropertyTag::null_tag;
+				tags[1].tag = mailbox::PropertyTag::get_arm_memory;
+				tags[2].tag = mailbox::PropertyTag::get_vc_memory;
+				tags[3].tag = mailbox::PropertyTag::null_tag;
 
 				if(!mailbox::send_messages(tags)){
-					stdio::print_error("Error: unable to query board revision");
+					stdio::print_error("Error: unable to query properties");
 
 				}else{
 					boardRevision = tags[0].data.boardRevision;
@@ -126,6 +129,9 @@ namespace hwquery {
 						}
 					}
 
+					videoMemoryStart = (void*)(U64)tags[2].data.memory.address;
+					videoMemory = tags[2].data.memory.size;
+
 					// stdio::print_info("board revision: ", boardRevision);
 					stdio::print_info("board: ", &to_string_hex_trim(boardRevision)[2]);
 					stdio::print_info("device: ", machineModel_name[(U32)machineModel]);
@@ -133,6 +139,7 @@ namespace hwquery {
 					stdio::print_info("revision: ", revisionMajor, '.', revisionMinor);
 					stdio::print_info("soc: ", soc_name[(U32)soc]);
 					stdio::print_info("ram: ", totalMemory/1024/1024, "MB");
+					stdio::print_info("vram: ", videoMemory/1024/1024, "MB");
 					memory::totalMemory = totalMemory;
 				}
 			}
