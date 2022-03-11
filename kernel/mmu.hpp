@@ -13,6 +13,8 @@ namespace mmu {
 		test
 	};
 
+	extern MemoryMapping kernelMapping;
+
 	void init();
 
 	void enable();

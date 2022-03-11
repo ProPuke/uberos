@@ -228,7 +228,11 @@ namespace scheduler {
 
 			asm volatile("" ::: "memory");
 
-			mmu::set_userspace_mapping(newThread.process.memoryMapping);
+			if(newThread.process.memoryMapping.pageCount>0){
+				mmu::set_userspace_mapping(newThread.process.memoryMapping);
+			}else{
+				mmu::set_userspace_mapping(mmu::kernelMapping);
+			}
 
 			Thread::swap_state(oldThread, newThread);
 

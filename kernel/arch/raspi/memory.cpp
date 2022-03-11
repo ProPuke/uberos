@@ -85,8 +85,8 @@ namespace memory {
 				auto vramPageCount = (hwquery::videoMemory+pageSize-1) / pageSize;
 				auto userPageCount = pageCount-kernelPageCount-vramPageCount;
 
-				stdio::print_debug("kernel start @ ", &__end);
-				stdio::print_debug("kernel end @ ", kernelEnd);
+				// stdio::print_debug("kernel start @ ", &__end);
+				// stdio::print_debug("kernel end @ ", kernelEnd);
 
 				stdio::print_info("pages: ", pageCount);
 				stdio::print_info(kernelPageCount, " kernel pages");
