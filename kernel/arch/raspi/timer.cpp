@@ -49,8 +49,9 @@ namespace timer {
 
 					U32 timer[4];
 				};
+				static_assert(sizeof(Timer_registers)==28);
 
-				volatile Timer_registers &timer_registers = *(Timer_registers*)mmio::Address::system_timer_base;
+				volatile auto &timer_registers = *(Timer_registers*)mmio::Address::system_timer_base;
 
 				struct __attribute((packed)) CoreTimerControlRegisters {
 					U8 reserved1;
@@ -58,8 +59,9 @@ namespace timer {
 					bool increment:1;
 					U32 reserved2:22;
 				};
+				static_assert(sizeof(CoreTimerControlRegisters)==4);
 
-				volatile CoreTimerControlRegisters core_timer_control_registers = *(CoreTimerControlRegisters*)mmio::Address::core_timer_control;
+				volatile auto &core_timer_control_registers = *(CoreTimerControlRegisters*)mmio::Address::core_timer_control;
 			}
 			
 			void init() {
