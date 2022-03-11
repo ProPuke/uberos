@@ -418,8 +418,21 @@ namespace mmu {
 		Ttbr ttbr1_el1;
 		ttbr1_el1.load_br1el1();
 
-		ttbr1_el1.set_tableAddress(&memoryMapping.initialTable);
-		// stdio::print_debug("point to table ", &memoryMapping.initialTable);
+		U8 lowBit;
+		switch(granularity){
+			case Granularity::_4kb:
+				lowBit = 12;
+			break;
+			case Granularity::_16kb:
+				lowBit = 14;
+			break;
+			case Granularity::_64kb:
+				lowBit = 16;
+			break;
+		}
+
+		ttbr1_el1.set_tableAddress(lowBit, memoryMapping.initialTable);
+		// stdio::print_debug("point ttbr1_el1 to table ", memoryMapping.initialTable);
 		ttbr1_el1.commonNotPrivate = false;
 
 		ttbr1_el1.save_br1el1();
@@ -429,8 +442,21 @@ namespace mmu {
 		Ttbr ttbr0_el1;
 		ttbr0_el1.load_br0el1();
 
-		ttbr0_el1.set_tableAddress(&memoryMapping.initialTable);
-		// stdio::print_debug("point to table ", &memoryMapping.initialTable);
+		U8 lowBit;
+		switch(granularity){
+			case Granularity::_4kb:
+				lowBit = 12;
+			break;
+			case Granularity::_16kb:
+				lowBit = 14;
+			break;
+			case Granularity::_64kb:
+				lowBit = 16;
+			break;
+		}
+
+		ttbr0_el1.set_tableAddress(lowBit, memoryMapping.initialTable);
+		// stdio::print_debug("point ttbr0_el1 to table ", memoryMapping.initialTable);
 		ttbr0_el1.commonNotPrivate = false;
 
 		ttbr0_el1.save_br0el1();

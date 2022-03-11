@@ -160,6 +160,10 @@ struct Sctlr {
 };
 static_assert(sizeof(Sctlr)==8);
 
+namespace mmu {
+	struct TableDescriptor;
+}
+
 struct Ttbr {
 	union {
 		struct __attribute__((packed)) {
@@ -171,12 +175,17 @@ struct Ttbr {
 		U64 data;
 	};
 
-	void* get_tableAddress(){
-		return (void*)(tableBaseAddress<<1);
+	mmu::TableDescriptor* get_tableAddress(U8 lowBit){
+		const auto bitmask = ::bitmask(lowBit, 47);
+		return (mmu::TableDescriptor*)(tableBaseAddress&bitmask);
 	}
 
-	void set_tableAddress(void *address){
-		tableBaseAddress = bits((U64)address, 1, 47);
+	void set_tableAddress(U8 lowBit, mmu::TableDescriptor *table){
+		const auto bitmask = ::bitmask(lowBit, 47);
+
+		assert((U64)table==((U64)table&bitmask), "tableAddress ", table, " does not align with bitmask", (void*)bitmask);
+
+		tableBaseAddress = ((U64)table&bitmask)>>1;
 	}
 
 	void load_br0el1() {
