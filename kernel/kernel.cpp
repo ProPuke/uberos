@@ -65,8 +65,6 @@ namespace kernel {
 
 			graphics2d::init();
 
-			spinlock::debug = true;
-
 			{ stdio::Section section("device summary");
 
 				stdio::print_info("cpu arch: ", info::cpu_arch);

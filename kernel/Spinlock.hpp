@@ -4,10 +4,6 @@
 #include "exceptions.hpp"
 #include <kernel/arch/arm64/atomic.hpp>
 
-namespace spinlock {
-	extern bool debug;
-}
-
 struct Spinlock {
 	/**/ Spinlock(const char *name):
 		name(name)
@@ -53,8 +49,8 @@ struct Spinlock {
 
 	const char *name;
 
-	// private: int _lock = 0;
-	// volatile int _lock = 0;
+	private:
+	
 	volatile U32 _lock = 0;
 };
 
@@ -64,15 +60,11 @@ struct Spinlock_Guard {
 		debug(debug),
 		_lock(lock)
 	{
-		// if(spinlock::debug&&context) stdio::print("lock ", &_lock, " (", lock._lock, ") ", context, "{\n");
 		_lock.lock(context);
-		// if(spinlock::debug&&context) stdio::print("} lock ", &_lock, " ", context, "\n");
 	}
 	
 	/**/~Spinlock_Guard(){
-		// if(spinlock::debug&&context) stdio::print("unlock ", &_lock, " ", context, "{\n");
 		_lock.unlock(debug);
-		// if(spinlock::debug&&context) stdio::print("} unlock ", &_lock, " ", context, "\n");
 	}
 
 	const char *context;
