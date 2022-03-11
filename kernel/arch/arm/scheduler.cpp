@@ -70,8 +70,6 @@ namespace scheduler {
 				//8436924000
 				//8440321000
 
-				while(true);
-
 				// stdio::print_info("test kmalloc");
 				// memory::kmalloc(123);
 

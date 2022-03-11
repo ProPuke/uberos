@@ -129,12 +129,10 @@ namespace mmu {
 				// table_nonSecure = true;
 
 				const auto bitmask = ::bitmask(bit_rightmost_position(get_level_bitmask(3)), 47);
-				if(((U64)table&bitmask)!=(U64)table){
-					stdio::print_error("table ", table, " does not align with ", (void*)bitmask);
-				}
+				assert(((U64)table&bitmask)==(U64)table, "table ", table, " does not align with bitmask ", (void*)bitmask);
 				data = data&~bitmask | (U64)table&bitmask;
 
-				stdio::print_debug("table ", this, " ", (void*)data);
+				// stdio::print_debug("table ", this, " ", (void*)data);
 			}
 
 			void set_block(U8 level, void *address) {
@@ -143,9 +141,7 @@ namespace mmu {
 				accessFlag = true;
 
 				const auto bitmask = ::bitmask(bit_rightmost_position(get_level_bitmask(level)), 47);
-				if(((U64)address&bitmask)!=(U64)address){
-					stdio::print_error("address ", address, " does not align with ", (void*)bitmask);
-				}
+				assert(((U64)address&bitmask)==(U64)address, "block ", address, " does not align with bitmask ", (void*)bitmask);
 				data = data&~bitmask | (U64)address&bitmask;
 
 				// stdio::print_debug("block ", this, " ", (void*)data);
@@ -228,63 +224,47 @@ namespace mmu {
 
 		MemoryMapping mapping;
 
-		// mapping.add_pages(128);
-		// for(unsigned i=0;i<7;i++){
-		// 	mapping.add_pages(128);
-		// }
-		// for(unsigned i=0;i<3;i++){
-		// 	mapping.add_pages(256);
-		// }
-		// for(unsigned i=0;i<3;i++){
-		// 	mapping.add_pages(512);
-		// }
-		// for(unsigned i=0;i<3;i++){
-		// 	mapping.add_pages(1024);
-		// }
-
-		// while(true);
-
 		init_kernelMap();
 
-		{
-			// void *address = (void*)0x82373584;
-			void *address = (void*)0x00000000FE215054;
+		// {
+		// 	// void *address = (void*)0x82373584;
+		// 	void *address = (void*)0x85a00;
 
-			U64 level0 = ((U64)address&get_level_bitmask(0))>>bit_rightmost_position(get_level_bitmask(0));
-			U64 level1 = ((U64)address&get_level_bitmask(1))>>bit_rightmost_position(get_level_bitmask(1));
-			U64 level2 = ((U64)address&get_level_bitmask(2))>>bit_rightmost_position(get_level_bitmask(2));
-			U64 level3 = ((U64)address&get_level_bitmask(3))>>bit_rightmost_position(get_level_bitmask(3));
-			U64 offset = bits((U64)address,0,bit_rightmost_position(get_level_bitmask(3))-1);
+		// 	U64 level0 = ((U64)address&get_level_bitmask(0))>>bit_rightmost_position(get_level_bitmask(0));
+		// 	U64 level1 = ((U64)address&get_level_bitmask(1))>>bit_rightmost_position(get_level_bitmask(1));
+		// 	U64 level2 = ((U64)address&get_level_bitmask(2))>>bit_rightmost_position(get_level_bitmask(2));
+		// 	U64 level3 = ((U64)address&get_level_bitmask(3))>>bit_rightmost_position(get_level_bitmask(3));
+		// 	U64 offset = bits((U64)address,0,bit_rightmost_position(get_level_bitmask(3))-1);
 
-			stdio::print_debug("address = ", (U64)address);
+		// 	stdio::print_debug("address = ", (U64)address);
 
-			stdio::print_debug("level0 = ", level0);
-			stdio::print_debug("level1 = ", level1);
-			stdio::print_debug("level2 = ", level2);
-			stdio::print_debug("level3 = ", level3);
-			stdio::print_debug("offset = ", offset);
+		// 	stdio::print_debug("level0 = ", level0);
+		// 	stdio::print_debug("level1 = ", level1);
+		// 	stdio::print_debug("level2 = ", level2);
+		// 	stdio::print_debug("level3 = ", level3);
+		// 	stdio::print_debug("offset = ", offset);
 
-			const auto &entry2 = kernelMapping.initialTable[level2];
-			stdio::print_debug("table2 = ", (void*)(U64)entry2.data);
+		// 	const auto &entry2 = kernelMapping.initialTable[level2];
+		// 	stdio::print_debug("table2 = ", (void*)(U64)entry2.data);
 
-			if(entry2.isTable){
-				const auto &entry3 = entry2.get_table_address()[level3];
-				stdio::print_debug("table3 = ", (void*)(U64)entry3.data);
+		// 	if(entry2.isTable){
+		// 		const auto &entry3 = entry2.get_table_address()[level3];
+		// 		stdio::print_debug("table3 = ", (void*)(U64)entry3.data);
 
-				auto page = entry3.get_block_address(3);
-				stdio::print_debug("page   = ", (U64)page);
-				stdio::print_debug("destination = ", (U64)page+offset);
-				stdio::print_debug("address     = ", (U64)address);
+		// 		auto page = entry3.get_block_address(3);
+		// 		stdio::print_debug("page   = ", (U64)page);
+		// 		stdio::print_debug("destination = ", (U64)page+offset);
+		// 		stdio::print_debug("address     = ", (U64)address);
 
-			}else{
-				auto page = entry2.get_block_address(2);
-				stdio::print_debug("page   = ", (U64)page);
-				stdio::print_debug("destination = ", (U64)page+((U64)address&get_level_bitmask(3))|offset);
-				stdio::print_debug("address     = ", (U64)address);
-			}
+		// 	}else{
+		// 		auto page = entry2.get_block_address(2);
+		// 		stdio::print_debug("page   = ", (U64)page);
+		// 		stdio::print_debug("destination = ", (U64)page+((U64)address&get_level_bitmask(3))|offset);
+		// 		stdio::print_debug("address     = ", (U64)address);
+		// 	}
 
-			// while(true);
-		}
+		// 	// while(true);
+		// }
 
 		set_kernelspace_mapping(kernelMapping);
 		set_userspace_mapping(kernelMapping);
@@ -432,7 +412,6 @@ namespace mmu {
 		}
 
 		ttbr1_el1.set_tableAddress(lowBit, memoryMapping.initialTable);
-		// stdio::print_debug("point ttbr1_el1 to table ", memoryMapping.initialTable);
 		ttbr1_el1.commonNotPrivate = false;
 
 		ttbr1_el1.save_br1el1();
@@ -456,7 +435,6 @@ namespace mmu {
 		}
 
 		ttbr0_el1.set_tableAddress(lowBit, memoryMapping.initialTable);
-		// stdio::print_debug("point ttbr0_el1 to table ", memoryMapping.initialTable);
 		ttbr0_el1.commonNotPrivate = false;
 
 		ttbr0_el1.save_br0el1();

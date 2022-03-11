@@ -6,12 +6,23 @@ KERNEL_HEADERS := $(shell find . -type d -name 'arch' -prune -or -name "*.hpp" -
 COMMON_SRCS    := $(shell find ../common -name "*.S" -or -name "*.cpp" -or -name "*.c")
 COMMON_HEADERS := $(shell find ../common -name "*.hpp" -or -name "*.inl")
 
+DEBUG ?= 1
+
 RASPI_MODEL ?= 4
 RASPI_UART  ?= 0
 
-CFLAGS   := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2
-CXXFLAGS := -g -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -O2 -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions
-LFLAGS   := -O2 -nostdlib -nostartfiles
+CFLAGS   := -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall
+CXXFLAGS := -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions
+LFLAGS   := -nostdlib -nostartfiles
+
+ifeq ($(DEBUG),1)
+	CFLAGS   := $(CFLAGS) -g -DDEBUG
+	CXXFLAGS := $(CXXFLAGS) -g -DDEBUG
+else
+	CFLAGS   := $(CFLAGS) -O2
+	CXXFLAGS := $(CXXFLAGS) -O2
+	LFLAGS   := $(LFLAGS) -O2
+endif
 
 ifeq ($(RASPI_MODEL),1)
 	OUTPUTDIR := $(OUTPUTDIR)/raspi1

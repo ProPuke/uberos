@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/types.hpp>
+#include <kernel/assert.hpp>
 
 // no idea what this shit means. docs are hard -_-
 
