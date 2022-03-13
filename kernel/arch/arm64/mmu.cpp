@@ -520,14 +520,14 @@ namespace mmu {
 							case RegionType::executable:
 								entry.mairIndex = 0;
 								entry.shareable = Stage1TableDescriptor::Shareable::innerShareable;
-								entry.block_kernelExecuteNever = true;
-								entry.block_executeNever = true;
+								entry.block_kernelExecuteNever = false;
+								entry.block_executeNever = false;
 							break;
 							case RegionType::memory:
 								entry.mairIndex = 0;
 								entry.shareable = Stage1TableDescriptor::Shareable::innerShareable;
-								entry.block_kernelExecuteNever = false;
-								entry.block_executeNever = false;
+								entry.block_kernelExecuteNever = true;
+								entry.block_executeNever = true;
 							break;
 							case RegionType::deviceMemory:
 								entry.mairIndex = 1;
