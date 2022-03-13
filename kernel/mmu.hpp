@@ -2,32 +2,34 @@
 
 #include <common/types.hpp>
 
-namespace mmu {
-	struct MemoryMapping;
+#if defined(ARCH_ARM64)
+	#define HAS_MMU
+#endif
 
-	enum struct RegionType {
-		executable,
-		memory,
-		device,
-		deviceMemory,
-		test
-	};
+#ifdef HAS_MMU
+	namespace mmu {
+		struct MemoryMapping;
 
-	extern MemoryMapping kernelMapping;
+		enum struct RegionType {
+			executable,
+			memory,
+			device,
+			deviceMemory,
+			test
+		};
 
-	void init();
+		extern MemoryMapping kernelMapping;
 
-	void enable();
-	void disable();
+		void init();
 
-	void set_kernelspace_mapping(MemoryMapping &memoryMapping);
-	void set_userspace_mapping(MemoryMapping &memoryMapping);
-}
+		void enable();
+		void disable();
 
-#if defined(ARCH_ARM32)
-	#include <kernel/arch/arm32/mmu.hpp>
-#elif defined(ARCH_ARM64)
+		void set_kernelspace_mapping(MemoryMapping &memoryMapping);
+		void set_userspace_mapping(MemoryMapping &memoryMapping);
+	}
+#endif
+
+#if defined(ARCH_ARM64)
 	#include <kernel/arch/arm64/mmu.hpp>
-#else
-	#error "Unsupported architecture"
 #endif

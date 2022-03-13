@@ -1,8 +1,11 @@
 #pragma once
 
-#ifdef ARCH_ARM64
+#if defined(ARCH_ARM32)
+	#include "arch/arm32/Spinlock.hpp"
+	using arch::arm32::Spinlock;
+	
+#elif defined(ARCH_ARM64)
 	#include "arch/arm64/Spinlock.hpp"
-
 	using arch::arm64::Spinlock;
 #endif
 

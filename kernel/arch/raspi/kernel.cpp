@@ -8,14 +8,13 @@
 
 #if defined(ARCH_ARM32)
 	#include <kernel/arch/arm32/exceptions.hpp>
-	#include <kernel/arch/arm32/mmu.hpp>
 #elif defined(ARCH_ARM64)
 	#include <kernel/arch/arm64/exceptions.hpp>
-	#include <kernel/arch/arm64/mmu.hpp>
 #endif
 
 #include <kernel/Spinlock.hpp>
 
+#include <kernel/mmu.hpp>
 #include <kernel/stdio.hpp>
 #include <common/stdlib.hpp>
 #include <common/types.hpp>
@@ -32,14 +31,6 @@ namespace serial {
 }
 
 namespace exceptions {
-	#if defined(ARCH_ARM32)
-		using namespace arch::arm32;
-	#elif defined(ARCH_ARM64)
-		using namespace arch::arm64;
-	#endif
-}
-
-namespace mmu {
 	#if defined(ARCH_ARM32)
 		using namespace arch::arm32;
 	#elif defined(ARCH_ARM64)
@@ -74,8 +65,16 @@ namespace systemInfo {
 namespace kernel {
 	namespace arch {
 		namespace raspi {
-			extern "C" void kernel_main(size_t _atags) {
-				// auto atags = (atags::Atag*) _atags;
+			#ifdef HAS_ATAGS
+				namespace {
+					const ::atags::Atag* atags;
+				}
+			#endif
+
+			extern "C" void kernel_main(const ::atags::Atag *_atags) {
+				#ifdef HAS_ATAGS
+					atags = _atags;
+				#endif
 
 				kernel::init(
 					[] {
@@ -83,10 +82,17 @@ namespace kernel {
 					},
 
 					[] {
-						// atags::init(atags);
+						#ifdef HAS_ATAGS
+							atags::init(atags);
+						#endif
+
 						hwquery::init();
 						memory::init();
-						mmu::init();
+
+						#ifdef HAS_MMU
+							mmu::init();
+						#endif
+
 						framebuffer::init();
 						usb::init();
 						timer::init();

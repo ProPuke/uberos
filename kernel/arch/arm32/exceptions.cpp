@@ -9,8 +9,6 @@
 
 extern "C" void install_exception_handlers();
 
-using namespace arch::raspi;
-
 namespace timer {
 	using namespace timer::arch::raspi;
 }

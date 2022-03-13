@@ -10,7 +10,7 @@ namespace arch {
 		namespace atags {
 			U32 mem_size = 0;
 
-			void init(Atag *tag){
+			void init(const Atag *tag){
 				stdio::Section section("arch::raspi::atags::init...");
 
 				mem_size = 0;

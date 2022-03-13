@@ -18,7 +18,10 @@ struct Process: LListItem<Process> {
 
 	const char *name;
 	ProcessLog log;
-	mmu::MemoryMapping memoryMapping;
+
+	#ifdef HAS_MMU
+		mmu::MemoryMapping memoryMapping;
+	#endif
 
 	ListUnordered<Thread> threads;
 

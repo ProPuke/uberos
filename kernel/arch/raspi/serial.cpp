@@ -16,7 +16,7 @@ namespace arch {
 
 			void init() {
 				#ifdef ARCH_RASPI_UART0
-					{ //uart 0 (untested)
+					{ //uart 0
 						// Disable UART0
 						mmio::write(mmio::Address::uart0_cr, 0x00000000);
 

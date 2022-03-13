@@ -26,34 +26,37 @@ namespace mmio {
 		namespace raspi {
 			enum struct Address: U32 {
 				#if defined(ARCH_RASPI1)
-					peripheral_base = 0x20000000,
-					peripheral_length = 0x01000000,
+					gpu_peripheral_base = 0x20000000,
+					gpu_peripheral_length = 0x01000000,
 				#elif defined(ARCH_RASPI2)
-					peripheral_base = 0x3F000000,
-					peripheral_length = 0x01000000,
+					gpu_peripheral_base = 0x3F000000,
+					gpu_peripheral_length = 0x01000000,
 				#elif defined(ARCH_RASPI3)
-					peripheral_base = 0x3F000000,
-					peripheral_length = 0x01000000, //might be wrong?
+					gpu_peripheral_base = 0x3F000000,
+					gpu_peripheral_length = 0x01000000,
 				#elif defined(ARCH_RASPI4)
-					peripheral_base = 0xFE000000,
-					peripheral_length = 0x01800000, //might be wrong?
+					gpu_peripheral_base = 0xFE000000,
+					gpu_peripheral_length = 0x01800000, //might be wrong?
 				#else
 					#error "Unknown model"
 				#endif
-				
-				system_timer_base  = peripheral_base + 0x3000,
-				interrupts_base    = peripheral_base + 0xB000,
-				mail0_base         = peripheral_base + 0xB880,
-				rstc               = peripheral_base + 0x10001c,
-				rsts               = peripheral_base + 0x100020,
-				wdog               = peripheral_base + 0x100024,
-				gpio_base          = peripheral_base + 0x200000,
-				uart0_base         = peripheral_base + 0x201000,
-				uart1_base         = peripheral_base + 0x215000,
-				emmc_base          = peripheral_base + 0x300000,
-				usb_base           = peripheral_base + 0x980000,
 
-				core_timer_base    = peripheral_base + peripheral_length,
+				local_peripheral_base = gpu_peripheral_base + gpu_peripheral_length,
+
+				system_timer_base  = gpu_peripheral_base + 0x3000,
+				interrupts_base    = gpu_peripheral_base + 0xB000,
+				mail0_base         = gpu_peripheral_base + 0xB880,
+				rstc               = gpu_peripheral_base + 0x10001c,
+				rsts               = gpu_peripheral_base + 0x100020,
+				wdog               = gpu_peripheral_base + 0x100024,
+				gpio_base          = gpu_peripheral_base + 0x200000,
+				uart0_base         = gpu_peripheral_base + 0x201000,
+				uart1_base         = gpu_peripheral_base + 0x215000,
+				emmc_base          = gpu_peripheral_base + 0x300000,
+				usb_base           = gpu_peripheral_base + 0x980000,
+
+				core_timer_base    = local_peripheral_base,
+				// core_timer_base    = gpu_peripheral_base + 0x3000,
 
 				interrupts_pending = interrupts_base + 0x200,
 
@@ -112,7 +115,6 @@ namespace mmio {
 				uart1_mu_stat    = uart1_base + 0x64,
 				uart1_mu_baud    = uart1_base + 0x68,
 
-
 				usb_core_base = usb_base,
 				usb_host_base = usb_base + 0x400,
 				usb_power     = usb_base + 0xE00,
@@ -130,12 +132,17 @@ namespace mmio {
 				usb_core_hw_cfg3          = usb_core_base + 0x04C,
 				usb_core_hw_cfg4          = usb_core_base + 0x045,
 
-				core_timer_control   = core_timer_base + 0x00,
-				core_timer_prescaler = core_timer_base + 0x08
+				// not sure these are correct or valid on pi, as they cause a crash on pi 1 and always read as 0 on others. Docs may be wrong
+				// core_timer_control   = core_timer_base + 0x00,
+				// core_timer_prescaler = core_timer_base + 0x08
 			};
 
 			void write(Address reg, U32 data);
 			U32 read(Address reg);
+
+			void write_address(U32 reg, U32 data);
+			U32 read_address(U32 reg);
+			
 			void delay(I32 count);
 
 			struct PeripheralAccessGuard {

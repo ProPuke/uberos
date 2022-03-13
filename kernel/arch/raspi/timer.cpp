@@ -61,14 +61,14 @@ namespace timer {
 				};
 				static_assert(sizeof(CoreTimerControlRegisters)==4);
 
-				volatile auto &core_timer_control_registers = *(CoreTimerControlRegisters*)mmio::Address::core_timer_control;
+				// volatile auto &core_timer_control_registers = *(CoreTimerControlRegisters*)mmio::Address::core_timer_control;
 			}
 			
 			void init() {
 				stdio::Section section("timer::arch::raspi::init...");
 
-				stdio::print_info("timer control: ", mmio::read(mmio::Address::core_timer_control));
-				stdio::print_info("timer prescaler: ", mmio::read(mmio::Address::core_timer_prescaler));
+				// stdio::print_info("timer control: ", mmio::read(mmio::Address::core_timer_control));
+				// stdio::print_info("timer prescaler: ", mmio::read(mmio::Address::core_timer_prescaler));
 			}
 
 			void set_timer(Timer timer, U32 usecs) {

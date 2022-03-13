@@ -2,6 +2,10 @@
 
 #include <common/types.hpp>
 
+#if defined(ARCH_ARM32)
+	#define HAS_ATAGS
+#endif
+
 namespace arch {
 	namespace raspi {
 		namespace atags {
@@ -47,7 +51,7 @@ namespace arch {
 
 			extern U32 mem_size;
 
-			void init(Atag *tags);
+			void init(const Atag *tags);
 		}
 	}
 }
