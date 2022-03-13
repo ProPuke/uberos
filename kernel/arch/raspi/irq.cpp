@@ -21,28 +21,28 @@ namespace irq {
 	namespace arch {
 		namespace raspi {
 			struct Interrupt_registers {
-				U32 irq_basic_pending;
-				U32 irq_gpu_pending1;
-				U32 irq_gpu_pending2;
+				U32 irq_basic_pending; // IRQ_PENDING0
+				U32 irq_gpu_pending1;  // IRQ_PENDING1
+				U32 irq_gpu_pending2;  // IRQ_PENDING2
 				U32 fiq_control;
-				U32 irq_gpu_enable1;
-				U32 irq_gpu_enable2;
-				U32 irq_basic_enable;
-				U32 irq_gpu_disable1;
-				U32 irq_gpu_disable2;
-				U32 irq_basic_disable;
+				U32 irq_gpu_enable1;   // IRQ0_SET_EN_0
+				U32 irq_gpu_enable2;   // IRQ0_SET_EN_1
+				U32 irq_basic_enable;  // IRQ0_SET_EN_2
+				U32 irq_gpu_disable1;  // IRQ0_CLR_EN_0
+				U32 irq_gpu_disable2;  // IRQ0_CLR_EN_1
+				U32 irq_basic_disable; // IRQ0_CLR_EN_2
 			};
 
 			volatile Interrupt_registers &interrupt_registers = *(Interrupt_registers*)mmio::Address::interrupts_pending;
 
 			inline bool _irq_is_pending(U32 irq_basic_pending, U32 irq_gpu_pending2, U32 irq_gpu_pending1, Irq irq) {
-				if((U32)irq>=64){ //basic
+				if((U32)irq>=64){
 					return irq_basic_pending & (1<<((U32)irq-64));
 
-				}else if((U32)irq>=32){ //gpu2
+				}else if((U32)irq>=32){
 					return irq_gpu_pending2 & (1<<((U32)irq-32));
 
-				}else{ //gpu1
+				}else{
 					return irq_gpu_pending1 & (1<<((U32)irq));
 				}
 			}
@@ -106,27 +106,27 @@ namespace irq {
 			}
 
 			void enable(Irq irq) {
-				// stdio::print("set interrupt handler for ", (U32)irq, "\n");
-				if((U32)irq>=64){ //basic
+				// stdio::print_debug("set interrupt handler for ", (U32)irq);
+				if((U32)irq>=64){
 					interrupt_registers.irq_basic_enable = (1<<((U32)irq-64));
 
-				}else if((U32)irq>=32){ //gpu2
+				}else if((U32)irq>=32){
 					interrupt_registers.irq_gpu_enable2 = (1<<((U32)irq-32));
 
-				}else{ //gpu1
+				}else{
 					interrupt_registers.irq_gpu_enable1 = (1<<((U32)irq));
 				}
 			}
 
 			void disable(Irq irq) {
-				// stdio::print("unset interrupt handler for ", (U32)irq, "\n");
-				if((U32)irq>=64){ //basic
+				// stdio::print_debug("unset interrupt handler for ", (U32)irq);
+				if((U32)irq>=64){
 					interrupt_registers.irq_basic_disable = (1<<((U32)irq-64));
 
-				}else if((U32)irq>=32){ //gpu2
+				}else if((U32)irq>=32){
 					interrupt_registers.irq_gpu_disable2 = (1<<((U32)irq-32));
 
-				}else{ //gpu1
+				}else{
 					interrupt_registers.irq_gpu_disable1 = (1<<((U32)irq));
 				}
 			}
