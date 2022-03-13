@@ -57,7 +57,7 @@ void Thread::sleep(U64 usecs) {
 	if(state!=State::active) return;
 
 	{
-		Spinlock_Guard lock{scheduler::threadLock, __FUNCTION__};
+		Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
 
 		state = State::sleeping;
 		sleep_wake_time = timer::now() + usecs;
@@ -82,13 +82,17 @@ void Thread::pause() {
 
 	//TODO:save state on next schedule and move it into a paused state *then* ?
 
-	// thread::activeThreads.pop(*this);
-	// state = State::paused;
-	// thread::pausedThreads.push_back(*this);
+	Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
+
+	thread::activeThreads.pop(*this);
+	state = State::paused;
+	thread::pausedThreads.push_back(*this);
 }
 
 void Thread::resume() {
 	if(state!=State::paused) return;
+
+	Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
 
 	thread::pausedThreads.pop(*this);
 	state = State::active;
@@ -101,6 +105,8 @@ void Thread::terminate() {
 	}
 
 	//FIXME:thread might still be activeThreads regardless of state (some switch lists late)
+
+	Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
 
 	switch(state){
 		case State::active:
