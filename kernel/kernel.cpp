@@ -309,8 +309,12 @@ namespace kernel {
 		// 	ramWrites = 0;
 		// }
 
+		scheduler::yield();
+
+		while(true);
+
 		while(true) {
-			scheduler::yield();
+			// scheduler::yield();
 
 			// timer::udelay(1000000);
 			// log.print_info("  zzZZ...");
