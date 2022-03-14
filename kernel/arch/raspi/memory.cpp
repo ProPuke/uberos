@@ -7,6 +7,7 @@
 #include "hwquery.hpp"
 #include <common/stdlib.hpp>
 #include <kernel/stdio.hpp>
+#include <kernel/kernel.h>
 #include <common/MemoryPool.hpp>
 #include <new>
 
@@ -67,7 +68,7 @@ namespace memory {
 				#pragma GCC diagnostic push
 				#pragma GCC diagnostic ignored "-Warray-bounds"
 					// heap = (MemoryPool<32>*)((U8*)&__end)+stackSize;
-					auto kernelEnd = ((U8*)&__end)+stackSize;//+heapSize;
+					auto kernelEnd = ((U8*)&__end)+KERNEL_STACK_SIZE;//+heapSize;
 				#pragma GCC diagnostic pop
 
 				// { //initialise heap

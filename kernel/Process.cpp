@@ -31,6 +31,21 @@ namespace thread {
 	void _cleanup_thread();
 }
 
+Thread* Process::create_current_thread(memory::Page *stackPage, size_t stackSize) {
+	scheduler::Guard guard;
+
+	auto thread = new Thread(*this);
+	thread->stackPage = stackPage;
+	thread->storedState = (ThreadCpuState*)((size_t)stackPage->physicalAddress + stackSize - sizeof(ThreadCpuState));
+
+	thread->state = Thread::State::active;
+	thread::activeThreads.push_back(*thread);
+
+	threads.push(*thread);
+
+	return thread;
+}
+
 Thread* Process::create_thread(void(*entrypoint)()) {
 	scheduler::Guard guard;
 

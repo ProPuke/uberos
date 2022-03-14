@@ -1,10 +1,12 @@
 #include "scheduler.hpp"
 
 #include <kernel/Thread.hpp>
+#include <kernel/ThreadCpuState.hpp>
 #include <kernel/stdio.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/mmu.hpp>
+#include <kernel/kernel.h>
 #include <atomic>
 
 #if defined(ARCH_RASPI)
@@ -23,6 +25,8 @@ namespace thread {
 	extern LList<Thread> pausedThreads;
 	extern LList<Thread> freedThreads;
 }
+
+extern U8 __end;
 
 namespace scheduler {
 	namespace arch {
@@ -64,9 +68,7 @@ namespace scheduler {
 				// 	stdio::print_debug("tested test spinlock");
 				// }
 				timer::set_timer(timer::Timer::cpu_scheduler, 1);
-				stdio::print_debug("installed 1");
-				timer::udelay(2000000);
-				stdio::print_debug("installed 2");
+				timer::set_timer(timer::Timer::cpu_scheduler, 1);
 				//8436924000
 				//8440321000
 
@@ -75,18 +77,10 @@ namespace scheduler {
 
 				stdio::print_info("allocating main process...");
 				auto mainProcess = new Process("kernel");
+				auto mainThread = mainProcess->create_current_thread(memory::get_memory_page(&__end), KERNEL_STACK_SIZE);
 
-				stdio::print_info("1");
-
-				auto mainThread = new Thread(*mainProcess);
-				mainThread->state = Thread::State::active;
-
-				stdio::print_info("2");
-				
-				thread::activeThreads.push_back(*mainThread);
+				// thread::activeThreads.push_back(*mainThread);
 				::thread::currentThread = mainThread;
-
-				stdio::print_info("3");
 
 				#if defined(ARCH_RASPI)
 					stdio::print_info("managed by timer::arch::raspi");
@@ -101,8 +95,6 @@ namespace scheduler {
 			void on_timer() {
 				yield();
 			}
-
-			std::atomic<const char*> inYield = nullptr;
 
 			std::atomic<U32> scheduledTime = 0;
 
@@ -147,46 +139,32 @@ namespace scheduler {
 
 		auto now = timer::now();
 
-		if(inYield){
-			auto lastScheduledTime = scheduledTime.load();
-			stdio::print_error("Error: still in yield (", inYield.load(), ") @ ", now, ", when it was last scheduled at ", lastScheduledTime, " (", now-lastScheduledTime, " later)");
-		}
-		
-		inYield.store("beginning");
-		
 		// if(now-lastSchedule<interval*3/4){
-		// 	stdio::print("fast: ", now-lastSchedule,"\n");
-		// }else if(now-lastSchedule>interval*2/3){
-		// 	stdio::print("slow: ", now-lastSchedule,"\n");
+		// 	stdio::print_info("fast: ", now-lastSchedule);
+		// }else if(now-lastSchedule>interval*6/5){
+		// 	stdio::print_info("slow: ", now-lastSchedule);
 		// }
 		lastSchedule = now;
 
-		// stdio::print(lastSchedule, "\n");
-
 		threadLock.lock("yield() threadlock");
 
-		// stdio::print("threads: ", thread::activeThreads.size, "\n");
+		auto oldThread = ::thread::currentThread.load();
 
-		auto &oldThread = *::thread::currentThread;
-
-		if(thread::activeThreads.size==0||thread::activeThreads.size==1&&thread::activeThreads.head==&oldThread){
+		if(thread::activeThreads.size==0||thread::activeThreads.size==1&&thread::activeThreads.head==oldThread){
 			//if no other threads to switch to, we can ease up on the scheduling a bit..
 
-			// stdio::print_info("no active other threads\n");
 			threadLock.unlock(false);
 			timer::set_timer(timer::Timer::cpu_scheduler, interval*4);
-			inYield.store(nullptr);
 			unlock();
 			exceptions::unlock();
 
 		}else{
 			// if the current thread has been scheduled again, then put it at back of the queue and we're done. Nothing to swap
-			if(thread::activeThreads.head==&oldThread){
+			if(thread::activeThreads.head==oldThread){
 				thread::activeThreads.push_back(*thread::activeThreads.pop_front());
 
 				threadLock.unlock(false);
 				timer::set_timer(timer::Timer::cpu_scheduler, interval);
-				inYield.store(nullptr);
 				unlock();
 				exceptions::unlock();
 
@@ -204,27 +182,11 @@ namespace scheduler {
 			threadLock.unlock(false, false);
 			// exceptions::unlock(false);
 			// exceptions::_activate();
-			inYield.store("end");
-			if(exceptions::_is_active()){
-				inYield.store("setting timer with exceptions active");
-			}else{
-				inYield.store("setting timer with exceptions inactive");
-			}
 			scheduledTime = timer::now();
 			timer::set_timer(timer::Timer::cpu_scheduler, interval);
-			inYield.store("after set_timer");
-
-			// if(::thread::currentThread->name){
-			// 	stdio::print("schedule ", ::thread::currentThread->name, "\n");
-			// }else{
-			// 	stdio::print("schedule ", ::thread::currentThread, "\n");
-			// }
 
 			deferredYields = 0; //nothing was missed as we've just left, do not auto fire any on unlock()
-			inYield.store("after set_timer and interrupt unlock");
 			unlock();
-
-			inYield.store(nullptr);
 
 			asm volatile("" ::: "memory");
 
@@ -236,7 +198,14 @@ namespace scheduler {
 				}
 			#endif
 
-			Thread::swap_state(oldThread, newThread);
+			// if(oldThread){
+			// 	stdio::print_debug("jump from ", (void*)oldThread, " pc = ", (void*)oldThread->storedState->pc, " lr = ", (void*)oldThread->storedState->lr);
+			// }
+			// stdio::print_debug("jump to   ", (void*)&newThread, " pc = ", (void*)newThread.storedState->pc, " lr = ", (void*)newThread.storedState->lr);
+
+			Thread::swap_state(*oldThread, newThread);
+
+			// stdio::print_debug("swapped");
 
 			exceptions::unlock();
 		}

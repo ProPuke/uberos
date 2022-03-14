@@ -5,10 +5,16 @@
 #include <common/LList.hpp>
 #include <common/ListUnordered.hpp>
 
+#include <cstddef>
+
 struct Process;
 
 namespace process {
 	Process& create_kernel(const char *name, void(*entrypoint)());
+}
+
+namespace memory {
+	struct Page;
 }
 
 struct Thread;
@@ -25,5 +31,6 @@ struct Process: LListItem<Process> {
 
 	ListUnordered<Thread> threads;
 
+	Thread* create_current_thread(memory::Page *stackPage, size_t stackSize);
 	Thread* create_thread(void(*entrypoint)());
 };

@@ -3,7 +3,7 @@
 #include <common/types.hpp>
 
 struct __attribute__((packed)) ThreadCpuState {
-	U32 r[12-4];
+	U32 r[12];
 	U32 cpsr;
 	U32 lr;
 	U32 pc;

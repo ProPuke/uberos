@@ -1,4 +1,4 @@
-.equ KERNEL_STACK_SIZE, 4096
+#include <kernel/kernel.h>
 
 .section ".text.boot"
 

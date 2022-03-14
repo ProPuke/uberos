@@ -31,6 +31,7 @@ struct Thread: LListItem<Thread> {
 
 	friend void scheduler::arch::arm::init();
 	friend Thread* Process::create_thread(void(*entrypoint)());
+	friend Thread* Process::create_current_thread(memory::Page *stackPage, size_t stackSize);
 
 	private: /**/ Thread(Process &process);
 	public:
@@ -75,3 +76,9 @@ struct Thread: LListItem<Thread> {
 inline const char* to_string(Thread::State state) {
 	return state<=Thread::max_state?Thread::state_name[state]:to_string((U8)state);
 }
+
+#if defined(ARCH_ARM32)
+	#include <kernel/arch/arm32/Thread.inl>
+#elif defined(ARCH_ARM64)
+	#include <kernel/arch/arm64/Thread.inl>
+#endif
