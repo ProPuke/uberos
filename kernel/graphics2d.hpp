@@ -51,12 +51,12 @@ namespace graphics2d {
 	};
 
 	struct View: LListItem<View> {
-		/**/ View(Thread &thread, U8 *address, U32 size, FramebufferFormat format, U32 stride, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
+		/**/ View(Thread &thread, U8 *address, U32 size, FramebufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
 			thread(thread),
 			x(x),
 			y(y),
 			scale(scale),
-			buffer(address, size, stride, width, height, format),
+			buffer(address, size, width*framebufferFormat::size[(U32)format], width, height, format),
 			mode(mode)
 		{}
 
