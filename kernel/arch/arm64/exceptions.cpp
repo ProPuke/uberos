@@ -123,8 +123,8 @@ namespace exceptions {
 				stdio::print_error("Error:     10 = ", (void*)reg.x[10], " 11 = ", (void*)reg.x[11], " 12 = ", (void*)reg.x[12], " 13 = ", (void*)reg.x[13], " 14 = ", (void*)reg.x[14]);
 				stdio::print_error("Error:     15 = ", (void*)reg.x[15], " 16 = ", (void*)reg.x[16], " 17 = ", (void*)reg.x[17], " 18 = ", (void*)reg.x[18], " 19 = ", (void*)reg.x[19]);
 				stdio::print_error("Error:     20 = ", (void*)reg.x[20], " 21 = ", (void*)reg.x[21], " 22 = ", (void*)reg.x[22], " 23 = ", (void*)reg.x[23], " 24 = ", (void*)reg.x[24]);
-				stdio::print_error("Error:     25 = ", (void*)reg.x[25], " 26 = ", (void*)reg.x[26], " 27 = ", (void*)reg.x[27], " 28 = ", (void*)reg.x[28], " 29 = ", (void*)reg.x[29]);
-				stdio::print_error("Error:     30 = ", (void*)reg.x[30]);
+				stdio::print_error("Error:     25 = ", (void*)reg.x[25], " 26 = ", (void*)reg.x[26], " 27 = ", (void*)reg.x[27], " 28 = ", (void*)reg.x[28]);
+				stdio::print_error("Error:     fp = ", (void*)reg.x[29], " lr = ", (void*)reg.x[30]);
 				stdio::print_error("Error:     elr = ", (void*)reg.elr, "  spsr = ", (void*)reg.spsr , " esr = ", (void*)reg.esr);
 				stdio::print_error("Error:     far = ", (void*)reg.far, " sctlr = ", (void*)reg.sctlr, " tcr = ", (void*)reg.tcr);
 

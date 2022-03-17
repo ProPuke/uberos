@@ -31,13 +31,13 @@ namespace arch {
 				
 				while(true){
 					U32 waits = 0;
-					while(mmio::read(mmio::Address::mail0_status) & Status::empty){
+					while(mmio::read_address(mmio::Address::mail0_status) & Status::empty){
 						if(++waits>1<<25){
 							return defaultValue;
 						}
 					}
 
-					message.as_int = mmio::read(mmio::Address::mail0_read);
+					message.as_int = mmio::read_address(mmio::Address::mail0_read);
 					if(message.channel==channel) break;
 				};
 
@@ -47,9 +47,9 @@ namespace arch {
 			inline void send(Channel channel, U32 data) {
 				Message message = {channel, data};
 
-				while(mmio::read(mmio::Address::mail0_status) & Status::full);
+				while(mmio::read_address(mmio::Address::mail0_status) & Status::full);
 
-				mmio::write(mmio::Address::mail0_write, message.as_int);
+				mmio::write_address(mmio::Address::mail0_write, message.as_int);
 			}
 		}
 	}

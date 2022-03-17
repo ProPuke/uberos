@@ -37,7 +37,7 @@ namespace timer {
 		namespace raspi {
 			namespace {
 				struct __attribute__((packed)) Timer_registers {
-					struct {
+					struct __attribute__((packed)) {
 						U8 timer_matched: 4;
 						U32 reserved: 28;
 					} control;
@@ -67,8 +67,8 @@ namespace timer {
 			void init() {
 				stdio::Section section("timer::arch::raspi::init...");
 
-				// stdio::print_info("timer control: ", mmio::read(mmio::Address::core_timer_control));
-				// stdio::print_info("timer prescaler: ", mmio::read(mmio::Address::core_timer_prescaler));
+				// stdio::print_info("timer control: ", mmio::read_address(mmio::Address::core_timer_control));
+				// stdio::print_info("timer prescaler: ", mmio::read_address(mmio::Address::core_timer_prescaler));
 			}
 
 			void set_timer(Timer timer, U32 usecs) {
@@ -122,7 +122,6 @@ namespace timer {
 					break;
 					case Timer::cpu_scheduler:
 						// irq::disable(irq::Irq::system_timer_1); //no point? ¯\_(ツ)_/¯
-						stdio::print_debug("scheduler fired");
 						scheduler::arch::arm::on_timer();
 					break;
 					case Timer::gpu1:

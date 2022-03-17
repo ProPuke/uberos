@@ -14,7 +14,7 @@ namespace mmio {
 }
 
 namespace timer {
-	using namespace timer::arch::raspi;
+	using namespace arch::raspi;
 }
 
 namespace irq {
@@ -56,23 +56,13 @@ namespace irq {
 				auto irq_gpu_pending2 = interrupt_registers.irq_gpu_pending2;
 				auto irq_gpu_pending1 = interrupt_registers.irq_gpu_pending1;
 
-				bool found = false;
-
 				for(U32 irq=0;irq<irq_max;irq++){
 					if(_irq_is_pending(irq_basic_pending, irq_gpu_pending2, irq_gpu_pending1, (Irq)irq)){
-						// stdio::print("  FOUND ", irq, "\n");
-						found = true;
-						// stdio::print("interrupt ", irq, "\n");
 						switch((Irq)irq){
 							case Irq::system_timer_0:
-								// stdio::print("gpu_pending was ",gpu_pending," so firing system_timer_0\n");
 								timer::on_interrupt(timer::Timer::gpu0);
-								// if(gpu_pending==3){
-								// 	stdio::print("gpu_pending is now ",interrupt_registers.irq_gpu_pending1,"\n");
-								// }
 							break;
 							case Irq::system_timer_1:
-								// stdio::print("gpu_pending was ",gpu_pending," so firing system_timer_1\n");
 								timer::on_interrupt(timer::Timer::cpu_scheduler);
 							break;
 							case Irq::system_timer_2:
@@ -88,13 +78,6 @@ namespace irq {
 						}
 					}
 				}
-			
-				if(!found){
-					stdio::print_info("  NOT FOUND");
-					stdio::print_info("  irq_basic_pending = ", irq_basic_pending);
-					stdio::print_info("  irq_gpu_pending2 = ", irq_gpu_pending2);
-					stdio::print_info("  irq_gpu_pending1 = ", irq_gpu_pending1);
-				}
 			}
 
 			void init() {
@@ -106,7 +89,6 @@ namespace irq {
 			}
 
 			void enable(Irq irq) {
-				// stdio::print_debug("set interrupt handler for ", (U32)irq);
 				if((U32)irq>=64){
 					interrupt_registers.irq_basic_enable = (1<<((U32)irq-64));
 

@@ -14,13 +14,13 @@ namespace arch {
 			#ifdef ARCH_RASPI_UART0
 				inline void putc(unsigned char c) {
 					if(c=='\n') putc('\r');
-					while(mmio::read(mmio::Address::uart0_fr) & 1<<5);
-					mmio::write(mmio::Address::uart0_dr, c);
+					while(mmio::read_address(mmio::Address::uart0_fr) & 1<<5);
+					mmio::write_address(mmio::Address::uart0_dr, c);
 				}
 
 				inline unsigned char getc() {
-					while(mmio::read(mmio::Address::uart0_fr) & 1<<4);
-					return mmio::read(mmio::Address::uart0_dr);
+					while(mmio::read_address(mmio::Address::uart0_fr) & 1<<4);
+					return mmio::read_address(mmio::Address::uart0_dr);
 				}
 
 				inline void puts(const char* str) {
@@ -32,8 +32,8 @@ namespace arch {
 				inline void _putc(unsigned char c) {
 					if(c=='\n') _putc('\r');
 
-					while(!(mmio::read(mmio::Address::uart1_mu_lsr) & 1<<5));
-					mmio::write(mmio::Address::uart1_mu_io, c);
+					while(!(mmio::read_address(mmio::Address::uart1_mu_lsr) & 1<<5));
+					mmio::write_address(mmio::Address::uart1_mu_io, c);
 				}
 
 				inline void putc(unsigned char c) {
@@ -42,8 +42,8 @@ namespace arch {
 				}
 
 				inline unsigned char _getc() {
-					while(!(mmio::read(mmio::Address::uart1_mu_lsr) & 1<<1));
-					return mmio::read(mmio::Address::uart1_mu_io);
+					while(!(mmio::read_address(mmio::Address::uart1_mu_lsr) & 1<<1));
+					return mmio::read_address(mmio::Address::uart1_mu_io);
 				}
 
 				inline unsigned char getc() {

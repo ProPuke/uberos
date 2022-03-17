@@ -2,6 +2,7 @@
 
 #include <common/types.hpp>
 #include <common/stdlib.hpp>
+#include <kernel/mmio.hpp>
 
 #if defined(ARCH_ARM32)
 	#include <kernel/arch/arm32/mmio/barrier.hpp>
@@ -137,13 +138,8 @@ namespace mmio {
 				// core_timer_prescaler = core_timer_base + 0x08
 			};
 
-			void write(Address reg, U32 data);
-			U32 read(Address reg);
-
-			void write_address(U32 reg, U32 data);
-			U32 read_address(U32 reg);
-			
-			void delay(I32 count);
+			void write_address(Address reg, U32 data);
+			U32 read_address(Address reg);
 
 			struct PeripheralAccessGuard {
 				/**/ PeripheralAccessGuard(){ barrier(); };
