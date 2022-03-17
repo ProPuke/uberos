@@ -661,7 +661,7 @@ namespace mmu {
 	}
 
 	void* MemoryMapping::add_mapping(void *addressStart, void *addressEnd, RegionType regionType) {
-		// stdio::print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
+		stdio::print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
 
 		const auto pageCount = ((U64)addressEnd-(U64)addressStart+memory::pageSize-1)/memory::pageSize;
 		auto virtualAddress = add_mapping(addressStart, pageCount, regionType);
