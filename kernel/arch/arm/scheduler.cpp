@@ -33,7 +33,7 @@ namespace scheduler {
 		namespace arm {
 			std::atomic<unsigned> lock_depth = 0;
 
-			U32 interval = 2000; //2ms
+			U32 interval = 15000; //15ms
 			U32 slowInterval = interval*3;
 
 			U64 lastSchedule = 0;
