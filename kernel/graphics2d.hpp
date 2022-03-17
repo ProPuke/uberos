@@ -91,6 +91,8 @@ namespace graphics2d {
 
 	void init();
 
+	// threadsafe functions
+
 	void set_background_colour(U32 colour);
 
 	View* create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1);
@@ -102,6 +104,20 @@ namespace graphics2d {
 	void update_view_area(View &view, Rect rect);
 
 	Buffer get_screen_buffer(U32 framebuffer, Rect rect);
+
+	// non-threadsafe internals
+
+	void _set_background_colour(U32 colour);
+
+	View* _create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1);
+	void _move_view_to(View &view, I32 x, I32 y);
+	void _update_background();
+	void _update_background_area(Rect rect);
+	void _update_area(Rect rect, View *below = nullptr);
+	void _update_view(View &view);
+	void _update_view_area(View &view, Rect rect);
+
+	Buffer _get_screen_buffer(U32 framebuffer, Rect rect);
 }
 
 #include "graphics2d.inl"

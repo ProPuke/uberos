@@ -10,20 +10,18 @@
 #endif
 
 struct Spinlock_Guard {
-	/**/ Spinlock_Guard(Spinlock &lock, const char *context, bool debug = true):
+	/**/ Spinlock_Guard(Spinlock &lock, const char *context = "unnamed"):
 		context(context),
-		debug(debug),
 		_lock(lock)
 	{
 		_lock.lock(context);
 	}
 	
 	/**/~Spinlock_Guard(){
-		_lock.unlock(debug);
+		_lock.unlock();
 	}
 
 	const char *context;
-	bool debug;
 
 	private: Spinlock &_lock;
 };

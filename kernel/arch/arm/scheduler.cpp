@@ -179,7 +179,7 @@ namespace scheduler {
 
 			::thread::currentThread = &newThread;
 
-			threadLock.unlock(false, false);
+			threadLock.unlock(false);
 			// exceptions::unlock(false);
 			// exceptions::_activate();
 			scheduledTime = timer::now();

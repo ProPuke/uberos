@@ -1,4 +1,5 @@
 #include <kernel/exceptions.hpp>
+#include <kernel/scheduler.hpp>
 
 namespace arch {
 	namespace arm32 {
@@ -11,14 +12,16 @@ namespace arch {
 			/**/ Spinlock(const Spinlock&) = delete;
 			Spinlock& operator=(const Spinlock&) = delete;
 
-			void lock(const char *context, bool apply = true) {
-				// exceptions::lock(apply);
+			void lock(const char *context) {
+				scheduler::lock();
+				exceptions::lock();
 				while (__atomic_test_and_set(&_lock, __ATOMIC_ACQUIRE));
 			}
 
-			void unlock(bool debug = true, bool apply = true) {
+			void unlock(bool debug = true) {
 				__atomic_clear(&_lock, __ATOMIC_RELEASE);
-				// // exceptions::unlock(apply);
+				exceptions::unlock();
+				scheduler::unlock();
 				// _lock = 0;
 			}
 

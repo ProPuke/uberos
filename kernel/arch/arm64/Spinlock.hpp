@@ -1,4 +1,5 @@
 #include <kernel/exceptions.hpp>
+#include <kernel/scheduler.hpp>
 #include <kernel/arch/arm64/atomic.hpp>
 
 namespace arch {
@@ -12,8 +13,9 @@ namespace arch {
 			/**/ Spinlock(const Spinlock&) = delete;
 			Spinlock& operator=(const Spinlock&) = delete;
 
-			void lock(const char *context, bool apply = true) {
-				// exceptions::lock(apply);
+			void lock(const char *context) {
+				scheduler::lock();
+				exceptions::lock();
 				// while (__atomic_test_and_set(&_lock, __ATOMIC_ACQUIRE));
 				// auto result = arch::arm64::atomic::add_return(&_lock, 69);
 
@@ -34,7 +36,6 @@ namespace arch {
 
 			void unlock(bool debug = true, bool apply = true) {
 				// __atomic_clear(&_lock, __ATOMIC_RELEASE);
-				// // exceptions::unlock(apply);
 				// _lock = 0;
 
 				asm volatile(
@@ -43,6 +44,9 @@ namespace arch {
 					: "r" (&_lock), "r" (0)
 					: "memory"
 				);
+
+				exceptions::unlock();
+				scheduler::unlock();
 			}
 
 			const char *name;
