@@ -35,9 +35,15 @@ namespace framebuffer {
 				framebuffer::framebuffer_count = 1;
 				framebuffer::framebuffers[0].index = 0;
 
-				if(!framebuffer::set_mode(0, default_resolution[0], default_resolution[1], FramebufferFormat::rgb565)){
-					framebuffer::framebuffer_count = 0;
-				}
+				#if true
+					if(!framebuffer::set_mode(0, 1280, 720, FramebufferFormat::rgb8)){
+						framebuffer::framebuffer_count = 0;
+					}
+				#else
+					if(!framebuffer::set_mode(0, default_resolution[0], default_resolution[1], FramebufferFormat::rgb8)){
+						framebuffer::framebuffer_count = 0;
+					}
+				#endif
 
 				// {
 				// 	auto &framebuffer = framebuffers[0];
