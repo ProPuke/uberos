@@ -99,21 +99,12 @@ namespace scheduler {
 			std::atomic<U32> scheduledTime = 0;
 
 			void on_slow_timer() {
-				threadLock.lock("on_slower_timer() threadLock");
+				// threadLock.lock("on_slower_timer() threadLock");
 
-				const auto now = timer::now();
+				// // stdio::print("ping ", now, "\n");
 
-				// stdio::print("ping ", now, "\n");
 
-				Thread *thread;
-
-				while((thread = thread::sleepingThreads.head)&&(now>=thread->sleep_wake_time&&now-thread->sleep_wake_time<10000000)){
-					thread->state = Thread::State::active;
-					thread::sleepingThreads.pop_front();
-					thread::activeThreads.push_front(*thread);
-				}
-
-				threadLock.unlock(false);
+				// threadLock.unlock(false);
 
 				timer::set_timer(timer::Timer::cpu_slow_scheduler, slowInterval);
 			}
@@ -147,6 +138,13 @@ namespace scheduler {
 		lastSchedule = now;
 
 		threadLock.lock("yield() threadlock");
+
+		// wake sleeping threads
+		for(Thread *thread = thread::sleepingThreads.head; thread && now >= thread->sleep_wake_time && now-thread->sleep_wake_time < 1ull<<63; thread = thread::sleepingThreads.head) {
+			thread->state = Thread::State::active;
+			thread::sleepingThreads.pop_front();
+			thread::activeThreads.push_front(*thread);
+		}
 
 		auto oldThread = ::thread::currentThread.load();
 
