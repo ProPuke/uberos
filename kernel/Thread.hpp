@@ -73,7 +73,7 @@ struct Thread: LListItem<Thread> {
 
 #include <common/stdlib.hpp>
 
-inline const char* to_string(Thread::State state) {
+inline auto to_string(Thread::State state) -> const char* {
 	return state<=Thread::max_state?Thread::state_name[state]:to_string((U8)state);
 }
 

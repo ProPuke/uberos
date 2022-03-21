@@ -1,5 +1,6 @@
 #pragma once
 
+#include <common/format.hpp>
 #include <common/types.hpp>
 #include <kernel/assert.hpp>
 
@@ -184,7 +185,7 @@ struct Ttbr {
 	void set_tableAddress(U8 lowBit, mmu::TableDescriptor *table){
 		const auto bitmask = ::bitmask(lowBit, 47);
 
-		assert((U64)table==((U64)table&bitmask), "tableAddress ", table, " does not align with bitmask", (void*)bitmask);
+		assert((U64)table==((U64)table&bitmask), "tableAddress ", table, " does not align with bitmask", format::Hex64{bitmask});
 
 		tableBaseAddress = ((U64)table&bitmask)>>1;
 	}

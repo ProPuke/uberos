@@ -2,22 +2,22 @@
 
 #include <cstddef>
 
-extern "C" void memcpy(void *dest, void *src, unsigned bytes) {
+extern "C" void memcpy(void *dest, const void *src, unsigned bytes) {
 	if(dest==src) return;
 	memcpy_forwards(dest, src, bytes);
 }
 
-extern "C" void memcpy_forwards(void *dest, void *src, unsigned bytes) {
+extern "C" void memcpy_forwards(void *dest, const void *src, unsigned bytes) {
 	char *d = (char*)dest, *s = (char*)src;
 	while(bytes--) *d++ = *s++;
 }
 
-extern "C" void memcpy_backwards(void *dest, void *src, unsigned bytes) {
+extern "C" void memcpy_backwards(void *dest, const void *src, unsigned bytes) {
 	char *d = (char*)dest+bytes, *s = (char*)src+bytes;
 	while(bytes--) *d-- = *s--;
 }
 
-extern "C" void memmove(void *dest, void *src, unsigned bytes) {
+extern "C" void memmove(void *dest, const void *src, unsigned bytes) {
 	if(dest>=src){
 		memcpy_backwards(dest, src, bytes);
 	}else{
@@ -42,11 +42,30 @@ extern "C" void bzero(void *dest, unsigned bytes) {
 
 extern "C" unsigned strlen(const C8 *str) {
 	U64 length = 0;
-	while(str){
+	while(*str){
 		length++;
 		str++;
 	}
 	return length;
+}
+
+extern "C" char* strcat(char *destination, const char *source) {
+	U64 length = strlen(destination);
+
+	memcpy(destination+length, source, strlen(source)+1);
+
+	return destination;
+}
+
+extern "C" int strcmp(const char* str1, const char* str2) {
+	while(*str1&&*str2){
+		int diff = *str1-*str2;
+		if(diff) return diff;
+		str1++;
+		str2++;
+	}
+	
+	return *str1?+1:*str2?-1:0;
 }
 
 constexpr unsigned digits_binary(unsigned bits, bool isSigned){
@@ -140,19 +159,18 @@ inline const char* _itoa(Type number){
 	return character+1;
 }
 
-const char* to_string(U16 x){ return _utoa(x); }
-const char* to_string(I16 x){ return _itoa(x); }
-const char* to_string(U32 x){ return _utoa(x); }
-const char* to_string(I32 x){ return _itoa(x); }
-const char* to_string(U64 x){ return _utoa(x); }
-const char* to_string(I64 x){ return _itoa(x); }
-const char* to_string(void* x){ return _utoahex((size_t)x); }
+auto to_string(U16 x) -> const char* { return _utoa(x); }
+auto to_string(I16 x) -> const char* { return _itoa(x); }
+auto to_string(U32 x) -> const char* { return _utoa(x); }
+auto to_string(I32 x) -> const char* { return _itoa(x); }
+auto to_string(U64 x) -> const char* { return _utoa(x); }
+auto to_string(I64 x) -> const char* { return _itoa(x); }
 
-const char* to_string_hex(U8 x) { return _utoahex(x); }
-const char* to_string_hex(U16 x) { return _utoahex(x); }
-const char* to_string_hex(U32 x) { return _utoahex(x); }
-const char* to_string_hex(U64 x) { return _utoahex(x); }
-const char* to_string_hex_trim(U8 x) { return _utoahextrim(x); }
-const char* to_string_hex_trim(U16 x) { return _utoahextrim(x); }
-const char* to_string_hex_trim(U32 x) { return _utoahextrim(x); }
-const char* to_string_hex_trim(U64 x) { return _utoahextrim(x); }
+auto to_string_hex(U8 x)  -> const char* { return _utoahex(x); }
+auto to_string_hex(U16 x) -> const char*  { return _utoahex(x); }
+auto to_string_hex(U32 x) -> const char*  { return _utoahex(x); }
+auto to_string_hex(U64 x) -> const char*  { return _utoahex(x); }
+auto to_string_hex_trim(U8 x)  -> const char* { return _utoahextrim(x); }
+auto to_string_hex_trim(U16 x) -> const char*  { return _utoahextrim(x); }
+auto to_string_hex_trim(U32 x) -> const char*  { return _utoahextrim(x); }
+auto to_string_hex_trim(U64 x) -> const char*  { return _utoahextrim(x); }

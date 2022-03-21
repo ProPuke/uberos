@@ -12,8 +12,8 @@ namespace scheduler {
 	U32 get_active_thread_count();
 
 	struct Guard {
-		/**/ Guard() { /*lock();*/ } //TODO:reneable
-		/**/~Guard() { /*unlock();*/ } //TODO:reneable
+		/**/ Guard() { lock(); }
+		/**/~Guard() { unlock(); }
 
 		/**/ Guard(const Guard&) = delete;
 		Guard& operator=(const Guard&) = delete;

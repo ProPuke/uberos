@@ -24,25 +24,52 @@ namespace memory {
 	#endif
 	// extern MemoryPool<32> *heap;
 
-	void check_dangerous_address(void *from, void *to);
+	// not thread-safe thread safe
+	auto _kmalloc(size_t size) -> void*;
+	void _kfree(void *address);
 
-	// threadsafe variants
-	Page* allocate_page();
-	Page* allocate_pages(U32 count);
-	void free_page(Page &page);
-	Page* get_memory_page(void *address);
-
-	void* kmalloc(size_t size);
-	void kfree(void*);
-
-	// only to be used internally, not threadsafe
-	Page* _allocate_page();
-	Page* _allocate_pages(U32 count);
+	auto _allocate_page() -> Page*;
+	auto _allocate_pages(U32 count) -> Page*;
 	void _free_page(Page &page);
+	auto _get_memory_page(void *address) -> Page*;
+
+	void _check_dangerous_address(void *from, void *to);
 
 	// inline void memset(U8 *address, U8 value, U32 size) {
 	// 	while(--size) *address++ = value;
 	// }
+
+	struct Transaction {
+		/**/ Transaction() { lock(); }
+		/**/~Transaction() { unlock(); }
+
+		static void lock();
+		static void unlock();
+
+		auto allocate_page() -> Page* {
+			return _allocate_page();
+		}
+		auto allocate_pages(U32 count) -> Page* {
+			return _allocate_pages(count);
+		}
+		void free_page(Page &page) {
+			return _free_page(page);
+		}
+		auto get_memory_page(void *address) -> Page* {
+			return _get_memory_page(address);
+		}
+
+		auto kmalloc(size_t size) -> void* {
+			return _kmalloc(size);
+		}
+		void kfree(void *address) {
+			return _kfree(address);
+		}
+
+		void check_dangerous_address(void *from, void *to) {
+			return _check_dangerous_address(from, to);
+		}
+	};
 }
 
 #include <cstddef>
@@ -54,10 +81,10 @@ inline void* operator new[](size_t size, size_t align) = delete;
 // void operator delete(void* p) noexcept;
 // void operator delete(void* p, size_t) noexcept;
 
-void* operator new(size_t size) noexcept;
-void* operator new[](size_t size) noexcept;
+inline void* operator new(size_t size) noexcept { memory::Transaction transaction; return transaction.kmalloc(size); }
+inline void* operator new[](size_t size) noexcept { memory::Transaction transaction; return transaction.kmalloc(size); }
 
-void operator delete(void* p) noexcept;
-void operator delete(void* p, size_t) noexcept;
+inline void operator delete(void* p) noexcept { memory::Transaction transaction; transaction.kfree(p); }
+inline void operator delete(void* p, size_t) noexcept { memory::Transaction transaction; transaction.kfree(p); }
 
 #include "memory.inl"

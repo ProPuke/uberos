@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/stdlib.hpp>
+#include <common/format.hpp>
 
 #undef getc
 #undef putc
@@ -26,7 +27,7 @@ namespace stdio {
 	};
 
 	template<typename Type>
-	inline void _print(Type x){ return _puts(::to_string(x)); }
+	inline void _print(Type x){ return _puts(to_string(x)); }
 	inline void _print(char x){ return _putc(x); }
 	inline void _print(const char *x){ return _puts(x); }
 

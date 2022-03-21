@@ -5,7 +5,8 @@
 enum struct FramebufferFormat {
 	rgb565,
 	rgb8,
-	rgba8
+	rgba8,
+	max = rgba8
 };
 
 namespace framebufferFormat {
@@ -24,7 +25,12 @@ namespace framebufferFormat {
 	};
 }
 
+namespace driver {
+	struct Graphics;
+}
+
 struct Framebuffer {
+	driver::Graphics *driver;
 	U32 index;
 	U8 *address;
 	U32 size;
@@ -45,7 +51,7 @@ struct Framebuffer {
 
 #include <common/stdlib.hpp>
 
-inline const char *to_string(FramebufferFormat format) {
+inline auto to_string(FramebufferFormat format) -> const char* {
 	return (U32)format<=framebufferFormat::max?framebufferFormat::name[(U32)format]: ::to_string((U32)format);
 }
 

@@ -62,6 +62,10 @@ namespace hwquery {
 			};
 
 			extern MachineModel machineModel;
+			extern U32 boardRevision;
+			extern U32 modelMajor;
+			extern U32 revisionMajor;
+			extern U32 revisionMinor;
 			extern Soc soc;
 
 			extern void* videoMemoryStart;

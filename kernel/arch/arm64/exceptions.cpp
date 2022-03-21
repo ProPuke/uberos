@@ -1,10 +1,13 @@
 #include "exceptions.hpp"
 
 #include <common/disassemble/arm64.hpp>
+#include <common/format.hpp>
+
 #include <kernel/arch/raspi/irq.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/arch/raspi/timer.hpp>
 #include <kernel/stdio.hpp>
+
 #include <cstddef>
 
 extern "C" void install_exception_handlers();
@@ -46,9 +49,9 @@ namespace exceptions {
 				stdio::print_error_start();
 					stdio::print_inline("Error: interrupt ", exception);
 
-					if(exception_error_registers.elr) stdio::print_inline(" from ", (void*)exception_error_registers.elr);
-					if(exception_error_registers.far) stdio::print_inline(" touching ", (void*)exception_error_registers.far);
-					if(exception_error_registers.esr) stdio::print_inline(" with esr ", (void*)exception_error_registers.esr);
+					if(exception_error_registers.elr) stdio::print_inline(" from ", format::Hex64{exception_error_registers.elr});
+					if(exception_error_registers.far) stdio::print_inline(" touching ", format::Hex64{exception_error_registers.far});
+					if(exception_error_registers.esr) stdio::print_inline(" with esr ", format::Hex64{exception_error_registers.esr});
 				stdio::print_end();
 
 
@@ -118,15 +121,15 @@ namespace exceptions {
 				}
 
 				stdio::print_error("Error:   Registers:");
-				stdio::print_error("Error:      0 = ", (void*)reg.x[ 0], "  1 = ", (void*)reg.x[ 1], "  2 = ", (void*)reg.x[ 2], "  3 = ", (void*)reg.x[ 3], "  4 = ", (void*)reg.x[ 4]);
-				stdio::print_error("Error:      5 = ", (void*)reg.x[ 5], "  6 = ", (void*)reg.x[ 6], "  7 = ", (void*)reg.x[ 7], "  8 = ", (void*)reg.x[ 8], "  9 = ", (void*)reg.x[ 9]);
-				stdio::print_error("Error:     10 = ", (void*)reg.x[10], " 11 = ", (void*)reg.x[11], " 12 = ", (void*)reg.x[12], " 13 = ", (void*)reg.x[13], " 14 = ", (void*)reg.x[14]);
-				stdio::print_error("Error:     15 = ", (void*)reg.x[15], " 16 = ", (void*)reg.x[16], " 17 = ", (void*)reg.x[17], " 18 = ", (void*)reg.x[18], " 19 = ", (void*)reg.x[19]);
-				stdio::print_error("Error:     20 = ", (void*)reg.x[20], " 21 = ", (void*)reg.x[21], " 22 = ", (void*)reg.x[22], " 23 = ", (void*)reg.x[23], " 24 = ", (void*)reg.x[24]);
-				stdio::print_error("Error:     25 = ", (void*)reg.x[25], " 26 = ", (void*)reg.x[26], " 27 = ", (void*)reg.x[27], " 28 = ", (void*)reg.x[28]);
-				stdio::print_error("Error:     fp = ", (void*)reg.x[29], " lr = ", (void*)reg.x[30]);
-				stdio::print_error("Error:     elr = ", (void*)reg.elr, "  spsr = ", (void*)reg.spsr , " esr = ", (void*)reg.esr);
-				stdio::print_error("Error:     far = ", (void*)reg.far, " sctlr = ", (void*)reg.sctlr, " tcr = ", (void*)reg.tcr);
+				stdio::print_error("Error:      0 = ", format::Hex64{reg.x[ 0]}, "  1 = ", format::Hex64{reg.x[ 1]}, "  2 = ", format::Hex64{reg.x[ 2]}, "  3 = ", format::Hex64{reg.x[ 3]}, "  4 = ", format::Hex64{reg.x[ 4]});
+				stdio::print_error("Error:      5 = ", format::Hex64{reg.x[ 5]}, "  6 = ", format::Hex64{reg.x[ 6]}, "  7 = ", format::Hex64{reg.x[ 7]}, "  8 = ", format::Hex64{reg.x[ 8]}, "  9 = ", format::Hex64{reg.x[ 9]});
+				stdio::print_error("Error:     10 = ", format::Hex64{reg.x[10]}, " 11 = ", format::Hex64{reg.x[11]}, " 12 = ", format::Hex64{reg.x[12]}, " 13 = ", format::Hex64{reg.x[13]}, " 14 = ", format::Hex64{reg.x[14]});
+				stdio::print_error("Error:     15 = ", format::Hex64{reg.x[15]}, " 16 = ", format::Hex64{reg.x[16]}, " 17 = ", format::Hex64{reg.x[17]}, " 18 = ", format::Hex64{reg.x[18]}, " 19 = ", format::Hex64{reg.x[19]});
+				stdio::print_error("Error:     20 = ", format::Hex64{reg.x[20]}, " 21 = ", format::Hex64{reg.x[21]}, " 22 = ", format::Hex64{reg.x[22]}, " 23 = ", format::Hex64{reg.x[23]}, " 24 = ", format::Hex64{reg.x[24]});
+				stdio::print_error("Error:     25 = ", format::Hex64{reg.x[25]}, " 26 = ", format::Hex64{reg.x[26]}, " 27 = ", format::Hex64{reg.x[27]}, " 28 = ", format::Hex64{reg.x[28]});
+				stdio::print_error("Error:     fp = ", format::Hex64{reg.x[29]}, " lr = ", format::Hex64{reg.x[30]});
+				stdio::print_error("Error:     elr = ", format::Hex64{reg.elr}, "  spsr = ", format::Hex64{reg.spsr} , " esr = ", format::Hex64{reg.esr});
+				stdio::print_error("Error:     far = ", format::Hex64{reg.far}, " sctlr = ", format::Hex64{reg.sctlr}, " tcr = ", format::Hex64{reg.tcr});
 
 				if(exception_error_registers.elr){
 					if(false){
@@ -136,14 +139,14 @@ namespace exceptions {
 						U32 *to = (size_t)(void*)current<SIZE_MAX-(1+10)*sizeof(U32)?current+10+1:((U32*)SIZE_MAX)-1;
 
 						for(U32 *i=from; i<current; i++){
-							stdio::print_error("Error:     ", (void*)i, " : ", disassemble::arm64::to_string(*i, (U64)(void*)i));
+							stdio::print_error("Error:     ", format::Hex64{i}, " : ", disassemble::arm64::to_string(*i, (U64)(void*)i));
 						}
 						{
 							U32 *i = current;
-							stdio::print_error("Error:   > ", (void*)i, " : ", disassemble::arm64::to_string(*current, (U64)(void*)i));
+							stdio::print_error("Error:   > ", format::Hex64{i}, " : ", disassemble::arm64::to_string(*current, (U64)(void*)i));
 						}
 						for(U32 *i=current+1; i<to; i++){
-							stdio::print_error("Error:     ", (void*)i, " : ", disassemble::arm64::to_string(*i, (U64)(void*)i));
+							stdio::print_error("Error:     ", format::Hex64{i}, " : ", disassemble::arm64::to_string(*i, (U64)(void*)i));
 						}
 
 					}else{
@@ -158,7 +161,7 @@ namespace exceptions {
 						unsigned x = 0;
 						for(U32 *data = from;data<to;data++){
 							if(false){
-								stdio::print_inline(to_string_hex(*data)+2);
+								stdio::print_inline(format::Hex32{(*data)});
 								x += 8;
 								if(x>=120){
 									stdio::print_end();
@@ -168,10 +171,10 @@ namespace exceptions {
 								}
 
 							}else{
-								stdio::print_inline(to_string_hex(((U8*)data)[0])+2);
-								stdio::print_inline(to_string_hex(((U8*)data)[1])+2);
-								stdio::print_inline(to_string_hex(((U8*)data)[2])+2);
-								stdio::print_inline(to_string_hex(((U8*)data)[3])+2);
+								stdio::print_inline(format::Hex8{((U8*)data)[0], false});
+								stdio::print_inline(format::Hex8{((U8*)data)[1], false});
+								stdio::print_inline(format::Hex8{((U8*)data)[2], false});
+								stdio::print_inline(format::Hex8{((U8*)data)[3], false});
 								x += 8;
 								if(x>=120){
 									stdio::print_end();

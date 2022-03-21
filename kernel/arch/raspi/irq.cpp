@@ -4,6 +4,7 @@
 #include "timer.hpp"
 
 #include <kernel/exceptions.hpp>
+#include <kernel/deviceManager.hpp>
 #include <kernel/stdio.hpp>
 #include <cstddef>
 
@@ -49,8 +50,7 @@ namespace irq {
 
 			extern "C" void interrupt_irq() {
 				exceptions::Guard guard;
-				// stdio::print("IRQ HANDLER ", "\n");
-				// int gpu_pending = interrupt_registers.irq_gpu_pending1;
+				// stdio::print_debug("irq");
 
 				auto irq_basic_pending = interrupt_registers.irq_basic_pending;
 				auto irq_gpu_pending2 = interrupt_registers.irq_gpu_pending2;
@@ -58,6 +58,7 @@ namespace irq {
 
 				for(U32 irq=0;irq<irq_max;irq++){
 					if(_irq_is_pending(irq_basic_pending, irq_gpu_pending2, irq_gpu_pending1, (Irq)irq)){
+						// stdio::print_debug("irq ", irq);
 						switch((Irq)irq){
 							case Irq::system_timer_0:
 								timer::on_interrupt(timer::Timer::gpu0);
@@ -71,7 +72,22 @@ namespace irq {
 							case Irq::system_timer_3:
 								timer::on_interrupt(timer::Timer::cpu_slow_scheduler);
 							break;
+							// case 0x60:
+							// 	timer::on_interrupt(timer::Timer::gpu0);
+							// break;
+							// case 0x61:
+							// 	timer::on_interrupt(timer::Timer::cpu_scheduler);
+							// break;
+							// case 0x62:
+							// 	timer::on_interrupt(timer::Timer::gpu1);
+							// break;
+							// case 0x63:
+							// 	timer::on_interrupt(timer::Timer::cpu_slow_scheduler);
+							// break;
 							case Irq::usb_controller:
+							break;
+							case Irq::hdmi_0:
+							case Irq::hdmi_1:
 							break;
 							case Irq::arm_timer:
 							break;
@@ -86,7 +102,15 @@ namespace irq {
 				interrupt_registers.irq_basic_disable = 0xffffffff;
 				interrupt_registers.irq_gpu_disable1 = 0xffffffff;
 				interrupt_registers.irq_gpu_disable2 = 0xffffffff;
+
+				#ifdef HAS_GIC400
+					deviceManager::add_device(gic400);
+				#endif
 			}
+
+			#ifdef HAS_GIC400
+				const U32 videocore_peripheral_irqs = 0x60;
+			#endif
 
 			void enable(Irq irq) {
 				if((U32)irq>=64){
@@ -98,6 +122,10 @@ namespace irq {
 				}else{
 					interrupt_registers.irq_gpu_enable1 = (1<<((U32)irq));
 				}
+
+				#ifdef HAS_GIC400
+					gic400.enable_irq(videocore_peripheral_irqs+(U32)irq, 0);
+				#endif
 			}
 
 			void disable(Irq irq) {
@@ -111,6 +139,10 @@ namespace irq {
 				}else{
 					interrupt_registers.irq_gpu_disable1 = (1<<((U32)irq));
 				}
+
+				#ifdef HAS_GIC400
+					gic400.disable_irq(videocore_peripheral_irqs+(U32)irq);
+				#endif
 			}
 		}
 	}

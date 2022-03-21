@@ -2,7 +2,9 @@
 
 #include "mmio.hpp"
 #include "mailbox.hpp"
+
 #include <common/types.hpp>
+
 #include <kernel/stdio.hpp>
 
 namespace arch {

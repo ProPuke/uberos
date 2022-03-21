@@ -1,10 +1,12 @@
 #include "exceptions.hpp"
 
+#include <common/types.hpp>
+
 #include <kernel/arch/raspi/irq.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/arch/raspi/timer.hpp>
 #include <kernel/stdio.hpp>
-#include <common/types.hpp>
+
 #include <atomic>
 
 extern "C" void install_exception_handlers();

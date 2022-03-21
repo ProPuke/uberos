@@ -1,5 +1,18 @@
 #pragma once
 
+#if defined(ARCH_RASPI4)
+	#define HAS_GIC400
+	#include <kernel/driver/irq/Arm_gic400.hpp>
+#endif
+
+#include <kernel/mmio.hpp>
+
+#include <kernel/arch/raspi/mmio.hpp>
+
+namespace mmio {
+	using namespace arch::raspi;
+}
+
 namespace irq {
 	namespace arch {
 		namespace raspi {
@@ -9,10 +22,16 @@ namespace irq {
 				system_timer_2 = 2,
 				system_timer_3 = 3,
 				usb_controller = 9,
+				hdmi_0 = 40,
+				hdmi_1 = 41,
 				arm_timer = 64
 			};
 
 			inline const unsigned irq_max = 72;
+
+			#ifdef HAS_GIC400
+				inline driver::irq::Arm_gic400 gic400 {(U32)mmio::Address::gpu_peripheral_base + 0x1840000}; //0xff840000 on pi 4
+			#endif
 
 			void init();
 			void enable(Irq irq);

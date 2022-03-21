@@ -1,16 +1,18 @@
 #include "memory.hpp"
 
-#include "memory/Page.hpp"
-#include "memory/PagedPool.hpp"
-#include "Spinlock.hpp"
-#include "stdio.hpp"
-#include <common/debugUtils.hpp>
+#include <common/format.hpp>
 #include <common/MemoryPool.hpp>
 #include <common/stdlib.hpp>
 
+#include <common/debugUtils.hpp>
+#include <kernel/memory/Page.hpp>
+#include <kernel/memory/PagedPool.hpp>
+#include <kernel/Spinlock.hpp>
+#include <kernel/stdio.hpp>
+
 extern "C" void memset(U8 *address, U8 value, unsigned int size) {
 	#ifdef MEMORY_CHECKS
-		stdio::print_debug("memset ", (void*)address, size, "\n");
+		stdio::print_debug("memset ", format::Hex64{address}, size, "\n");
 	#endif
 	while(--size) *address++ = value;
 }
@@ -31,11 +33,6 @@ namespace memory {
 		bzero(physicalAddress, pageSize);
 	}
 
-	Page* allocate_page() {
-		Spinlock_Guard _lock(lock, __FUNCTION__);
-		return _allocate_page();
-	}
-
 	Page* _allocate_page() {
 
 		if(freePages.size<1){
@@ -51,12 +48,6 @@ namespace memory {
 		asm volatile("" ::: "memory");
 
 		return page;
-	}
-
-	Page* allocate_pages(U32 count){
-		Spinlock_Guard _lock(lock, __FUNCTION__);
-
-		return _allocate_pages(count);
 	}
 
 	Page* _allocate_pages(U32 count){
@@ -87,12 +78,6 @@ namespace memory {
 		return nullptr;
 	}
 
-	void free_page(Page &page) {
-		Spinlock_Guard _lock(lock, __FUNCTION__);
-
-		return _free_page(page);
-	}
-
 	void _free_page(Page &page) {
 		page.isAllocated = false;
 
@@ -101,13 +86,8 @@ namespace memory {
 		freePages.push_back(page);
 	}
 
-	Page* get_memory_page(void *address) {
-		return &pageData[(U64)address/pageSize];
-	}
-
-	void* kmalloc(size_t size) {
+	void* _kmalloc(size_t size) {
 		// stdio::Section section("kmalloc");
-		Spinlock_Guard _lock(lock, __FUNCTION__);
 
 		#ifdef MEMORY_CHECKS
 			stdio::Section section("kmalloc ", size);
@@ -128,14 +108,13 @@ namespace memory {
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
-		check_dangerous_address(address, (U8*)address+size-1);
+		_check_dangerous_address(address, (U8*)address+size-1);
 
 		return address;
 	}
 
-	void kfree(void *address) {
+	void _kfree(void *address) {
 		// stdio::Section section("kfree");
-		Spinlock_Guard _lock(lock, __FUNCTION__);
 
 		#ifdef MEMORY_CHECKS
 			stdio::print_debug("kfree ", address, "\n");
@@ -147,17 +126,19 @@ namespace memory {
 		// heap->free(address);
 	}
 
-	void check_dangerous_address(void *from, void *to) {
+	void _check_dangerous_address(void *from, void *to) {
 		for(auto block=kernelHeap.availableBlocks.head; block; block=block->next) {
 			if(to>block&&from<&block->_data+block->size){
 				stdio::print_error("Error: DANGEROUS ADDRESS ", from, " -> ", (U8*)to-1, " overlaps block ", block, " -> ", &block->_data+block->size-1);
 			}
 		}
 	}
+
+	void Transaction::lock() {
+		memory::lock.lock();
+	}
+
+	void Transaction::unlock() {
+		memory::lock.unlock();
+	}
 }
-
-void* operator new(size_t size) noexcept { return memory::kmalloc(size); }
-void* operator new[](size_t size) noexcept { return memory::kmalloc(size); }
-
-void operator delete(void* p) noexcept { memory::kfree(p); }
-void operator delete(void* p, size_t) noexcept { memory::kfree(p); }

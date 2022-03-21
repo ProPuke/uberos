@@ -1,6 +1,7 @@
 #include "exceptions.hpp"
 
 #include <common/types.hpp>
+
 #include <atomic>
 
 namespace exceptions {

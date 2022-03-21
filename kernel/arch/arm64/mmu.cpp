@@ -1,10 +1,11 @@
 #include "mmu.hpp"
 
+#include <common/format.hpp>
 #include <common/stdlib.hpp>
 
+#include <kernel/arch/arm64/systemRegisters.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/stdio.hpp>
-#include <kernel/arch/arm64/systemRegisters.hpp>
 
 namespace mmu {
 	namespace {
@@ -129,10 +130,10 @@ namespace mmu {
 				// table_nonSecure = true;
 
 				const auto bitmask = ::bitmask(bit_rightmost_position(get_level_bitmask(3)), 47);
-				assert(((U64)table&bitmask)==(U64)table, "table ", table, " does not align with bitmask ", (void*)bitmask);
+				assert(((U64)table&bitmask)==(U64)table, "table ", table, " does not align with bitmask ", format::Hex64{bitmask});
 				data = data&~bitmask | (U64)table&bitmask;
 
-				// stdio::print_debug("table ", this, " ", (void*)data);
+				// stdio::print_debug("table ", this, " ", format::Hex64{data});
 			}
 
 			void set_block(U8 level, void *address) {
@@ -141,10 +142,10 @@ namespace mmu {
 				accessFlag = true;
 
 				const auto bitmask = ::bitmask(bit_rightmost_position(get_level_bitmask(level)), 47);
-				assert(((U64)address&bitmask)==(U64)address, "block ", address, " does not align with bitmask ", (void*)bitmask);
+				assert(((U64)address&bitmask)==(U64)address, "block ", address, " does not align with bitmask ", format::Hex64{bitmask});
 				data = data&~bitmask | (U64)address&bitmask;
 
-				// stdio::print_debug("block ", this, " ", (void*)data);
+				// stdio::print_debug("block ", this, " ", format::Hex64{data});
 			}
 
 			constexpr auto get_table_address() const {
@@ -226,45 +227,46 @@ namespace mmu {
 
 		init_kernelMap();
 
-		// {
-		// 	// void *address = (void*)0x82373584;
-		// 	void *address = (void*)0x85a00;
+		{
+			// void *address = (void*)0x82373584;
+			// void *address = (void*)0x85a00;
+			void *address = (void*)0x3686C8;
 
-		// 	U64 level0 = ((U64)address&get_level_bitmask(0))>>bit_rightmost_position(get_level_bitmask(0));
-		// 	U64 level1 = ((U64)address&get_level_bitmask(1))>>bit_rightmost_position(get_level_bitmask(1));
-		// 	U64 level2 = ((U64)address&get_level_bitmask(2))>>bit_rightmost_position(get_level_bitmask(2));
-		// 	U64 level3 = ((U64)address&get_level_bitmask(3))>>bit_rightmost_position(get_level_bitmask(3));
-		// 	U64 offset = bits((U64)address,0,bit_rightmost_position(get_level_bitmask(3))-1);
+			U64 level0 = ((U64)address&get_level_bitmask(0))>>bit_rightmost_position(get_level_bitmask(0));
+			U64 level1 = ((U64)address&get_level_bitmask(1))>>bit_rightmost_position(get_level_bitmask(1));
+			U64 level2 = ((U64)address&get_level_bitmask(2))>>bit_rightmost_position(get_level_bitmask(2));
+			U64 level3 = ((U64)address&get_level_bitmask(3))>>bit_rightmost_position(get_level_bitmask(3));
+			U64 offset = bits((U64)address,0,bit_rightmost_position(get_level_bitmask(3))-1);
 
-		// 	stdio::print_debug("address = ", (U64)address);
+			stdio::print_debug("address = ", address);
 
-		// 	stdio::print_debug("level0 = ", level0);
-		// 	stdio::print_debug("level1 = ", level1);
-		// 	stdio::print_debug("level2 = ", level2);
-		// 	stdio::print_debug("level3 = ", level3);
-		// 	stdio::print_debug("offset = ", offset);
+			stdio::print_debug("level0 = ", level0);
+			stdio::print_debug("level1 = ", level1);
+			stdio::print_debug("level2 = ", level2);
+			stdio::print_debug("level3 = ", level3);
+			stdio::print_debug("offset = ", offset);
 
-		// 	const auto &entry2 = kernelMapping.initialTable[level2];
-		// 	stdio::print_debug("table2 = ", (void*)(U64)entry2.data);
+			const auto &entry2 = kernelMapping.initialTable[level2];
+			stdio::print_debug("table2 = ", format::Hex64{entry2.data});
 
-		// 	if(entry2.isTable){
-		// 		const auto &entry3 = entry2.get_table_address()[level3];
-		// 		stdio::print_debug("table3 = ", (void*)(U64)entry3.data);
+			if(entry2.isTable){
+				const auto &entry3 = entry2.get_table_address()[level3];
+				stdio::print_debug("table3 = ", format::Hex64{entry3.data});
 
-		// 		auto page = entry3.get_block_address(3);
-		// 		stdio::print_debug("page   = ", (U64)page);
-		// 		stdio::print_debug("destination = ", (U64)page+offset);
-		// 		stdio::print_debug("address     = ", (U64)address);
+				auto page = entry3.get_block_address(3);
+				stdio::print_debug("page   = ", (U64)page);
+				stdio::print_debug("destination = ", (void*)((U64)page+offset));
+				stdio::print_debug("address     = ", address);
 
-		// 	}else{
-		// 		auto page = entry2.get_block_address(2);
-		// 		stdio::print_debug("page   = ", (U64)page);
-		// 		stdio::print_debug("destination = ", (U64)page+((U64)address&get_level_bitmask(3))|offset);
-		// 		stdio::print_debug("address     = ", (U64)address);
-		// 	}
+			}else{
+				auto page = entry2.get_block_address(2);
+				stdio::print_debug("page   = ", (U64)page);
+				stdio::print_debug("destination = ", (void*)((U64)page+((U64)address&get_level_bitmask(3))|offset));
+				stdio::print_debug("address     = ", address);
+			}
 
-		// 	// while(true);
-		// }
+			// while(true);
+		}
 
 		set_kernelspace_mapping(kernelMapping);
 		set_userspace_mapping(kernelMapping);
@@ -449,29 +451,29 @@ namespace mmu {
 	/**/ MemoryMapping::~MemoryMapping(){
 		if(initialTable){
 			clear();
-			memory::kfree(initialTable);
+			memory::Transaction().kfree(initialTable);
 		}
 	}
 
 	void MemoryMapping::init() {
-		initialTable = (TableDescriptor*)memory::_allocate_page()->physicalAddress;
+		initialTable = (TableDescriptor*)memory::Transaction().allocate_page()->physicalAddress;
 		bzero(initialTable, memory::pageSize);
 	}
 
 	namespace {
-		inline void _clear(Stage1TableDescriptor *table, U8 level){
+		inline void _clear(Stage1TableDescriptor *table, U8 level, memory::Transaction &transaction){
 			for(unsigned i=0;i<levelSize[level];i++){
 				auto &entry = table[i];
 				if(!entry.isValid) break;
 
 				if(entry.isTable){
 					auto subTable = entry.get_table_address();
-					_clear(subTable, level+1);
-					memory::_free_page(*memory::get_memory_page(subTable));
+					_clear(subTable, level+1, transaction);
+					transaction.free_page(*transaction.get_memory_page(subTable));
 
 				}else{
 					auto address = entry.get_block_address(level);
-					memory::_free_page(*memory::get_memory_page(address));
+					transaction.free_page(*transaction.get_memory_page(address));
 				}
 
 				entry.set_unused();
@@ -485,14 +487,14 @@ namespace mmu {
 		// we can look at defragmenting the physical addresses later, so that tables can be swapped out for larger chunks
 		// if this becomes a problem
 
-		void* _insert2(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType);
+		void* _insert2(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction);
 
-		inline void* _insert(Stage1TableDescriptor *table, unsigned level, void *address, unsigned &pages, RegionType regionType){
+		inline void* _insert(Stage1TableDescriptor *table, unsigned level, void *address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
 			auto addressToInsert = address;
-			return _insert2(table, level, addressToInsert, pages, regionType);
+			return _insert2(table, level, addressToInsert, pages, regionType, transaction);
 		}
 
-		inline void* _insert2(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType){
+		inline void* _insert2(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
 			// stdio::Section section("insert ", pages, ' ', regionType_to_string(regionType), " pages into level ", level, "...");
 
 			void *baseVirtualAddress = nullptr;
@@ -548,7 +550,7 @@ namespace mmu {
 								entry.block_executeNever = false;
 							break;
 						}
-						// stdio::print_debug("block ", &entry, " ", (void*)entry.data);
+						// stdio::print_debug("block ", &entry, " ", format::Hex64{entry.data});
 						// stdio::print_debug("allocating block of ", entrySize, "...");
 						pages -= entrySize;
 						address = (void*)((U64)address+entrySize*memory::pageSize);
@@ -561,7 +563,7 @@ namespace mmu {
 						// stdio::print_debug("allocating a subtable...");
 
 						//allocate a subtable
-						auto subtable = (Stage1TableDescriptor*)memory::_allocate_page()->physicalAddress;
+						auto subtable = (Stage1TableDescriptor*)transaction.allocate_page()->physicalAddress;
 						bzero(subtable, sizeof(Stage1TableDescriptor)*levelSize[level+1]);
 						entry.set_table(subtable);
 					}
@@ -586,7 +588,7 @@ namespace mmu {
 					// stdio::print_debug("inserting into existing table...");
 				}
 
-				auto virtualAddress = _insert2(entry.get_table_address(), level+1, address, pages, regionType);
+				auto virtualAddress = _insert2(entry.get_table_address(), level+1, address, pages, regionType, transaction);
 				if(firstAddress){
 					firstAddress = false;
 					baseVirtualAddress = (void*)(i*bit_rightmost(get_level_bitmask(level))|(U64)virtualAddress);
@@ -604,7 +606,8 @@ namespace mmu {
 	void MemoryMapping::clear() {
 		const auto initialTable = this->initialTable;
 
-		_clear(initialTable, startLevel);
+		memory::Transaction memoryTransaction;
+		_clear(initialTable, startLevel, memoryTransaction);
 
 		pageCount = 0;
 	}
@@ -612,7 +615,9 @@ namespace mmu {
 	void* MemoryMapping::add_pages(U32 count, RegionType regionType) {
 		if(count<1) return nullptr;
 
-		const auto pages = memory::_allocate_pages(count);
+		memory::Transaction memoryTransaction;
+
+		const auto pages = memoryTransaction.allocate_pages(count);
 		if(!pages) return nullptr;
 
 		const auto initialTable = this->initialTable;
@@ -634,7 +639,7 @@ namespace mmu {
 			// should probably lock granularity to match pagesize to make all this simpler
 
 			auto pagesToInsert = consecutivePages;
-			auto virtualAddress = _insert(initialTable, startLevel, pages[i].physicalAddress, pagesToInsert, regionType);
+			auto virtualAddress = _insert(initialTable, startLevel, pages[i].physicalAddress, pagesToInsert, regionType, memoryTransaction);
 
 			if(pagesToInsert>0){
 				//OH NO! Couldn't fit it all into the tables
@@ -655,9 +660,10 @@ namespace mmu {
 	void* MemoryMapping::add_mapping(void *address, U32 pages, RegionType regionType) {
 		if(pages<1) return nullptr;
 
+		memory::Transaction memoryTransaction;
 		const auto initialTable = this->initialTable;
 
-		return _insert(initialTable, startLevel, address, pages, regionType);
+		return _insert(initialTable, startLevel, address, pages, regionType, memoryTransaction);
 	}
 
 	void* MemoryMapping::add_mapping(void *addressStart, void *addressEnd, RegionType regionType) {

@@ -1,20 +1,25 @@
-#include "framebuffer.hpp"
-#include "memory.hpp"
-#include "memory/PagedPool.hpp"
-#include "scheduler.hpp"
-#include "Spinlock.hpp"
-#include "stdio.hpp"
-#include "info.hpp"
-#include "timer.hpp"
-#include "graphics2d.hpp"
-#include "graphics2d/font.hpp"
-#include "arch/raspi/timer.hpp"
-#include "Process.hpp"
-#include "Thread.hpp"
-#include "scheduler.hpp"
-#include "exceptions.hpp"
 #include <common/stdlib.hpp>
+
+#include <kernel/arch/raspi/kernel.hpp>
+#include <kernel/arch/raspi/timer.hpp>
+#include <kernel/cpu.hpp>
 #include <common/debugUtils.hpp>
+#include <kernel/deviceManager.hpp>
+#include <kernel/exceptions.hpp>
+#include <kernel/framebuffer.hpp>
+#include <kernel/graphics2d.hpp>
+#include <kernel/graphics2d/font.hpp>
+#include <kernel/info.hpp>
+#include <kernel/memory.hpp>
+#include <kernel/memory/PagedPool.hpp>
+#include <kernel/Process.hpp>
+#include <kernel/scheduler.hpp>
+#include <kernel/scheduler.hpp>
+#include <kernel/Spinlock.hpp>
+#include <kernel/stdio.hpp>
+#include <kernel/Thread.hpp>
+#include <kernel/timer.hpp>
+
 
 namespace memory {
 	extern LList<::memory::Page> freePages;
@@ -30,8 +35,6 @@ namespace arm {
 	}
 }
 
-#include <kernel/arch/raspi/kernel.hpp>
-
 namespace libc {
 	void init();
 }
@@ -44,6 +47,10 @@ namespace scheduler {
 	void init();
 }
 
+namespace deviceManager {
+	void print_summary();
+}
+
 U64 vramWrites = 0;
 U64 ramWrites = 0;
 
@@ -52,6 +59,8 @@ namespace kernel {
 		if(preinit) preinit();
 
 		libc::init();
+
+		cpu::init();
 
 		{ stdio::Section section("kernel init");
 			exceptions::init();
@@ -69,16 +78,22 @@ namespace kernel {
 
 				stdio::print_info("cpu arch: ", info::cpu_arch);
 				stdio::print_info("device type: ", info::device_type);
-				stdio::print_info("device version: ", info::device_version);
+				stdio::print_info("device model: ", info::device_model);
+				stdio::print_info("device revision: ", info::device_revision);
 				stdio::print_info("memory: ", memory::totalMemory/1024/1024, "MB");
 
 				{ stdio::Section section("displays:");
 
-					for(auto i=0u;i<framebuffer::framebuffer_count;i++){
-						auto &framebuffer = framebuffer::framebuffers[i];
+					for(auto i=0u;i<framebuffer::get_framebuffer_count();i++){
+						auto &framebuffer = *framebuffer::get_framebuffer(i);
 
 						stdio::print_info(framebuffer.width, 'x', framebuffer.height, ", ", framebuffer.format);
 					}
+				}
+
+				{ stdio::Section section("devices:");
+
+					deviceManager::print_summary();
 				}
 			}
 
@@ -179,7 +194,13 @@ namespace kernel {
 			for(int i=0;i<4;i++){
 				process.create_thread([]() {
 					auto &log = thread::currentThread.load()->process.log;
-					auto &framebuffer = framebuffer::framebuffers[0];
+					auto possibleFramebuffer = framebuffer::get_framebuffer(0);
+					if(!possibleFramebuffer){
+						log.print_error("No valid framebuffer");
+						return;
+					}
+
+					auto &framebuffer = *possibleFramebuffer;
 
 					log.print_debug("entered thread!");
 
@@ -187,6 +208,8 @@ namespace kernel {
 					auto height = 480u/(rand()%3+1);
 					auto scale = rand()%3+1;
 					auto life = 300;
+
+					log.print_debug("got view ", width, "x", height, " @ ", scale);
 
 					width /= scale;
 					height /= scale;
@@ -200,6 +223,8 @@ namespace kernel {
 						log.print_error("Error: didn't get a view");
 						return;
 					}
+
+					log.print_debug("got view");
 
 					int dirX = rand()%2?+1:-1;
 					int dirY = rand()%2?+1:-1;
@@ -268,7 +293,8 @@ namespace kernel {
 			for(auto i=0;i<5;i++)process.create_thread([]() {
 				float scale = 0.25+(rand()%256)/128.0;
 
-				auto &log = thread::currentThread.load()->process.log;
+				auto &thread = *::thread::currentThread.load();
+				auto &log = thread.process.log;
 
 				I32 width = 985*scale;
 				I32 height = 128*scale;
@@ -292,7 +318,13 @@ namespace kernel {
 				buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 128*scale, 0xdddddd);
 				log.print_debug("blitted in ", timer::now()-startTime);
 
-				auto &framebuffer = framebuffer::framebuffers[0];
+				auto possibleFramebuffer = framebuffer::get_framebuffer(0);
+				if(!possibleFramebuffer){
+					log.print_error("No valid framebuffer");
+					return;
+				}
+
+				auto &framebuffer = *possibleFramebuffer;
 
 				graphics2d::update_view(*view);
 
@@ -300,6 +332,8 @@ namespace kernel {
 				// float scaleDelta = 0.1;
 
 				while(true){
+					// const auto startTime = timer::now();
+
 					x -= speed*4;
 
 					if(x+width<1){
@@ -310,6 +344,8 @@ namespace kernel {
 
 					graphics2d::move_view_to(*view, x, y);
 					scheduler::yield();
+					// thread.sleep(1000000/60-(timer::now()-startTime));
+
 					// buffer.draw_rect(0, 0, width, height, 0x111111);
 					// buffer.draw_msdf(10-(scale-1)*graphics2d::font::openSans.atlas.width/2, 10-(scale-1)*graphics2d::font::openSans.atlas.height/2, graphics2d::font::openSans.atlas.width*scale, graphics2d::font::openSans.atlas.height*scale, graphics2d::font::openSans.atlas, 0, 0, graphics2d::font::openSans.atlas.width, graphics2d::font::openSans.atlas.height, 0xffffff);
 					// graphics2d::update_view(*view);
@@ -337,18 +373,10 @@ namespace kernel {
 		// 	ramWrites = 0;
 		// }
 
-		scheduler::yield();
-
-		while(true);
-
-		while(true) {
-			// scheduler::yield();
-
-			// timer::udelay(1000000);
-			// log.print_info("  zzZZ...");
-
-			// stdio::print(stdio::getc());
-			// stdio::print('\n');
+		// finally put this thread to sleep, and keep it that way, should it ever be re-awakened
+		while(true){
+			thread::currentThread.load()->pause();
+			scheduler::yield();
 		}
 	}
 }

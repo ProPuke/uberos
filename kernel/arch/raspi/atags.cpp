@@ -1,9 +1,10 @@
 #include "atags.hpp"
 
-#include <common/types.hpp>
 #include <common/stdlib.hpp>
-#include <kernel/stdio.hpp>
+#include <common/types.hpp>
+
 #include <kernel/memory.hpp>
+#include <kernel/stdio.hpp>
 
 namespace arch {
 	namespace raspi {

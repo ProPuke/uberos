@@ -1,14 +1,17 @@
 #include "memory.hpp"
 
-#include <common/types.hpp>
-#include <common/LList.hpp>
 #include "atags.hpp"
-#include "memory.hpp"
 #include "hwquery.hpp"
-#include <common/stdlib.hpp>
-#include <kernel/stdio.hpp>
-#include <kernel/kernel.h>
+#include "memory.hpp"
+
+#include <common/LList.hpp>
 #include <common/MemoryPool.hpp>
+#include <common/stdlib.hpp>
+#include <common/types.hpp>
+
+#include <kernel/kernel.h>
+#include <kernel/stdio.hpp>
+
 #include <new>
 
 extern U8 __end;

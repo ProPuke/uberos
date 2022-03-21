@@ -1,22 +1,25 @@
 #include "scheduler.hpp"
 
+#include <common/format.hpp>
+
+#include <kernel/exceptions.hpp>
+#include <kernel/kernel.h>
+#include <kernel/memory.hpp>
+#include <kernel/mmu.hpp>
+#include <kernel/stdio.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/ThreadCpuState.hpp>
-#include <kernel/stdio.hpp>
-#include <kernel/memory.hpp>
-#include <kernel/exceptions.hpp>
-#include <kernel/mmu.hpp>
-#include <kernel/kernel.h>
-#include <atomic>
 
 #if defined(ARCH_RASPI)
-	#include "../raspi/timer.hpp"
+	#include <kernel/arch/raspi/timer.hpp>
 #else
 	#error "Unsupported architecture"
 #endif
 
+#include <atomic>
+
 namespace timer {
-	using namespace timer::arch::raspi;
+	using namespace arch::raspi;
 }
 
 namespace thread {
@@ -68,16 +71,15 @@ namespace scheduler {
 				// 	stdio::print_debug("tested test spinlock");
 				// }
 				timer::set_timer(timer::Timer::cpu_scheduler, 1);
-				timer::set_timer(timer::Timer::cpu_scheduler, 1);
-				//8436924000
-				//8440321000
 
 				// stdio::print_info("test kmalloc");
 				// memory::kmalloc(123);
 
 				stdio::print_info("allocating main process...");
 				auto mainProcess = new Process("kernel");
-				auto mainThread = mainProcess->create_current_thread(memory::get_memory_page(&__end), KERNEL_STACK_SIZE);
+				memory::Page *kernelStack = memory::Transaction().get_memory_page(&__end);
+				auto mainThread = mainProcess->create_current_thread(kernelStack, KERNEL_STACK_SIZE);
+				stdio::print_info("allocating main process...");
 
 				// thread::activeThreads.push_back(*mainThread);
 				::thread::currentThread = mainThread;
@@ -118,6 +120,8 @@ namespace scheduler {
 	}
 
 	void yield() {
+		// stdio::print_debug("yield");
+		
 		if(lock_depth>0){
 			deferredYields++;
 			return;
@@ -197,15 +201,15 @@ namespace scheduler {
 			#endif
 
 			// if(oldThread){
-			// 	stdio::print_debug("jump from ", (void*)oldThread, " pc = ", (void*)oldThread->storedState->pc, " lr = ", (void*)oldThread->storedState->lr);
+			// 	stdio::print_debug("jump from ", oldThread, " pc = ", format::Hex64{oldThread->storedState->pc}, " lr = ", format::Hex64{oldThread->storedState->lr});
 			// }
-			// stdio::print_debug("jump to   ", (void*)&newThread, " pc = ", (void*)newThread.storedState->pc, " lr = ", (void*)newThread.storedState->lr);
+			// stdio::print_debug("jump to   ", &newThread, " pc = ", format::Hex64{newThread.storedState->pc}, " lr = ", format::Hex64{newThread.storedState->lr});
 
 			Thread::swap_state(*oldThread, newThread);
 
+			exceptions::unlock();
 			// stdio::print_debug("swapped");
 
-			exceptions::unlock();
 		}
 	}
 

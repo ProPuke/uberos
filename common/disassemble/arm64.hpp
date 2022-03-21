@@ -1573,7 +1573,7 @@ namespace disassemble {
 
 		Instruction read(U32 data, U64 pc);
 
-		const char *to_string(U32 data, U64 pc);
-		const char *to_string(Instruction instruction);
+		auto to_string(U32 data, U64 pc) -> const char*;
+		auto to_string(Instruction instruction) -> const char*;
 	}
 }

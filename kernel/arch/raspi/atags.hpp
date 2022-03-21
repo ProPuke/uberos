@@ -58,6 +58,6 @@ namespace arch {
 
 #include <common/stdlib.hpp>
 
-inline const char* to_string(arch::raspi::atags::Tag tag){
+inline auto to_string(arch::raspi::atags::Tag tag) -> const char* {
 	return (U32)tag<=arch::raspi::atags::tag_max?arch::raspi::atags::tag_name[(U32)tag]:to_string((U32)tag);
 }

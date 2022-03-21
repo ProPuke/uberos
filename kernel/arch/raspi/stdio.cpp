@@ -1,6 +1,7 @@
 #include "stdio.hpp"
 
 #include "serial.hpp"
+
 #include <common/stdlib.hpp>
 
 namespace serial {

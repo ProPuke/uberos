@@ -1,6 +1,9 @@
 #include "usb.hpp"
 
 #include "mmio.hpp"
+
+#include <common/format.hpp>
+
 #include <kernel/stdio.hpp>
 
 namespace mmio {
@@ -23,10 +26,10 @@ namespace usb {
 						stdio::print_info("Synopsys vendor detected");
 					break;
 					default:
-						stdio::print_info("Error: Unrecognised vendor id (", ::to_string_hex(vendorId), ')');
+						stdio::print_info("Error: Unrecognised vendor id (", format::Hex32{vendorId}, ')');
 				}
 
-				stdio::print_info("User Id: ", ::to_string_hex(userId));
+				stdio::print_info("User Id: ", format::Hex32{userId});
 			}
 		}
 	}

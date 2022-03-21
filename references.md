@@ -14,6 +14,9 @@
 
 	https://github.com/LdB-ECM/Raspberry-Pi
 
+	https://github.com/valvers/arm-tutorial-rpi
+	https://www.valvers.com/open-software/raspberry-pi/bare-metal-programming-in-c-part-1/
+
 # kernel references:
 	https://github.com/xinu-os/xinu/tree/master/system/arch/arm
 

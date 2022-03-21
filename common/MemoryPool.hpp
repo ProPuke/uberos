@@ -1,9 +1,9 @@
 #pragma once
 
-#include "types.hpp"
+#include "debugUtils.hpp"
 #include "LList.hpp"
 #include "stdlib.hpp"
-#include <common/debugUtils.hpp>
+#include "types.hpp"
 
 #include <new>
 

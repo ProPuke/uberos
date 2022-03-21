@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 
 typedef uint8_t  U8;
@@ -18,8 +20,10 @@ typedef char16_t C16;
 typedef char32_t C32;
 
 #if defined(ARCH_ARM32)
+	#define _32BIT
 	typedef U32 Reg;
 #elif defined(ARCH_ARM64)
+	#define _64BIT
 	typedef U64 Reg;
 #else
 	#error Unsupported architecture

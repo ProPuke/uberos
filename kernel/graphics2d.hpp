@@ -30,10 +30,10 @@ namespace graphics2d {
 		void set_rgb8(U32 x, U32 y, U32 colour);
 		void set_rgba8(U32 x, U32 y, U32 colour);
 
-		U32 get(U32 x, U32 y);
-		U32 get_rgb565(U32 x, U32 y);
-		U32 get_rgb8(U32 x, U32 y);
-		U32 get_rgba8(U32 x, U32 y);
+		auto get(U32 x, U32 y) -> U32;
+		auto get_rgb565(U32 x, U32 y) -> U32;
+		auto get_rgb8(U32 x, U32 y) -> U32;
+		auto get_rgba8(U32 x, U32 y) -> U32;
 
 		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour);
 		void draw_msdf(I32 x, I32 y, U32 width, U32 height, Buffer &source, U32 source_x, U32 source_y, U32 source_width, U32 source_height, U32 colour);
@@ -42,8 +42,8 @@ namespace graphics2d {
 		void scroll(I32 x, I32 y);
 	};
 
-	U32 blend_rgb(U32 from, U32 to, float phase);
-	U32 blend_rgb(U32 from, U32 to, U8 phase);
+	auto blend_rgb(U32 from, U32 to, float phase) -> U32;
+	auto blend_rgb(U32 from, U32 to, U8 phase) -> U32;
 
 	enum struct ViewMode {
 		solid,
@@ -95,7 +95,7 @@ namespace graphics2d {
 
 	void set_background_colour(U32 colour);
 
-	View* create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1);
+	auto create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
 	void move_view_to(View &view, I32 x, I32 y);
 	void update_background();
 	void update_background_area(Rect rect);
@@ -103,13 +103,13 @@ namespace graphics2d {
 	void update_view(View &view);
 	void update_view_area(View &view, Rect rect);
 
-	Buffer get_screen_buffer(U32 framebuffer, Rect rect);
+	auto get_screen_buffer(U32 framebuffer, Rect rect) -> Buffer;
 
 	// non-threadsafe internals
 
 	void _set_background_colour(U32 colour);
 
-	View* _create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1);
+	auto _create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
 	void _move_view_to(View &view, I32 x, I32 y);
 	void _update_background();
 	void _update_background_area(Rect rect);
@@ -117,7 +117,7 @@ namespace graphics2d {
 	void _update_view(View &view);
 	void _update_view_area(View &view, Rect rect);
 
-	Buffer _get_screen_buffer(U32 framebuffer, Rect rect);
+	auto _get_screen_buffer(U32 framebuffer, Rect rect) -> Buffer;
 }
 
 #include "graphics2d.inl"

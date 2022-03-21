@@ -49,7 +49,7 @@ Thread* Process::create_current_thread(memory::Page *stackPage, size_t stackSize
 Thread* Process::create_thread(void(*entrypoint)()) {
 	scheduler::Guard guard;
 
-	auto stackPage = memory::allocate_page();
+	auto stackPage = memory::Transaction().allocate_page();
 	const auto stackSize = memory::pageSize;
 
 	auto thread = new Thread(*this);

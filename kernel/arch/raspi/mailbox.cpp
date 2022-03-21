@@ -28,19 +28,55 @@ namespace arch {
 						return 8;
 
 					case PropertyTag::set_clock_rate:
-						return 12;
+						return sizeof(PropertyMessage::Data::clock_rate);
 
 					case PropertyTag::allocate_buffer: 
 					case PropertyTag::get_physical_dimensions:
+					case PropertyTag::test_physical_dimensions:
 					case PropertyTag::set_physical_dimensions:
 					case PropertyTag::get_virtual_dimensions:
+					case PropertyTag::test_virtual_dimensions:
 					case PropertyTag::set_virtual_dimensions:
 						return 8;
+
 					case PropertyTag::get_bits_per_pixel:
+					case PropertyTag::test_bits_per_pixel:
 					case PropertyTag::set_bits_per_pixel:
-					case PropertyTag::get_bytes_per_row:
+					case PropertyTag::get_pixel_order:
+					case PropertyTag::test_pixel_order:
 					case PropertyTag::set_pixel_order:
+					case PropertyTag::get_alpha_mode:
+					case PropertyTag::test_alpha_mode:
+					case PropertyTag::set_alpha_mode:
+					case PropertyTag::get_bytes_per_row:
 						return 4;
+
+					case PropertyTag::get_virtual_offset:
+					case PropertyTag::test_virtual_offset:
+					case PropertyTag::set_virtual_offset:
+						return sizeof(PropertyMessage::Data::virtualOffset);
+
+					case PropertyTag::get_overscan_offset:
+					case PropertyTag::test_overscan_offset:
+					case PropertyTag::set_overscan_offset:
+						return sizeof(PropertyMessage::Data::screenOverscan);
+
+					// case PropertyTag::get_palette:
+					// 	return sizeof(PropertyMessage::Data::existingPalette);
+					// case PropertyTag::test_palette:
+					// case PropertyTag::set_palette:
+					// 	return sizeof(PropertyMessage::Data::newPalette); //FIXME: Technically 24..1032. We might need to handle this dynamically based on data
+
+					case PropertyTag::set_cursor_info:
+						return sizeof(PropertyMessage::Data::cursorInfo);
+					case PropertyTag::set_cursor_state:
+						return sizeof(PropertyMessage::Data::cursorState);
+
+					#ifdef ARCH_RASPI3
+						case PropertyTag::set_display_gamma:
+							return sizeof(PropertyMessage::Data::gamma);
+					#endif
+
 					case PropertyTag::release_buffer:
 					case PropertyTag::null_tag:
 						return 0;

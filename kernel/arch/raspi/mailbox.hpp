@@ -37,21 +37,55 @@ namespace arch {
 
 				allocate_buffer = 0x40001,
 				release_buffer  = 0x48001,
+
 				get_physical_dimensions = 0x40003,
+				test_physical_dimensions = 0x44003,
 				set_physical_dimensions = 0x48003,
+
 				get_virtual_dimensions = 0x40004,
+				test_virtual_dimensions = 0x44004,
 				set_virtual_dimensions = 0x48004,
+
 				get_bits_per_pixel = 0x40005,
+				test_bits_per_pixel = 0x44005,
 				set_bits_per_pixel = 0x48005,
+
+				get_pixel_order = 0x40006,
+				test_pixel_order = 0x44006,
 				set_pixel_order = 0x48006,
-				get_bytes_per_row = 0x40008
+
+				get_alpha_mode = 0x40007,
+				test_alpha_mode = 0x44007,
+				set_alpha_mode = 0x48007,
+
+				get_bytes_per_row = 0x40008,
+
+				get_virtual_offset = 0x40009,
+				test_virtual_offset = 0x44009,
+				set_virtual_offset = 0x48009,
+
+				get_overscan_offset = 0x4000a,
+				test_overscan_offset = 0x4400a,
+				set_overscan_offset = 0x4800a,
+
+				// disabled as a bit too large in the union, for now (will need to pack differently)
+				// get_palette = 0x4000b,
+				// test_palette = 0x4400b,
+				// set_palette = 0x4800b,
+
+				set_cursor_info = 0x8010,
+				set_cursor_state = 0x8011,
+
+				#ifdef ARCH_RASPI3 //NOT 1-2 OR 4
+					set_display_gamma = 0x8012,
+				#endif
 			};
 
 			// struct __attribute__((packed)) PropertyMessage {
 			struct PropertyMessage {
 				PropertyTag tag;
 
-				union {
+				union Data {
 					U32 boardRevision;
 
 					struct {
@@ -76,8 +110,62 @@ namespace arch {
 						U32 height;
 					} screenSize;
 
+					enum struct PixelOrder:U32 {
+						bgr,
+						rgb
+					} pixelOrder;
+
+					enum struct AlphaMode:U32 {
+						enabled  = 0x0, // opacity is 1..0
+						reversed = 0x1, // opacity is 0..1
+						ignore   = 0x2
+					} alphaMode;
+
+					struct {
+						U32 x;
+						U32 y;
+					} virtualOffset;
+
+					struct {
+						U32 top;
+						U32 bottom;
+						U32 left;
+						U32 right;
+					} screenOverscan;
+
+					// U32 existingPalette[256];
+
+					// struct {
+					// 	U32 offset; //0..255
+					// 	U32 length; //1..255
+					// 	U32 palette[256];
+					// } newPalette;
+
 					U32 bitsPerPixel;
 					U32 bytesPerRow;
+
+					struct {
+						U32 width;
+						U32 height;
+						U32 _unused1;
+						U32 pixelData; //pointer
+						U32 hotspotX;
+						U32 hotspotY;
+					} cursorInfo;
+
+					struct {
+						U32 enable; //0..1
+						U32 x;
+						U32 y;
+						U32 flags;
+					} cursorState;
+
+					#ifdef ARCH_RASPI3
+						struct {
+							U32 display;
+							U32 data; //address of 768 byte gamma table: 256 bytes red, 256 bytes green, 256 blue
+						} gamma;
+					#endif
 				} data;
 			};
 

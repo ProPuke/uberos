@@ -4,14 +4,14 @@
 #include <common/types.hpp>
 
 namespace framebuffer {
-	static const unsigned max_framebuffers = 8;
+	struct Mode {
+		U32 width;
+		U32 height;
+		FramebufferFormat format;
+	};
 
-	extern Framebuffer framebuffers[max_framebuffers];
-	extern unsigned framebuffer_count;
+	void init();
 
-	extern U32 default_resolution[2];
-
-	bool set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion = true);
-
-	bool detect_default_resolution();
+	auto get_framebuffer_count() -> U32;
+	auto get_framebuffer(U32 index) -> Framebuffer*;
 }

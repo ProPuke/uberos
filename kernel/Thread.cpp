@@ -42,7 +42,7 @@ namespace thread {
 				stdio::print_error("Error: Terminating thread not found in any lists");
 			}
 
-			memory::free_page(*thread.stackPage);
+			memory::Transaction().free_page(*thread.stackPage);
 		}
 		
 		scheduler::yield();

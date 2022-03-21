@@ -1,11 +1,12 @@
 #include "graphics2d.hpp"
 
-#include <kernel/graphics2d/Font.hpp>
+#include <common/stdlib.hpp>
+
 #include <kernel/framebuffer.hpp>
+#include <kernel/graphics2d/Font.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
-#include <common/stdlib.hpp>
 
 #ifdef ARCH_RASPI
 	#include <kernel/arch/raspi/mmio.hpp>
@@ -24,8 +25,9 @@ namespace graphics2d {
 	Spinlock spinlock("graphics2d");
 
 	void init() {
+		Spinlock_Guard guard(spinlock);
+
 		_update_background();
-		stdio::print_info("cleared bg");
 	}
 
 	void _set_background_colour(U32 colour) {
@@ -41,14 +43,14 @@ namespace graphics2d {
 			stdio::Section section("create_view ", x, ", ", y, " ", width, "x", height);
 		#endif
 
-		auto &framebuffer = framebuffer::framebuffers[0];
+		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
 		auto bpp = framebufferFormat::size[(U8)framebuffer.format];
 
 		#ifdef DEBUG_MEMORY
 			stdio::print("new U8 ", width, "x", height, "@", bpp, "\n");
 		#endif
 
-		auto buffer = new U8[width*height*bpp];
+		auto buffer = new U8[width*height*bpp]; //TODO:allocate from pages and map to current thread
 
 		#ifdef DEBUG_MEMORY
 			stdio::print("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
@@ -95,7 +97,7 @@ namespace graphics2d {
 	}
 
 	void _update_background() {
-		auto &framebuffer = framebuffer::framebuffers[0];
+		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME:handle 0 framebuffers
 
 		_update_background_area({0, 0, (I32)framebuffer.width, (I32)framebuffer.height});
 	}
@@ -105,8 +107,8 @@ namespace graphics2d {
 
 		// stdio::print_info("update background area");
 
-		for(auto i=0u; i<framebuffer::framebuffer_count; i++){
-			auto &framebuffer = framebuffer::framebuffers[i];
+		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
+			auto &framebuffer = *framebuffer::get_framebuffer(i);
 			// auto bpp = framebufferFormat::size[(U8)framebuffer.format];
 
 			rect.x1 = max<I32>(rect.x1, 0);
@@ -199,8 +201,8 @@ namespace graphics2d {
 	void _update_view_area(View &view, Rect rect) {
 		//TODO: do not occlude against transparent views, and after loop, continue forward through each transparent view, updating them over the same local rect
 		
-		for(auto i=0u; i<framebuffer::framebuffer_count; i++){
-			auto &framebuffer = framebuffer::framebuffers[i];
+		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
+			auto &framebuffer = *framebuffer::get_framebuffer(i);
 			auto bpp = framebufferFormat::size[(U8)framebuffer.format];
 
 			rect.x1 = max<I32>(rect.x1, max<I32>(0, -view.x));
@@ -278,7 +280,8 @@ namespace graphics2d {
 	}
 
 	Buffer _get_screen_buffer(U32 framebuffer_id, Rect rect) {
-		const auto &framebuffer = ::framebuffer::framebuffers[framebuffer_id];
+		auto possibleFramebuffer = framebuffer::get_framebuffer(framebuffer_id);
+		const auto &framebuffer = *possibleFramebuffer; //FIXME: handle invalid framebuffer
 		const auto bpp = framebufferFormat::size[(U8)framebuffer.format];
 		return Buffer(framebuffer.address, framebuffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.format);
 	}

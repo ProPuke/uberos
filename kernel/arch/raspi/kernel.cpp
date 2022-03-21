@@ -6,19 +6,19 @@
 #include "framebuffer.hpp"
 #include "hwquery.hpp"
 
+#include <common/stdlib.hpp>
+#include <common/types.hpp>
+
 #if defined(ARCH_ARM32)
 	#include <kernel/arch/arm32/exceptions.hpp>
 #elif defined(ARCH_ARM64)
 	#include <kernel/arch/arm64/exceptions.hpp>
 #endif
 
-#include <kernel/Spinlock.hpp>
-
-#include <kernel/mmu.hpp>
-#include <kernel/stdio.hpp>
-#include <common/stdlib.hpp>
-#include <common/types.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/mmu.hpp>
+#include <kernel/Spinlock.hpp>
+#include <kernel/stdio.hpp>
 
 extern U8 __end;
 
@@ -93,6 +93,7 @@ namespace kernel {
 							mmu::init();
 						#endif
 
+						framebuffer::arch::raspi::init();
 						framebuffer::init();
 						usb::init();
 						timer::init();

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "LList.hpp"
+
+#include <kernel/stdio.hpp>
+
 template <typename Type>
 void debug_llist(LList<Type> &list, const char *label = "list") {
 	stdio::Section section(label, ':');

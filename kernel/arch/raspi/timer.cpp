@@ -1,9 +1,11 @@
 #include "timer.hpp"
 
 #include "mmio.hpp"
-#include <kernel/arch/arm/scheduler.hpp>
 #include "irq.hpp"
+
 #include <common/types.hpp>
+
+#include <kernel/arch/arm/scheduler.hpp>
 #include <kernel/stdio.hpp>
 
 #if defined(ARCH_ARM32)
@@ -72,6 +74,8 @@ namespace timer {
 			}
 
 			void set_timer(Timer timer, U32 usecs) {
+				// stdio::print_debug("set timer ", (unsigned)timer);
+
 				{
 					mmio::PeripheralAccessGuard guard1;
 

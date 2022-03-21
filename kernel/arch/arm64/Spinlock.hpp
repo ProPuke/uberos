@@ -4,6 +4,8 @@
 
 namespace arch {
 	namespace arm64 {
+		//TODO:allow nested use on the same processor core
+
 		struct Spinlock {
 			/**/ Spinlock(const char *name):
 				name(name)
@@ -13,7 +15,7 @@ namespace arch {
 			/**/ Spinlock(const Spinlock&) = delete;
 			Spinlock& operator=(const Spinlock&) = delete;
 
-			void lock(const char *context) {
+			void lock(const char *context = "") {
 				scheduler::lock();
 				exceptions::lock();
 				// while (__atomic_test_and_set(&_lock, __ATOMIC_ACQUIRE));

@@ -2,6 +2,7 @@
 
 #include "mailbox.hpp"
 
+#include <kernel/info.hpp>
 #include <kernel/stdio.hpp>
 #include <kernel/memory.hpp>
 
@@ -141,6 +142,14 @@ namespace hwquery {
 					stdio::print_info("ram: ", totalMemory/1024/1024, "MB");
 					stdio::print_info("vram: ", videoMemory/1024/1024, "MB");
 					memory::totalMemory = totalMemory;
+
+					static char revision_buffer[256] = "";
+					strcat(revision_buffer, to_string(revisionMajor));
+					strcat(revision_buffer, ".");
+					strcat(revision_buffer, to_string(revisionMinor));
+
+					info::device_model = machineModel_name[(U32)machineModel];
+					info::device_revision = revision_buffer;
 				}
 			}
 		}
