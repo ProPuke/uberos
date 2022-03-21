@@ -16,7 +16,7 @@ inline void __attribute__((flatten)) Thread::swap_state(Thread &from, Thread &to
 		"stp x23, x24, [sp, #16* 2]\n"
 		"stp x25, x26, [sp, #16* 3]\n"
 		"stp x27, x28, [sp, #16* 4]\n"
-		"stp  fp,  x9, [sp, #16* 5]\n" // fp, lr
+		"stp  fp,  lr, [sp, #16* 5]\n"
 		"adr x8, 1f\n"
 		"str x8,       [sp, #16* 6]\n" // pc
 		// "stp q14, q15, [sp, #32* 6]\n"
