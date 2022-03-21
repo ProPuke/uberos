@@ -2,6 +2,48 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "Remote debug raspi 1",
+			"type": "shell",
+			"command": "make",
+			"group": "test",
+			"options": {
+				"cwd": "kernel",
+			},
+			"isBackground": true,
+			"args": [
+				"remote-debug",
+				"RASPI_MODEL=1"
+			]
+		},
+		{
+			"label": "Remote debug raspi 2",
+			"type": "shell",
+			"command": "make",
+			"group": "test",
+			"options": {
+				"cwd": "kernel",
+			},
+			"isBackground": true,
+			"args": [
+				"remote-debug",
+				"RASPI_MODEL=2"
+			]
+		},
+		{
+			"label": "Remote debug raspi 3",
+			"type": "shell",
+			"command": "make",
+			"group": "test",
+			"options": {
+				"cwd": "kernel",
+			},
+			"isBackground": true,
+			"args": [
+				"remote-debug",
+				"RASPI_MODEL=3"
+			]
+		},
+		{
 			"label": "Remote debug raspi 4",
 			"type": "shell",
 			"command": "make",
