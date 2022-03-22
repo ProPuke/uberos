@@ -6,7 +6,7 @@
 #undef getc
 #undef putc
 #undef gets
-#undef _puts
+#undef puts
 
 #ifndef STDIO_COLOUR
 	#define STDIO_COLOUR 1
@@ -15,9 +15,18 @@
 namespace stdio {
 	extern U32 indent;
 
-	char getc();
-	void _putc(char c);
-	void _puts(const char *str);
+	typedef auto (*Putc)(unsigned char c) -> void;
+	typedef auto (*Getc)() -> unsigned char;
+	typedef auto (*Puts)(const char *str) -> void;
+	typedef void (*Gets)(char *buf, U32 length);
+
+	extern Putc putc;
+	extern Getc getc;
+	extern Puts puts;
+	extern Gets gets;
+
+	void bind(Putc putc, Getc getc, Puts puts = nullptr, Gets gets = nullptr);
+	// void bind(typeof putc, typeof getc, typeof puts = nullptr, typeof gets = nullptr);
 
 	enum struct PrintType {
 		info,
@@ -27,9 +36,9 @@ namespace stdio {
 	};
 
 	template<typename Type>
-	inline void _print(Type x){ return _puts(to_string(x)); }
-	inline void _print(char x){ return _putc(x); }
-	inline void _print(const char *x){ return _puts(x); }
+	inline void _print(Type x){ return puts(to_string(x)); }
+	inline void _print(char x){ return putc(x); }
+	inline void _print(const char *x){ return puts(x); }
 
 	template<typename ...Params>
 	void print_inline(Params ...params){
@@ -38,8 +47,8 @@ namespace stdio {
 
 	inline void print_start(PrintType type){
 		for(U32 i=0;i<indent;i++){
-			_putc(' ');
-			_putc(' ');
+			putc(' ');
+			putc(' ');
 		};
 		#if STDIO_COLOUR == 1
 			switch(type){
@@ -97,8 +106,6 @@ namespace stdio {
 		indent--;
 		print_info("OK\n");
 	}
-
-	void gets(char *buf, int buflen);
 
 	struct Section {
 		template<typename ...Params>

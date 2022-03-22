@@ -6,7 +6,7 @@
 
 namespace driver {
 	struct Graphics: Driver {
-		/**/ Graphics(U64 address, const char *name, const char *descriptiveType):
+		constexpr /**/ Graphics(U64 address, const char *name, const char *descriptiveType):
 			Driver(address, name, "graphics", descriptiveType)
 		{}
 

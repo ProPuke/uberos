@@ -7,7 +7,7 @@ namespace driver {
 		const char *processor_arch;
 		U32 processor_cores = 1;
 
-		/**/ Processor(const char *name, const char *processor_arch, const char *descriptiveType):
+		constexpr /**/ Processor(const char *name, const char *processor_arch, const char *descriptiveType):
 			Driver(0, name, "processor", descriptiveType),
 			processor_arch(processor_arch)
 		{}

@@ -12,7 +12,8 @@ struct Driver: LListItem<Driver> {
 		enabling,
 		disabling,
 		restarting,
-		max = restarting
+		failed,
+		max = failed
 	};
 	static const char * state_name[(U64)State::max+1];
 
@@ -23,7 +24,8 @@ struct Driver: LListItem<Driver> {
 	const char *descriptiveType;
 	State state = State::disabled;
 
-	/**/ Driver(U64 address, const char *name, const char *type, const char *descriptiveType):
+	//NOTE:constexpr helps ensure that drivers are (hopefully) valid from the start, and not invalid and then overwritten later by __init_array_start
+	constexpr /**/ Driver(U64 address, const char *name, const char *type, const char *descriptiveType):
 		address(address),
 		name(name),
 		type(type),
@@ -32,7 +34,7 @@ struct Driver: LListItem<Driver> {
 
 	virtual /**/~Driver();
 
-	virtual auto get_driver_state() -> State { return State::enabled; };
+	auto get_driver_state() -> State { return State::enabled; };
 
 	virtual auto can_disable_driver() -> bool { return !is_builtin; }
 	virtual auto can_restart_driver() -> bool { return true; }

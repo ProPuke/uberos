@@ -4,7 +4,7 @@
 
 namespace driver {
 	struct Irq: Driver {
-		/**/ Irq(U64 address, const char *name, const char *descriptiveType):
+		constexpr /**/ Irq(U64 address, const char *name, const char *descriptiveType):
 			Driver(address, name, "irq", descriptiveType)
 		{}
 

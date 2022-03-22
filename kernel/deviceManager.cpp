@@ -3,8 +3,9 @@
 #include <common/format.hpp>
 
 #include <kernel/Driver.hpp>
-#include <kernel/driver/Processor.hpp>
 #include <kernel/driver/Graphics.hpp>
+#include <kernel/driver/Processor.hpp>
+#include <kernel/driver/Serial.hpp>
 #include <kernel/stdio.hpp>
 
 namespace deviceManager {
@@ -31,6 +32,7 @@ namespace deviceManager {
 			// 	stdio::print_inline(" @ ", format::Hex64{device->address});
 			// }
 			stdio::print_end();
+			stdio::print_info("  State: ", device->state);
 			if(device->address){
 				stdio::print_info("  Address: ", format::Hex64{device->address});
 			}
@@ -39,6 +41,12 @@ namespace deviceManager {
 				auto &processor = *(driver::Processor*)device;
 				stdio::print_info("  Architecture: ", processor.processor_arch);
 				stdio::print_info("  Cores: ", processor.processor_cores);
+			}
+			if(!strcmp(device->type, "serial")){
+				auto &serial = *(driver::Serial*)device;
+				if(serial.state==driver::Serial::State::enabled){
+					stdio::print_info("  Baud: ", serial.get_active_baud());
+				}
 			}
 			if(!strcmp(device->type, "graphics")){
 				auto &graphics = *(driver::Graphics*)device;
@@ -50,8 +58,6 @@ namespace deviceManager {
 					stdio::print_info("  Default mode: None");
 				}
 			}
-
-			stdio::print_info("  State: ", device->state);
 
 			first = false;
 		}

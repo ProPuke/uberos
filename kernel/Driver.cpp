@@ -6,6 +6,7 @@ const char * Driver::state_name[(U64)Driver::State::max+1] = {
 	"enabling",
 	"disabling",
 	"restarting",
+	"disabled"
 };
 
 /**/ Driver::~Driver() {
