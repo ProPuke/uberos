@@ -11,44 +11,30 @@ namespace mailbox {
 	using namespace arch::raspi::mailbox;
 }
 
+//TODO:the gpio mmio addresses still needing abstracting away, in here. Those should prob be passed to the driver
+
 namespace driver {
 	namespace serial {
 		namespace {
 			const U32 uart_clock = 500000000;
 
+			enum struct Address:U32 {
+				enable     = 0x04,
+				mu_io      = 0x40,
+				mu_ier     = 0x44,
+				mu_iir     = 0x48,
+				mu_lcr     = 0x4C,
+				mu_mcr     = 0x50,
+				mu_lsr     = 0x54,
+				mu_msr     = 0x58,
+				mu_scratch = 0x5C,
+				mu_cntl    = 0x60,
+				mu_stat    = 0x64,
+				mu_baud    = 0x68,
+			};
+
 			U32 baud_to_uart_reg(U32 baud) {
 				return uart_clock/(baud*8)-1;
-			}
-
-			inline void __putc(unsigned char c) {
-				if(c=='\n') __putc('\r');
-
-				while(!(mmio::read_address(mmio::Address::uart1_mu_lsr) & 1<<5));
-				mmio::write_address(mmio::Address::uart1_mu_io, c);
-			}
-
-			inline void _putc(unsigned char c) {
-				mmio::PeripheralWriteGuard _guard;
-				__putc(c);
-			}
-
-			inline unsigned char __getc() {
-				while(!(mmio::read_address(mmio::Address::uart1_mu_lsr) & 1<<1));
-				return mmio::read_address(mmio::Address::uart1_mu_io);
-			}
-
-			inline unsigned char _getc() {
-				mmio::PeripheralReadGuard _guard;
-				return __getc();
-			}
-
-			inline void __puts(const char* str) {
-				while(*str) __putc(*str++);
-			}
-
-			inline void _puts(const char* str) {
-				mmio::PeripheralWriteGuard _guard;
-				while(*str) __putc(*str++);
 			}
 		}
 
@@ -61,13 +47,13 @@ namespace driver {
 
 			{
 				// initialize UART1
-				mmio::write_address(mmio::Address::uart1_enable, mmio::read_address(mmio::Address::uart1_enable)|1); // enable UART1, AUX mini uart
-				mmio::write_address(mmio::Address::uart1_mu_cntl, 0);
-				mmio::write_address(mmio::Address::uart1_mu_lcr, 3); // 8 bits
-				mmio::write_address(mmio::Address::uart1_mu_mcr, 0);
-				mmio::write_address(mmio::Address::uart1_mu_ier, 0);
-				mmio::write_address(mmio::Address::uart1_mu_iir, 0xc6); // disable interrupts
-				mmio::write_address(mmio::Address::uart1_mu_baud, baud_to_uart_reg(_specified_baud));
+				mmio::write32(address+(U32)Address::enable, mmio::read32(address+(U32)Address::enable)|1); // enable UART1, AUX mini uart
+				mmio::write32(address+(U32)Address::mu_cntl, 0);
+				mmio::write32(address+(U32)Address::mu_lcr, 3); // 8 bits
+				mmio::write32(address+(U32)Address::mu_mcr, 0);
+				mmio::write32(address+(U32)Address::mu_ier, 0);
+				mmio::write32(address+(U32)Address::mu_iir, 0xc6); // disable interrupts
+				mmio::write32(address+(U32)Address::mu_baud, baud_to_uart_reg(_specified_baud));
 
 
 				// map UART1 to GPIO pins
@@ -80,7 +66,7 @@ namespace driver {
 				mmio::write_address(mmio::Address::gppudclk0, (1<<14)|(1<<15));
 				mmio::delay(150);
 				mmio::write_address(mmio::Address::gppudclk0, 0); // flush GPIO setup
-				mmio::write_address(mmio::Address::uart1_mu_cntl, 3); // enable Tx, Rx
+				mmio::write32(address+(U32)Address::mu_cntl, 3); // enable Tx, Rx
 			}
 
 			_active_baud = _specified_baud;
@@ -91,7 +77,7 @@ namespace driver {
 		void Raspi_mini_uart::disable_driver() {
 			if(state==State::disabled) return;
 
-			mmio::write_address(mmio::Address::uart1_enable, mmio::read_address(mmio::Address::uart1_enable)&~1);
+			mmio::write32(address+(U32)Address::enable, mmio::read32(address+(U32)Address::enable)&~1);
 
 			state = State::disabled;
 		}
@@ -106,10 +92,35 @@ namespace driver {
 			return _getc();
 		}
 
-		void Raspi_mini_uart::bind_stdio() {
-			if(state!=State::enabled) return;
+		void Raspi_mini_uart::__putc(unsigned char c) {
+			if(c=='\n') __putc('\r');
 
-			stdio::bind(_putc, _getc, _puts, nullptr);
+			while(!(mmio::read32(address+(U32)Address::mu_lsr) & 1<<5));
+			mmio::write32(address+(U32)Address::mu_io, c);
+		}
+
+		void Raspi_mini_uart::_putc(unsigned char c) {
+			mmio::PeripheralWriteGuard _guard;
+			__putc(c);
+		}
+
+		auto Raspi_mini_uart::__getc() -> unsigned char {
+			while(!(mmio::read32(address+(U32)Address::mu_lsr) & 1<<1));
+			return mmio::read32(address+(U32)Address::mu_io);
+		}
+
+		auto Raspi_mini_uart::_getc() -> unsigned char {
+			mmio::PeripheralReadGuard _guard;
+			return __getc();
+		}
+
+		void Raspi_mini_uart::__puts(const char* str) {
+			while(*str) __putc(*str++);
+		}
+
+		void Raspi_mini_uart::_puts(const char* str) {
+			mmio::PeripheralWriteGuard _guard;
+			while(*str) __putc(*str++);
 		}
 	}
 }

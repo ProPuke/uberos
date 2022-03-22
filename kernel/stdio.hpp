@@ -15,17 +15,31 @@
 namespace stdio {
 	extern U32 indent;
 
-	typedef auto (*Putc)(unsigned char c) -> void;
-	typedef auto (*Getc)() -> unsigned char;
-	typedef auto (*Puts)(const char *str) -> void;
-	typedef void (*Gets)(char *buf, U32 length);
+	typedef auto (*Putc)(void*, unsigned char c) -> void;
+	typedef auto (*Getc)(void*) -> unsigned char;
+	typedef auto (*Puts)(void*, const char *str) -> void;
+	typedef void (*Gets)(void*, char *buf, U32 length);
 
-	extern Putc putc;
-	extern Getc getc;
-	extern Puts puts;
-	extern Gets gets;
+	extern void* _binding;
+	extern Putc _binding_putc;
+	extern Getc _binding_getc;
+	extern Puts _binding_puts;
+	extern Gets _binding_gets;
 
-	void bind(Putc putc, Getc getc, Puts puts = nullptr, Gets gets = nullptr);
+	inline auto putc(unsigned char c) -> void {
+		return _binding_putc(_binding, c);
+	}
+	inline auto getc() -> unsigned char {
+		return _binding_getc(_binding);
+	}
+	inline auto puts(const char *str) -> void {
+		return _binding_puts(_binding, str);
+	}
+	inline void gets(char *buffer, U32 length) {
+		return _binding_gets(_binding, buffer, length);
+	}
+
+	void bind(void* binding, Putc putc, Getc getc, Puts puts = nullptr, Gets gets = nullptr);
 	// void bind(typeof putc, typeof getc, typeof puts = nullptr, typeof gets = nullptr);
 
 	enum struct PrintType {

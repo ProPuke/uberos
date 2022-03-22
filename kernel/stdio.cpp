@@ -6,42 +6,45 @@ namespace stdio {
 	U32 indent = 0;
 
 	namespace {
-		void null_putc(unsigned char c) {}
-		auto null_getc() -> unsigned char { return 0; }
+		void null_putc(void*, unsigned char c) {}
+		auto null_getc(void*) -> unsigned char { return 0; }
 
-		void automatic_puts(const char *str) {
-			while(*str) putc(*str++);
+		void automatic_puts(void *binding, const char *str) {
+			while(*str) _binding_putc(binding, *str++);
 		}
 
-		void automatic_gets(char *buffer, U32 length) {
+		void automatic_gets(void *binding, char *buffer, U32 length) {
 			char c;
 			U32 i;
 
 			for(i=0; i<length; i++){
-				c=getc();
+				c = _binding_getc(binding);
 
 				if(c=='\r') continue;
 				if(c=='\n') break;
 				
-				putc(c);
+				_binding_putc(binding, c);
 				buffer[i] = c;
 			}
 
-			putc('\n');
+			_binding_putc(binding, '\n');
 			buffer[i] = '\0';
 		}
 	}
 
-	Putc putc = null_putc;
-	Getc getc = null_getc;
-	Puts puts = automatic_puts;
-	Gets gets = automatic_gets;
+	void *_binding = nullptr;
+	Putc _binding_putc = null_putc;
+	Getc _binding_getc = null_getc;
+	Puts _binding_puts = automatic_puts;
+	Gets _binding_gets = automatic_gets;
 
-	void bind(Putc putc, Getc getc, Puts puts, Gets gets) {
-		stdio::putc = putc?:null_putc;
-		stdio::getc = getc?:null_getc;
+	void bind(void* binding, Putc putc, Getc getc, Puts puts, Gets gets) {
+		_binding = binding;
 
-		stdio::puts = puts?:automatic_puts;
-		stdio::gets = gets?:automatic_gets;
+		_binding_putc = putc?:null_putc;
+		_binding_getc = getc?:null_getc;
+
+		_binding_puts = puts?:automatic_puts;
+		_binding_gets = gets?:automatic_gets;
 	}
 }

@@ -5,7 +5,7 @@
 
 namespace driver {
 	namespace graphics {
-		struct Raspi_videocore_mailbox: driver::Graphics {
+		struct Raspi_videocore_mailbox final: driver::Graphics {
 			/**/ Raspi_videocore_mailbox(U64 address);
 
 			void enable_driver() override;

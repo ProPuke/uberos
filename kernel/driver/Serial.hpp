@@ -1,6 +1,9 @@
 #pragma once
 
 #include <kernel/Driver.hpp>
+#include <kernel/stdio.hpp>
+
+#include <functional>
 
 namespace driver {
 	struct Serial: Driver {
@@ -33,6 +36,15 @@ namespace driver {
 			buffer[i] = '\0';
 		}
 
-		virtual void bind_stdio() = 0;
+		void bind_stdio() {
+			if(state!=State::enabled) return;
+
+			stdio::bind(this,
+				[](void *self, unsigned char c) { return ((Serial*)self)->putc(c); },
+				[](void *self) { return ((Serial*)self)->getc(); },
+				[](void *self, const char *str) { return ((Serial*)self)->puts(str); },
+				[](void *self, char *buffer, U32 length) { return ((Serial*)self)->gets(buffer, length); }
+			);
+		}
 	};
 }

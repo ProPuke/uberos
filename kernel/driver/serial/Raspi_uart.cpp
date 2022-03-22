@@ -16,35 +16,26 @@ namespace driver {
 		namespace {
 			const U32 clock = 3000000;
 
-			inline void __putc(unsigned char c) {
-				if(c=='\n') __putc('\r');
-				while(mmio::read_address(mmio::Address::uart0_fr) & 1<<5);
-				mmio::write_address(mmio::Address::uart0_dr, c);
-			}
-
-			inline void _putc(unsigned char c) {
-				mmio::PeripheralWriteGuard _guard;
-				__putc(c);
-			}
-
-			inline auto __getc() -> unsigned char {
-				while(mmio::read_address(mmio::Address::uart0_fr) & 1<<4);
-				return mmio::read_address(mmio::Address::uart0_dr);
-			}
-
-			inline unsigned char _getc() {
-				mmio::PeripheralReadGuard _guard;
-				return __getc();
-			}
-			
-			inline void __puts(const char* str) {
-				while(*str) __putc(*str++);
-			}
-
-			inline void _puts(const char* str) {
-				mmio::PeripheralWriteGuard _guard;
-				while(*str) __putc(*str++);
-			}
+			enum struct Address:U32 {
+				dr      = 0x00,
+				rsrecr  = 0x04,
+				fr      = 0x18,
+				ilpr    = 0x20,
+				ibrd    = 0x24,
+				fbrd    = 0x28,
+				lcrh    = 0x2C,
+				cr      = 0x30,
+				ifls    = 0x34,
+				imsc    = 0x38,
+				ris     = 0x3C,
+				mis     = 0x40,
+				icr     = 0x44,
+				dmacr   = 0x48,
+				itcr    = 0x80,
+				itip    = 0x84,
+				itop    = 0x88,
+				tdr     = 0x8C,
+			};
 		}
 
 		void Raspi_uart::set_baud(U32 set) {
@@ -55,7 +46,7 @@ namespace driver {
 			if(state==State::enabled) return;
 
 			// Disable UART0
-			mmio::write_address(mmio::Address::uart0_cr, 0x00000000);
+			mmio::write32(address+(U32)Address::cr, 0x00000000);
 
 			mailbox::PropertyMessage tags[2];
 			tags[0].tag = mailbox::PropertyTag::set_clock_rate;
@@ -84,28 +75,24 @@ namespace driver {
 			mmio::write_address(mmio::Address::gppudclk0, 0x00000000);
 
 			// Clear any interrupts pending
-			mmio::write_address(mmio::Address::uart0_icr, 0x7FF);
+			mmio::write32(address+(U32)Address::icr, 0x7FF);
 
 			// Set integer & fractional part of baud rate.
-			// Divider = UART_CLOCK/(16 * Baud)
-			// Fraction part register = (Fractional part * 64) + 0.5
-			// UART_CLOCK = 3000000; Baud = 115200.
-
 			U64 divider = 64*clock/(16*_specified_baud); //TODO:*round* the floating component to the nearest? (as in other examples) Does this matter? This rounds it down.
-			mmio::write_address(mmio::Address::uart0_ibrd, divider/64);
-			mmio::write_address(mmio::Address::uart0_fbrd, divider%64);
+			mmio::write32(address+(U32)Address::ibrd, divider/64);
+			mmio::write32(address+(U32)Address::fbrd, divider%64);
 
-			// mmio::write_address(mmio::Address::uart0_ibrd, 2);
-			// mmio::write_address(mmio::Address::uart0_fbrd, 11);
+			// mmio::write32(address+(U32)Address::ibrd, 2);
+			// mmio::write32(address+(U32)Address::fbrd, 11);
 
 			// Enable FIFO & 8bit data transmissions (1 stop bit, no parity)
-			mmio::write_address(mmio::Address::uart0_lcrh, 1<<4 | 1<<5 | 1<<6);
+			mmio::write32(address+(U32)Address::lcrh, 1<<4 | 1<<5 | 1<<6);
 
 			// Mask all interrupts
-			mmio::write_address(mmio::Address::uart0_imsc, 1<<1 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10);
+			mmio::write32(address+(U32)Address::imsc, 1<<1 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10);
 
 			// Enable UART0, receive & transfer part of UART.
-			mmio::write_address(mmio::Address::uart0_cr, 1<<0 | 1<<8 | 1<<9);
+			mmio::write32(address+(U32)Address::cr, 1<<0 | 1<<8 | 1<<9);
 
 			_active_baud = _specified_baud;
 
@@ -115,7 +102,7 @@ namespace driver {
 		void Raspi_uart::disable_driver() {
 			if(state==State::disabled) return;
 
-			mmio::write_address(mmio::Address::uart0_cr, 0x00000000);
+			mmio::write32(address+(U32)Address::cr, 0x00000000);
 
 			state = State::disabled;
 		}
@@ -130,10 +117,34 @@ namespace driver {
 			return _getc();
 		}
 
-		void Raspi_uart::bind_stdio() {
-			if(state!=State::enabled) return;
+		void Raspi_uart::__putc(unsigned char c) {
+			if(c=='\n') __putc('\r');
+			while(mmio::read32(address+(U32)Address::fr) & 1<<5);
+			mmio::write32(address+(U32)Address::dr, c);
+		}
 
-			stdio::bind(_putc, _getc, _puts, nullptr);
+		void Raspi_uart::_putc(unsigned char c) {
+			mmio::PeripheralWriteGuard _guard;
+			__putc(c);
+		}
+
+		auto Raspi_uart::__getc() -> unsigned char {
+			while(mmio::read32(address+(U32)Address::fr) & 1<<4);
+			return mmio::read32(address+(U32)Address::dr);
+		}
+
+		auto Raspi_uart::_getc() -> unsigned char {
+			mmio::PeripheralReadGuard _guard;
+			return __getc();
+		}
+		
+		void Raspi_uart::__puts(const char* str) {
+			while(*str) __putc(*str++);
+		}
+
+		void Raspi_uart::_puts(const char* str) {
+			mmio::PeripheralWriteGuard _guard;
+			while(*str) __putc(*str++);
 		}
 	}
 }

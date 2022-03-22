@@ -1,8 +1,10 @@
+#pragma once
+
 #include <kernel/driver/Serial.hpp>
 
 namespace driver {
 	namespace serial {
-		struct Raspi_mini_uart: driver::Serial {
+		struct Raspi_mini_uart final: driver::Serial {
 			constexpr /**/ Raspi_mini_uart(U64 address, const char *name):
 				Serial(address, name, "serial port")
 			{
@@ -21,11 +23,16 @@ namespace driver {
 			void puts(const char *str) override;
 			auto getc() -> unsigned char override;
 
-			void bind_stdio() override;
-
 			U32 _specified_baud = 9600;
 			
 			U32 _active_baud = 9600;
+
+			void __putc(unsigned char c);
+			void _putc(unsigned char c);
+			auto __getc() -> unsigned char;
+			auto _getc() -> unsigned char;
+			void __puts(const char* str);
+			void _puts(const char* str);
 		};
 	}
 }

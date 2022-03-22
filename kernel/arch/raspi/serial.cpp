@@ -11,15 +11,31 @@
 #include <kernel/stdio.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 
+namespace mmio {
+	using namespace arch::raspi;
+}
+
 namespace arch {
 	namespace raspi {
 		namespace serial {
-			driver::serial::Raspi_uart uart0((U64)mmio::arch::raspi::Address::uart0_base, "Raspi UART0");
-			driver::serial::Raspi_mini_uart uart1((U64)mmio::arch::raspi::Address::uart1_base, "Raspi mini UART");
+			driver::serial::Raspi_uart      uart0((U64)mmio::Address::uart0, "Raspi UART0");
+			driver::serial::Raspi_mini_uart uart1((U64)mmio::Address::uart1, "Raspi mini UART");
+			#if defined(ARCH_RASPI4)
+				driver::serial::Raspi_uart  uart2((U64)mmio::Address::uart2, "Raspi UART2");
+				driver::serial::Raspi_uart  uart3((U64)mmio::Address::uart3, "Raspi UART3");
+				driver::serial::Raspi_uart  uart4((U64)mmio::Address::uart4, "Raspi UART4");
+				driver::serial::Raspi_uart  uart5((U64)mmio::Address::uart5, "Raspi UART5");
+			#endif
 
 			void init() {
 				deviceManager::add_device(uart0, false);
 				deviceManager::add_device(uart1, false);
+				#if defined(ARCH_RASPI4)
+					deviceManager::add_device(uart2, false);
+					deviceManager::add_device(uart3, false);
+					deviceManager::add_device(uart4, false);
+					deviceManager::add_device(uart5, false);
+				#endif
 
 				auto &serial =
 					#if defined(ARCH_RASPI_UART0)
@@ -31,17 +47,8 @@ namespace arch {
 
 				serial.set_baud(115200);
 				serial.enable_driver();
-				
-				serial.bind_stdio();
 
-				// if(serial.state==Driver::State::enabled){
-				// 	stdio::bind(
-				// 		[](unsigned char c) { return serial.putc(c); },
-				// 		[]() { return serial.getc(); },
-				// 		[](const char *s) { return serial.puts(s); },
-				// 		[](char *buffer, U32 length) { return serial.gets(buffer, length); }
-				// 	);
-				// }
+				serial.bind_stdio();
 
 				if(serial.state==Driver::State::enabled) {
 					stdio::Section section("arch::raspi::serial::init...");
