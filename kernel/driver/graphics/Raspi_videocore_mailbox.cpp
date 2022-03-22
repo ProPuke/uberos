@@ -1,4 +1,4 @@
-#include "Rpi_videocore_mailbox.hpp"
+#include "Raspi_videocore_mailbox.hpp"
 
 #include <kernel/arch/raspi/mailbox.hpp>
 
@@ -44,13 +44,13 @@ namespace driver {
 			};
 		}
 
-		/**/ Rpi_videocore_mailbox::Rpi_videocore_mailbox():
-			Graphics(0, "RPI Videocore firmware mailbox", "video driver")
+		/**/ Raspi_videocore_mailbox::Raspi_videocore_mailbox(U64 address):
+			Graphics(address, "Raspi Videocore firmware mailbox", "video driver")
 		{
 			is_builtin = true;
 		}
 
-		void Rpi_videocore_mailbox::enable_driver() {
+		void Raspi_videocore_mailbox::enable_driver() {
 			if(state==State::enabled) return;
 
 			state = State::enabling;
@@ -69,7 +69,7 @@ namespace driver {
 			state = State::enabled;
 		}
 
-		void Rpi_videocore_mailbox::disable_driver() {
+		void Raspi_videocore_mailbox::disable_driver() {
 			if(state==State::disabled) return;
 
 			if(framebuffer.driver==this){
@@ -79,7 +79,7 @@ namespace driver {
 			state = State::disabled;
 		}
 
-		bool Rpi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion) {
+		bool Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion) {
 			if(framebufferId>0) return false;
 
 			stdio::Section section("framebuffer::arch::raspi::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
@@ -205,11 +205,11 @@ namespace driver {
 			return true;
 		}
 
-		U32  Rpi_videocore_mailbox::get_mode_count() {
+		U32  Raspi_videocore_mailbox::get_mode_count() {
 			return sizeof(possibleResolutions)/sizeof(possibleResolutions[0]) * ((U32)FramebufferFormat::max+1);
 		}
 
-		framebuffer::Mode Rpi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) {
+		framebuffer::Mode Raspi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) {
 			auto modeIndex = index/((U32)FramebufferFormat::max+1);
 			if(modeIndex>=sizeof(possibleResolutions)/sizeof(possibleResolutions[0])) {
 				return { 0 };
@@ -241,7 +241,7 @@ namespace driver {
 			return { resolution[0], resolution[1], format };
 		}
 
-		bool Rpi_videocore_mailbox::detect_default_mode() {
+		bool Raspi_videocore_mailbox::detect_default_mode() {
 			//TODO:pick better defaults? This seems awfully low
 			defaultMode.width = 640;
 			defaultMode.height = 480;
@@ -297,15 +297,15 @@ namespace driver {
 			return true;
 		}
 
-		framebuffer::Mode Rpi_videocore_mailbox::get_default_mode() {
+		framebuffer::Mode Raspi_videocore_mailbox::get_default_mode() {
 			return defaultMode;
 		}
 
-		U32 Rpi_videocore_mailbox::get_framebuffer_count() {
+		U32 Raspi_videocore_mailbox::get_framebuffer_count() {
 			return framebuffer.driver==this?1:0;
 		}
 
-		Framebuffer* Rpi_videocore_mailbox::get_framebuffer(U32 index) {
+		Framebuffer* Raspi_videocore_mailbox::get_framebuffer(U32 index) {
 			return index==0&&framebuffer.driver==this?&framebuffer:nullptr;
 		}
 	}
