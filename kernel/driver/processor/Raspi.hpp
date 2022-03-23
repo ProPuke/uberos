@@ -5,9 +5,7 @@ namespace driver {
 		struct Raspi: driver::Processor {
 			/**/ Raspi(const char *name, const char *processor_arch):
 				Processor(name, processor_arch, "cpu")
-			{
-				is_builtin = true;
-			}
+			{}
 
 			auto get_temperature_count() -> U32 override;
 			auto get_temperature_name(U32 index) -> const char* override;

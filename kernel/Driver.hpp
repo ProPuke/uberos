@@ -18,7 +18,6 @@ struct Driver: LListItem<Driver> {
 	static const char * state_name[(U64)State::max+1];
 
 	U64 address;
-	bool is_builtin = false;
 	const char *name;
 	const char *type;
 	const char *descriptiveType;
@@ -36,7 +35,7 @@ struct Driver: LListItem<Driver> {
 
 	auto get_driver_state() -> State { return State::enabled; };
 
-	virtual auto can_disable_driver() -> bool { return !is_builtin; }
+	virtual auto can_disable_driver() -> bool { return true; }
 	virtual auto can_restart_driver() -> bool { return true; }
 
 	virtual void enable_driver() { state = State::enabled; };

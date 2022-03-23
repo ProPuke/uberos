@@ -46,9 +46,7 @@ namespace driver {
 
 		/**/ Raspi_videocore_mailbox::Raspi_videocore_mailbox(U64 address):
 			Graphics(address, "Raspi Videocore firmware mailbox", "video driver")
-		{
-			is_builtin = true;
-		}
+		{}
 
 		void Raspi_videocore_mailbox::enable_driver() {
 			if(state==State::enabled) return;

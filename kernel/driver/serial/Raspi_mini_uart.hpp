@@ -7,9 +7,7 @@ namespace driver {
 		struct Raspi_mini_uart final: driver::Serial {
 			constexpr /**/ Raspi_mini_uart(U64 address, const char *name):
 				Serial(address, name, "serial port")
-			{
-				is_builtin = true;
-			}
+			{}
 
 			void set_uart(U32 uart);
 			void set_baud(U32 set) override;

@@ -36,7 +36,6 @@ namespace deviceManager {
 			if(device->address){
 				stdio::print_info("  Address: ", format::Hex64{device->address});
 			}
-			stdio::print_info("  Location: ", device->is_builtin?"Internal":"Runtime");
 			if(!strcmp(device->type, "processor")){
 				auto &processor = *(driver::Processor*)device;
 				stdio::print_info("  Architecture: ", processor.processor_arch);

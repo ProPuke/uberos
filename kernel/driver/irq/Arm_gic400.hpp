@@ -5,9 +5,7 @@ namespace driver {
 		struct Arm_gic400: driver::Irq {
 			/**/ Arm_gic400(U32 address):
 				Irq(address, "GIC-400", "interrupt controller")
-			{
-				is_builtin = true;
-			}
+			{}
 
 			void enable_driver() override;
 			void disable_driver() override;
