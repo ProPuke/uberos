@@ -4,7 +4,7 @@
 
 namespace mmio {
 	void write32(U32 reg, U32 data);
-	U32 read32(U32 reg);
+	auto read32(U32 reg) -> U32;
 	
 	void delay(I32 count);
 }

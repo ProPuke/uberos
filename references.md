@@ -22,3 +22,11 @@
 
 # enable floating point:
 	https://developer.arm.com/documentation/ddi0463/d/Programmers-Model/About-the-programmers-model/Enabling-VFP-support
+
+# pi references
+	mailbox docs
+	https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
+
+	some code samples
+	https://github.com/raspberrypi/firmware/tree/master/hardfp/opt/vc
+	

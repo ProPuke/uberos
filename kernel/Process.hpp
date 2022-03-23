@@ -31,6 +31,6 @@ struct Process: LListItem<Process> {
 
 	ListUnordered<Thread> threads;
 
-	Thread* create_current_thread(memory::Page *stackPage, size_t stackSize);
-	Thread* create_thread(void(*entrypoint)());
+	auto create_current_thread(memory::Page *stackPage, size_t stackSize) -> Thread*;
+	auto create_thread(void(*entrypoint)()) -> Thread*;
 };

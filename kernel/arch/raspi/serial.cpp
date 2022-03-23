@@ -19,7 +19,7 @@ namespace arch {
 	namespace raspi {
 		namespace serial {
 			driver::serial::Raspi_uart      uart0((U64)mmio::Address::uart0, "Raspi UART0");
-			driver::serial::Raspi_mini_uart uart1((U64)mmio::Address::uart1, "Raspi mini UART");
+			driver::serial::Raspi_mini_uart uart1((U64)mmio::Address::uart1, "Raspi mini UART1");
 			#if defined(ARCH_RASPI4)
 				driver::serial::Raspi_uart  uart2((U64)mmio::Address::uart2, "Raspi UART2");
 				driver::serial::Raspi_uart  uart3((U64)mmio::Address::uart3, "Raspi UART3");

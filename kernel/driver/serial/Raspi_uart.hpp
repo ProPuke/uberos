@@ -23,6 +23,8 @@ namespace driver {
 			void puts(const char *str) override;
 			auto getc() -> unsigned char override;
 
+		private:
+
 			U32 _specified_baud = 9600;
 			
 			U32 _active_baud = 9600;

@@ -14,6 +14,8 @@ namespace mailbox {
 namespace driver {
 	namespace serial {
 		namespace {
+			//FIXME: do something about the shared state between multiple of these. They manipulate some of the same gpio registers
+			
 			const U32 clock = 3000000;
 
 			enum struct Address:U32 {
@@ -49,10 +51,10 @@ namespace driver {
 			mmio::write32(address+(U32)Address::cr, 0x00000000);
 
 			mailbox::PropertyMessage tags[2];
-			tags[0].tag = mailbox::PropertyTag::set_clock_rate;
-			tags[0].data.clock_rate.clockId = 2;
-			tags[0].data.clock_rate.rate = 4000000; //4Mhz
-			tags[0].data.clock_rate.skipSettingTurbo = 0;
+			tags[0].tag = mailbox::PropertyTag::set_clock;
+			tags[0].data.setClock.clock = mailbox::PropertyMessage::Data::Clock::uart;
+			tags[0].data.setClock.rate = 4000000; //4Mhz
+			tags[0].data.setClock.skipSettingTurbo = 0;
 
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 

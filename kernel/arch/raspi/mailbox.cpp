@@ -27,9 +27,6 @@ namespace arch {
 					case PropertyTag::get_vc_memory:
 						return 8;
 
-					case PropertyTag::set_clock_rate:
-						return sizeof(PropertyMessage::Data::clock_rate);
-
 					case PropertyTag::allocate_buffer: 
 					case PropertyTag::get_physical_dimensions:
 					case PropertyTag::test_physical_dimensions:
@@ -38,6 +35,27 @@ namespace arch {
 					case PropertyTag::test_virtual_dimensions:
 					case PropertyTag::set_virtual_dimensions:
 						return 8;
+
+					case PropertyTag::get_clock:
+					case PropertyTag::get_actual_clock:
+					case PropertyTag::get_min_clock:
+					case PropertyTag::get_max_clock:
+						return sizeof(PropertyMessage::Data::getClockResult);
+
+					case PropertyTag::set_clock:
+						return sizeof(PropertyMessage::Data::setClock);
+
+					case PropertyTag::get_voltage:
+					case PropertyTag::get_min_voltage:
+					case PropertyTag::get_max_voltage:
+						return sizeof(PropertyMessage::Data::getVoltageResult);
+
+					case PropertyTag::set_voltage:
+						return sizeof(PropertyMessage::Data::setVoltage);
+
+					case PropertyTag::get_temperature:
+					case PropertyTag::get_max_temperature:
+						return sizeof(PropertyMessage::Data::getTemperatureResult);
 
 					case PropertyTag::get_bits_per_pixel:
 					case PropertyTag::test_bits_per_pixel:
@@ -125,18 +143,18 @@ namespace arch {
 				{
 					mmio::PeripheralReadGuard _guard;
 					if(read(Channel::property, 0xffffffff) == 0xffffffff){
-						stdio::print_info("Error: Mailbox did not respond");
+						stdio::print_warning("Error: Mailbox did not respond");
 						return false;
 					}
 				}
 
 				if(message->req_res_code==BufferReqResCode::request){
-					stdio::print_info("Error: Mailbox did not respond with anything useful");
+					stdio::print_warning("Error: Mailbox did not respond with anything useful");
 					return false;
 				}
 
 				if(message->req_res_code==BufferReqResCode::response_error){
-					stdio::print_info("Error: Mailbox returned an error"); //TODO:print code?
+					stdio::print_warning("Error: Mailbox returned an error"); //TODO:print code?
 					return false;
 				}
 

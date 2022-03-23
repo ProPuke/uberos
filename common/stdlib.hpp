@@ -9,6 +9,7 @@ extern "C" void memmove(void *dest, const void *src, unsigned bytes);
 extern "C" int memcmp(const void *a, const void *b, unsigned length);
 extern "C" void bzero(void *dest, unsigned bytes);
 extern "C" unsigned strlen(const C8 *str);
+extern "C" char* strcpy(char *destination, const char *source);
 extern "C" char* strcat(char *destination, const char *source);
 extern "C" int strcmp(const char* str1, const char* str2);
 
@@ -36,6 +37,8 @@ auto to_string(U32 i) -> const char*;
 auto to_string(I32 i) -> const char*;
 auto to_string(U64 i) -> const char*;
 auto to_string(I64 i) -> const char*;
+auto to_string(F32 f) -> const char*;
+auto to_string(F64 f) -> const char*;
 
 auto to_string_hex(U8 i) -> const char*;
 auto to_string_hex(U16 i) -> const char*;

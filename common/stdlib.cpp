@@ -50,10 +50,15 @@ extern "C" unsigned strlen(const C8 *str) {
 }
 
 extern "C" char* strcat(char *destination, const char *source) {
-	U64 length = strlen(destination);
+	return strcpy(destination+strlen(destination), source);
+}
 
-	memcpy(destination+length, source, strlen(source)+1);
-
+extern "C" char* strcpy(char *destination, const char *source) {
+	char *x = destination;
+	while(*source){
+		*x++ = *source++;
+	}
+	*x = '\0';
 	return destination;
 }
 
@@ -140,14 +145,16 @@ inline const char* _utoahextrim(Type number){
 }
 
 template <typename Type>
-inline const char* _itoa(Type number){
-	static char buffer[digits_decimal(sizeof(number), false)+1] = {0};
-	buffer[sizeof(buffer)-1] = 0;
+inline char* _itoa(Type number, char *buffer = nullptr){
+	static char internalBuffer[digits_decimal(sizeof(number), false)+1] = {0};
+	if(!buffer) buffer = internalBuffer;
+	
+	buffer[sizeof(internalBuffer)-1] = 0;
 
 	bool isNegative = number<0;
 	unsigned numberAbs = isNegative?-number:number;
 
-	char *end = &buffer[sizeof(buffer)-2];
+	char *end = &buffer[sizeof(internalBuffer)-2];
 	char *character = end;
 	do {
 		*character--=numberAbs%10+'0';
@@ -159,12 +166,36 @@ inline const char* _itoa(Type number){
 	return character+1;
 }
 
+template <typename Type>
+inline const char* _ftoa(Type number) {
+	I64 i = (I64)number;
+	I32 f = (number-i)*1000+0.5; // 3 decimal places
+
+	if(f==0) return _itoa(i);
+
+	static char internalBuffer[1+digits_decimal(sizeof(i), false)+1+digits_decimal(sizeof(f), false)] = {0};
+	char *buffer = internalBuffer;
+
+	buffer = _itoa(i, buffer);
+
+	auto decimalDigits = _itoa(f);
+	U32 decimalPos = strlen(buffer); //TODO: avoid this excess strlen walk?
+	buffer[decimalPos] = '.';
+
+	strcpy(&buffer[decimalPos+1], decimalDigits);
+
+	return buffer;
+}
+
 auto to_string(U16 x) -> const char* { return _utoa(x); }
 auto to_string(I16 x) -> const char* { return _itoa(x); }
 auto to_string(U32 x) -> const char* { return _utoa(x); }
 auto to_string(I32 x) -> const char* { return _itoa(x); }
 auto to_string(U64 x) -> const char* { return _utoa(x); }
 auto to_string(I64 x) -> const char* { return _itoa(x); }
+
+auto to_string(F32 x) -> const char* { return _ftoa(x); }
+auto to_string(F64 x) -> const char* { return _ftoa(x); }
 
 auto to_string_hex(U8 x)  -> const char* { return _utoahex(x); }
 auto to_string_hex(U16 x) -> const char*  { return _utoahex(x); }

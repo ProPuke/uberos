@@ -24,19 +24,26 @@ namespace arch {
 				get_arm_memory = 0x10005,
 				get_vc_memory = 0x10006,
 				// set_power_state = 0x28001,
-				// get_clock_rate = 0x30002,
-				// get_max_clock_rate = 0x30004,
-				// get_temperature = 0x30006,
-				// get_min_clock_rate = 0x30007,
-				// get_turbo = 0x30009,
-				// get_max_temperature = 0x3000A,
 				// get_edid_block = 0x30020,
-				set_clock_rate = 0x38002,
 				// set_turbo = 0x38009,
 				// set_set_gpio_state = 0x38041,
 
 				allocate_buffer = 0x40001,
 				release_buffer  = 0x48001,
+
+				get_clock = 0x30002,
+				get_actual_clock = 0x30047,
+				get_min_clock = 0x30007,
+				get_max_clock = 0x30004,
+				set_clock = 0x38002,
+
+				get_voltage = 0x300003,
+				get_min_voltage = 0x300008,
+				get_max_voltage = 0x300005,
+				set_voltage = 0x380003,
+
+				get_temperature = 0x300006,
+				get_max_temperature = 0x30000a,
 
 				get_physical_dimensions = 0x40003,
 				test_physical_dimensions = 0x44003,
@@ -87,12 +94,6 @@ namespace arch {
 
 				union Data {
 					U32 boardRevision;
-
-					struct {
-						U32 clockId;
-						U32 rate; //hz
-						U32 skipSettingTurbo;
-					} clock_rate;
 
 					U32 allocate_align;
 					struct {
@@ -159,6 +160,79 @@ namespace arch {
 						U32 y;
 						U32 flags;
 					} cursorState;
+
+					enum struct Clock:U32 {
+						min = 1,
+						emmc = min,
+						uart,
+						arm,
+						core,
+						v3d,
+						h264,
+						isp,
+						sdram,
+						pixel,
+						pwm,
+						hevc,
+						emmc2,
+						m2mc,
+						pixel_bvb,
+						max = pixel_bvb
+					};
+
+					Clock getClock;
+
+					struct {
+						Clock clock;
+						U32 rate; //hz
+					} getClockResult;
+
+					struct {
+						Clock clock;
+						U32 rate; //hz
+						U32 skipSettingTurbo; //voltage, sdram and gpu freq will be boosted when setting above average rate UNLESS this flag is set
+					} setClock;
+
+					enum struct Voltage:U32 {
+						min = 1,
+						core = min,
+						sdram_c,
+						sdram_p,
+						sdram_i,
+						max = sdram_i
+					};
+
+					Voltage getVoltage;
+
+					struct SetVoltage {
+						Voltage voltage;
+						U32 value; //microvolts
+
+						/* NOTE: when setting, `value` has some special rules:
+							     0..16   : relative to platform-specific typical voltage, in 25mV steps
+							    17..49999: relative to platform-specific typical voltage, in microvolts
+							500000..*    : absolute voltage in microvolts
+
+							Yes there's a discrepancy in the last 2 values. See https://github.com/raspberrypi/firmware/issues/1708
+						*/
+					} setVoltage;
+
+					SetVoltage getVoltageResult;
+
+					enum struct Temperature:U32 {
+						min = 0,
+						soc = min, //presumably?
+						max = soc
+					};
+
+					Temperature getTemperature;
+
+					struct SetTemperature {
+						Temperature temperature;
+						U32 value; //millidegrees celcius
+					};
+
+					SetTemperature getTemperatureResult;
 
 					#ifdef ARCH_RASPI3
 						struct {

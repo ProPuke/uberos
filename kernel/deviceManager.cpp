@@ -41,6 +41,18 @@ namespace deviceManager {
 				auto &processor = *(driver::Processor*)device;
 				stdio::print_info("  Architecture: ", processor.processor_arch);
 				stdio::print_info("  Cores: ", processor.processor_cores);
+
+				// for(U32 i=0;i<processor.get_voltage_count();i++){
+				// 	stdio::print_info("  ", processor.get_voltage_name(i), " = ", processor.get_voltage_value(i), " V");
+				// }
+
+				// for(U32 i=0;i<processor.get_clock_count();i++){
+				// 	stdio::print_info("  ", processor.get_clock_name(i), " = ", processor.get_clock_value(i)/1000000.0f, " Mhz");
+				// }
+
+				// for(U32 i=0;i<processor.get_temperature_count();i++){
+				// 	stdio::print_info("  ", processor.get_temperature_name(i), " = ", processor.get_temperature_value(i), " K");
+				// }
 			}
 			if(!strcmp(device->type, "serial")){
 				auto &serial = *(driver::Serial*)device;

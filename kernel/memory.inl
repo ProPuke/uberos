@@ -6,7 +6,7 @@
 #include <common/types.hpp>
 
 namespace memory {
-	inline Page* _get_memory_page(void *address){
+	inline auto _get_memory_page(void *address) -> Page* {
 		return &pageData[(size_t)address/sizeof(Page)];
 	}
 }

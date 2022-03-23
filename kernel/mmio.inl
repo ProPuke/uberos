@@ -6,7 +6,7 @@ namespace mmio {
 	inline void write32(U32 reg, U32 data) {
 		*(volatile U32*)(U64)reg = data;
 	}
-	inline U32 read32(U32 reg) {
+	inline auto read32(U32 reg) -> U32 {
 		return *(volatile U32*)(U64)reg;
 	}
 
