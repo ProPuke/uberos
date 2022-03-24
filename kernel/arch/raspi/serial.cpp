@@ -5,7 +5,7 @@
 
 #include <common/types.hpp>
 
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 #include <kernel/driver/serial/Raspi_uart.hpp>
 #include <kernel/driver/serial/Raspi_mini_uart.hpp>
 #include <kernel/stdio.hpp>
@@ -28,13 +28,13 @@ namespace arch {
 			#endif
 
 			void init() {
-				deviceManager::add_device(uart0, false);
-				deviceManager::add_device(uart1, false);
+				device::install_device(uart0, false);
+				device::install_device(uart1, false);
 				#if defined(ARCH_RASPI4)
-					deviceManager::add_device(uart2, false);
-					deviceManager::add_device(uart3, false);
-					deviceManager::add_device(uart4, false);
-					deviceManager::add_device(uart5, false);
+					device::install_device(uart2, false);
+					device::install_device(uart3, false);
+					device::install_device(uart4, false);
+					device::install_device(uart5, false);
 				#endif
 
 				auto &serial =
@@ -46,7 +46,7 @@ namespace arch {
 				;
 
 				serial.set_baud(115200);
-				serial.enable_driver();
+				serial._on_driver_enable();
 
 				serial.bind_stdio();
 

@@ -7,8 +7,8 @@ namespace driver {
 				Irq(address, "GIC-400", "interrupt controller")
 			{}
 
-			void enable_driver() override;
-			void disable_driver() override;
+			void _on_driver_enable() override;
+			void _on_driver_disable() override;
 			
 			void enable_irq(U32 irq, U8 cpu) override;
 			void disable_irq(U32 irq) override;

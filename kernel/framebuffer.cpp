@@ -1,7 +1,7 @@
 #include "framebuffer.hpp"
 
 #include <kernel/driver/Graphics.hpp>
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 
 namespace framebuffer {
 	void init() {
@@ -10,28 +10,24 @@ namespace framebuffer {
 		{
 			stdio::Section section("Devices:");
 
-			for(auto device=deviceManager::devices.head; device; device=device->next) {
-				if(!strcmp(device->type, "graphics")){
-					auto &graphics = *(driver::Graphics*)device;
+			for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
+				stdio::Section section(graphics.name);
 
-					stdio::Section section(graphics.name);
+				{
+					stdio::Section section("Possible video modes:");
 
-					{
-						stdio::Section section("Possible video modes:");
+					U32 count = 0;
+					for(U32 i=0;i<graphics.get_mode_count();i++){
+						auto mode = graphics.get_mode(0, i);
 
-						U32 count = 0;
-						for(U32 i=0;i<graphics.get_mode_count();i++){
-							auto mode = graphics.get_mode(0, i);
+						if(!mode.width) continue;
 
-							if(!mode.width) continue;
+						stdio::print_info(mode.width, "x", mode.height, " @ ", mode.format);
+						count++;
+					}
 
-							stdio::print_info(mode.width, "x", mode.height, " @ ", mode.format);
-							count++;
-						}
-
-						if(!count){
-							stdio::print_warning("None found");
-						}
+					if(!count){
+						stdio::print_warning("None found");
 					}
 				}
 			}
@@ -52,29 +48,21 @@ namespace framebuffer {
 	U32 get_framebuffer_count() {
 		U32 count = 0;
 
-		for(auto device = deviceManager::devices.head; device; device=device->next){
-			if(!strcmp(device->type, "graphics")){
-				auto graphics = (driver::Graphics*)device;
-
-				count += graphics->get_framebuffer_count();
-			}
+		for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
+			count += graphics.get_framebuffer_count();
 		}
 
 		return count;
 	}
 
 	Framebuffer* get_framebuffer(U32 index) {
-		for(auto device = deviceManager::devices.head; device; device=device->next){
-			if(!strcmp(device->type, "graphics")){
-				auto graphics = (driver::Graphics*)device;
-
-				const auto count = graphics->get_framebuffer_count();
-				if(index<count){
-					return graphics->get_framebuffer(index);
-				}
-
-				index -= count;
+		for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
+			const auto count = graphics.get_framebuffer_count();
+			if(index<count){
+				return graphics.get_framebuffer(index);
 			}
+
+			index -= count;
 		}
 
 		return nullptr;

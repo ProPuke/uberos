@@ -44,7 +44,7 @@ namespace driver {
 			_specified_baud = set;
 		}
 
-		void Raspi_uart::enable_driver() {
+		void Raspi_uart::_on_driver_enable() {
 			if(state==State::enabled) return;
 
 			// Disable UART0
@@ -101,7 +101,7 @@ namespace driver {
 			state = State::enabled;
 		}
 		
-		void Raspi_uart::disable_driver() {
+		void Raspi_uart::_on_driver_disable() {
 			if(state==State::disabled) return;
 
 			mmio::write32(address+(U32)Address::cr, 0x00000000);

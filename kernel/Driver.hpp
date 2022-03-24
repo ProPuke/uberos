@@ -1,16 +1,14 @@
 #pragma once
 
-#include <common/types.hpp>
 #include <common/LList.hpp>
 
+#include <kernel/device.hpp>
 #include <kernel/memory.hpp>
 
 struct Driver: LListItem<Driver> {
 	enum struct State {
 		disabled,
 		enabled,
-		enabling,
-		disabling,
 		restarting,
 		failed,
 		max = failed
@@ -38,9 +36,15 @@ struct Driver: LListItem<Driver> {
 	virtual auto can_disable_driver() -> bool { return true; }
 	virtual auto can_restart_driver() -> bool { return true; }
 
-	virtual void enable_driver() { state = State::enabled; };
-	virtual void disable_driver() { state = State::disabled; };
-	virtual void restart_driver() { disable_driver(); enable_driver(); };
+private:
+
+	friend auto device::start_device(Driver &device) -> bool;
+	friend auto device::stop_device(Driver &device) -> bool;
+	friend auto device::restart_device(Driver &device) -> bool;
+
+	virtual void _on_driver_enable() { state = State::enabled; };
+	virtual void _on_driver_disable() { state = State::disabled; };
+	virtual void _on_driver_restart() { _on_driver_disable(); _on_driver_enable(); };
 };
 
 inline auto to_string(Driver::State state) -> const char* { return Driver::state_name[(U64)state]; }

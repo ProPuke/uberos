@@ -1,15 +1,15 @@
 #include <common/types.hpp>
 
 #include <kernel/driver/Graphics.hpp>
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 
 namespace driver {
 	namespace graphics {
 		struct Raspi_videocore_mailbox final: driver::Graphics {
 			/**/ Raspi_videocore_mailbox(U64 address);
 
-			void enable_driver() override;
-			void disable_driver() override;
+			void _on_driver_enable() override;
+			void _on_driver_disable() override;
 
 			auto set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion = true) -> bool override;
 

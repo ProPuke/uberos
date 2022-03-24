@@ -34,12 +34,10 @@ namespace driver {
 			};	
 		}
 
-		void Arm_gic400::enable_driver() {
+		void Arm_gic400::_on_driver_enable() {
 			if(state==State::enabled) return;
 
 			stdio::Section section("Gic400::init");
-
-			state = State::enabling;
 
 			const U32 gicd_address = address + gicd_base;
 			const U32 gicc_address = address + gicc_base;
@@ -96,15 +94,15 @@ namespace driver {
 			state = State::enabled;
 		}
 
-		void Arm_gic400::disable_driver() {
+		void Arm_gic400::_on_driver_disable() {
 			if(state==State::disabled) return;
 			
 			const U32 gicd_address = address + gicd_base;
 			const U32 gicc_address = address + gicc_base;
 
-			state = State::disabling;
 			mmio::write32(gicd_address+(U32)Gicd_address::ctlr, 0x00);
 			mmio::write32(gicc_address+(U32)Gicc_address::ctlr, 0x00);
+
 			state = State::disabled;
 		}
 

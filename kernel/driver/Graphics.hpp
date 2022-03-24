@@ -5,6 +5,7 @@
 #include <kernel/Framebuffer.hpp>
 
 namespace driver {
+	//TODO: should graphics drivers also include an api for querying their active processor(s) drivers if present? This would allow us to work out what processor speeds and temps relate to this graphics adapter, which might be useful/neat
 	struct Graphics: Driver {
 		constexpr /**/ Graphics(U64 address, const char *name, const char *descriptiveType):
 			Driver(address, name, "graphics", descriptiveType)

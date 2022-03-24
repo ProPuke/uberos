@@ -1,6 +1,6 @@
 #include "cpu.hpp"
 
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 
 #if defined(ARCH_RASPI1)
 	#include <kernel/driver/processor/Raspi_bcm2835.hpp>
@@ -30,6 +30,6 @@ namespace cpu {
 	#endif
 
 	void init() {
-		deviceManager::add_device(device);
+		device::install_device(device, true);
 	}
 }

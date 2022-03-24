@@ -4,7 +4,7 @@
 #include <common/stdlib.hpp>
 #include <common/types.hpp>
 
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 #include <kernel/driver/graphics/Raspi_videocore_mailbox.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/stdio.hpp>
@@ -17,7 +17,7 @@ namespace framebuffer {
 			void init() {
 				stdio::Section section("framebuffer::arch::raspi::init...");
 
-				deviceManager::add_device(device);
+				device::install_device(device, true);
 			}
 		}
 	}

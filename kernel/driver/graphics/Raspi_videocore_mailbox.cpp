@@ -48,10 +48,8 @@ namespace driver {
 			Graphics(address, "Raspi Videocore firmware mailbox", "video driver")
 		{}
 
-		void Raspi_videocore_mailbox::enable_driver() {
+		void Raspi_videocore_mailbox::_on_driver_enable() {
 			if(state==State::enabled) return;
-
-			state = State::enabling;
 
 			//TODO: only allow one of these drivers active at once?
 			framebuffer.driver = nullptr;
@@ -67,7 +65,7 @@ namespace driver {
 			state = State::enabled;
 		}
 
-		void Raspi_videocore_mailbox::disable_driver() {
+		void Raspi_videocore_mailbox::_on_driver_disable() {
 			if(state==State::disabled) return;
 
 			if(framebuffer.driver==this){
@@ -80,7 +78,7 @@ namespace driver {
 		bool Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion) {
 			if(framebufferId>0) return false;
 
-			stdio::Section section("framebuffer::arch::raspi::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
+			stdio::Section section("device::", name, "::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
 
 			framebuffer.driver = nullptr; // initially invalid
 

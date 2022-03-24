@@ -4,7 +4,7 @@
 #include "timer.hpp"
 
 #include <kernel/exceptions.hpp>
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 #include <kernel/stdio.hpp>
 #include <cstddef>
 
@@ -104,7 +104,7 @@ namespace irq {
 				interrupt_registers.irq_gpu_disable2 = 0xffffffff;
 
 				#ifdef HAS_GIC400
-					deviceManager::add_device(gic400);
+					device::install_device(gic400, true);
 				#endif
 			}
 

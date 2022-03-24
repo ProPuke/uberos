@@ -12,8 +12,8 @@ namespace driver {
 			void set_uart(U32 uart);
 			void set_baud(U32 set) override;
 
-			void enable_driver() override;
-			void disable_driver() override;
+			void _on_driver_enable() override;
+			void _on_driver_disable() override;
 
 			auto get_active_baud() -> U32 override { return _active_baud; }
 

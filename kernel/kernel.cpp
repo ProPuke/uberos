@@ -4,7 +4,7 @@
 #include <kernel/arch/raspi/timer.hpp>
 #include <kernel/cpu.hpp>
 #include <common/debugUtils.hpp>
-#include <kernel/deviceManager.hpp>
+#include <kernel/device.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/graphics2d.hpp>
@@ -47,7 +47,7 @@ namespace scheduler {
 	void init();
 }
 
-namespace deviceManager {
+namespace device {
 	void print_summary();
 }
 
@@ -93,7 +93,7 @@ namespace kernel {
 
 				{ stdio::Section section("devices:");
 
-					deviceManager::print_summary();
+					device::print_summary();
 				}
 			}
 

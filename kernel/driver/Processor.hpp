@@ -15,8 +15,8 @@ namespace driver {
 		auto can_disable_driver() -> bool override { return false; }
 		auto can_restart_driver() -> bool override { return false; }
 
-		void disable_driver() override {};
-		void restart_driver() override {};
+		void _on_driver_disable() override {};
+		void _on_driver_restart() override {};
 
 		//temps in K
 		virtual auto get_temperature_count() -> U32 { return 0; }
