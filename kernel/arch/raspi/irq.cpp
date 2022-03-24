@@ -104,7 +104,7 @@ namespace irq {
 				interrupt_registers.irq_gpu_disable2 = 0xffffffff;
 
 				#ifdef HAS_GIC400
-					device::install_device(gic400, true);
+					device::install_device(interruptController, true);
 				#endif
 			}
 
@@ -124,7 +124,7 @@ namespace irq {
 				}
 
 				#ifdef HAS_GIC400
-					gic400.enable_irq(videocore_peripheral_irqs+(U32)irq, 0);
+					interruptController.enable_irq(videocore_peripheral_irqs+(U32)irq, 0);
 				#endif
 			}
 
@@ -141,7 +141,7 @@ namespace irq {
 				}
 
 				#ifdef HAS_GIC400
-					gic400.disable_irq(videocore_peripheral_irqs+(U32)irq);
+					interruptController.disable_irq(videocore_peripheral_irqs+(U32)irq);
 				#endif
 			}
 		}

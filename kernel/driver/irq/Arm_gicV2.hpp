@@ -2,9 +2,9 @@
 
 namespace driver {
 	namespace irq {
-		struct Arm_gic400: driver::Irq {
-			/**/ Arm_gic400(U32 address):
-				Irq(address, "GIC-400", "interrupt controller")
+		struct Arm_gicV2: driver::Irq {
+			/**/ Arm_gicV2(U32 address):
+				Irq(address, "GIC v2", "interrupt controller")
 			{}
 
 			void _on_driver_enable() override;

@@ -1,4 +1,4 @@
-#include "Arm_gic400.hpp"
+#include "Arm_gicV2.hpp"
 
 #include <kernel/mmio.hpp>
 #include <kernel/stdio.hpp>
@@ -34,7 +34,7 @@ namespace driver {
 			};	
 		}
 
-		void Arm_gic400::_on_driver_enable() {
+		void Arm_gicV2::_on_driver_enable() {
 			if(state==State::enabled) return;
 
 			stdio::Section section("Gic400::init");
@@ -94,7 +94,7 @@ namespace driver {
 			state = State::enabled;
 		}
 
-		void Arm_gic400::_on_driver_disable() {
+		void Arm_gicV2::_on_driver_disable() {
 			if(state==State::disabled) return;
 			
 			const U32 gicd_address = address + gicd_base;
@@ -106,7 +106,7 @@ namespace driver {
 			state = State::disabled;
 		}
 
-		void Arm_gic400::enable_irq(U32 irq, U8 cpu) {
+		void Arm_gicV2::enable_irq(U32 irq, U8 cpu) {
 			// mmio::write32(gicd_address+(U32)Gicd_address::irq_config+4*(irq/16), (0b11 << (irq%16)) & mmio::read32(gicd_address+(U32)Gicd_address::irq_config+4*(irq/16)) | (0b1 << (irq%16)));
 
 			// mmio::write32(gicd_address+(U32)Gicd_address::irq_setEnable+4*(irq/32), 1<<(irq%32));
@@ -116,14 +116,14 @@ namespace driver {
 
 		}
 
-		void Arm_gic400::disable_irq(U32 irq) {
+		void Arm_gicV2::disable_irq(U32 irq) {
 
 		}
 
 		// intel GIC (1?) docs:
 
-		// void Arm_gic400::init() {
-		// 	stdio::Section section("Arm_gic400::init");
+		// void Arm_gicV2::init() {
+		// 	stdio::Section section("Arm_gicV2::init");
 
 		// 	// Set Interrupt Priority Mask Register (ICCPMR). Enable interrupts of all
 		// 	// priorities
@@ -138,7 +138,7 @@ namespace driver {
 		// 	mmio::write32(gicd_address+(U32)Gicd_address::ctlr, 1);
 		// }
 
-		// void Arm_gic400::enable_irq(U32 irq, U8 cpu) {
+		// void Arm_gicV2::enable_irq(U32 irq, U8 cpu) {
 		// 	int reg_offset, index, value, address;
 
 		// 	/* Configure the Interrupt Set-Enable Registers (ICDISERn).

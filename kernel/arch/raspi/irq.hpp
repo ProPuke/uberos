@@ -2,7 +2,7 @@
 
 #if defined(ARCH_RASPI4)
 	#define HAS_GIC400
-	#include <kernel/driver/irq/Arm_gic400.hpp>
+	#include <kernel/driver/irq/Arm_gicV2.hpp>
 #endif
 
 #include <kernel/mmio.hpp>
@@ -30,7 +30,7 @@ namespace irq {
 			inline const unsigned irq_max = 72;
 
 			#ifdef HAS_GIC400
-				inline driver::irq::Arm_gic400 gic400 {(U32)mmio::Address::gpu_peripheral_base + 0x1840000}; //0xff840000 on pi 4
+				inline driver::irq::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
 			#endif
 
 			void init();

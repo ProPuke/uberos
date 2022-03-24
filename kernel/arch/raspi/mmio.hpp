@@ -53,14 +53,17 @@ namespace mmio {
 				gpio_base          = gpu_peripheral_base + 0x200000,
 				uart0              = gpu_peripheral_base + 0x201000,
 				#if defined(ARCH_RASPI4)
-					uart2           = gpu_peripheral_base + 0x201400,
-					uart3           = gpu_peripheral_base + 0x201600,
-					uart4           = gpu_peripheral_base + 0x201800,
-					uart5           = gpu_peripheral_base + 0x201a00,
+					uart2          = gpu_peripheral_base + 0x201400,
+					uart3          = gpu_peripheral_base + 0x201600,
+					uart4          = gpu_peripheral_base + 0x201800,
+					uart5          = gpu_peripheral_base + 0x201a00,
 				#endif
 				uart1              = gpu_peripheral_base + 0x215000,
 				emmc_base          = gpu_peripheral_base + 0x300000,
 				usb_base           = gpu_peripheral_base + 0x980000,
+				#if defined(ARCH_RASPI4)
+					gic400         = gpu_peripheral_base + 0x1840000,
+				#endif
 
 				core_timer_base    = local_peripheral_base,
 				// core_timer_base    = gpu_peripheral_base + 0x3000,
