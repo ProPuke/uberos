@@ -1,6 +1,6 @@
 #include "Raspi.hpp"
 
-#include <common/math.hpp>
+#include <common/maths.hpp>
 
 #include <kernel/arch/raspi/mailbox.hpp>
 
