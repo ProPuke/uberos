@@ -1,9 +1,11 @@
 #pragma once
 
-#include "ProcessLog.hpp"
-#include "mmu.hpp"
+#include <common/ipc.hpp>
 #include <common/LList.hpp>
 #include <common/ListUnordered.hpp>
+
+#include <kernel/ProcessLog.hpp>
+#include <kernel/mmu.hpp>
 
 #include <cstddef>
 
@@ -32,5 +34,7 @@ struct Process: LListItem<Process> {
 	ListUnordered<Thread> threads;
 
 	auto create_current_thread(memory::Page *stackPage, size_t stackSize) -> Thread*;
-	auto create_thread(void(*entrypoint)()) -> Thread*;
+
+	auto create_thread(void(*entrypoint)(IpcId, void* ipcData)) -> Thread*;
+	auto create_kernel_thread(void(*entrypoint)()) -> Thread*;
 };

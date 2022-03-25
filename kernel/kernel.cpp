@@ -106,7 +106,7 @@ namespace kernel {
 			debug_llist(memory::kernelHeap.availableBlocks, "availableBlocks 1");
 		#endif
 
-		// thread::create_kernel("ram test", []() {
+		// thread::create_kernel_thread("ram test", []() {
 		// 	#ifdef MEMORY_CHECKS
 		// 		debug_llist(memory::kernelHeap.availableBlocks, "availableBlocks 3");
 		// 	#endif
@@ -135,7 +135,7 @@ namespace kernel {
 		log.print_info("Putting on lightshow...");
 
 		// stdio::print_error("Error: BEFORE THREAD");
-		// thread::create_kernel("drawing test", []() {
+		// thread::create_kernel_thread("drawing test", []() {
 		// 	stdio::print_error("Error: IN THREAD");
 
 		// 	auto &framebuffer = framebuffer::framebuffers[0];
@@ -177,7 +177,7 @@ namespace kernel {
 			}
 		});
 
-		// for(auto i=0;i<2;i++)process.create_thread([]() {
+		// for(auto i=0;i<2;i++)process.create_kernel_thread([]() {
 		// 	auto &log = thread::currentThread.load()->process.log;
 
 		// 	// const process = thread::currentThread->load();
@@ -192,7 +192,7 @@ namespace kernel {
 
 		if(true){
 			for(int i=0;i<4;i++){
-				process.create_thread([]() {
+				process.create_kernel_thread([]() {
 					auto &log = thread::currentThread.load()->process.log;
 					auto possibleFramebuffer = framebuffer::get_framebuffer(0);
 					if(!possibleFramebuffer){
@@ -290,7 +290,7 @@ namespace kernel {
 		}
 		
 		if(true){
-			for(auto i=0;i<5;i++)process.create_thread([]() {
+			for(auto i=0;i<5;i++)process.create_kernel_thread([]() {
 				float scale = 0.25+(rand()%256)/128.0;
 
 				auto &thread = *::thread::currentThread.load();
