@@ -5,6 +5,7 @@ namespace arch {
 	namespace arm32 {
 		//TODO:allow nested use on the same processor core
 
+		template <bool lock_scheduler = true, bool lock_exceptions = true>
 		struct Spinlock {
 			/**/ Spinlock(const char *name):
 				name(name)

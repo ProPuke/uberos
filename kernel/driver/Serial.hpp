@@ -25,8 +25,7 @@ namespace driver {
 			for(i=0; i<length; i++){
 				c=getc();
 
-				if(c=='\r') continue;
-				if(c=='\n') break;
+				if(c=='\r'||c=='\n') break;
 				
 				putc(c);
 				buffer[i] = c;

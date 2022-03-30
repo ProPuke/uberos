@@ -43,12 +43,12 @@ namespace scheduler {
 			U64 lastPing = 0;
 			U32 deferredYields = 0;
 			
-			Spinlock threadLock("scheduler threadLock");
+			Spinlock<> threadLock("scheduler threadLock");
 
 			void init() {
 				stdio::Section section("scheduler::arch::arm::init...");
 
-				stdio::print_debug("installing interrupt timer...");
+				stdio::print_info("installing interrupt timer...");
 				// {
 				// 	stdio::print_debug("creating test spinlock");
 				// 	Spinlock testlock("testlock");
@@ -214,16 +214,16 @@ namespace scheduler {
 	}
 
 	void lock() {
-		lock_depth.fetch_add(1);
+		// lock_depth.fetch_add(1);
 	}
 
 	void unlock() {
-		if(lock_depth.fetch_sub(1)==1){
-			if(deferredYields>0){
-				deferredYields = 0;
-				yield();
-			}
-		}
+		// if(lock_depth.fetch_sub(1)==1){
+		// 	if(deferredYields>0){
+		// 		deferredYields = 0;
+		// 		yield();
+		// 	}
+		// }
 	}
 
 	U32 get_total_thread_count() {

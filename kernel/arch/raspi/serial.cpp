@@ -57,6 +57,10 @@ namespace arch {
 					#elif defined(ARCH_RASPI_UART1)
 						stdio::print_info("UART1 active");
 					#endif
+
+					// char buffer[1024];
+					// serial.gets(buffer, 1024);
+					// stdio::print_info("got ", (const char *)&buffer[0]);
 				}
 			}
 		}

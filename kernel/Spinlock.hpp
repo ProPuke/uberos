@@ -9,8 +9,9 @@
 	using arch::arm64::Spinlock;
 #endif
 
+template <bool lock_scheduler = true, bool lock_exceptions = true>
 struct Spinlock_Guard {
-	/**/ Spinlock_Guard(Spinlock &lock, const char *context = "unnamed"):
+	/**/ Spinlock_Guard(Spinlock<lock_scheduler, lock_exceptions> &lock, const char *context = "unnamed"):
 		context(context),
 		_lock(lock)
 	{
@@ -23,5 +24,5 @@ struct Spinlock_Guard {
 
 	const char *context;
 
-	private: Spinlock &_lock;
+	private: Spinlock<lock_scheduler, lock_exceptions> &_lock;
 };

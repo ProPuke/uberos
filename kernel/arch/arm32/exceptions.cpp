@@ -2,22 +2,11 @@
 
 #include <common/types.hpp>
 
-#include <kernel/arch/raspi/irq.hpp>
-#include <kernel/arch/raspi/mmio.hpp>
-#include <kernel/arch/raspi/timer.hpp>
 #include <kernel/stdio.hpp>
 
 #include <atomic>
 
 extern "C" void install_exception_handlers();
-
-namespace timer {
-	using namespace timer::arch::raspi;
-}
-
-namespace irq {
-	using namespace irq::arch::raspi;
-}
 
 namespace exceptions {
 	namespace arch {
@@ -49,8 +38,6 @@ namespace exceptions {
 
 			void init() {
 				stdio::Section section("exceptions::arch::arm32::init...");
-
-				irq::init();
 
 				install_exception_handlers();
 

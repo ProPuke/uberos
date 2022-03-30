@@ -45,7 +45,7 @@ namespace mmio {
 				local_peripheral_base = gpu_peripheral_base + gpu_peripheral_length,
 
 				system_timer_base  = gpu_peripheral_base + 0x3000,
-				interrupts_base    = gpu_peripheral_base + 0xB000,
+				interrupts_legacy  = gpu_peripheral_base + 0xB000,
 				mail0_base         = gpu_peripheral_base + 0xB880,
 				rstc               = gpu_peripheral_base + 0x10001c,
 				rsts               = gpu_peripheral_base + 0x100020,
@@ -67,8 +67,6 @@ namespace mmio {
 
 				core_timer_base    = local_peripheral_base,
 				// core_timer_base    = gpu_peripheral_base + 0x3000,
-
-				interrupts_pending = interrupts_base + 0x200,
 
 				mail0_read    = mail0_base + 0x00,
 				mail0_status  = mail0_base + 0x18,

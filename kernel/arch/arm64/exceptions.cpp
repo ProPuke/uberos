@@ -3,22 +3,11 @@
 #include <common/disassemble/arm64.hpp>
 #include <common/format.hpp>
 
-#include <kernel/arch/raspi/irq.hpp>
-#include <kernel/arch/raspi/mmio.hpp>
-#include <kernel/arch/raspi/timer.hpp>
 #include <kernel/stdio.hpp>
 
 #include <cstddef>
 
 extern "C" void install_exception_handlers();
-
-namespace timer {
-	using namespace timer::arch::raspi;
-}
-
-namespace irq {
-	using namespace irq::arch::raspi;
-}
 
 struct __attribute__((packed)) Registers {
 	U64 x[31];
@@ -272,8 +261,6 @@ namespace exceptions {
 			
 			void init() {
 				stdio::Section section("exceptions::arch::arm64::init...");
-
-				irq::init();
 
 				install_exception_handlers();
 

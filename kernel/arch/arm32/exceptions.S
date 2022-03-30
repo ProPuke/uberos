@@ -39,7 +39,7 @@ interrupt_irq_asm_wrapper:
 	and     r1, sp, #4       // Make sure stack is 8 byte aligned
 	sub     sp, sp, r1
 	push    {r1}             // Save the stack adjustment
-	bl      interrupt_irq
+	bl      handle_interrupt
 	pop     {r1}             // Get the stack adjustment
 	add     sp, sp, r1
 	pop     {r0-r3, r12, lr} // Revert the caller save registers

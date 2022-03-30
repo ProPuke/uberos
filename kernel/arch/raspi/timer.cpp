@@ -76,6 +76,9 @@ namespace timer {
 			void set_timer(Timer timer, U32 usecs) {
 				// stdio::print_debug("set timer ", (unsigned)timer);
 
+				usecs += 500;
+				// usecs += 5000000;
+
 				{
 					mmio::PeripheralAccessGuard guard1;
 
@@ -96,7 +99,7 @@ namespace timer {
 					}
 				}
 
-				// stdio::print_error("set timer ", (U32)timer, ", ", usecs);
+				// stdio::print_debug("set timer ", (U32)timer, ", ", usecs);
 
 				switch(timer){
 					case Timer::gpu0:

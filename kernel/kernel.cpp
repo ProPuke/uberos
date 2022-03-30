@@ -192,12 +192,12 @@ namespace kernel {
 
 		if(true){
 			for(int i=0;i<4;i++){
-				process.create_kernel_thread([]() {
+				process.create_kernel_thread([]() -> I32 {
 					auto &log = thread::currentThread.load()->process.log;
 					auto possibleFramebuffer = framebuffer::get_framebuffer(0);
 					if(!possibleFramebuffer){
 						log.print_error("No valid framebuffer");
-						return;
+						return 0;
 					}
 
 					auto &framebuffer = *possibleFramebuffer;
@@ -221,7 +221,7 @@ namespace kernel {
 					auto view = graphics2d::create_view(*thread::currentThread, rand()%((U32)framebuffer.width-width), rand()%((U32)framebuffer.height-height), width, height, scale);
 					if(!view) {
 						log.print_error("Error: didn't get a view");
-						return;
+						return 0;
 					}
 
 					log.print_debug("got view");
@@ -290,7 +290,7 @@ namespace kernel {
 		}
 		
 		if(true){
-			for(auto i=0;i<5;i++)process.create_kernel_thread([]() {
+			for(auto i=0;i<5;i++)process.create_kernel_thread([]() -> I32 {
 				float scale = 0.25+(rand()%256)/128.0;
 
 				auto &thread = *::thread::currentThread.load();
@@ -321,7 +321,7 @@ namespace kernel {
 				auto possibleFramebuffer = framebuffer::get_framebuffer(0);
 				if(!possibleFramebuffer){
 					log.print_error("No valid framebuffer");
-					return;
+					return 0;
 				}
 
 				auto &framebuffer = *possibleFramebuffer;

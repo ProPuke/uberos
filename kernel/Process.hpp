@@ -3,6 +3,7 @@
 #include <common/ipc.hpp>
 #include <common/LList.hpp>
 #include <common/ListUnordered.hpp>
+#include <common/ipc.hpp>
 
 #include <kernel/ProcessLog.hpp>
 #include <kernel/mmu.hpp>
@@ -22,9 +23,12 @@ namespace memory {
 struct Thread;
 
 struct Process: LListItem<Process> {
-	/**/ Process(const char *name);
+	typedef I32(*Entrypoint)(ipc::Id, void *ipcPacket);
+
+	/**/ Process(const char *name, Entrypoint entrypoint = nullptr);
 
 	const char *name;
+	Entrypoint entrypoint;
 	ProcessLog log;
 
 	#ifdef HAS_MMU
@@ -35,6 +39,8 @@ struct Process: LListItem<Process> {
 
 	auto create_current_thread(memory::Page *stackPage, size_t stackSize) -> Thread*;
 
-	auto create_thread(void(*entrypoint)(IpcId, void* ipcData)) -> Thread*;
-	auto create_kernel_thread(void(*entrypoint)()) -> Thread*;
+	auto create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) -> Thread*;
+	auto create_kernel_thread(I32(*entrypoint)()) -> Thread*;
+
+	void run(ipc::Id ipc, void *ipcPacket);
 };

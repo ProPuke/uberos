@@ -4,6 +4,7 @@
 
 #include <kernel/Driver.hpp>
 #include <kernel/driver/Graphics.hpp>
+#include <kernel/driver/Interrupt.hpp>
 #include <kernel/driver/Processor.hpp>
 #include <kernel/driver/Serial.hpp>
 #include <kernel/stdio.hpp>
@@ -164,6 +165,10 @@ namespace device {
 				}else{
 					stdio::print_info("   Default mode: None");
 				}
+			}
+			if(!strcmp(device->type, "interrupt")){
+				auto &irq = *(driver::Interrupt*)device;
+				stdio::print_info("   Interrupts: ", irq.min_irq, " - ", irq.max_irq);
 			}
 
 			first = false;

@@ -151,7 +151,7 @@ namespace driver {
 				stdio::print_info("accepting a bitdepth of ", bitdepth);
 			}
 
-			stdio::print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
+			// stdio::print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
 
 			framebuffer.address = (U8*)(size_t)(tags[0].data.allocate_res.fb_addr&0x3FFFFFFF);
 			framebuffer.size = tags[0].data.allocate_res.fb_size;
@@ -276,7 +276,7 @@ namespace driver {
 
 					bool found = false;
 
-					for(U32 i=0;i<(U8)FramebufferFormat::max;i++){
+					for(U32 i=0;i<=(U8)FramebufferFormat::max;i++){
 						if(framebufferFormat::size[i]*8==defaultBitdepth){
 							defaultMode.format = (FramebufferFormat)i;
 							found = true;

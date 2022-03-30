@@ -12,7 +12,7 @@ namespace format {
 
 		#ifdef _32BIT
 			Hex32(U32 value):value(value){}
-			Hex32(void *pointer):value((U32)pointer){}
+			Hex32(volatile void *pointer):value((U32)pointer){}
 		#endif
 	};
 	struct Hex64 {
@@ -21,7 +21,7 @@ namespace format {
 
 		#ifdef _64BIT
 			Hex64(U64 value):value(value){}
-			Hex64(void *pointer):value((U64)pointer){}
+			Hex64(volatile void *pointer):value((U64)pointer){}
 		#endif
 	};
 }

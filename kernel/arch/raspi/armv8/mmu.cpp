@@ -1,4 +1,7 @@
 #include <kernel/mmu.hpp>
+
+#ifdef HAS_MMU
+
 #include "../hwquery.hpp"
 #include "../mmio.hpp"
 
@@ -47,3 +50,5 @@ namespace mmu {
 		// 0xfe000000 peripheral_start
 	}
 }
+
+#endif

@@ -2,7 +2,9 @@
 
 #if defined(ARCH_RASPI4)
 	#define HAS_GIC400
-	#include <kernel/driver/irq/Arm_gicV2.hpp>
+	#include <kernel/driver/interrupt/Arm_gicV2.hpp>
+#else
+	#include <kernel/driver/interrupt/Arm_raspi_legacy.hpp>
 #endif
 
 #include <kernel/mmio.hpp>
@@ -30,7 +32,9 @@ namespace irq {
 			inline const unsigned irq_max = 72;
 
 			#ifdef HAS_GIC400
-				inline driver::irq::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
+				inline driver::interrupt::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
+			#else
+				inline driver::interrupt::Arm_raspi_legacy interruptController {(U32)mmio::Address::interrupts_legacy};
 			#endif
 
 			void init();

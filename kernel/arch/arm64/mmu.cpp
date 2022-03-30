@@ -1,4 +1,6 @@
-#include "mmu.hpp"
+#include <kernel/mmu.hpp>
+
+#ifdef HAS_MMU
 
 #include <common/format.hpp>
 #include <common/stdlib.hpp>
@@ -676,3 +678,5 @@ namespace mmu {
 		return virtualAddress;
 	}
 }
+
+#endif

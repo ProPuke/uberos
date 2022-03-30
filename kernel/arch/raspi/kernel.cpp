@@ -1,10 +1,11 @@
-#include "serial.hpp"
-#include "memory.hpp"
-#include "usb.hpp"
 #include "atags.hpp"
-#include "timer.hpp"
 #include "framebuffer.hpp"
 #include "hwquery.hpp"
+#include "irq.hpp"
+#include "memory.hpp"
+#include "serial.hpp"
+#include "timer.hpp"
+#include "usb.hpp"
 
 #include <common/stdlib.hpp>
 #include <common/types.hpp>
@@ -36,6 +37,10 @@ namespace exceptions {
 	#elif defined(ARCH_ARM64)
 		using namespace arch::arm64;
 	#endif
+}
+
+namespace irq {
+	using namespace arch::raspi;
 }
 
 namespace timer {
@@ -87,6 +92,7 @@ namespace kernel {
 						#endif
 
 						hwquery::init();
+						irq::init();
 						memory::init();
 
 						#ifdef HAS_MMU
