@@ -12,27 +12,27 @@ namespace exceptions {
 	namespace arch {
 		namespace arm32 {
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_reset() {
-				stdio::print_info("RESET HANDLER");
+				stdio::print_error("RESET HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_prefetch_abort() {
-				stdio::print_info("PREFETCH ABORT HANDLER");
+				stdio::print_error("PREFETCH ABORT HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_data_abort() {
-				stdio::print_info("DATA ABORT HANDLER");
+				stdio::print_error("DATA ABORT HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("UNDEF"))) interrupt_undefined_instruction() {
-				stdio::print_info("UNDEFINED INSTRUCTION HANDLER");
+				stdio::print_error("UNDEFINED INSTRUCTION HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("SWI"))) interrupt_software_interrupt() {
-				stdio::print_info("SWI HANDLER");
+				stdio::print_error("SWI HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("FIQ"))) interrupt_fast_irq() {
-				stdio::print_info("FIQ HANDLER");
+				stdio::print_error("FIQ HANDLER");
 				while(true);
 			}
 
