@@ -8,6 +8,7 @@ namespace stdio {
 	namespace {
 		void null_putc(void*, unsigned char c) {}
 		auto null_getc(void*) -> unsigned char { return 0; }
+		auto null_peekc(void*) -> unsigned char { return 0; }
 
 		void automatic_puts(void *binding, const char *str) {
 			while(*str) _binding_putc(binding, *str++);
@@ -34,14 +35,16 @@ namespace stdio {
 
 	void *_binding = nullptr;
 	Putc _binding_putc = null_putc;
+	Peekc _binding_peekc = null_peekc;
 	Getc _binding_getc = null_getc;
 	Puts _binding_puts = automatic_puts;
 	Gets _binding_gets = automatic_gets;
 
-	void bind(void* binding, Putc putc, Getc getc, Puts puts, Gets gets) {
+	void bind(void* binding, Putc putc, Peekc peekc, Getc getc, Puts puts, Gets gets) {
 		_binding = binding;
 
 		_binding_putc = putc?:null_putc;
+		_binding_peekc = peekc?:null_peekc;
 		_binding_getc = getc?:null_getc;
 
 		_binding_puts = puts?:automatic_puts;

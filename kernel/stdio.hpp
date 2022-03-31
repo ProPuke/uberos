@@ -17,17 +17,22 @@ namespace stdio {
 
 	typedef auto (*Putc)(void*, unsigned char c) -> void;
 	typedef auto (*Getc)(void*) -> unsigned char;
+	typedef auto (*Peekc)(void*) -> unsigned char;
 	typedef auto (*Puts)(void*, const char *str) -> void;
 	typedef void (*Gets)(void*, char *buf, U32 length);
 
 	extern void* _binding;
 	extern Putc _binding_putc;
+	extern Getc _binding_peekc;
 	extern Getc _binding_getc;
 	extern Puts _binding_puts;
 	extern Gets _binding_gets;
 
 	inline auto putc(unsigned char c) -> void {
 		return _binding_putc(_binding, c);
+	}
+	inline auto peekc() -> unsigned char {
+		return _binding_peekc(_binding);
 	}
 	inline auto getc() -> unsigned char {
 		return _binding_getc(_binding);
@@ -39,8 +44,7 @@ namespace stdio {
 		return _binding_gets(_binding, buffer, length);
 	}
 
-	void bind(void* binding, Putc putc, Getc getc, Puts puts = nullptr, Gets gets = nullptr);
-	// void bind(typeof putc, typeof getc, typeof puts = nullptr, typeof gets = nullptr);
+	void bind(void* binding, Putc putc, Peekc peekc, Getc getc, Puts puts = nullptr, Gets gets = nullptr);
 
 	enum struct PrintType {
 		info,

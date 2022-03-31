@@ -19,6 +19,7 @@ namespace driver {
 
 			void putc(unsigned char c) override;
 			void puts(const char *str) override;
+			auto peekc() -> unsigned char override;
 			auto getc() -> unsigned char override;
 
 		private:
@@ -27,11 +28,9 @@ namespace driver {
 			
 			U32 _active_baud = 9600;
 
-			void __putc(unsigned char c);
 			void _putc(unsigned char c);
-			auto __getc() -> unsigned char;
+			auto _peekc() -> unsigned char;
 			auto _getc() -> unsigned char;
-			void __puts(const char* str);
 			void _puts(const char* str);
 		};
 	}

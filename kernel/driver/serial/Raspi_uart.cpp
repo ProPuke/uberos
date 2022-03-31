@@ -110,43 +110,43 @@ namespace driver {
 		}
 
 		void Raspi_uart::putc(unsigned char c) {
+			mmio::PeripheralWriteGuard _guard;
 			_putc(c);
 		}
 		void Raspi_uart::puts(const char *str) {
-			_puts(str);
+			mmio::PeripheralWriteGuard _guard;
+			while(*str) _putc(*str++);
+		}
+		auto Raspi_uart::peekc() -> unsigned char {
+			mmio::PeripheralReadGuard _guard;
+			return _peekc();
 		}
 		auto Raspi_uart::getc() -> unsigned char {
+			mmio::PeripheralReadGuard _guard;
 			return _getc();
 		}
 
-		void Raspi_uart::__putc(unsigned char c) {
-			if(c=='\n') __putc('\r');
+		void Raspi_uart::_putc(unsigned char c) {
+			if(c=='\n') _putc('\r');
 			while(mmio::read32(address+(U32)Address::fr) & 1<<5);
 			mmio::write32(address+(U32)Address::dr, c);
 		}
 
-		void Raspi_uart::_putc(unsigned char c) {
-			mmio::PeripheralWriteGuard _guard;
-			__putc(c);
+		auto Raspi_uart::_peekc() -> unsigned char {
+			if(!(mmio::read32(address+(U32)Address::fr) & 1<<4)){
+				return mmio::read32(address+(U32)Address::dr);
+			}else{
+				return 0;
+			}
 		}
-
-		auto Raspi_uart::__getc() -> unsigned char {
+		
+		auto Raspi_uart::_getc() -> unsigned char {
 			while(mmio::read32(address+(U32)Address::fr) & 1<<4);
 			return mmio::read32(address+(U32)Address::dr);
 		}
-
-		auto Raspi_uart::_getc() -> unsigned char {
-			mmio::PeripheralReadGuard _guard;
-			return __getc();
-		}
 		
-		void Raspi_uart::__puts(const char* str) {
-			while(*str) __putc(*str++);
-		}
-
 		void Raspi_uart::_puts(const char* str) {
-			mmio::PeripheralWriteGuard _guard;
-			while(*str) __putc(*str++);
+			while(*str) _putc(*str++);
 		}
 	}
 }
