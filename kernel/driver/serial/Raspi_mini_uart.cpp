@@ -107,7 +107,7 @@ namespace driver {
 		}
 
 		auto Raspi_mini_uart::_peekc() -> unsigned char {
-			if(mmio::read32(address+(U32)Address::mu_lsr) & 1<<1){
+			if(mmio::read32(address+(U32)Address::mu_lsr) & 1<<0){
 				return mmio::read32(address+(U32)Address::mu_io);
 			}else{
 				return 0;
@@ -115,7 +115,7 @@ namespace driver {
 		}
 
 		auto Raspi_mini_uart::_getc() -> unsigned char {
-			while(!(mmio::read32(address+(U32)Address::mu_lsr) & 1<<1));
+			while(!(mmio::read32(address+(U32)Address::mu_lsr) & 1<<0));
 			return mmio::read32(address+(U32)Address::mu_io);
 		}
 
