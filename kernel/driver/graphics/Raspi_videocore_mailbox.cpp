@@ -75,7 +75,7 @@ namespace driver {
 			state = State::disabled;
 		}
 
-		bool Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion) {
+		auto Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion) -> bool {
 			if(framebufferId>0) return false;
 
 			stdio::Section section("device::", name, "::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
@@ -201,11 +201,11 @@ namespace driver {
 			return true;
 		}
 
-		U32  Raspi_videocore_mailbox::get_mode_count() {
+		auto Raspi_videocore_mailbox::get_mode_count() -> U32 {
 			return sizeof(possibleResolutions)/sizeof(possibleResolutions[0]) * ((U32)FramebufferFormat::max+1);
 		}
 
-		framebuffer::Mode Raspi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) {
+		auto Raspi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode {
 			auto modeIndex = index/((U32)FramebufferFormat::max+1);
 			if(modeIndex>=sizeof(possibleResolutions)/sizeof(possibleResolutions[0])) {
 				return { 0 };
@@ -237,7 +237,7 @@ namespace driver {
 			return { resolution[0], resolution[1], format };
 		}
 
-		bool Raspi_videocore_mailbox::detect_default_mode() {
+		auto Raspi_videocore_mailbox::detect_default_mode() -> bool {
 			//TODO:pick better defaults? This seems awfully low
 			defaultMode.width = 640;
 			defaultMode.height = 480;
@@ -293,15 +293,17 @@ namespace driver {
 			return true;
 		}
 
-		framebuffer::Mode Raspi_videocore_mailbox::get_default_mode() {
+		auto Raspi_videocore_mailbox::get_default_mode() -> framebuffer::Mode {
 			return defaultMode;
 		}
 
-		U32 Raspi_videocore_mailbox::get_framebuffer_count() {
-			return framebuffer.driver==this?1:0;
+		auto Raspi_videocore_mailbox::get_framebuffer_count() -> U32 {
+			if(framebuffer.driver!=this) return 0;
+
+			return 1;
 		}
 
-		Framebuffer* Raspi_videocore_mailbox::get_framebuffer(U32 index) {
+		auto Raspi_videocore_mailbox::get_framebuffer(U32 index) -> Framebuffer* {
 			return index==0&&framebuffer.driver==this?&framebuffer:nullptr;
 		}
 	}
