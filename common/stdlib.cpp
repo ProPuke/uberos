@@ -4,26 +4,28 @@
 
 #include <cstddef>
 
-extern "C" void memcpy(void *dest, const void *src, unsigned bytes) {
-	if(dest==src) return;
-	memcpy_forwards(dest, src, bytes);
+extern "C" void* memcpy(void *dest, const void *src, unsigned bytes) {
+	if(dest==src) return dest;
+	return memcpy_forwards(dest, src, bytes);
 }
 
-extern "C" void memcpy_forwards(void *dest, const void *src, unsigned bytes) {
+extern "C" void* memcpy_forwards(void *dest, const void *src, unsigned bytes) {
 	char *d = (char*)dest, *s = (char*)src;
 	while(bytes--) *d++ = *s++;
+	return dest;
 }
 
-extern "C" void memcpy_backwards(void *dest, const void *src, unsigned bytes) {
+extern "C" void* memcpy_backwards(void *dest, const void *src, unsigned bytes) {
 	char *d = (char*)dest+bytes, *s = (char*)src+bytes;
 	while(bytes--) *d-- = *s--;
+	return dest;
 }
 
-extern "C" void memmove(void *dest, const void *src, unsigned bytes) {
+extern "C" void* memmove(void *dest, const void *src, unsigned bytes) {
 	if(dest>=src){
-		memcpy_backwards(dest, src, bytes);
+		return memcpy_backwards(dest, src, bytes);
 	}else{
-		memcpy_forwards(dest, src, bytes);
+		return memcpy_forwards(dest, src, bytes);
 	}
 }
 
@@ -54,7 +56,8 @@ extern "C" unsigned strlen(const C8 *str) {
 }
 
 extern "C" char* strcat(char *destination, const char *source) {
-	return strcpy(destination+strlen(destination), source);
+	strcpy(destination+strlen(destination), source);
+	return destination;
 }
 
 extern "C" char* strcpy(char *destination, const char *source) {

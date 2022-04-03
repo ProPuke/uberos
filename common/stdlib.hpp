@@ -2,10 +2,10 @@
 
 #include "types.hpp"
 
-extern "C" void memcpy(void *dest, const void *src, unsigned bytes);
-extern "C" void memcpy_forwards(void *dest, const void *src, unsigned bytes);
-extern "C" void memcpy_backwards(void *dest, const void *src, unsigned bytes);
-extern "C" void memmove(void *dest, const void *src, unsigned bytes);
+extern "C" void* memcpy(void *dest, const void *src, unsigned bytes);
+extern "C" void* memcpy_forwards(void *dest, const void *src, unsigned bytes);
+extern "C" void* memcpy_backwards(void *dest, const void *src, unsigned bytes);
+extern "C" void* memmove(void *dest, const void *src, unsigned bytes);
 extern "C" int memcmp(const void *a, const void *b, unsigned length);
 extern "C" void bzero(void *dest, unsigned bytes);
 extern "C" unsigned strlen(const C8 *str);
