@@ -20,6 +20,7 @@
 #include <kernel/Thread.hpp>
 #include <kernel/timer.hpp>
 
+using namespace maths;
 
 namespace memory {
 	extern LList<::memory::Page> freePages;

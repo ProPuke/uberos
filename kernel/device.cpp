@@ -1,6 +1,7 @@
 #include "device.hpp"
 
 #include <common/format.hpp>
+#include <common/maths.hpp>
 
 #include <kernel/Driver.hpp>
 #include <kernel/driver/Graphics.hpp>
@@ -8,6 +9,8 @@
 #include <kernel/driver/Processor.hpp>
 #include <kernel/driver/Serial.hpp>
 #include <kernel/stdio.hpp>
+
+using namespace maths;
 
 namespace device {
 	LList<Driver> devices;

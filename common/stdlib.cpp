@@ -1,5 +1,7 @@
 #include "stdlib.hpp"
 
+#include <common/maths.hpp>
+
 #include <cstddef>
 
 extern "C" void memcpy(void *dest, const void *src, unsigned bytes) {

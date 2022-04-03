@@ -4,6 +4,8 @@
 
 #include <kernel/arch/raspi/mailbox.hpp>
 
+using namespace maths;
+
 namespace mailbox {
 	using namespace arch::raspi::mailbox;
 }

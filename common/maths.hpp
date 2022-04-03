@@ -2,22 +2,30 @@
 
 #include "types.hpp"
 
-U16 rand();
+namespace maths {
+	auto rand() -> U16;
 
-template <typename Type>
-inline Type min(Type x, Type y) { return x<=y?x:y; }
-template <typename Type>
-inline Type max(Type x, Type y) { return x>=y?x:y; }
+	template <typename Type>
+	constexpr auto min(Type x, Type y) -> Type { return x<=y?x:y; }
+	template <typename Type>
+	constexpr auto max(Type x, Type y) -> Type { return x>=y?x:y; }
 
-inline U8  abs(I8  x) { return x>=0?x:-x; }
-inline U16 abs(I16 x) { return x>=0?x:-x; }
-inline U32 abs(I32 x) { return x>=0?x:-x; }
-inline U64 abs(I64 x) { return x>=0?x:-x; }
+	template <typename Type>
+	constexpr auto abs(Type x) -> Type { return x>=0?x:-x; }
 
-template <typename InputType, typename OutputType>
-inline OutputType clamp(InputType x, OutputType a, OutputType b) { return min<InputType>(max<InputType>(x, a), b); }
+	constexpr auto abs(I8  x) -> U8  { return x>=0?x:-x; }
+	constexpr auto abs(I16 x) -> U16 { return x>=0?x:-x; }
+	constexpr auto abs(I32 x) -> U32 { return x>=0?x:-x; }
+	constexpr auto abs(I64 x) -> U64 { return x>=0?x:-x; }
 
-template <typename T>
-inline auto celcius_to_kelvin(T x) { return x+273.15; }
-template <typename T>
-inline auto kelvin_to_celcius(T x) { return x-273.15; }
+	template <typename Type>
+	constexpr auto sign(Type x) -> U32 { return x>0?+1:x<0?-1:0; }
+
+	template <typename InputType, typename OutputType>
+	constexpr auto clamp(InputType x, OutputType a, OutputType b) -> OutputType { return min<InputType>(max<InputType>(x, a), b); }
+
+	template <typename T>
+	constexpr auto celcius_to_kelvin(T x) -> T { return x+273.15; }
+	template <typename T>
+	constexpr auto kelvin_to_celcius(T x) -> T { return x-273.15; }
+}

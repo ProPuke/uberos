@@ -117,7 +117,7 @@ namespace graphics2d {
 
 			I32 screenPxDistance = ((I32)median-128)*sdfPixels;
 
-			U8 alpha = clamp(screenPxDistance + 128, 0, 255);
+			U8 alpha = maths::clamp(screenPxDistance + 128, 0, 255);
 
 			set(startX+x, startY+y, blend_rgb(get(startX+x, startY+y), colour, alpha));
 		}
@@ -125,7 +125,7 @@ namespace graphics2d {
 
 	inline void Buffer::scroll(I32 scrollX, I32 scrollY) {
 		if(!scrollX&&!scrollY) return;
-		if(abs(scrollX)>=width||abs(scrollY)>=height) return;
+		if(maths::abs(scrollX)>=width||maths::abs(scrollY)>=height) return;
 
 		const auto bpp = framebufferFormat::size[(U8)format];
 		U32 x1, x2;

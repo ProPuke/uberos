@@ -20,7 +20,7 @@ struct ListUnordered {
 	}
 
 	void resize(U32 newSize){
-		newSize = max(max(length, (U32)1), newSize);
+		newSize = maths::max(maths::max(length, (U32)1), newSize);
 		if(newSize==allocated) return;
 
 		Type **newData = new Type*[allocated=newSize];
