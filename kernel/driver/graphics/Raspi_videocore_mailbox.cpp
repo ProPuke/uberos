@@ -306,5 +306,11 @@ namespace driver {
 		auto Raspi_videocore_mailbox::get_framebuffer(U32 index) -> Framebuffer* {
 			return index==0&&framebuffer.driver==this?&framebuffer:nullptr;
 		}
+
+		auto Raspi_videocore_mailbox::get_framebuffer_name(U32 index) -> const char* {
+			if(framebuffer.driver!=this) return 0;
+
+			return "framebuffer";
+		}
 	}
 }

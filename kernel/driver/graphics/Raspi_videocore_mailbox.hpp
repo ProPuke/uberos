@@ -21,6 +21,7 @@ namespace driver {
 
 			auto get_framebuffer_count() -> U32 override;
 			auto get_framebuffer(U32 index) -> Framebuffer* override;
+			auto get_framebuffer_name(U32 index) -> const char* override;
 		};
 	}
 }

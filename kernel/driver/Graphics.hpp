@@ -20,5 +20,6 @@ namespace driver {
 
 		virtual auto get_framebuffer_count() -> U32 = 0;
 		virtual auto get_framebuffer(U32 index) -> Framebuffer* = 0;
+		virtual auto get_framebuffer_name(U32 index) -> const char* = 0;
 	};
 }
