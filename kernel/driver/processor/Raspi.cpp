@@ -29,13 +29,15 @@ namespace driver {
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_temperature;
 			messages[0].data.getTemperature = mailbox::PropertyMessage::Data::Temperature::soc;
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
 				stdio::print_error("Error requesting temperature ", index, " from mailbox");
 				return 0;
 			}
 
-			return celcius_to_kelvin((F32)messages[0].data.getTemperatureResult.value/1000.0);
+			auto value = messages[0].data.getTemperatureResult.value;
+			return value?celcius_to_kelvin((F32)value/1000.0):0.0;
 		}
 
 		auto Raspi::get_temperature_max(U32 index) -> F32 {
@@ -44,13 +46,15 @@ namespace driver {
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_max_temperature;
 			messages[0].data.getTemperature = mailbox::PropertyMessage::Data::Temperature::soc;
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
 				stdio::print_error("Error requesting max temperature ", index, " from mailbox");
 				return 0;
 			}
 
-			return celcius_to_kelvin((F32)messages[0].data.getTemperatureResult.value/1000.0);
+			auto value = messages[0].data.getTemperatureResult.value;
+			return value?celcius_to_kelvin((F32)value/1000.0):0.0;
 		}
 
 		namespace {
@@ -74,6 +78,7 @@ namespace driver {
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_voltage;
 			messages[0].data.getVoltage = (mailbox::PropertyMessage::Data::Voltage)((U32)mailbox::PropertyMessage::Data::Voltage::min+index);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
 				stdio::print_error("Error requesting voltage ", index, " from mailbox");
@@ -89,6 +94,7 @@ namespace driver {
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_min_voltage;
 			messages[0].data.getVoltage = (mailbox::PropertyMessage::Data::Voltage)((U32)mailbox::PropertyMessage::Data::Voltage::min+index);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
 				stdio::print_error("Error requesting min voltage ", index, " from mailbox");
@@ -104,6 +110,7 @@ namespace driver {
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_max_voltage;
 			messages[0].data.getVoltage = (mailbox::PropertyMessage::Data::Voltage)((U32)mailbox::PropertyMessage::Data::Voltage::min+index);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
 				stdio::print_error("Error requesting max voltage ", index, " from mailbox");
@@ -121,6 +128,7 @@ namespace driver {
 			messages[0].tag = mailbox::PropertyTag::set_voltage;
 			messages[0].data.setVoltage.voltage = (mailbox::PropertyMessage::Data::Voltage)((U32)mailbox::PropertyMessage::Data::Voltage::min+index);
 			messages[0].data.setVoltage.value = set*1000000; //TODO: this might need special treatment in lower values (see mailbox notes)
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
 				stdio::print_error("Error setting voltage ", index, " via mailbox");
@@ -133,38 +141,42 @@ namespace driver {
 
 		namespace {
 			const U32 clockCount = (U32)mailbox::PropertyMessage::Data::Clock::max-(U32)mailbox::PropertyMessage::Data::Clock::min+1;
-			const char *clockNames[clockCount] = {
-				"EMMC",
-				"UART",
-				"ARM",
-				"CORE",
-				"V3D",
-				"H264",
-				"ISP",
-				"SDRAM",
-				"Pixel",
-				"PWM",
-				"HEVC",
-				"EMMC2",
-				"M2MC",
-				"Pixel BVB",
+			struct Clock {const char *name; U32 id; };
+			Clock clocks[clockCount] = { //NOTE:all ids start at 0 and are sequential, they're just reordered for prettier defaults
+				{ "ARM", 2 },
+				{ "CORE", 3 },
+				{ "V3D", 4 },
+				{ "EMMC", 0 },
+				{ "UART", 1 },
+				{ "H264", 5 },
+				{ "ISP", 6 },
+				{ "SDRAM", 7},
+				{ "Pixel", 8 },
+				{ "PWM", 9 },
+				{ "HEVC", 10 },
+				{ "EMMC2", 11 },
+				{ "M2MC", 12 },
+				{ "Pixel BVB", 13 },
 			};
 		}
 
 		auto Raspi::get_clock_count() -> U32 { return clockCount; }
 		auto Raspi::get_clock_name(U32 index) -> const char* {
-			return index<clockCount?clockNames[index]:"";
+			return index<clockCount?clocks[index].name:"";
 		}
 
 		auto Raspi::get_clock_value(U32 index) -> U32 {
 			if(index>=clockCount) return 0;
 
+			auto id = clocks[index].id;
+
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_clock;
-			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+index);
+			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+id);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting clock ", index, " from mailbox");
+				stdio::print_error("Error requesting clock ", id, " from mailbox");
 				return 0;
 			}
 
@@ -174,12 +186,15 @@ namespace driver {
 		auto Raspi::get_clock_active_value(U32 index) -> U32 {
 			if(index>=clockCount) return 0;
 
+			auto id = clocks[index].id;
+
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_actual_clock;
-			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+index);
+			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+id);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting clock ", index, " from mailbox");
+				stdio::print_error("Error requesting clock ", id, " from mailbox");
 				return 0;
 			}
 
@@ -189,12 +204,15 @@ namespace driver {
 		auto Raspi::get_clock_min(U32 index) -> U32 {
 			if(index>=clockCount) return 0;
 
+			auto id = clocks[index].id;
+
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_min_clock;
-			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+index);
+			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+id);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting min voltage ", index, " from mailbox");
+				stdio::print_error("Error requesting min voltage ", id, " from mailbox");
 				return 0;
 			}
 
@@ -204,12 +222,15 @@ namespace driver {
 		auto Raspi::get_clock_max(U32 index) -> U32 {
 			if(index>=clockCount) return 0;
 
+			auto id = clocks[index].id;
+
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::get_max_clock;
-			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+index);
+			messages[0].data.getClock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+id);
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting max voltage ", index, " from mailbox");
+				stdio::print_error("Error requesting max voltage ", id, " from mailbox");
 				return 0;
 			}
 
@@ -220,14 +241,17 @@ namespace driver {
 		auto Raspi::set_clock_value(U32 index, U32 set) -> bool {
 			if(index>=clockCount) return false;
 
+			auto id = clocks[index].id;
+
 			mailbox::PropertyMessage messages[2];
 			messages[0].tag = mailbox::PropertyTag::set_clock;
-			messages[0].data.setClock.clock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+index);
+			messages[0].data.setClock.clock = (mailbox::PropertyMessage::Data::Clock)((U32)mailbox::PropertyMessage::Data::Clock::min+id);
 			messages[0].data.setClock.rate = set;
 			messages[0].data.setClock.skipSettingTurbo = 0;
+			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error setting clock ", index, " via mailbox");
+				stdio::print_error("Error setting clock ", id, " via mailbox");
 				return false;
 			}
 
