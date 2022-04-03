@@ -19,21 +19,6 @@ namespace driver {
 		virtual void puts(const char *str) { while(*str) putc(*str); }
 		virtual auto peekc() -> unsigned char = 0;
 		virtual auto getc() -> unsigned char = 0;
-		virtual void gets(char *buffer, U32 length) {
-			char c;
-			U32 i;
-
-			for(i=0; i<length; i++){
-				c = getc();
-
-				if(c=='\r'||c=='\n') break;
-				
-				putc(c);
-				buffer[i] = c;
-			}
-
-			buffer[i] = '\0';
-		}
 
 		void bind_stdio() {
 			if(state!=State::enabled) return;
@@ -43,7 +28,7 @@ namespace driver {
 				[](void *self) { return ((Serial*)self)->peekc(); },
 				[](void *self) { return ((Serial*)self)->getc(); },
 				[](void *self, const char *str) { return ((Serial*)self)->puts(str); },
-				[](void *self, char *buffer, U32 length) { return ((Serial*)self)->gets(buffer, length); }
+				nullptr
 			);
 		}
 	};
