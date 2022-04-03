@@ -37,13 +37,13 @@ namespace arch {
 				get_max_clock = 0x30004,
 				set_clock = 0x38002,
 
-				get_voltage = 0x300003,
-				get_min_voltage = 0x300008,
-				get_max_voltage = 0x300005,
-				set_voltage = 0x380003,
+				get_voltage = 0x30003,
+				get_min_voltage = 0x30008,
+				get_max_voltage = 0x30005,
+				set_voltage = 0x38003,
 
-				get_temperature = 0x300006,
-				get_max_temperature = 0x30000a,
+				get_temperature = 0x30006,
+				get_max_temperature = 0x3000a,
 
 				get_physical_dimensions = 0x40003,
 				test_physical_dimensions = 0x44003,
