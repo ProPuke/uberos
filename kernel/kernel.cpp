@@ -1,9 +1,9 @@
 #include <common/stdlib.hpp>
+#include <common/debugUtils.hpp>
 
 #include <kernel/arch/raspi/kernel.hpp>
 #include <kernel/arch/raspi/timer.hpp>
 #include <kernel/cpu.hpp>
-#include <common/debugUtils.hpp>
 #include <kernel/device.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/framebuffer.hpp>
