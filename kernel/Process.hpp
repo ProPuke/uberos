@@ -13,7 +13,8 @@
 struct Process;
 
 namespace process {
-	Process& create_kernel(const char *name, void(*entrypoint)());
+	auto create_kernel(const char *name, void(*entrypoint)()) -> Process&;
+	auto get_count() -> U32;
 }
 
 namespace memory {

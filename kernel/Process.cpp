@@ -8,12 +8,16 @@
 namespace process {
 	LList<Process> processes;
 
-	Process& create_kernel(const char *name, void(*entrypoint)()) {
+	auto create_kernel(const char *name, void(*entrypoint)()) -> Process& {
 		auto &process = *new Process(name, nullptr);
 
 		processes.push_back(process);
 
 		return process;
+	}
+
+	auto get_count() -> U32 {
+		return processes.length();
 	}
 }
 
