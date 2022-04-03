@@ -11,25 +11,7 @@ namespace framebuffer {
 			stdio::Section section("Devices:");
 
 			for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
-				stdio::Section section(graphics.name);
-
-				{
-					stdio::Section section("Possible video modes:");
-
-					U32 count = 0;
-					for(U32 i=0;i<graphics.get_mode_count();i++){
-						auto mode = graphics.get_mode(0, i);
-
-						if(!mode.width) continue;
-
-						stdio::print_info(mode.width, "x", mode.height, " @ ", mode.format);
-						count++;
-					}
-
-					if(!count){
-						stdio::print_warning("None found");
-					}
-				}
+				stdio::print_info(graphics.name);
 			}
 		}
 
