@@ -15,6 +15,9 @@ namespace device {
 	auto find_first_type(const char *type) -> Driver*;
 	auto find_next_type(Driver &after, const char *type) -> Driver*;
 
+	void print_device_summary(const char *indent, Driver &device);
+	bool print_device_details(const char *indent, Driver &device, const char *beforeName="", const char *afterName="");
+
 	template <typename Type>
 	struct Iterator {
 		Type *device = nullptr;
