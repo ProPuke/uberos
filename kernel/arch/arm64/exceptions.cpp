@@ -25,6 +25,8 @@ extern "C" Registers exception_error_registers;
 Registers exception_error_registers;
 
 namespace exceptions {
+	void after_failure();
+	
 	namespace arch {
 		namespace arm64 {
 			// extern "C" void exception_callback(size_t type, size_t esr, size_t elr, size_t spsr, size_t far) {
@@ -176,6 +178,8 @@ namespace exceptions {
 						stdio::print_end();
 					}
 				}
+
+				after_failure();
 			}
 
 			extern "C" void interrupt_sync_el1t() {
