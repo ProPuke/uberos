@@ -19,18 +19,19 @@ namespace driver {
 			const U32 uart_clock = 500000000;
 
 			enum struct Address:U32 {
+				irq        = 0x00, // bits 0, 1 and 2 are 1 if there is a pending mini uart interrupt, sp1 interrupt and sp2 itnerrupt
 				enable     = 0x04,
-				mu_io      = 0x40,
-				mu_ier     = 0x44,
-				mu_iir     = 0x48,
-				mu_lcr     = 0x4C,
-				mu_mcr     = 0x50,
-				mu_lsr     = 0x54,
-				mu_msr     = 0x58,
-				mu_scratch = 0x5C,
-				mu_cntl    = 0x60,
-				mu_stat    = 0x64,
-				mu_baud    = 0x68,
+				mu_io      = 0x40, // i/o data
+				mu_ier     = 0x44, // interrupt enable
+				mu_iir     = 0x48, // interrupt identity
+				mu_lcr     = 0x4C, // line control
+				mu_mcr     = 0x50, // modem control
+				mu_lsr     = 0x54, // line status
+				mu_msr     = 0x58, // model status
+				mu_scratch = 0x5C, // scratch
+				mu_cntl    = 0x60, // extra control
+				mu_stat    = 0x64, // extra status
+				mu_baud    = 0x68, // baudrate
 			};
 
 			U32 baud_to_uart_reg(U32 baud) {
