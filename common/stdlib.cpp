@@ -28,8 +28,10 @@ extern "C" void memmove(void *dest, const void *src, unsigned bytes) {
 }
 
 extern "C" int memcmp(const void *a, const void *b, unsigned bytes) {
-	while(bytes){
-		const auto diff = *(C8*)a-*(C8*)b;
+	while(bytes--){
+		const auto diff = *((C8*)a)-*((C8*)b);
+		a = (C8*)a+1;
+		b = (C8*)b+1;
 		if(diff){
 			return diff;
 		}
