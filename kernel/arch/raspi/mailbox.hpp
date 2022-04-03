@@ -96,38 +96,38 @@ namespace arch {
 					U32 boardRevision;
 
 					U32 allocate_align;
-					struct {
+					struct __attribute__((packed)) {
 						U32 fb_addr;
 						U32 fb_size;
 					} allocate_res;
 
-					struct {
+					struct __attribute__((packed)) {
 						U32 address;
 						U32 size;
 					} memory;
 
-					struct {
+					struct __attribute__((packed)) {
 						U32 width;
 						U32 height;
 					} screenSize;
 
-					enum struct PixelOrder:U32 {
+					enum struct __attribute__((packed)) PixelOrder:U32 {
 						bgr,
 						rgb
 					} pixelOrder;
 
-					enum struct AlphaMode:U32 {
+					enum struct __attribute__((packed)) AlphaMode:U32 {
 						enabled  = 0x0, // opacity is 1..0
 						reversed = 0x1, // opacity is 0..1
 						ignore   = 0x2
 					} alphaMode;
 
-					struct {
+					struct __attribute__((packed)) {
 						U32 x;
 						U32 y;
 					} virtualOffset;
 
-					struct {
+					struct __attribute__((packed)) {
 						U32 top;
 						U32 bottom;
 						U32 left;
@@ -136,7 +136,7 @@ namespace arch {
 
 					// U32 existingPalette[256];
 
-					// struct {
+					// struct __attribute__((packed)) {
 					// 	U32 offset; //0..255
 					// 	U32 length; //1..255
 					// 	U32 palette[256];
@@ -145,7 +145,7 @@ namespace arch {
 					U32 bitsPerPixel;
 					U32 bytesPerRow;
 
-					struct {
+					struct __attribute__((packed)) {
 						U32 width;
 						U32 height;
 						U32 _unused1;
@@ -154,14 +154,14 @@ namespace arch {
 						U32 hotspotY;
 					} cursorInfo;
 
-					struct {
+					struct __attribute__((packed)) {
 						U32 enable; //0..1
 						U32 x;
 						U32 y;
 						U32 flags;
 					} cursorState;
 
-					enum struct Clock:U32 {
+					enum struct __attribute__((packed)) Clock:U32 {
 						min = 1,
 						emmc = min,
 						uart,
@@ -182,18 +182,18 @@ namespace arch {
 
 					Clock getClock;
 
-					struct {
+					struct __attribute__((packed)) {
 						Clock clock;
 						U32 rate; //hz
 					} getClockResult;
 
-					struct {
+					struct __attribute__((packed)) {
 						Clock clock;
 						U32 rate; //hz
 						U32 skipSettingTurbo; //voltage, sdram and gpu freq will be boosted when setting above average rate UNLESS this flag is set
 					} setClock;
 
-					enum struct Voltage:U32 {
+					enum struct __attribute__((packed)) Voltage:U32 {
 						min = 1,
 						core = min,
 						sdram_c,
@@ -204,22 +204,20 @@ namespace arch {
 
 					Voltage getVoltage;
 
-					struct SetVoltage {
+					struct __attribute__((packed)) SetVoltage {
 						Voltage voltage;
 						U32 value; //microvolts
 
 						/* NOTE: when setting, `value` has some special rules:
-							     0..16   : relative to platform-specific typical voltage, in 25mV steps
-							    17..49999: relative to platform-specific typical voltage, in microvolts
-							500000..*    : absolute voltage in microvolts
-
-							Yes there's a discrepancy in the last 2 values. See https://github.com/raspberrypi/firmware/issues/1708
+							     0..16    : relative to platform-specific typical voltage, in 25mV steps
+							    17..499999: relative to platform-specific typical voltage, in microvolts
+							500000..*     : absolute voltage in microvolts
 						*/
 					} setVoltage;
 
 					SetVoltage getVoltageResult;
 
-					enum struct Temperature:U32 {
+					enum struct __attribute__((packed)) Temperature:U32 {
 						min = 0,
 						soc = min, //presumably?
 						max = soc
@@ -227,7 +225,7 @@ namespace arch {
 
 					Temperature getTemperature;
 
-					struct SetTemperature {
+					struct __attribute__((packed)) SetTemperature {
 						Temperature temperature;
 						U32 value; //millidegrees celcius
 					};
@@ -235,7 +233,7 @@ namespace arch {
 					SetTemperature getTemperatureResult;
 
 					#ifdef ARCH_RASPI3
-						struct {
+						struct __attribute__((packed)) {
 							U32 display;
 							U32 data; //address of 768 byte gamma table: 256 bytes red, 256 bytes green, 256 blue
 						} gamma;
