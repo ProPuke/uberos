@@ -170,9 +170,11 @@ inline char* _itoa(Type number, char *buffer = nullptr){
 
 template <typename Type>
 inline const char* _ftoa(Type number) {
+	Type abs = maths::abs(number);
 	I64 i = (I64)number;
-	I32 f = (number-i)*1000+0.5; // 3 decimal places
+	U32 f = (abs-(I64)abs)*1000+0.5; // 3 decimal places
 
+	if(f>999) return _itoa(i+maths::sign(number));
 	if(f==0) return _itoa(i);
 
 	static char internalBuffer[1+digits_decimal(sizeof(i), false)+1+digits_decimal(sizeof(f), false)] = {0};
