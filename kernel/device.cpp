@@ -31,7 +31,7 @@ namespace device {
 
 		// stop if there's an existing driver that would conflict (or fail if we can't)
 		if(device.address){
-			for(Driver &existing:iterate_all<Driver>()){
+			for(Driver &existing:iterate_all()){
 				if(&existing==&device||existing.state==Driver::State::disabled) continue;
 
 				if(existing.address==device.address){ //check for any other conflict scenarios here
@@ -106,7 +106,7 @@ namespace device {
 
 	void print_summary() {
 		auto first = true;
-		for(auto device = devices.head; device; device=device->next){
+		for(auto &device:iterate_all()){
 			if(!first) stdio::print_info();
 			
 			stdio::print_info_start();

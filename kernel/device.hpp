@@ -36,9 +36,12 @@ namespace device {
 		auto end() -> Iterator<Type>;
 	};
 
-	template <typename Type> auto iterate_type(const char *type) { return Iterate<Type>(type); }
-	template <typename Type> auto iterate_all() { return Iterate<Type>(); }
+	template <typename Type>
+	inline auto iterate_type(const char *type) { return Iterate<Type>(type); }
+	inline auto iterate_all() { return Iterate<Driver>(); }
 
-	template <typename Type> inline auto Iterate<Type>::begin() -> Iterator<Type> { return Iterator<Type>(type?(Type*)find_first_type(type):(Type*)find_first(), type); }
-	template <typename Type> inline auto Iterate<Type>::end() -> Iterator<Type> { return Iterator<Type>(nullptr, type); }
+	template <typename Type>
+	inline auto Iterate<Type>::begin() -> Iterator<Type> { return Iterator<Type>(type?(Type*)find_first_type(type):(Type*)find_first(), type); }
+	template <typename Type>
+	inline auto Iterate<Type>::end() -> Iterator<Type> { return Iterator<Type>(nullptr, type); }
 }
