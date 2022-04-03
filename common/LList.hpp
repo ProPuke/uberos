@@ -130,6 +130,12 @@ struct LList {
 		}
 		return false;
 	}
+
+	U32 length() {
+		U32 length = 0;
+		for(auto item=head;item;item=item->next) length++;
+		return length;
+	}
 };
 
 template <typename Type>
