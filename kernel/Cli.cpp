@@ -14,67 +14,69 @@
 #include <kernel/scheduler.hpp>
 #include <kernel/stdio.hpp>
 
-namespace {
-	const char *format_object = "\x1b[33m";
-	const char *format_verb   = "\x1b[1;36m";
-	const char *format_param  = "\x1b[1;35m";;
-	const char *format_cwd    = "\x1b[32m";
-	const char *format_input  = "\x1b[1;37m";
-	const char *format_none   = "\x1b[0m";
+namespace cli {
+	namespace {
+		const char *format_object = "\x1b[33m";
+		const char *format_verb   = "\x1b[1;36m";
+		const char *format_param  = "\x1b[1;35m";;
+		const char *format_cwd    = "\x1b[32m";
+		const char *format_input  = "\x1b[1;37m";
+		const char *format_none   = "\x1b[0m";
 
-	bool is_whitespace(C8 c){
-		switch(c){
-			case ' ':
-			case '\t':
-			case '\r':
-			case '\n':
-				return true;
-			break;
-			default:
-				return false;
+		bool is_whitespace(C8 c){
+			switch(c){
+				case ' ':
+				case '\t':
+				case '\r':
+				case '\n':
+					return true;
+				break;
+				default:
+					return false;
+			}
 		}
-	}
 
-	Box<char> resolve_path(const char *pathA, const char *pathB){
-		if(!*pathB) return strcpy(new C8[strlen(pathA)+1], pathA);
+		Box<char> resolve_path(const char *pathA, const char *pathB){
+			if(!*pathB) return strcpy(new C8[strlen(pathA)+1], pathA);
 
-		if(!*pathA) pathA = "";
+			if(!*pathA) pathA = "";
 
-		if(pathB[0]=='/'){
-			return resolve_path("", pathB+1);
+			if(pathB[0]=='/'){
+				return resolve_path("", pathB+1);
 
-		}else if(pathB[0]=='.'&&pathB[1]=='.'&&(pathB[2]=='/'||pathB[2]=='\0')){
-			U32 length = strlen(pathA);
-			while(length>0&&pathA[length-1]!='/') length--;
-			if(length>0) length--;
+			}else if(pathB[0]=='.'&&pathB[1]=='.'&&(pathB[2]=='/'||pathB[2]=='\0')){
+				U32 length = strlen(pathA);
+				while(length>0&&pathA[length-1]!='/') length--;
+				if(length>0) length--;
 
-			Box temp = (char*)memcpy(new C8[length+1], pathA, length);
-			temp.get()[length] = '\0';
-			if(!pathB[2]) return temp.release();
+				Box temp = (char*)memcpy(new C8[length+1], pathA, length);
+				temp.get()[length] = '\0';
+				if(!pathB[2]) return temp.release();
 
-			return resolve_path(temp.get(), pathB+3);
+				return resolve_path(temp.get(), pathB+3);
 
-		}else if(pathB[0]=='.'&&(pathB[1]=='/'||pathB[1]=='\0')){
-			return resolve_path(pathA, pathB+(pathB[1]=='/'?2:1));
+			}else if(pathB[0]=='.'&&(pathB[1]=='/'||pathB[1]=='\0')){
+				return resolve_path(pathA, pathB+(pathB[1]=='/'?2:1));
 
-		}else{
-			U32 length = 0;
-			while(pathB[length]&&pathB[length]!='/') length++;
-
-			U32 aLength = strlen(pathA);
-
-			auto temp = (char*)memcpy(new C8[aLength+(aLength?1:0)+length+1], pathA, aLength);
-			if(aLength) temp[aLength] = '/';
-
-			memcpy(temp+aLength+(aLength?1:0), pathB, length);
-			temp[aLength+(aLength?1:0)+length] = '\0';
-
-			if(pathB[length]=='/'){
-				auto result = resolve_path(temp, pathB+length+1);
-				delete temp;
-				return result;
 			}else{
-				return temp;
+				U32 length = 0;
+				while(pathB[length]&&pathB[length]!='/') length++;
+
+				U32 aLength = strlen(pathA);
+
+				auto temp = (char*)memcpy(new C8[aLength+(aLength?1:0)+length+1], pathA, aLength);
+				if(aLength) temp[aLength] = '/';
+
+				memcpy(temp+aLength+(aLength?1:0), pathB, length);
+				temp[aLength+(aLength?1:0)+length] = '\0';
+
+				if(pathB[length]=='/'){
+					auto result = resolve_path(temp, pathB+length+1);
+					delete temp;
+					return result;
+				}else{
+					return temp;
+				}
 			}
 		}
 	}
@@ -474,25 +476,25 @@ void Cli::prompt() {
 	stdio::print_info_start();
 	{
 		U32 pathLength = strlen(currentPath);
-		stdio::print_inline(format_cwd);
+		stdio::print_inline(cli::format_cwd);
 		if(pathLength<32){
 			stdio::print_inline(currentPath);
 		}else{
 			stdio::print_inline("...", &currentPath[pathLength-(32-3)]);
 		}
-		stdio::print_inline("> ", format_none);
+		stdio::print_inline("> ", cli::format_none);
 	}
 	C8 buffer[1024];
-	stdio::print_inline(format_input);
+	stdio::print_inline(cli::format_input);
 	stdio::gets(buffer, sizeof(buffer));
-	stdio::print_inline(format_none);
+	stdio::print_inline(cli::format_none);
 	stdio::print_end();
 
 	execute(buffer);
 }
 
 void Cli::execute(char *command) {
-	while(is_whitespace(*command)) command++;
+	while(cli::is_whitespace(*command)) command++;
 
 	if(!*command) return;
 
@@ -500,24 +502,24 @@ void Cli::execute(char *command) {
 
 	if(!inputVerb[0]) return;
 
-	while(*command&&!is_whitespace(*command)) command++;
-	while(is_whitespace(*command)) *command++ = '\0';
+	while(*command&&!cli::is_whitespace(*command)) command++;
+	while(cli::is_whitespace(*command)) *command++ = '\0';
 
 	const char *inputSubject = command;
 
-	while(*command&&!is_whitespace(*command)) command++;
-	while(is_whitespace(*command)) *command++ = '\0';
+	while(*command&&!cli::is_whitespace(*command)) command++;
+	while(cli::is_whitespace(*command)) *command++ = '\0';
 
 	const char *inputParameters = command;
 
 	bool commandFound = false;
 
-	auto inputPath = resolve_path(currentPath, inputSubject);
+	auto inputPath = cli::resolve_path(currentPath, inputSubject);
 
-	auto child = RootObject{}.get_child(inputPath);
+	auto child = cli::RootObject{}.get_child(inputPath);
 
-	for(U32 i=0;i<sizeof(verbs)/sizeof(verbs[0]);i++){
-		auto &verb = verbs[i];
+	for(U32 i=0;i<sizeof(cli::verbs)/sizeof(cli::verbs[0]);i++){
+		auto &verb = cli::verbs[i];
 
 		if(!strcmp(verb.verbShort, inputVerb)||!strcmp(verb.verb, inputVerb)){
 			commandFound = true;
