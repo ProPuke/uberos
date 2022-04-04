@@ -15,7 +15,7 @@ namespace exceptions {
 
 	void after_failure() {
 		stdio::print_info("");
-		stdio::print_info("Attempting to drop you into the backrooms...");
+		stdio::print_info("Dropping you into the backrooms...");
 		stdio::print_info("");
 
 		while(true){

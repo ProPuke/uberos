@@ -3,6 +3,8 @@
 #include <common/disassemble/arm64.hpp>
 #include <common/format.hpp>
 
+#include <kernel/arch/raspi/memory.hpp>
+#include <kernel/debugSymbols.hpp>
 #include <kernel/stdio.hpp>
 
 #include <cstddef>
@@ -176,6 +178,44 @@ namespace exceptions {
 							}
 						}
 						stdio::print_end();
+					}
+				}
+
+				{
+					U64 pc = 0;
+					// U64 lr = 0;
+					U64 fp = 0;
+					U64 sp = 0;
+
+					asm volatile("mov %0, fp" : "=r" (fp));
+					sp = fp;
+
+					stdio::print_error("Error:   Stacktrace:");
+
+					U32 depth=0;
+					for(;depth<64;depth++){
+						const auto stackBottom = sp;
+						const auto stackTop = sp+memory::stackSize; //TODO: set to top of source thread stack
+
+						if(fp<stackBottom||fp>=stackTop){
+							stdio::print_error("Error:     - Connection lost");
+							break;
+						}else if(fp&0xf){
+							stdio::print_error("Error:     - Non-aligned position");
+							break;
+						}
+
+						sp = fp + 0x10;
+						fp = *(U32*)fp;
+						pc = *(U32*)(fp+8);
+
+						auto symbol = debugSymbols::get_symbol_by_address((void*)pc);
+
+						if(symbol){
+							stdio::print_error("Error:     ", depth, " - ", format::Hex64{pc}, " ", symbol->name, " + ", format::Hex64{pc-(U64)symbol->address, true, false});
+						}else{
+							stdio::print_error("Error:     ", depth, " - ", format::Hex64{pc});
+						}
 					}
 				}
 

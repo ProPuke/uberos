@@ -1,9 +1,9 @@
 MAKEFLAGS := --jobs=$(shell nproc)
 
 OUTPUTDIR := ../build
-KERNEL_SRCS    := $(shell find . -type d -name 'arch' -prune -or -name "*.S" -print -or -name "*.cpp" -print -or -name "*.c" -print)
+KERNEL_SRCS    := $(shell find . -type d -name 'arch' -prune -or -name "*.S" -print -or -name "*.cpp" -print -or -name "*.c" ! -iname ".*" -print)
 KERNEL_HEADERS := $(shell find . -type d -name 'arch' -prune -or -name "*.hpp" -print -or -name "*.inl" -print)
-COMMON_SRCS    := $(shell find ../common -name "*.S" -or -name "*.cpp" -or -name "*.c")
+COMMON_SRCS    := $(shell find ../common -name "*.S" -or -name "*.cpp" -or -name "*.c" ! -iname ".*")
 COMMON_HEADERS := $(shell find ../common -name "*.hpp" -or -name "*.inl")
 
 BUILD ?= debug
@@ -147,6 +147,7 @@ CXXFLAGS := $(CXXFLAGS) $(DIRECTIVES)
 CC  := $(TOOLCHAIN_PREFIX)gcc -I ../ $(CFLAGS)
 CXX := $(TOOLCHAIN_PREFIX)g++ -I ../ $(CXXFLAGS)
 LD  := $(TOOLCHAIN_PREFIX)gcc
+NM  := $(TOOLCHAIN_PREFIX)nm
 GDB := $(TOOLCHAIN_PREFIX)gdb
 CPY := $(TOOLCHAIN_PREFIX)objcopy
 
@@ -237,7 +238,24 @@ $(OUTPUTDIR)/boot:
 
 $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) linker.ld Makefile | $(OUTPUTDIR) $(OUTPUTDIR)/boot
 	@echo "LD   " $@
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
+	@$(CC) -c .kernelSymbolsPlaceholder.c -o .kernelSymbols.o
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+
+	@# build debug from linked kernel, and relink with those included
+	@$(NM) --numeric-sort --demangle --print-size $@ | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={" } { if(NF==3){print "{\"" $$3 "\", (void*)0x" $$1 ", 0x" ($$2?$$2:0) "},"}} END{print "{0,0} };"}' > .kernelSymbols.c
+	@$(CC) -c .kernelSymbols.c -o .kernelSymbols.o
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+
+	@# now they're included, we need to calculate them AGAIN, so we take into account how having them affects other addresses. However, there will be some extra symbols this time that come from that injectd file, soo..
+	@$(NM) --numeric-sort --demangle --print-size $@ | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={" } { if(NF==3){print "{\"" $$3 "\", (void*)0x" $$1 ", 0x" ($$2?$$2:0) "},"}} END{print "{0,0} };"}' > .kernelSymbols.c
+	@$(CC) -c .kernelSymbols.c -o .kernelSymbols.o
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+
+	@# ..we recalculate and link the third final time, now that we know their final definite position, including 
+	@$(NM) --numeric-sort --demangle --print-size $@ | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={" } { if(NF==3){print "{\"" $$3 "\", (void*)0x" $$1 ", 0x" ($$2?$$2:0) "},"}} END{print "{0,0} };"}' > .kernelSymbols.c
+	@$(CC) -c .kernelSymbols.c -o .kernelSymbols.o
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+
 	@echo "DUMP " $@.lst
 	@$(TOOLCHAIN_PREFIX)objdump --disassemble --demangle --source $@ > $@.lst
 	@echo "CPY  " $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
