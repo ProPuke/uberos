@@ -12,8 +12,10 @@
 extern "C" void install_exception_handlers();
 
 struct __attribute__((packed)) Registers {
-	U64 x[31];
-	U64 _;
+	U64 x[29];
+	U64 fp;
+	U64 lr;
+	U64 sp;
 	U64 elr;
 	U64 spsr;
 	U64 esr;
@@ -42,9 +44,9 @@ namespace exceptions {
 				stdio::print_error_start();
 					stdio::print_inline("Error: interrupt ", exception);
 
-					if(exception_error_registers.elr) stdio::print_inline(" from ", format::Hex64{exception_error_registers.elr});
-					if(exception_error_registers.far) stdio::print_inline(" touching ", format::Hex64{exception_error_registers.far});
-					if(exception_error_registers.esr) stdio::print_inline(" with esr ", format::Hex64{exception_error_registers.esr});
+					if(reg.elr) stdio::print_inline(" from ", format::Hex64{reg.elr});
+					if(reg.far) stdio::print_inline(" touching ", format::Hex64{reg.far});
+					if(reg.esr) stdio::print_inline(" with esr ", format::Hex64{reg.esr});
 				stdio::print_end();
 
 
@@ -120,14 +122,14 @@ namespace exceptions {
 				stdio::print_error("Error:     15 = ", format::Hex64{reg.x[15]}, " 16 = ", format::Hex64{reg.x[16]}, " 17 = ", format::Hex64{reg.x[17]}, " 18 = ", format::Hex64{reg.x[18]}, " 19 = ", format::Hex64{reg.x[19]});
 				stdio::print_error("Error:     20 = ", format::Hex64{reg.x[20]}, " 21 = ", format::Hex64{reg.x[21]}, " 22 = ", format::Hex64{reg.x[22]}, " 23 = ", format::Hex64{reg.x[23]}, " 24 = ", format::Hex64{reg.x[24]});
 				stdio::print_error("Error:     25 = ", format::Hex64{reg.x[25]}, " 26 = ", format::Hex64{reg.x[26]}, " 27 = ", format::Hex64{reg.x[27]}, " 28 = ", format::Hex64{reg.x[28]});
-				stdio::print_error("Error:     fp = ", format::Hex64{reg.x[29]}, " lr = ", format::Hex64{reg.x[30]});
+				stdio::print_error("Error:     fp = ", format::Hex64{reg.fp}, " lr = ", format::Hex64{reg.lr});
 				stdio::print_error("Error:     elr = ", format::Hex64{reg.elr}, "  spsr = ", format::Hex64{reg.spsr} , " esr = ", format::Hex64{reg.esr});
 				stdio::print_error("Error:     far = ", format::Hex64{reg.far}, " sctlr = ", format::Hex64{reg.sctlr}, " tcr = ", format::Hex64{reg.tcr});
 
-				if(exception_error_registers.elr){
+				if(reg.elr){
 					if(false){
 						stdio::print_error("Error:   Instructions:");
-						U32 *current = (U32*)(void*)exception_error_registers.elr;
+						U32 *current = (U32*)(void*)reg.elr;
 						U32 *from = (size_t)(void*)current>10*sizeof(U32)?current-10:0;
 						U32 *to = (size_t)(void*)current<SIZE_MAX-(1+10)*sizeof(U32)?current+10+1:((U32*)SIZE_MAX)-1;
 
@@ -143,7 +145,7 @@ namespace exceptions {
 						}
 
 					}else{
-						U32 *current = (U32*)(void*)exception_error_registers.elr;
+						U32 *current = (U32*)(void*)reg.elr;
 						U32 *from = (size_t)(void*)current>100*sizeof(U32)?current-100:0;
 						U32 *to = (size_t)(void*)current<SIZE_MAX-(1+100)*sizeof(U32)?current+100+1:((U32*)SIZE_MAX)-1;
 
@@ -182,10 +184,10 @@ namespace exceptions {
 				}
 
 				{
-					U64 pc = 0;
-					// U64 lr = 0;
-					U64 fp = 0;
-					U64 sp = 0;
+					U64 pc;
+					// U64 lr;
+					U64 fp;
+					U64 sp;
 
 					asm volatile("mov %0, fp" : "=r" (fp));
 					sp = fp;
