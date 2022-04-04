@@ -239,7 +239,7 @@ $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) linker.ld Makefil
 	@echo "LD   " $@
 	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
 	@echo "DUMP " $@.lst
-	$(TOOLCHAIN_PREFIX)objdump --disassemble --demangle --source $@ > $@.lst
+	@$(TOOLCHAIN_PREFIX)objdump --disassemble --demangle --source $@ > $@.lst
 	@echo "CPY  " $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
 	@$(CPY) -O binary $@ $(OUTPUTDIR)/boot/$(KERNEL_FILENAME)
 
