@@ -249,8 +249,8 @@ namespace device {
 						stdio::print_inline(value, " Hz");
 					}
 
-					if(active!=value){
-						stdio::print_inline(" (currently");
+					if(abs(active-value)>active/100){
+						stdio::print_inline(" (currently ");
 
 						if(active>=1000000000){
 							stdio::print_inline(active/1000000.0, " Ghz");
