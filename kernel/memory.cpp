@@ -26,7 +26,7 @@ namespace memory {
 	
 	LList<::memory::Page> freePages;
 
-	memory::PagedPool<4> kernelHeap;
+	memory::PagedPool<sizeof(size_t)> kernelHeap;
 	// MemoryPool<32> *heap;
 
 	void Page::clear() {

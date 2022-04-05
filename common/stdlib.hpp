@@ -13,6 +13,10 @@ extern "C" char* strcpy(char *destination, const char *source);
 extern "C" char* strcat(char *destination, const char *source);
 extern "C" int strcmp(const char* str1, const char* str2);
 
+template <typename T> constexpr inline /* */ T* align(/* */ T *pointer, U8 alignment) { return (/* */ T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }
+template <typename T> constexpr inline const T* align(const T *pointer, U8 alignment) { return (const T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }
+template <typename T> constexpr inline T align(T x, U8 alignment) { return x+(x%alignment?(alignment-x%alignment):0); }
+
 constexpr inline U32 bits(U32 data, U8 start, U8 end){ return (data&((((U32)1<<(end-start+1)) - 1) << start)) >> start; }
 constexpr inline U64 bits(U64 data, U8 start, U8 end){ return (data&((((U64)1<<(end-start+1)) - 1) << start)) >> start; }
 

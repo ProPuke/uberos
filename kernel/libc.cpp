@@ -1,5 +1,4 @@
 #include "stdio.hpp"
-#include <cstddef>
 #include "framebuffer.hpp"
 
 extern void (*__preinit_array_start []) (void) __attribute__((weak));

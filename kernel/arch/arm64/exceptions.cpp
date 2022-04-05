@@ -7,8 +7,6 @@
 #include <kernel/debugSymbols.hpp>
 #include <kernel/stdio.hpp>
 
-#include <cstddef>
-
 extern "C" void install_exception_handlers();
 
 struct __attribute__((packed)) Registers {

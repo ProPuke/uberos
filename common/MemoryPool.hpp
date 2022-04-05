@@ -7,13 +7,14 @@
 
 #include <new>
 
+//These must always be aligned correctly in memory
 struct MemoryPoolBlock:LListItem<MemoryPoolBlock> {
-	/**/ MemoryPoolBlock(U32 size):
+	/**/ MemoryPoolBlock(size_t size):
 		size(size - offsetof(MemoryPoolBlock, MemoryPoolBlock::_data))
 	{}
 
-	U32 size;
-	U8 _data;
+	size_t size;
+	U8 _data; //since we're offsetting by `size_t`, we'll assume this shares `size_t_` alignment and is thus always at a valid alignment
 };
 
 //TODO:safely lock this so the kernel can inspect?
@@ -44,10 +45,9 @@ struct MemoryPool {
 
 		//TODO:align properly. This only aligns the chunk position, not the data inside it
 
-		auto isLarge = size>=memory::pageSize; //TODO:mark is large if it's higher than the median size (do this with a guessed term that adapts on each search when more than half blocks are searched)
+		unsigned requiredSize = align(size, alignment);
 
-		unsigned requiredSize = size;
-		requiredSize += requiredSize%alignment?alignment-(requiredSize%alignment):0;
+		auto isLarge = requiredSize>=memory::pageSize; //TODO:mark is large if it's higher than the median size (do this with a guessed term that adapts on each search when more than half blocks are searched)
 
 		if(!isLarge){ //search forwards
 			for(auto block=availableBlocks.head;block;block=block->next){

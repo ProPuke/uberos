@@ -111,11 +111,9 @@ namespace arch {
 				}
 
 				messageSize += sizeof(U32)*3; //end tag header
+				messageSize = align(messageSize, 16);
 
-				messageSize += (messageSize%16)?16-(messageSize%16):0; //16 byte align
-
-				PropertyMessageBuffer *message = (PropertyMessageBuffer*)alloca(messageSize+15);
-				message = (PropertyMessageBuffer*)(((size_t)message)+(true?16-(((size_t)message)%16):0));
+				auto *message = align((PropertyMessageBuffer*)alloca(messageSize+15), 16);
 
 				message->size = messageSize;
 				message->req_res_code = BufferReqResCode::request;

@@ -23,9 +23,11 @@ namespace memory {
 
 			const auto blockHeaderSize = offsetof(MemoryPoolBlock, MemoryPoolBlock::_data);
 
-			if(size>this->available){
-				if(blockHeaderSize+size>=memory::pageSize){
-					const auto pageCount = (blockHeaderSize+size+memory::pageSize-1)/memory::pageSize;
+			unsigned requiredSize = align(size, alignment);
+
+			if(requiredSize>this->available){
+				if(blockHeaderSize+requiredSize>=memory::pageSize){
+					const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 					#ifdef MEMORY_CHECKS
 						stdio::print_debug("try to add ", pageCount, " pages\n");
 					#endif
@@ -50,23 +52,23 @@ namespace memory {
 			}
 
 			#ifdef MEMORY_CHECKS
-				stdio::print_debug("try to malloc 2 ", size, "\n");
+				stdio::print_debug("try to malloc 2 ", requiredSize, "\n");
 			#endif
 
 			void *result;
 
 			do{
-				result = Super::malloc(size);
+				result = Super::malloc(requiredSize);
 
 				if(!result){
 					#ifdef MEMORY_CHECKS
-						stdio::print_debug("could not allocate ", size, "\n");
+						stdio::print_debug("could not allocate ", requiredSize, "\n");
 					#endif
-					if(blockHeaderSize+size>=memory::pageSize){
+					if(blockHeaderSize+requiredSize>=memory::pageSize){
 						#ifdef MEMORY_CHECKS
 							const auto sizeBefore = this->available;
 						#endif
-						const auto pageCount = (blockHeaderSize+size+memory::pageSize-1)/memory::pageSize;
+						const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 						#ifdef MEMORY_CHECKS
 							stdio::print_debug("trying to allocate ", pageCount, " pages\n");
 						#endif

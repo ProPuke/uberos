@@ -24,7 +24,7 @@ using namespace maths;
 
 namespace memory {
 	extern LList<::memory::Page> freePages;
-	extern memory::PagedPool<4> kernelHeap;
+	extern memory::PagedPool<sizeof(size_t)> kernelHeap;
 }
 
 namespace arm {

@@ -2,8 +2,6 @@
 
 #include <common/maths.hpp>
 
-#include <cstddef>
-
 extern "C" void* memcpy(void *dest, const void *src, unsigned bytes) {
 	if(dest==src) return dest;
 	return memcpy_forwards(dest, src, bytes);

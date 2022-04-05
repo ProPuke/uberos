@@ -6,7 +6,6 @@
 #include <kernel/exceptions.hpp>
 #include <kernel/device.hpp>
 #include <kernel/stdio.hpp>
-#include <cstddef>
 
 namespace mmio {
 	using namespace arch::raspi;

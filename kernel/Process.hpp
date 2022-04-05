@@ -8,8 +8,6 @@
 #include <kernel/ProcessLog.hpp>
 #include <kernel/mmu.hpp>
 
-#include <cstddef>
-
 struct Process;
 
 namespace process {
