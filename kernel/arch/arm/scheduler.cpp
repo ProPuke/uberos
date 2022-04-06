@@ -43,7 +43,7 @@ namespace scheduler {
 			U64 lastPing = 0;
 			U32 deferredYields = 0;
 			
-			Spinlock<> threadLock("scheduler threadLock");
+			Spinlock threadLock("scheduler threadLock");
 
 			void init() {
 				stdio::Section section("scheduler::arch::arm::init...");
@@ -130,7 +130,7 @@ namespace scheduler {
 		// bool exceptionsWereActive = exceptions::_is_active();
 
 		lock();
-		exceptions::lock();
+		CriticalSection::lock();
 
 		auto now = timer::now();
 
@@ -158,7 +158,7 @@ namespace scheduler {
 			threadLock.unlock(false);
 			timer::set_timer(timer::Timer::cpu_scheduler, interval*4);
 			unlock();
-			exceptions::unlock();
+			CriticalSection::unlock();
 
 		}else{
 			// if the current thread has been scheduled again, then put it at back of the queue and we're done. Nothing to swap
@@ -168,7 +168,7 @@ namespace scheduler {
 				threadLock.unlock(false);
 				timer::set_timer(timer::Timer::cpu_scheduler, interval);
 				unlock();
-				exceptions::unlock();
+				CriticalSection::unlock();
 
 				return;
 			}
@@ -182,8 +182,7 @@ namespace scheduler {
 			::thread::currentThread = &newThread;
 
 			threadLock.unlock(false);
-			// exceptions::unlock(false);
-			// exceptions::_activate();
+			// CriticalSection::unlock(false);
 			scheduledTime = timer::now();
 			timer::set_timer(timer::Timer::cpu_scheduler, interval);
 
@@ -207,7 +206,7 @@ namespace scheduler {
 
 			Thread::swap_state(*oldThread, newThread);
 
-			exceptions::unlock();
+			CriticalSection::unlock();
 			// stdio::print_debug("swapped");
 
 		}

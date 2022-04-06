@@ -7,7 +7,7 @@
 namespace scheduler {
 	namespace arch {
 		namespace arm {
-			extern Spinlock<> threadLock; //TODO:remove
+			extern Spinlock threadLock; //TODO:remove
 
 			void init();
 

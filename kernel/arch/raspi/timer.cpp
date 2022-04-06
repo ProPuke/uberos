@@ -6,25 +6,8 @@
 #include <common/types.hpp>
 
 #include <kernel/arch/arm/scheduler.hpp>
+#include <kernel/CriticalSection.hpp>
 #include <kernel/stdio.hpp>
-
-#if defined(ARCH_ARM32)
-	#include <kernel/arch/arm32/exceptions.hpp>
-
-	namespace exceptions {
-		using namespace exceptions::arch::arm32;
-	}
-
-#elif defined(ARCH_ARM64)
-	#include <kernel/arch/arm64/exceptions.hpp>
-
-	namespace exceptions {
-		using namespace exceptions::arch::arm64;
-	}
-	
-#else
-	#error "Unsupported architecture"
-#endif
 
 namespace mmio {
 	using namespace arch::raspi;
@@ -76,6 +59,8 @@ namespace timer {
 			void set_timer(Timer timer, U32 usecs) {
 				// stdio::print_debug("set timer ", (unsigned)timer);
 
+				CriticalSection guard;
+
 				usecs += 500;
 				// usecs += 5000000;
 
@@ -88,8 +73,6 @@ namespace timer {
 					// we could check current time after to check for this case, but doesn't seem worth it really
 
 					// timer_registers.timer[(U8)timer] = timer_registers.counter_low + usecs;
-
-					scheduler::Guard guard2;
 
 					for(U32 time; ; usecs+=10){
 						U32 low = timer_registers.counter_low;

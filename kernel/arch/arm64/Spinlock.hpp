@@ -1,7 +1,6 @@
 #include <kernel/arch/arm64/atomic.hpp>
-#include <kernel/exceptions.hpp>
+#include <kernel/CriticalSection.hpp>
 #include <kernel/mmu.hpp>
-#include <kernel/scheduler.hpp>
 
 #ifdef HAS_MMU
 	#define HAS_SPINLOCKS
@@ -11,7 +10,6 @@ namespace arch {
 	namespace arm64 {
 		//TODO:allow nested use on the same processor core
 
-		template <bool lock_scheduler = true, bool lock_exceptions = true>
 		struct Spinlock {
 			/**/ Spinlock(const char *name):
 				name(name)
@@ -22,8 +20,7 @@ namespace arch {
 			Spinlock& operator=(const Spinlock&) = delete;
 
 			void lock(const char *context = "") {
-				scheduler::lock();
-				exceptions::lock();
+				CriticalSection::lock();
 
 				#ifdef HAS_SPINLOCKS
 					// while (__atomic_test_and_set(&_lock, __ATOMIC_ACQUIRE));
@@ -58,8 +55,7 @@ namespace arch {
 					);
 				#endif
 
-				exceptions::unlock();
-				scheduler::unlock();
+				CriticalSection::unlock();
 			}
 
 			const char *name;

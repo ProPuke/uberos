@@ -2,6 +2,8 @@
 
 #include <common/types.hpp>
 #include <common/stdlib.hpp>
+
+#include <kernel/CriticalSection.hpp>
 #include <kernel/mmio.hpp>
 
 #if defined(ARCH_ARM32)
@@ -117,24 +119,24 @@ namespace mmio {
 			U32 read_address(Address reg);
 
 			struct PeripheralAccessGuard {
-				/**/ PeripheralAccessGuard(){ barrier(); };
-				/**/~PeripheralAccessGuard(){ barrier(); };
+				/**/ PeripheralAccessGuard(){ CriticalSection::lock(); barrier(); };
+				/**/~PeripheralAccessGuard(){ barrier(); CriticalSection::unlock(); };
 
 				/**/ PeripheralAccessGuard(const PeripheralAccessGuard&) = delete;
 				PeripheralAccessGuard& operator=(const PeripheralAccessGuard&) = delete;
 			};
 
 			struct PeripheralReadGuard {
-				/**/ PeripheralReadGuard(){ barrier(); };
-				/**/~PeripheralReadGuard(){ barrier(); };
+				/**/ PeripheralReadGuard(){ CriticalSection::lock(); barrier(); };
+				/**/~PeripheralReadGuard(){ barrier(); CriticalSection::unlock(); };
 
 				/**/ PeripheralReadGuard(const PeripheralReadGuard&) = delete;
 				PeripheralReadGuard& operator=(const PeripheralReadGuard&) = delete;
 			};
 
 			struct PeripheralWriteGuard {
-				/**/ PeripheralWriteGuard(){ barrier(); };
-				/**/~PeripheralWriteGuard(){ barrier(); };
+				/**/ PeripheralWriteGuard(){ CriticalSection::lock(); barrier(); };
+				/**/~PeripheralWriteGuard(){ barrier(); CriticalSection::unlock(); };
 
 				/**/ PeripheralWriteGuard(const PeripheralWriteGuard&) = delete;
 				PeripheralWriteGuard& operator=(const PeripheralWriteGuard&) = delete;

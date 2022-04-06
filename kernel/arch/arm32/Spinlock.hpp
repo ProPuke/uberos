@@ -1,11 +1,9 @@
-#include <kernel/exceptions.hpp>
-#include <kernel/scheduler.hpp>
+#include <kernel/CriticalSection.hpp>
 
 namespace arch {
 	namespace arm32 {
 		//TODO:allow nested use on the same processor core
 
-		template <bool lock_scheduler = true, bool lock_exceptions = true>
 		struct Spinlock {
 			/**/ Spinlock(const char *name):
 				name(name)
@@ -16,15 +14,13 @@ namespace arch {
 			Spinlock& operator=(const Spinlock&) = delete;
 
 			void lock(const char *context = "") {
-				scheduler::lock();
-				exceptions::lock();
+				CriticalSection::lock();
 				while (__atomic_test_and_set(&_lock, __ATOMIC_ACQUIRE));
 			}
 
 			void unlock(bool debug = true) {
 				__atomic_clear(&_lock, __ATOMIC_RELEASE);
-				exceptions::unlock();
-				scheduler::unlock();
+				CriticalSection::unlock();
 				// _lock = 0;
 			}
 

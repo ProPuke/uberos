@@ -3,7 +3,7 @@
 #include "mmio.hpp"
 #include "timer.hpp"
 
-#include <kernel/exceptions.hpp>
+#include <kernel/CriticalSection.hpp>
 #include <kernel/device.hpp>
 #include <kernel/stdio.hpp>
 
@@ -23,7 +23,7 @@ namespace irq {
 
 				if(interruptController.state!=Driver::State::enabled) return;
 
-				exceptions::Guard guard;
+				CriticalSection guard;
 				// stdio::print_debug("irq");
 
 				interruptController.handle_interrupt([](U32 irq) {

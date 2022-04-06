@@ -26,7 +26,9 @@ namespace exceptions {
 				_deactivate();
 			}
 		#else
-			_deactivate();
+			if(!_lock_depth++){
+				_deactivate();
+			}
 		#endif
 	}
 
@@ -37,7 +39,9 @@ namespace exceptions {
 				_activate();
 			}
 		#else
-			_activate();
+			if(!--_lock_depth){
+				_activate();
+			}
 		#endif
 	}
 }
