@@ -464,8 +464,7 @@ namespace cli {
 }
 
 /**/ Cli:: Cli() {
-	currentPath = new char[1];
-	currentPath[0] = '\0';
+	currentPath = nullptr;
 }
 
 /**/ Cli::~Cli() {
