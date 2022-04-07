@@ -37,7 +37,9 @@ namespace exceptions {
 
 			void handle_error(const char *exception) {
 				auto &reg = exception_error_registers;
-				const U8 ec = (reg.esr>>26) & 0b111111;
+				const U32 iss = bits(reg.esr, 0, 24);
+				// const U32 il = bits(reg.esr, 25, 25);
+				const U32 ec = bits(reg.esr, 26, 31);
 
 				stdio::print_error_start();
 					stdio::print_inline("Error: interrupt ", exception);
@@ -47,6 +49,12 @@ namespace exceptions {
 					if(reg.esr) stdio::print_inline(" with esr ", format::Hex64{reg.esr});
 				stdio::print_end();
 
+				enum struct ErrorType {
+					unknown,
+					dataAbort
+				};
+				
+				auto errorType = ErrorType::unknown;
 
 				const char *error = nullptr;
 				switch(ec){
@@ -69,8 +77,8 @@ namespace exceptions {
 					case 0b100000: error = "Instruction Abort from a lower Exception level (0b100000)"; break;
 					case 0b100001: error = "Instruction Abort taken without a change in Exception level (0b100001)"; break;
 					case 0b100010: error = "PC alignment fault exception (0b100010)"; break;
-					case 0b100100: error = "Data abort (lower level) (0b100100)"; break;
-					case 0b100101: error = "Data abort (same level) (0b100101)"; break;
+					case 0b100100: errorType = ErrorType::dataAbort; error = "Data abort (lower level) (0b100100)"; break;
+					case 0b100101: errorType = ErrorType::dataAbort; error = "Data abort (same level) (0b100101)"; break;
 					case 0b100110: error = "SP alignment fault exception (0b100110)"; break;
 					case 0b101000: error = "Trapped floating-point exception taken from AArch32 state (0b101000)"; break;
 					case 0b101100: error = "Trapped floating-point exception taken from AArch64 state (0b101100)"; break;
@@ -87,6 +95,52 @@ namespace exceptions {
 			
 				if(error){
 					stdio::print_error("Error:   ", error);
+					
+					switch(errorType){
+						case ErrorType::unknown:
+						break;
+						case ErrorType::dataAbort:
+							switch(bits(iss, 0, 5)){
+								case 0b000000: stdio::print_error("Error:   ", "Address size fault, level 0 of translation or translation table base register"); break;
+								case 0b000001: stdio::print_error("Error:   ", "Address size fault, level 1"); break;
+								case 0b000010: stdio::print_error("Error:   ", "Address size fault, level 2"); break;
+								case 0b000011: stdio::print_error("Error:   ", "Address size fault, level 3"); break;
+								case 0b000100: stdio::print_error("Error:   ", "Translation fault, level 0"); break;
+								case 0b000101: stdio::print_error("Error:   ", "Translation fault, level 1"); break;
+								case 0b000110: stdio::print_error("Error:   ", "Translation fault, level 2"); break;
+								case 0b000111: stdio::print_error("Error:   ", "Translation fault, level 3"); break;
+								case 0b001001: stdio::print_error("Error:   ", "Access flag fault, level 1"); break;
+								case 0b001010: stdio::print_error("Error:   ", "Access flag fault, level 2"); break;
+								case 0b001011: stdio::print_error("Error:   ", "Access flag fault, level 3"); break;
+								case 0b001000: stdio::print_error("Error:   ", "Access flag fault, level 0"); break;
+								case 0b001100: stdio::print_error("Error:   ", "Permission fault, level 0"); break;
+								case 0b001101: stdio::print_error("Error:   ", "Permission fault, level 1"); break;
+								case 0b001110: stdio::print_error("Error:   ", "Permission fault, level 2"); break;
+								case 0b001111: stdio::print_error("Error:   ", "Permission fault, level 3"); break;
+								case 0b010000: stdio::print_error("Error:   ", "Synchronous External abort, not on translation table walk or hardware update of translation table"); break;
+								case 0b010001: stdio::print_error("Error:   ", "Synchronous Tag Check Fault"); break;
+								case 0b010011: stdio::print_error("Error:   ", "Synchronous External abort on translation table walk or hardware update of translation table, level -1"); break;
+								case 0b010100: stdio::print_error("Error:   ", "Synchronous External abort on translation table walk or hardware update of translation table, level 0"); break;
+								case 0b010101: stdio::print_error("Error:   ", "Synchronous External abort on translation table walk or hardware update of translation table, level 1"); break;
+								case 0b010110: stdio::print_error("Error:   ", "Synchronous External abort on translation table walk or hardware update of translation table, level 2"); break;
+								case 0b010111: stdio::print_error("Error:   ", "Synchronous External abort on translation table walk or hardware update of translation table, level 3"); break;
+								case 0b011000: stdio::print_error("Error:   ", "Synchronous parity or ECC error on memory access, not on translation table walk"); break;
+								case 0b011011: stdio::print_error("Error:   ", "Synchronous parity or ECC error on memory access on translation table walk or hardware update of translation table, level -1"); break;
+								case 0b011100: stdio::print_error("Error:   ", "Synchronous parity or ECC error on memory access on translation table walk or hardware update of translation table, level 0"); break;
+								case 0b011101: stdio::print_error("Error:   ", "Synchronous parity or ECC error on memory access on translation table walk or hardware update of translation table, level 1"); break;
+								case 0b011110: stdio::print_error("Error:   ", "Synchronous parity or ECC error on memory access on translation table walk or hardware update of translation table, level 2"); break;
+								case 0b011111: stdio::print_error("Error:   ", "Synchronous parity or ECC error on memory access on translation table walk or hardware update of translation table, level 3"); break;
+								case 0b100001: stdio::print_error("Error:   ", "Alignment fault"); break;
+								case 0b101001: stdio::print_error("Error:   ", "Address size fault, level -1"); break;
+								case 0b101011: stdio::print_error("Error:   ", "Translation fault, level -1"); break;
+								case 0b110000: stdio::print_error("Error:   ", "TLB conflict abort"); break;
+								case 0b110001: stdio::print_error("Error:   ", "Unsupported atomic hardware update fault"); break;
+								case 0b110100: stdio::print_error("Error:   ", "IMPLEMENTATION DEFINED fault (Lockdown)"); break;
+								case 0b110101: stdio::print_error("Error:   ", "IMPLEMENTATION DEFINED fault (Unsupported Exclusive or Atomic access)"); break;
+							}
+						break;
+					}
+
 				}else{
 					stdio::print_error("Error:   Unknown (ec = ", ec, ")");
 				}
