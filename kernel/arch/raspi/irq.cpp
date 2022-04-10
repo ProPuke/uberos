@@ -18,6 +18,12 @@ namespace timer {
 namespace irq {
 	namespace arch {
 		namespace raspi {
+			#ifdef HAS_GIC400
+				driver::interrupt::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
+			#else
+				driver::interrupt::Arm_raspi_legacy interruptController {(U32)mmio::Address::interrupts_legacy};
+			#endif
+
 			extern "C" void handle_interrupt() {
 				// stdio::print_debug("irq?");
 

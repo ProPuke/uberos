@@ -7,14 +7,7 @@
 #include <kernel/memory.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
-
-#ifdef ARCH_RASPI
-	#include <kernel/arch/raspi/mmio.hpp>
-
-	namespace mmio {
-		using namespace arch::raspi;
-	}
-#endif
+#include <kernel/mmio.hpp>
 
 namespace graphics2d {
 	LList<View> views;

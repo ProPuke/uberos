@@ -10,3 +10,9 @@ namespace mmio {
 }
 
 #include "mmio.inl"
+
+#if defined(ARCH_ARM32)
+	#include <kernel/arch/arm32/mmio.hpp>
+#elif defined(ARCH_ARM64)
+	#include <kernel/arch/arm64/mmio.hpp>
+#endif

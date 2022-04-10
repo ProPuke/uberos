@@ -6,14 +6,6 @@
 #include <kernel/CriticalSection.hpp>
 #include <kernel/mmio.hpp>
 
-#if defined(ARCH_ARM32)
-	#include <kernel/arch/arm32/mmio/barrier.hpp>
-#elif defined(ARCH_ARM64)
-	#include <kernel/arch/arm64/mmio/barrier.hpp>
-#else
-	#error "Unsupported architecture"
-#endif
-
 namespace mmio {
 	// #if defined(ARCH_ARM32)
 	// 	using namespace arch::arm32;
@@ -117,40 +109,8 @@ namespace mmio {
 
 			void write_address(Address reg, U32 data);
 			U32 read_address(Address reg);
-
-			struct PeripheralAccessGuard {
-				/**/ PeripheralAccessGuard(){ CriticalSection::lock(); barrier(); };
-				/**/~PeripheralAccessGuard(){ barrier(); CriticalSection::unlock(); };
-
-				/**/ PeripheralAccessGuard(const PeripheralAccessGuard&) = delete;
-				PeripheralAccessGuard& operator=(const PeripheralAccessGuard&) = delete;
-			};
-
-			struct PeripheralReadGuard {
-				/**/ PeripheralReadGuard(){ CriticalSection::lock(); barrier(); };
-				/**/~PeripheralReadGuard(){ barrier(); CriticalSection::unlock(); };
-
-				/**/ PeripheralReadGuard(const PeripheralReadGuard&) = delete;
-				PeripheralReadGuard& operator=(const PeripheralReadGuard&) = delete;
-			};
-
-			struct PeripheralWriteGuard {
-				/**/ PeripheralWriteGuard(){ CriticalSection::lock(); barrier(); };
-				/**/~PeripheralWriteGuard(){ barrier(); CriticalSection::unlock(); };
-
-				/**/ PeripheralWriteGuard(const PeripheralWriteGuard&) = delete;
-				PeripheralWriteGuard& operator=(const PeripheralWriteGuard&) = delete;
-			};
 		}
 	}
 }
 
 #include "mmio.inl"
-
-#if defined(ARCH_ARM32)
-	#include <kernel/arch/arm32/mmio/barrier.hpp>
-#elif defined(ARCH_ARM64)
-	#include <kernel/arch/arm64/mmio/barrier.hpp>
-#else
-	#error "Unsupported architecture"
-#endif

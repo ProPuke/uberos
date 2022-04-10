@@ -2,6 +2,7 @@
 
 #include <kernel/mmio.hpp>
 #include <kernel/stdio.hpp>
+#include <kernel/mmio.hpp>
 
 namespace driver {
 	namespace interrupt {
@@ -168,6 +169,8 @@ namespace driver {
 		void Arm_gicV2::_on_driver_enable() {
 			if(state==State::enabled) return;
 
+			mmio::PeripheralAccessGuard guard;
+
 			auto& gicd = *(volatile Gicd*)(address + gicd_base);
 			auto& gicc = *(volatile Gicc*)(address + gicc_base);
 
@@ -243,6 +246,8 @@ namespace driver {
 
 		void Arm_gicV2::_on_driver_disable() {
 			if(state==State::disabled) return;
+
+			mmio::PeripheralAccessGuard guard;
 			
 			auto& gicd = *(volatile Gicd*)(address + gicd_base);
 			auto& gicc = *(volatile Gicc*)(address + gicc_base);
@@ -257,6 +262,8 @@ namespace driver {
 		}
 
 		void Arm_gicV2::enable_irq(U32 cpu, U32 irq) {
+			mmio::PeripheralAccessGuard guard;
+			
 			irq += vcPeripheralIrqOffset;
 
 			auto& gicd = *(volatile Gicd*)(address + gicd_base);
@@ -283,6 +290,8 @@ namespace driver {
 		}
 
 		void Arm_gicV2::disable_irq(U32 cpu, U32 irq) {
+			mmio::PeripheralAccessGuard guard;
+
 			irq += vcPeripheralIrqOffset;
 
 			auto& gicd = *(volatile Gicd*)(address + gicd_base);
@@ -326,6 +335,8 @@ namespace driver {
 		// }
 
 		void Arm_gicV2::handle_interrupt(InterruptHandler callback) {
+			mmio::PeripheralAccessGuard guard;
+
 			auto& gicc = *(volatile Gicc*)(address + gicc_base);
 
 			Gicc::Iar interrupt;

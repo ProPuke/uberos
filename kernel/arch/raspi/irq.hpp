@@ -32,9 +32,9 @@ namespace irq {
 			inline const unsigned irq_max = 72;
 
 			#ifdef HAS_GIC400
-				inline driver::interrupt::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
+				extern driver::interrupt::Arm_gicV2 interruptController;
 			#else
-				inline driver::interrupt::Arm_raspi_legacy interruptController {(U32)mmio::Address::interrupts_legacy};
+				extern driver::interrupt::Arm_raspi_legacy interruptController;
 			#endif
 
 			void init();

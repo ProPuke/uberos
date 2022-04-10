@@ -32,6 +32,8 @@ namespace driver {
 		void Arm_raspi_legacy::_on_driver_enable() {
 			if(state==State::enabled) return;
 
+			mmio::PeripheralWriteGuard guard;
+
 			auto &registers = *(volatile Registers*)address;
 
 			registers.irq_basic_disable = 0xffffffff;
@@ -44,6 +46,8 @@ namespace driver {
 		void Arm_raspi_legacy::_on_driver_disable() {
 			if(state==State::disabled) return;
 
+			mmio::PeripheralWriteGuard guard;
+
 			auto &registers = *(volatile Registers*)address;
 
 			registers.irq_basic_disable = 0xffffffff;
@@ -55,6 +59,8 @@ namespace driver {
 
 		void Arm_raspi_legacy::enable_irq(U32 cpu, U32 irq) {
 			auto &registers = *(volatile Registers*)address;
+
+			mmio::PeripheralAccessGuard guard;
 
 			if((U32)irq>=64){
 				registers.irq_basic_enable |= (1<<((U32)irq-64));
@@ -69,6 +75,8 @@ namespace driver {
 
 		void Arm_raspi_legacy::disable_irq(U32 cpu, U32 irq) {
 			auto &registers = *(volatile Registers*)address;
+
+			mmio::PeripheralWriteGuard guard;
 			
 			if((U32)irq>=64){
 				registers.irq_basic_disable = (1<<((U32)irq-64));
@@ -97,6 +105,8 @@ namespace driver {
 
 		void Arm_raspi_legacy::handle_interrupt(InterruptHandler callback) {
 			// exceptions::Guard guard;
+
+			mmio::PeripheralReadGuard guard;
 
 			auto &registers = *(volatile Registers*)address;
 
