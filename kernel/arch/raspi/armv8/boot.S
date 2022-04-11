@@ -33,15 +33,15 @@ _start:
 			ldr x0, = (SCR_RESERVED | SCR_RW | SCR_NS)
 			msr scr_el3, x0
 
-			ldr x0, = (SPSR_MASK_ALL | SPSR_EL1h)
+			ldr x0, = (SPSR_MASK_ALL | SPSR_EL2h)
 			msr spsr_el3, x0
 
 			mrs x0, cpacr_el1
 			orr x0, x0, (CPACR_FPEN_TRAP_OFF)
 			msr cpacr_el1, x0
 
-			//exit into level 1
-			adr x0, 1f
+			//exit into level 2
+			adr x0, 2f
 			msr elr_el3, x0
 			eret
 

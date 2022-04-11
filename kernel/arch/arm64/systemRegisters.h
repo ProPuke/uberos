@@ -19,7 +19,8 @@
 #define SCR_NS                  (1 << 0)
 
 #define SPSR_MASK_ALL           (7 << 6)
-#define SPSR_EL1h               (5 << 0)
+#define SPSR_EL2h               (0b1001)
+#define SPSR_EL1h               (0b0101)
 
 #define CPACR_FPEN_TRAP_0       (1 << 20)
 #define CPACR_FPEN_TRAP_1       (1 << 21)
