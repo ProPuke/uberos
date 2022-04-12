@@ -21,7 +21,8 @@ namespace timer {
 	namespace arch {
 		namespace raspi {
 			namespace {
-				struct __attribute__((packed)) Timer_registers {
+				//NOTE: do not make this root struct packed as it breaks volatile pointers in gcc (without optimisations) resulting in non-atomic writes
+				struct Timer_registers {
 					struct __attribute__((packed)) {
 						U8 timer_matched: 4;
 						U32 reserved: 28;
@@ -38,7 +39,7 @@ namespace timer {
 
 				volatile auto &timer_registers = *(Timer_registers*)mmio::Address::system_timer_base;
 
-				struct __attribute((packed)) CoreTimerControlRegisters {
+				struct __attribute__((packed)) CoreTimerControlRegisters {
 					U8 reserved1;
 					bool source:1;
 					bool increment:1;

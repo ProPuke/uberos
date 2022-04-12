@@ -11,7 +11,7 @@ namespace driver {
 
 			const U32 vcPeripheralIrqOffset = 96; //videocore interrupts start at SPI ID 96
 
-			struct __attribute__((packed)) Gicd {
+			struct Gicd {
 				struct __attribute__((packed)) {
 					U32 enableGroup0:1;
 					U32 enableGroup1:1;
@@ -110,7 +110,7 @@ namespace driver {
 
 			const U32 gicc_base = 0x2000;
 
-			struct __attribute__((packed)) Gicc {
+			struct Gicc {
 				struct __attribute__((packed)) {
 					U32 enableGroup0:1;
 					U32 enableGroup1:1;
