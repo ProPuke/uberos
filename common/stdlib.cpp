@@ -194,15 +194,14 @@ inline const char* _ftoa(Type number) {
 	return buffer;
 }
 
-auto to_string(U16 x) -> const char* { return _utoa(x); }
-auto to_string(I16 x) -> const char* { return _itoa(x); }
-auto to_string(U32 x) -> const char* { return _utoa(x); }
-auto to_string(I32 x) -> const char* { return _itoa(x); }
-auto to_string(U64 x) -> const char* { return _utoa(x); }
-auto to_string(I64 x) -> const char* { return _itoa(x); }
-
-auto to_string(F32 x) -> const char* { return _ftoa(x); }
-auto to_string(F64 x) -> const char* { return _ftoa(x); }
+auto utoa(U16 x) -> const char* { return _utoa(x); }
+auto itoa(I16 x) -> const char* { return _itoa(x); }
+auto utoa(U32 x) -> const char* { return _utoa(x); }
+auto itoa(I32 x) -> const char* { return _itoa(x); }
+auto utoa(U64 x) -> const char* { return _utoa(x); }
+auto itoa(I64 x) -> const char* { return _itoa(x); }
+auto ftoa(F32 x) -> const char* { return _ftoa(x); }
+auto ftoa(F64 x) -> const char* { return _ftoa(x); }
 
 auto to_string_hex(U8 x)  -> const char* { return _utoahex(x); }
 auto to_string_hex(U16 x) -> const char*  { return _utoahex(x); }

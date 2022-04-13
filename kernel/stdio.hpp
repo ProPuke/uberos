@@ -55,9 +55,9 @@ namespace stdio {
 
 	template<typename Type>
 	inline void _print(Type x){ return puts(to_string(x)); }
-	inline void _print(char x){ return putc(x); }
-	inline void _print(char *x){ return puts(x); }
-	inline void _print(const char *x){ return puts(x); }
+	template<> inline void _print(char x){ return putc(x); }
+	template<> inline void _print(char *x){ return puts(x); }
+	template<> inline void _print(const char *x){ return puts(x); }
 
 	template<typename ...Params>
 	void print_inline(Params ...params){

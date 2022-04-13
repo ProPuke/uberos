@@ -47,4 +47,6 @@ private:
 	virtual void _on_driver_restart() { _on_driver_disable(); _on_driver_enable(); };
 };
 
-inline auto to_string(Driver::State state) -> const char* { return Driver::state_name[(U64)state]; }
+#include <common/stdlib.hpp>
+
+template<> inline auto to_string(Driver::State state) -> const char* { return Driver::state_name[(U64)state]; }
