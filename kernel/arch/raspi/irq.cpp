@@ -20,20 +20,65 @@ namespace irq {
 		namespace raspi {
 			#ifdef HAS_GIC400
 				driver::interrupt::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
-			#else
-				driver::interrupt::Arm_raspi_legacy interruptController {(U32)mmio::Address::interrupts_legacy};
 			#endif
 
+			driver::interrupt::Arm_raspi_legacy cpuInterruptController {(U32)mmio::Address::interrupts_legacy};
+
 			extern "C" void handle_interrupt() {
-				// stdio::print_debug("irq?");
+				asm volatile("" ::: "memory");
+
+				U64 sp;
+				asm volatile("mov %0, sp" : "=r" (sp));
+
+				// I64 distance = sp-(I64)&interruptController.state;
+				I64 distance = sp-(I64)0x00000000000EE0B0;
+
+				U64 CurrentEL;
+				U64 spsel;
+				asm volatile("mrs %0, CurrentEL" : "=r" (CurrentEL));
+				asm volatile("mrs %0, SPSel" : "=r" (spsel));
+				switch(bits(CurrentEL,2,3)){
+					case 0:
+						stdio::print_info("CurrentEL = 0");
+					break;
+					case 1:
+						stdio::print_info("CurrentEL = 1");
+					break;
+					case 2:
+						stdio::print_info("CurrentEL = 2");
+					break;
+					case 3:
+						stdio::print_info("CurrentEL = 3");
+					break;
+					case 4:
+						stdio::print_info("CurrentEL = 4");
+					break;
+				}
+				stdio::print_info("spsel = ", spsel?"1":"0");
+
+				stdio::print_debug(distance>10000?"far1":"near");
+				stdio::print_debug(distance>1000?"far2":"near");
+				stdio::print_debug(distance>100?"far3":"near");
+				stdio::print_debug(distance>10?"far4":"near");
+				stdio::print_debug(distance<0?"before":"after");
+				stdio::print_debug(interruptController.state==Driver::State::disabled?"disabled":"?");
+				stdio::print_debug(interruptController.state==Driver::State::enabled?"enabled":"?");
+				stdio::print_debug(interruptController.state==Driver::State::restarting?"restarting":"?");
+				stdio::print_debug(interruptController.state==Driver::State::failed?"failed":"?");
+				stdio::print_debug((U32)interruptController.state>65536?"high":"low");
+				stdio::print_debug("irq?");
+
+				// stdio::print_info("interrupt state = ", interruptController.state);
 
 				if(interruptController.state!=Driver::State::enabled) return;
 
+				stdio::print_debug("irq??");
+
 				CriticalSection guard;
-				// stdio::print_debug("irq");
+				stdio::print_debug("irq");
 
 				interruptController.handle_interrupt([](U32 irq) {
-					// stdio::print_debug("irq ", irq);
+					stdio::print_debug("irq ", irq);
 
 					switch((Irq)irq){
 						case Irq::system_timer_0:
@@ -75,14 +120,17 @@ namespace irq {
 				stdio::Section section("irq::arch::raspi::init...");
 
 				device::install_device(interruptController, true);
+				device::install_device(cpuInterruptController, true);
 			}
 
 			void enable(Irq irq) {
 				interruptController.enable_irq(0, (U32)irq);
+				cpuInterruptController.enable_irq(0, (U32)irq);
 			}
 
 			void disable(Irq irq) {
 				interruptController.disable_irq(0, (U32)irq);
+				cpuInterruptController.disable_irq(0, (U32)irq);
 			}
 		}
 	}

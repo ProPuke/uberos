@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Framebuffer.hpp"
+#include <common/graphics2d/BufferFormat.hpp>
 #include <common/types.hpp>
 
 namespace framebuffer {
 	struct Mode {
 		U32 width;
 		U32 height;
-		FramebufferFormat format;
+		graphics2d::BufferFormat format;
 	};
 
 	void init();

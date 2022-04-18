@@ -19,7 +19,7 @@ namespace maths {
 	constexpr auto abs(I64 x) -> U64 { return x>=0?x:-x; }
 
 	template <typename Type>
-	constexpr auto sign(Type x) -> U32 { return x>0?+1:x<0?-1:0; }
+	constexpr auto sign(Type x) -> FastI8 { return x>0?+1:x<0?-1:0; }
 
 	template <typename InputType, typename OutputType>
 	constexpr auto clamp(InputType x, OutputType a, OutputType b) -> OutputType { return min<InputType>(max<InputType>(x, a), b); }

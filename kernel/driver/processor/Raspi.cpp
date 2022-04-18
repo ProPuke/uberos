@@ -143,8 +143,8 @@ namespace driver {
 			const U32 clockCount = (U32)mailbox::PropertyMessage::Data::Clock::max-(U32)mailbox::PropertyMessage::Data::Clock::min+1;
 			struct Clock {const char *name; U32 id; };
 			Clock clocks[clockCount] = { //NOTE:all ids start at 0 and are sequential, they're just reordered for prettier defaults
-				{ "ARM", 2 },
 				{ "CORE", 3 },
+				{ "ARM", 2 },
 				{ "V3D", 4 },
 				{ "EMMC", 0 },
 				{ "UART", 1 },

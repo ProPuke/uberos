@@ -9,6 +9,7 @@
 #include <kernel/stdio.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/ThreadCpuState.hpp>
+#include <kernel/arch/raspi/irq.hpp>
 
 #if defined(ARCH_RASPI)
 	#include <kernel/arch/raspi/timer.hpp>
@@ -49,6 +50,14 @@ namespace scheduler {
 				stdio::Section section("scheduler::arch::arm::init...");
 
 				stdio::print_info("installing interrupt timer...");
+
+				U64 sp;
+				asm volatile("mov %0, sp" : "=r" (sp));
+
+				stdio::print_info("sp @ ", format::Hex64{sp});
+				stdio::print_info("controller @ ", (void*)&irq::arch::raspi::interruptController.state);
+				stdio::print_info("distance = ", sp-(I64)&irq::arch::raspi::interruptController.state);
+
 				// {
 				// 	stdio::print_debug("creating test spinlock");
 				// 	Spinlock testlock("testlock");
@@ -70,7 +79,26 @@ namespace scheduler {
 				// 	}
 				// 	stdio::print_debug("tested test spinlock");
 				// }
-				timer::set_timer(timer::Timer::cpu_scheduler, 1);
+				timer::set_timer(timer::Timer::cpu_scheduler, 1000000);
+
+				{
+					I64 distance = sp-(I64)&irq::arch::raspi::interruptController.state;
+
+					stdio::print_debug("== before ==");
+					stdio::print_debug(distance>10000?"far1":"near");
+					stdio::print_debug(distance>1000?"far2":"near");
+					stdio::print_debug(distance>100?"far3":"near");
+					stdio::print_debug(distance>10?"far4":"near");
+					stdio::print_debug(distance<0?"before":"after");
+					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::disabled?"disabled":"?");
+					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::enabled?"enabled":"?");
+					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::restarting?"restarting":"?");
+					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::failed?"failed":"?");
+					stdio::print_debug((U32)irq::arch::raspi::interruptController.state>65536?"high":"low");
+					stdio::print_debug("== /before ==");
+				}
+
+				while(true);
 
 				// stdio::print_info("test kmalloc");
 				// memory::kmalloc(123);
@@ -79,7 +107,6 @@ namespace scheduler {
 				auto mainProcess = new Process("kernel");
 				memory::Page *kernelStack = memory::Transaction().get_memory_page(&__end);
 				auto mainThread = mainProcess->create_current_thread(kernelStack, KERNEL_STACK_SIZE);
-				stdio::print_info("allocating main process...");
 
 				// thread::activeThreads.push_back(*mainThread);
 				::thread::currentThread = mainThread;

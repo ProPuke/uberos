@@ -14,6 +14,14 @@
 
 #include <new>
 
+extern U8 __text_start;
+extern U8 __text_end;
+extern U8 __data_start;
+extern U8 __data_end;
+extern U8 __rodata_start;
+extern U8 __rodata_end;
+extern U8 __bss_start;
+extern U8 __bss_end;
 extern U8 __end;
 
 namespace memory {
@@ -89,8 +97,13 @@ namespace memory {
 				auto vramPageCount = (hwquery::videoMemory+pageSize-1) / pageSize;
 				auto userPageCount = pageCount-kernelPageCount-vramPageCount;
 
-				// stdio::print_debug("kernel start @ ", &__end);
-				// stdio::print_debug("kernel end @ ", kernelEnd);
+				stdio::print_debug("kernel start @ ", &__end);
+				stdio::print_debug("kernel end @ ", kernelEnd);
+
+				stdio::print_debug("text @ ", &__text_start, " - ", &__text_end);
+				stdio::print_debug("rodata @ ", &__rodata_start, " - ", &__rodata_end);
+				stdio::print_debug("data @ ", &__data_start, " - ", &__data_end);
+				stdio::print_debug("bss @ ", &__bss_start, " - ", &__bss_end);
 
 				stdio::print_info("pages: ", pageCount);
 				stdio::print_info(kernelPageCount, " kernel pages");

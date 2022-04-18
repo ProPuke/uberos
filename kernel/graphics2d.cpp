@@ -1,9 +1,9 @@
 #include "graphics2d.hpp"
 
+#include <common/graphics2d/Font.hpp>
 #include <common/stdlib.hpp>
 
 #include <kernel/framebuffer.hpp>
-#include <kernel/graphics2d/Font.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
@@ -37,7 +37,7 @@ namespace graphics2d {
 		#endif
 
 		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
-		auto bpp = framebufferFormat::size[(U8)framebuffer.format];
+		auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
 
 		#ifdef DEBUG_MEMORY
 			stdio::print("new U8 ", width, "x", height, "@", bpp, "\n");
@@ -102,7 +102,7 @@ namespace graphics2d {
 
 		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 			auto &framebuffer = *framebuffer::get_framebuffer(i);
-			// auto bpp = framebufferFormat::size[(U8)framebuffer.format];
+			// auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
 
 			rect.x1 = max<I32>(rect.x1, 0);
 			rect.y1 = max<I32>(rect.y1, 0);
@@ -196,7 +196,7 @@ namespace graphics2d {
 		
 		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 			auto &framebuffer = *framebuffer::get_framebuffer(i);
-			auto bpp = framebufferFormat::size[(U8)framebuffer.format];
+			auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
 
 			rect.x1 = max<I32>(rect.x1, max<I32>(0, -view.x));
 			rect.y1 = max<I32>(rect.y1, max<I32>(0, -view.y));
@@ -234,7 +234,7 @@ namespace graphics2d {
 						// 	stdio::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 						// }
 						// stdio::print(source, " -> ", source+length, "\n");
-						// memcpy(target, source, length);
+						// memcpy_aligned(target, source, length);
 
 						if(scale==1){
 							U8 *target = &framebuffer.address[((view.y+y)*framebuffer.width+view.x+startX)*bpp];
@@ -244,7 +244,7 @@ namespace graphics2d {
 							// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
 							// 	stdio::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 							// }
-							memcpy(target, source, length);
+							memcpy_aligned(target, source, length);
 
 						}else{
 							U8 *target = &framebuffer.address[((view.y+y)*framebuffer.width+view.x+startX)*bpp];
@@ -275,7 +275,7 @@ namespace graphics2d {
 	Buffer _get_screen_buffer(U32 framebuffer_id, Rect rect) {
 		auto possibleFramebuffer = framebuffer::get_framebuffer(framebuffer_id);
 		const auto &framebuffer = *possibleFramebuffer; //FIXME: handle invalid framebuffer
-		const auto bpp = framebufferFormat::size[(U8)framebuffer.format];
+		const auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
 		return Buffer(framebuffer.address, framebuffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.format);
 	}
 
@@ -337,25 +337,5 @@ namespace graphics2d {
 		auto &view = *(View*)data;
 
 		delete &view;
-	}
-
-	void Buffer::draw_text(Font &font, const char *text, I32 startX, I32 startY, U32 size, U32 colour) {
-		I32 x = startX;
-		I32 y = startY;
-
-		I32 scale = 256 * size/font.size;
-
-		for(const char *c=text;*c;c++){
-			auto character = font.get_character(*c);
-			if(!character){
-				continue;
-			}
-
-			// draw_rect(x, y, 10, 10, 0xff0000);
-
-			draw_msdf(x+character->offsetX*(I32)size/256, y-character->offsetY*(I32)size/256, character->atlasWidth*scale/256, character->atlasHeight*scale/256, font.atlas, character->atlasX, character->atlasY, character->atlasWidth, character->atlasHeight, colour);
-
-			x += character->advance*(I32)font.size*scale/256/256;
-		}
 	}
 }

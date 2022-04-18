@@ -2,48 +2,16 @@
 
 #include "Framebuffer.hpp"
 #include "Thread.hpp"
-#include <common/types.hpp>
-#include <common/LList.hpp>
+
 #include <common/Callback.hpp>
+#include <common/graphics2d/Buffer.hpp>
+#include <common/graphics2d/BufferFormat.hpp>
+#include <common/graphics2d/Rect.hpp>
+#include <common/LList.hpp>
+#include <common/types.hpp>
 
 namespace graphics2d {
 	struct Font;
-
-	struct Buffer {
-		/**/ Buffer(U8 *address, U32 size, U32 stride, U32 width, U32 height, FramebufferFormat format):
-			format(format),
-			address(address),
-			size(size),
-			stride(stride),
-			width(width),
-			height(height)
-		{}
-
-		FramebufferFormat format;
-		U8 *address;
-		U32 size;
-		U32 stride;
-		U32 width, height;
-
-		void set(U32 x, U32 y, U32 colour);
-		void set_rgb565(U32 x, U32 y, U32 colour);
-		void set_rgb8(U32 x, U32 y, U32 colour);
-		void set_rgba8(U32 x, U32 y, U32 colour);
-
-		auto get(U32 x, U32 y) -> U32;
-		auto get_rgb565(U32 x, U32 y) -> U32;
-		auto get_rgb8(U32 x, U32 y) -> U32;
-		auto get_rgba8(U32 x, U32 y) -> U32;
-
-		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour);
-		void draw_msdf(I32 x, I32 y, U32 width, U32 height, Buffer &source, U32 source_x, U32 source_y, U32 source_width, U32 source_height, U32 colour);
-		void draw_text(Font &font, const char *text, I32 x, I32 y, U32 size, U32 colour);
-
-		void scroll(I32 x, I32 y);
-	};
-
-	auto blend_rgb(U32 from, U32 to, float phase) -> U32;
-	auto blend_rgb(U32 from, U32 to, U8 phase) -> U32;
 
 	enum struct ViewMode {
 		solid,
@@ -51,12 +19,12 @@ namespace graphics2d {
 	};
 
 	struct View: LListItem<View> {
-		/**/ View(Thread &thread, U8 *address, U32 size, FramebufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
+		/**/ View(Thread &thread, U8 *address, U32 size, graphics2d::BufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
 			thread(thread),
 			x(x),
 			y(y),
 			scale(scale),
-			buffer(address, size, width*framebufferFormat::size[(U32)format], width, height, format),
+			buffer(address, size, width*graphics2d::bufferFormat::size[(U32)format], width, height, format),
 			mode(mode)
 		{}
 
@@ -74,17 +42,6 @@ namespace graphics2d {
 
 			void call(void *data) override;
 		} handle_thread_deleted {*this};
-	};
-
-	struct Rect {
-		I32 x1, y1, x2, y2;
-
-		void offset(I32 x, I32 y) {
-			x1 += x;
-			x2 += x;
-			y1 += y;
-			y2 += y;
-		}
 	};
 
 	extern LList<View> views;

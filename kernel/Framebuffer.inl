@@ -12,10 +12,22 @@ inline void Framebuffer::set(U32 x, U32 y, U32 colour) {
 	// return _set(x, y, colour);
 	
 	switch(format){ //the switch is faster ¯\_(ツ)_/¯
-		case FramebufferFormat::rgb565: return set_rgb565(x, y, colour);
-		case FramebufferFormat::rgb8  : return set_rgb8(x, y, colour);
-		case FramebufferFormat::rgba8 : return set_rgba8(x, y, colour);
+		case graphics2d::BufferFormat::grey8 : return set_grey8(x, y, colour);
+		case graphics2d::BufferFormat::rgb565: return set_rgb565(x, y, colour);
+		case graphics2d::BufferFormat::rgb8  : return set_rgb8(x, y, colour);
+		case graphics2d::BufferFormat::rgba8 : return set_rgba8(x, y, colour);
 	}
+}
+
+inline void Framebuffer::set_grey8(U32 x, U32 y, U32 colour) {
+	//TODO:dither? (based on frame, once there is such a concept?)
+	
+	auto offset = y*width+x;
+	*(U16*)&address[offset] = (0
+		+ (int)((colour&0x0000ff)>> 0)
+		+ (int)((colour&0x00ff00)>> 8)
+		+ (int)((colour&0xff0000)>>16)
+	) / 3;
 }
 
 inline void Framebuffer::set_rgb565(U32 x, U32 y, U32 colour) {

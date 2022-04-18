@@ -3,9 +3,8 @@
 #if defined(ARCH_RASPI4)
 	#define HAS_GIC400
 	#include <kernel/driver/interrupt/Arm_gicV2.hpp>
-#else
-	#include <kernel/driver/interrupt/Arm_raspi_legacy.hpp>
 #endif
+#include <kernel/driver/interrupt/Arm_raspi_legacy.hpp>
 
 #include <kernel/mmio.hpp>
 
@@ -33,9 +32,8 @@ namespace irq {
 
 			#ifdef HAS_GIC400
 				extern driver::interrupt::Arm_gicV2 interruptController;
-			#else
-				extern driver::interrupt::Arm_raspi_legacy interruptController;
 			#endif
+			extern driver::interrupt::Arm_raspi_legacy cpuInterruptController;
 
 			void init();
 			void enable(Irq irq);

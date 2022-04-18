@@ -129,5 +129,8 @@
 	"docwriter.progress.trackFunctions": false,
 	"docwriter.progress.trackMethods": false,
 	"docwriter.progress.trackClasses": false,
-	"docwriter.progress.trackTypes": false
+	"docwriter.progress.trackTypes": false,
+	"deno.enablePaths": [
+		"./common/graphics2d/font"
+	]
 }

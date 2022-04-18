@@ -74,6 +74,72 @@ auto to_string_hex_trim(U16 i) -> const char*;
 auto to_string_hex_trim(U32 i) -> const char*;
 auto to_string_hex_trim(U64 i) -> const char*;
 
+#include "maths.hpp"
+
+template <bool align>
+void* __attribute__ ((optimize(2))) memory_copy_forwards(void *__restrict dest, const void *__restrict src, size_t size) {
+	if(align){
+		auto align_dest = maths::min(size, (size_t)dest%8);
+		auto align_src = maths::min(size, (size_t)src%8);
+
+		if(align_dest!=align_src){
+			while(size--) *(*(U8**)&dest)++ = *(*(U8**)&src)++;
+			return dest;
+		}
+
+		if(align_dest){
+			align_dest = 8-align_dest;
+
+			switch(8-align_dest){
+				case 7:
+					*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+				case 6:
+					*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+				case 5:
+					*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+				case 4:
+					*(*(U32**)&dest)++ = *(*(U32**)&src)++;
+				break;
+				case 3:
+					*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+				case 2:
+					*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+				case 1:
+					*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+			}
+
+			size -= align_dest;
+		}
+	}
+
+	{
+		size_t _8s = size/8;
+		size -= _8s*8;
+
+		while(_8s--) *(*(U64**)&dest)++ = *(*(U64**)&src)++;
+	}
+
+	if(size>=4){
+		*(*(U32**)&dest)++ = *(*(U32**)&src)++;
+		size -= 4;
+	}
+
+	switch(size){
+		case 3:
+			*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+		case 2:
+			*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+		case 1:
+			*(*(U8**)&dest)++ = *(*(U8**)&src)++;
+	}
+
+	return dest;
+}
+
+// inline void* memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
+// 	return memory_copy_forwards<true>(dest, src, bytes);
+// }
+
 #if defined(_32BIT)
 	template<> inline auto to_string(const void *pointer) -> const char* { return to_string_hex((U32)pointer); }
 	template<> inline auto to_string(/* */ void *pointer) -> const char* { return to_string_hex((U32)pointer); }
@@ -88,4 +154,10 @@ auto to_string_hex_trim(U64 i) -> const char*;
 	template<> inline auto to_string(unsigned int i) -> const char* { return to_string((U32)i); }
 	inline auto to_string_hex(unsigned int i) -> const char* { return to_string_hex((U32)i); }
 	inline auto to_string_hex_trim(unsigned int i) -> const char* { return to_string_hex_trim((U32)i); }
+#endif
+
+#ifdef USE_STDLIB_ASM
+	#if defined(ARCH_ARM64)
+		#include "arch/arm64/stdlib.hpp"
+	#endif
 #endif

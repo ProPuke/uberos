@@ -1,5 +1,7 @@
 #pragma once
 
+#include <common/graphics2d/BufferFormat.hpp>
+
 #include <kernel/Driver.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/Framebuffer.hpp>
@@ -11,7 +13,7 @@ namespace driver {
 			Driver(address, name, "graphics", descriptiveType)
 		{}
 
-		virtual auto set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion = true) -> bool = 0;
+		virtual auto set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion = true) -> bool = 0;
 
 		virtual auto get_mode_count() -> U32 = 0;
 		virtual auto get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode = 0;

@@ -1,15 +1,17 @@
 #pragma once
 
-#include "../graphics2d.hpp"
+#include <common/maths/Fixed.hpp>
+
+#include "Buffer.hpp"
 
 namespace graphics2d {
 	struct FontCharacter {
 		U32 code;
 
-		I16 advance;
+		maths::Fixed<I16,256> advance;
 
-		I16 offsetX;
-		I16 offsetY;
+		maths::Fixed<I16,256> offsetX;
+		maths::Fixed<I16,256> offsetY;
 
 		U32 atlasX;
 		U32 atlasY;

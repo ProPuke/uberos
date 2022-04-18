@@ -62,7 +62,7 @@ namespace timer {
 
 				CriticalSection guard;
 
-				usecs += 500;
+				usecs += 50;
 				// usecs += 5000000;
 
 				{

@@ -13,6 +13,16 @@ typedef int16_t I16;
 typedef int32_t I32;
 typedef int64_t I64;
 
+typedef uint_fast8_t  FastU8;
+typedef uint_fast16_t FastU16;
+typedef uint_fast32_t FastU32;
+typedef uint_fast64_t FastU64;
+
+typedef int_fast8_t  FastI8;
+typedef int_fast16_t FastI16;
+typedef int_fast32_t FastI32;
+typedef int_fast64_t FastI64;
+
 typedef float  F32;
 typedef double F64;
 
@@ -23,7 +33,7 @@ typedef char32_t C32;
 #if defined(ARCH_ARM32)
 	#define _32BIT
 	typedef U32 Reg;
-#elif defined(ARCH_ARM64)
+#elif defined(ARCH_ARM64) or defined(__x86_64__)
 	#define _64BIT
 	typedef U64 Reg;
 #else

@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "@types/node": "^16.4.3"
+  },
+  "dependencies": {
+    "ts-node": "^10.7.0"
   }
 }

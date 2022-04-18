@@ -79,6 +79,14 @@ _start:
 		mov x1, #(KERNEL_STACK_SIZE)
 		add sp, sp, x1
 
+		// mov x1, 0
+		// msr spsel, x1
+		// ldr x1, = __end
+		// mov sp, x1
+		// mov x1, #(KERNEL_STACK_SIZE)
+		// mov x1, #(KERNEL_STACK_SIZE)
+		// add sp, sp, x1
+
 	//clear the bss section
 		ldr x1, = __bss_start
 		ldr x2, = __bss_end

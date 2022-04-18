@@ -1,14 +1,15 @@
-#include <common/stdlib.hpp>
 #include <common/debugUtils.hpp>
+#include <common/graphics2d/font.hpp>
+#include <common/stdlib.hpp>
 
 #include <kernel/arch/raspi/kernel.hpp>
 #include <kernel/arch/raspi/timer.hpp>
+#include <kernel/Cli.hpp>
 #include <kernel/cpu.hpp>
 #include <kernel/device.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/graphics2d.hpp>
-#include <kernel/graphics2d/font.hpp>
 #include <kernel/info.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/memory/PagedPool.hpp>
@@ -360,6 +361,14 @@ namespace kernel {
 				}
 			});
 		}
+
+		// process.create_kernel_thread([]() -> I32 {
+		// 	Cli cli;
+
+		// 	while(true){
+		// 		cli.prompt();
+		// 	}
+		// });
 
 		// while(true){
 		// 	thread::currentThread.load()->sleep(1000000);

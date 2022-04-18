@@ -1,5 +1,6 @@
 #include "Raspi_videocore_mailbox.hpp"
 
+#include <common/graphics2d/BufferFormat.hpp>
 #include <kernel/arch/raspi/mailbox.hpp>
 
 namespace mailbox {
@@ -57,9 +58,9 @@ namespace driver {
 			detect_default_mode();
 
 			#if true
-				set_mode(0, 1280, 720, FramebufferFormat::rgb8);
+				set_mode(0, 1280, 720, graphics2d::BufferFormat::rgb8);
 			#else
-				set_mode(0, default_resolution[0], default_resolution[1], FramebufferFormat::rgb8);
+				set_mode(0, default_resolution[0], default_resolution[1], graphics2d::BufferFormat::rgb8);
 			#endif
 
 			state = State::enabled;
@@ -75,14 +76,14 @@ namespace driver {
 			state = State::disabled;
 		}
 
-		auto Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion) -> bool {
+		auto Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> bool {
 			if(framebufferId>0) return false;
 
 			stdio::Section section("device::", name, "::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
 
 			framebuffer.driver = nullptr; // initially invalid
 
-			unsigned bitdepth = framebufferFormat::size[(U8)format]*8;
+			unsigned bitdepth = graphics2d::bufferFormat::size[(U8)format]*8;
 
 			mailbox::PropertyMessage tags[4];
 			tags[0].tag = mailbox::PropertyTag::set_physical_dimensions;
@@ -136,13 +137,13 @@ namespace driver {
 				bitdepth = tags[2].data.bitsPerPixel;
 				switch(bitdepth){
 					case 16u:
-						format = FramebufferFormat::rgb565;
+						format = graphics2d::BufferFormat::rgb565;
 					break;
 					case 24u:
-						format = FramebufferFormat::rgb8;
+						format = graphics2d::BufferFormat::rgb8;
 					break;
 					case 32u:
-						format = FramebufferFormat::rgba8;
+						format = graphics2d::BufferFormat::rgba8;
 					break;
 					default:
 						return false;
@@ -202,17 +203,17 @@ namespace driver {
 		}
 
 		auto Raspi_videocore_mailbox::get_mode_count() -> U32 {
-			return sizeof(possibleResolutions)/sizeof(possibleResolutions[0]) * ((U32)FramebufferFormat::max+1);
+			return sizeof(possibleResolutions)/sizeof(possibleResolutions[0]) * ((U32)graphics2d::BufferFormat::max+1);
 		}
 
 		auto Raspi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode {
-			auto modeIndex = index/((U32)FramebufferFormat::max+1);
+			auto modeIndex = index/((U32)graphics2d::BufferFormat::max+1);
 			if(modeIndex>=sizeof(possibleResolutions)/sizeof(possibleResolutions[0])) {
 				return { 0 };
 			}
-			FramebufferFormat format = (FramebufferFormat)(index%((U32)FramebufferFormat::max+1));
+			graphics2d::BufferFormat format = (graphics2d::BufferFormat)(index%((U32)graphics2d::BufferFormat::max+1));
 			auto resolution = possibleResolutions[modeIndex];
-			auto formatSize = framebufferFormat::size[(U8)format]*8u;
+			auto formatSize = graphics2d::bufferFormat::size[(U8)format]*8u;
 
 			mailbox::PropertyMessage tags[3];
 			tags[0].tag = mailbox::PropertyTag::test_physical_dimensions;
@@ -241,7 +242,7 @@ namespace driver {
 			//TODO:pick better defaults? This seems awfully low
 			defaultMode.width = 640;
 			defaultMode.height = 480;
-			defaultMode.format = FramebufferFormat::rgb8;
+			defaultMode.format = graphics2d::BufferFormat::rgb8;
 
 			{ //get default resolution
 				mailbox::PropertyMessage tags[2];
@@ -262,7 +263,7 @@ namespace driver {
 
 				mailbox::PropertyMessage tags[2];
 				tags[0].tag = mailbox::PropertyTag::test_bits_per_pixel;
-				tags[0].data.bitsPerPixel = framebufferFormat::size[(U8)FramebufferFormat::rgb8]*8;
+				tags[0].data.bitsPerPixel = graphics2d::bufferFormat::size[(U8)graphics2d::BufferFormat::rgb8]*8;
 
 				tags[1].tag = mailbox::PropertyTag::null_tag;
 
@@ -276,9 +277,9 @@ namespace driver {
 
 					bool found = false;
 
-					for(U32 i=0;i<=(U8)FramebufferFormat::max;i++){
-						if(framebufferFormat::size[i]*8==defaultBitdepth){
-							defaultMode.format = (FramebufferFormat)i;
+					for(U32 i=0;i<=(U8)graphics2d::BufferFormat::max;i++){
+						if(graphics2d::bufferFormat::size[i]*8==defaultBitdepth){
+							defaultMode.format = (graphics2d::BufferFormat)i;
 							found = true;
 							break;
 						}

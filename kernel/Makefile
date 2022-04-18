@@ -208,9 +208,9 @@ $(OUTPUTDIR):
 
 .PHONY: fonts
 fonts:
-	@$(MSDF_ATLAS_GEN) -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -imageout graphics2d/font/OpenSans.txt -json graphics2d/font/OpenSans.json
-	@$(MSDF_ATLAS_GEN) -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -imageout graphics2d/font/Roboto_Mono.txt -json graphics2d/font/Roboto_Mono.json
-	@cd graphics2d/font; ts-node build
+	@$(MSDF_ATLAS_GEN) -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
+	@$(MSDF_ATLAS_GEN) -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
+	@cd ../common/graphics2d/font; ./build.sh
 
 %.S.o: %.S Makefile $(KERNEL_HEADERS) $(COMMON_HEADERS)
 	@echo "C    " $<

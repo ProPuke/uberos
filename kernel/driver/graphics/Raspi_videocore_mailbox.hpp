@@ -1,3 +1,4 @@
+#include <common/graphics2d/BufferFormat.hpp>
 #include <common/types.hpp>
 
 #include <kernel/driver/Graphics.hpp>
@@ -11,7 +12,7 @@ namespace driver {
 			void _on_driver_enable() override;
 			void _on_driver_disable() override;
 
-			auto set_mode(U32 framebufferId, U32 width, U32 height, FramebufferFormat format, bool acceptSuggestion = true) -> bool override;
+			auto set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion = true) -> bool override;
 
 			auto get_mode_count() -> U32 override;
 			auto get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode override;
