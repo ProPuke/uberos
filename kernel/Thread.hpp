@@ -32,7 +32,7 @@ struct Thread: LListItem<Thread> {
 	friend void scheduler::arch::arm::init();
 	friend Thread* Process::create_thread(Process::Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket);
 	friend Thread* Process::create_kernel_thread(I32(*entrypoint)());
-	friend Thread* Process::create_current_thread(memory::Page *stackPage, size_t stackSize);
+	friend Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize);
 
 	private: /**/ Thread(Process &process);
 	public:

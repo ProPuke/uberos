@@ -30,7 +30,7 @@ namespace memory {
 	auto _allocate_page() -> Page*;
 	auto _allocate_pages(U32 count) -> Page*;
 	void _free_page(Page &page);
-	auto _get_memory_page(void *address) -> Page*;
+	auto _get_memory_page(void *address) -> Page&;
 
 	void _check_dangerous_address(void *from, void *to);
 
@@ -54,7 +54,7 @@ namespace memory {
 		void free_page(Page &page) {
 			return _free_page(page);
 		}
-		auto get_memory_page(void *address) -> Page* {
+		auto get_memory_page(void *address) -> Page& {
 			return _get_memory_page(address);
 		}
 

@@ -60,7 +60,7 @@ namespace graphics2d {
 		thread.on_deleted.push_front(view->handle_thread_deleted);
 
 		#ifdef DEBUG_MEMORY
-			stdio::print("created view ", view, "\n");
+			stdio::print_debug("created view ", view);
 		#endif
 
 		return view;
@@ -286,7 +286,7 @@ namespace graphics2d {
 	}
 
 	View* create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale) {
-		Spinlock_Guard guard(spinlock);
+		Spinlock_Guard guard(spinlock, "create_view");
 
 		return _create_view(thread, x, y, width, height, scale);
 	}

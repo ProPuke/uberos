@@ -34,7 +34,6 @@ namespace memory {
 	}
 
 	Page* _allocate_page() {
-
 		if(freePages.size<1){
 			return nullptr;
 		}
@@ -104,7 +103,7 @@ namespace memory {
 		}
 
 		#ifdef MEMORY_CHECKS
-			stdio::print_debug("kmalloc ", size, " @ ", address, "\n");
+			stdio::print_debug("kmalloc ", size, " @ ", address);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
@@ -117,7 +116,7 @@ namespace memory {
 		// stdio::Section section("kfree");
 
 		#ifdef MEMORY_CHECKS
-			stdio::print_debug("kfree ", address, "\n");
+			stdio::print_debug("kfree ", address);
 		#endif
 
 		if(!address) return;

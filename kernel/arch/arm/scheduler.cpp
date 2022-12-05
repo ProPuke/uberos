@@ -98,14 +98,14 @@ namespace scheduler {
 					stdio::print_debug("== /before ==");
 				}
 
-				while(true);
+				// while(true);
 
 				// stdio::print_info("test kmalloc");
 				// memory::kmalloc(123);
 
 				stdio::print_info("allocating main process...");
 				auto mainProcess = new Process("kernel");
-				memory::Page *kernelStack = memory::Transaction().get_memory_page(&__end);
+				auto &kernelStack = memory::Transaction().get_memory_page(&__end);
 				auto mainThread = mainProcess->create_current_thread(kernelStack, KERNEL_STACK_SIZE);
 
 				// thread::activeThreads.push_back(*mainThread);
