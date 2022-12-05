@@ -458,8 +458,13 @@ namespace mmu {
 	}
 
 	void MemoryMapping::init() {
-		initialTable = (TableDescriptor*)memory::Transaction().allocate_page()->physicalAddress;
-		bzero(initialTable, memory::pageSize);
+		const auto requiredSize = levelSize[startLevel]*sizeof(TableDescriptor);
+		const auto requiredPages = (requiredSize+memory::pageSize-1)/memory::pageSize;
+		assert(requiredPages==1, "mmu table does not sit in a single page"); // we only free a single page, so make sure we only allocate 1, too
+		auto page = memory::Transaction().allocate_pages(requiredPages);
+		auto address = page->physicalAddress;
+		initialTable = (TableDescriptor*)address;
+		bzero(initialTable, requiredSize);
 	}
 
 	namespace {
@@ -489,14 +494,7 @@ namespace mmu {
 		// we can look at defragmenting the physical addresses later, so that tables can be swapped out for larger chunks
 		// if this becomes a problem
 
-		void* _insert2(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction);
-
-		inline void* _insert(Stage1TableDescriptor *table, unsigned level, void *address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
-			auto addressToInsert = address;
-			return _insert2(table, level, addressToInsert, pages, regionType, transaction);
-		}
-
-		inline void* _insert2(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
+		inline void* _insert(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
 			// stdio::Section section("insert ", pages, ' ', regionType_to_string(regionType), " pages into level ", level, "...");
 
 			void *baseVirtualAddress = nullptr;
@@ -565,8 +563,11 @@ namespace mmu {
 						// stdio::print_debug("allocating a subtable...");
 
 						//allocate a subtable
-						auto subtable = (Stage1TableDescriptor*)transaction.allocate_page()->physicalAddress;
-						bzero(subtable, sizeof(Stage1TableDescriptor)*levelSize[level+1]);
+						const auto requiredSize = levelSize[level+1]*sizeof(TableDescriptor);
+						const auto requiredPages = (requiredSize+memory::pageSize-1)/memory::pageSize;
+						assert(requiredPages==1, "mmu table does not sit in a single page"); // we only free a single page, so make sure we only allocate 1, too
+						auto subtable = (Stage1TableDescriptor*)transaction.allocate_pages(requiredPages)->physicalAddress;
+						bzero(subtable, requiredSize);
 						entry.set_table(subtable);
 					}
 
@@ -590,7 +591,7 @@ namespace mmu {
 					// stdio::print_debug("inserting into existing table...");
 				}
 
-				auto virtualAddress = _insert2(entry.get_table_address(), level+1, address, pages, regionType, transaction);
+				auto virtualAddress = _insert(entry.get_table_address(), level+1, address, pages, regionType, transaction);
 				if(firstAddress){
 					firstAddress = false;
 					baseVirtualAddress = (void*)(i*bit_rightmost(get_level_bitmask(level))|(U64)virtualAddress);
