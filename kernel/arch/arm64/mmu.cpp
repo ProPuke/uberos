@@ -453,7 +453,7 @@ namespace mmu {
 	/**/ MemoryMapping::~MemoryMapping(){
 		if(initialTable){
 			clear();
-			memory::Transaction().kfree(initialTable);
+			memory::Transaction().free_page_with_address(initialTable);
 		}
 	}
 
@@ -471,11 +471,11 @@ namespace mmu {
 				if(entry.isTable){
 					auto subTable = entry.get_table_address();
 					_clear(subTable, level+1, transaction);
-					transaction.free_page(*transaction.get_memory_page(subTable));
+					transaction.free_page_with_address(subTable);
 
 				}else{
 					auto address = entry.get_block_address(level);
-					transaction.free_page(*transaction.get_memory_page(address));
+					transaction.free_page_with_address(address);
 				}
 
 				entry.set_unused();

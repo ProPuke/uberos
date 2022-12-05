@@ -54,6 +54,9 @@ namespace memory {
 		void free_page(Page &page) {
 			return _free_page(page);
 		}
+		void free_page_with_address(void *address) {
+			return free_page(get_memory_page(address));
+		}
 		auto get_memory_page(void *address) -> Page& {
 			return _get_memory_page(address);
 		}
