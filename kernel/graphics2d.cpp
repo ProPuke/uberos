@@ -53,7 +53,7 @@ namespace graphics2d {
 
 		bzero(buffer, width*height*bpp);
 
-		auto view = new View(thread, buffer, layer, width*height*bpp, framebuffer.format, x, y, width, height, scale);
+		auto view = new View(thread, buffer, layer, width*height*bpp, framebuffer.format, framebuffer.order, x, y, width, height, scale);
 		if(!view) return nullptr;
 
 		if(views.size<1){
@@ -311,7 +311,7 @@ namespace graphics2d {
 		auto possibleFramebuffer = framebuffer::get_framebuffer(framebuffer_id);
 		const auto &framebuffer = *possibleFramebuffer; //FIXME: handle invalid framebuffer
 		const auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
-		return Buffer(framebuffer.address, framebuffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.format);
+		return Buffer(framebuffer.address, framebuffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.format, framebuffer.order);
 	}
 
 	void set_background_colour(U32 colour) {

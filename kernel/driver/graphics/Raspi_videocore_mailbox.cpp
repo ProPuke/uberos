@@ -104,6 +104,8 @@ namespace driver {
 				return false;
 			}
 
+			auto assignBitdepth = tags[2].data.bitsPerPixel;
+
 			framebuffer.width = tags[1].data.screenSize.width;
 			framebuffer.height = tags[1].data.screenSize.height;
 
@@ -118,9 +120,9 @@ namespace driver {
 				return false;
 			}
 
-			if(tags[2].data.bitsPerPixel!=bitdepth){
+			if(assignBitdepth!=bitdepth){
 				stdio::print_warning("Warning: Unable to allocate framebuffer with bitdepth ", bitdepth);
-				if(!tags[2].data.bitsPerPixel){
+				if(!assignBitdepth){
 					return false;
 				}
 				
@@ -134,7 +136,7 @@ namespace driver {
 					return false;
 				}
 
-				bitdepth = tags[2].data.bitsPerPixel;
+				bitdepth = assignBitdepth;
 				switch(bitdepth){
 					case 16u:
 						format = graphics2d::BufferFormat::rgb565;
@@ -159,7 +161,6 @@ namespace driver {
 			framebuffer.format = format;
 
 			tags[0].tag = mailbox::PropertyTag::get_bytes_per_row;
-
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!send_messages(tags)){
@@ -167,8 +168,27 @@ namespace driver {
 				return false;
 			}
 
+			auto pitch = tags[0].data.bytesPerRow;
 
-			if(tags[0].data.bytesPerRow!=framebuffer.width*bitdepth/8){
+			tags[0].tag = mailbox::PropertyTag::get_pixel_order;
+			tags[1].tag = mailbox::PropertyTag::null_tag;
+
+			if(!send_messages(tags)){
+				stdio::print_warning("Warning: Unable to query pixel order");
+			}
+
+			auto pixelOrder = tags[0].data.pixelOrder;
+
+			switch(pixelOrder){
+				case mailbox::PropertyMessage::Data::PixelOrder::rgb:
+					framebuffer.order = graphics2d::BufferFormatOrder::rgb;
+				break;
+				case mailbox::PropertyMessage::Data::PixelOrder::bgr:
+					framebuffer.order = graphics2d::BufferFormatOrder::bgr;
+				break;
+			}
+
+			if(pitch!=framebuffer.width*bitdepth/8){
 				stdio::print_error("Error: Custom pitch of ", tags[0].data.bytesPerRow, " required for framebuffer. This is not supported");
 				return false;
 			}

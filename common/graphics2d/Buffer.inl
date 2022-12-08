@@ -14,12 +14,18 @@ namespace graphics2d {
 
 	inline void Buffer::set(U32 x, U32 y, U32 colour) {
 		// return _set(x, y, colour);
+
+		static_assert((int)BufferFormatOrder::max<2);
 		
-		switch(format){ //the switch is faster ¯\_(ツ)_/¯
-			case BufferFormat::grey8 : return set_grey8(x, y, colour);
-			case BufferFormat::rgb565: return set_rgb565(x, y, colour);
-			case BufferFormat::rgb8  : return set_rgb8(x, y, colour);
-			case BufferFormat::rgba8 : return set_rgba8(x, y, colour);
+		switch((int)format<<1|(int)order){ //the switch is faster ¯\_(ツ)_/¯
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::rgb:
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgr: return set_grey8(x, y, colour);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::rgb: return set_rgb565(x, y, colour);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgr: return set_bgr565(x, y, colour);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::rgb: return set_rgb8(x, y, colour);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgr: return set_bgr8(x, y, colour);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::rgb: return set_rgba8(x, y, colour);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgr: return set_bgra8(x, y, colour);
 		}
 	}
 
@@ -38,14 +44,32 @@ namespace graphics2d {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
 		auto offset = (y*width+x)*2;
-		*(U16*)&address[offset] =
-			 (((colour&0x0000ff)>> 0)>>3)<< 0
+		*(U16*)&address[offset] = 0
+			|(((colour&0x0000ff)>> 0)>>3)<< 0
 			|(((colour&0x00ff00)>> 8)>>2)<< 5
 			|(((colour&0xff0000)>>16)>>3)<<11
 		;
 	}
 
+	inline void Buffer::set_bgr565(U32 x, U32 y, U32 colour) {
+		//TODO:dither? (based on frame, once there is such a concept?)
+		
+		auto offset = (y*width+x)*2;
+		*(U16*)&address[offset] = 0
+			|(((colour&0x0000ff)>> 0)>>3)<<11
+			|(((colour&0x00ff00)>> 8)>>2)<< 5
+			|(((colour&0xff0000)>>16)>>3)<< 0
+		;
+	}
+
 	inline void Buffer::set_rgb8(U32 x, U32 y, U32 colour) {
+		auto offset = (y*width+x)*3;
+		address[offset+0] = (colour&0xff0000)>>16;
+		address[offset+1] = (colour&0x00ff00)>> 8;
+		address[offset+2] = (colour&0x0000ff)>> 0;
+	}
+
+	inline void Buffer::set_bgr8(U32 x, U32 y, U32 colour) {
 		auto offset = (y*width+x)*3;
 		address[offset+0] = (colour&0x0000ff)>> 0;
 		address[offset+1] = (colour&0x00ff00)>> 8;
@@ -53,6 +77,14 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_rgba8(U32 x, U32 y, U32 colour) {
+		auto offset = (y*width+x)*4;
+		address[offset+0] = (colour&0x00ff0000)>>16;
+		address[offset+1] = (colour&0x0000ff00)>> 8;
+		address[offset+2] = (colour&0x000000ff)>> 0;
+		address[offset+3] = (colour&0xff000000)>>24;
+	}
+
+	inline void Buffer::set_bgra8(U32 x, U32 y, U32 colour) {
 		auto offset = (y*width+x)*4;
 		address[offset+0] = (colour&0x000000ff)>> 0;
 		address[offset+1] = (colour&0x0000ff00)>> 8;
@@ -68,12 +100,18 @@ namespace graphics2d {
 
 	inline U32 Buffer::get(U32 x, U32 y) {
 		// return _get(x, y);
+
+		static_assert((int)BufferFormatOrder::max<2);
 		
-		switch(format){ //the switch is faster ¯\_(ツ)_/¯
-			case BufferFormat::grey8 : return get_grey8(x, y);
-			case BufferFormat::rgb565: return get_rgb565(x, y);
-			case BufferFormat::rgb8  : return get_rgb8(x, y);
-			case BufferFormat::rgba8 : return get_rgba8(x, y);
+		switch((int)format<<1|(int)order){ //the switch is faster ¯\_(ツ)_/¯
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::rgb:
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgr: return get_grey8(x, y);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::rgb: return get_rgb565(x, y);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgr: return get_bgr565(x, y);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::rgb: return get_rgb8(x, y);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgr: return get_bgr8(x, y);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::rgb: return get_rgba8(x, y);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgr: return get_bgra8(x, y);
 		}
 
 		return 0x000000;
@@ -86,28 +124,56 @@ namespace graphics2d {
 
 	inline U32 Buffer::get_rgb565(U32 x, U32 y) {
 		U16 data = *(U16*)&address[(y*width+x)*2];
-		return
-			 (((data>>11)&0x1f)<<3<<16)
+		return 0
+			|(((data>>11)&0x1f)<<3<<16)
 			|(((data>> 5)&0x3f)<<2<< 8)
 			|(((data>> 0)&0x1f)<<3<< 0)
 		;
 	}
 
+	inline U32 Buffer::get_bgr565(U32 x, U32 y) {
+		U16 data = *(U16*)&address[(y*width+x)*2];
+		return 0
+			|(((data>> 0)&0x1f)<<3<<16)
+			|(((data>> 5)&0x3f)<<2<< 8)
+			|(((data>>11)&0x1f)<<3<< 0)
+		;
+	}
+
 	inline U32 Buffer::get_rgb8(U32 x, U32 y) {
 		auto offset = (y*width+x)*3;
-		return 
-			 (address[offset+0]<<16)
+		return 0
+			|(address[offset+0]<<16)
 			|(address[offset+1]<< 8)
 			|(address[offset+2]<< 0)
 		;
 	}
 
+	inline U32 Buffer::get_bgr8(U32 x, U32 y) {
+		auto offset = (y*width+x)*3;
+		return 0
+			|(address[offset+2]<<16)
+			|(address[offset+1]<< 8)
+			|(address[offset+0]<< 0)
+		;
+	}
+
 	inline U32 Buffer::get_rgba8(U32 x, U32 y) {
 		auto offset = (y*width+x)*4;
-		return 
-			 address[offset+0]<<16
+		return 0
+			|address[offset+0]<<16
 			|address[offset+1]<< 8
 			|address[offset+2]<< 0
+			|address[offset+3]<<24
+		;
+	}
+
+	inline U32 Buffer::get_bgra8(U32 x, U32 y) {
+		auto offset = (y*width+x)*4;
+		return 0
+			|address[offset+2]<<16
+			|address[offset+1]<< 8
+			|address[offset+0]<< 0
 			|address[offset+3]<<24
 		;
 	}

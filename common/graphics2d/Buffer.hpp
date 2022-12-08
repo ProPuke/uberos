@@ -13,8 +13,9 @@ namespace graphics2d {
 	};
 
 	struct Buffer {
-		/**/ Buffer(U8 *address, U32 size, U32 stride, U32 width, U32 height, BufferFormat format):
+		/**/ Buffer(U8 *address, U32 size, U32 stride, U32 width, U32 height, BufferFormat format, BufferFormatOrder order):
 			format(format),
+			order(order),
 			address(address),
 			size(size),
 			stride(stride),
@@ -23,6 +24,7 @@ namespace graphics2d {
 		{}
 
 		BufferFormat format;
+		BufferFormatOrder order;
 		U8 *address;
 		U32 size;
 		U32 stride;
@@ -32,15 +34,21 @@ namespace graphics2d {
 		void set(U32 x, U32 y, U32 colour);
 		void set_grey8(U32 x, U32 y, U32 colour);
 		void set_rgb565(U32 x, U32 y, U32 colour);
+		void set_bgr565(U32 x, U32 y, U32 colour);
 		void set_rgb8(U32 x, U32 y, U32 colour);
+		void set_bgr8(U32 x, U32 y, U32 colour);
 		void set_rgba8(U32 x, U32 y, U32 colour);
+		void set_bgra8(U32 x, U32 y, U32 colour);
 
 		auto get(I32 x, I32 y) -> U32;
 		auto get(U32 x, U32 y) -> U32;
 		auto get_grey8(U32 x, U32 y) -> U32;
 		auto get_rgb565(U32 x, U32 y) -> U32;
+		auto get_bgr565(U32 x, U32 y) -> U32;
 		auto get_rgb8(U32 x, U32 y) -> U32;
+		auto get_bgr8(U32 x, U32 y) -> U32;
 		auto get_rgba8(U32 x, U32 y) -> U32;
+		auto get_bgra8(U32 x, U32 y) -> U32;
 
 		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour);
 		void draw_rect_outline(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth=1);

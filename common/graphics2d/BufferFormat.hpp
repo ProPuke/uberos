@@ -11,6 +11,12 @@ namespace graphics2d {
 		max = rgba8
 	};
 
+	enum struct BufferFormatOrder {
+		rgb,
+		bgr,
+		max = bgr
+	};
+
 	namespace bufferFormat {
 		static const char *const name[(U32)BufferFormat::max+1] = {
 			"8bit greyscale",

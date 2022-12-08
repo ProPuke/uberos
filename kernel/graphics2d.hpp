@@ -27,13 +27,13 @@ namespace graphics2d {
 	};
 
 	struct View: LListItem<View> {
-		/**/ View(Thread *thread, U8 *address, ViewLayer layer, U32 size, graphics2d::BufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
+		/**/ View(Thread *thread, U8 *address, ViewLayer layer, U32 size, graphics2d::BufferFormat format, graphics2d::BufferFormatOrder order, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
 			thread(thread),
 			x(x),
 			y(y),
 			layer(layer),
 			scale(scale),
-			buffer(address, size, width*graphics2d::bufferFormat::size[(U32)format], width, height, format),
+			buffer(address, size, width*graphics2d::bufferFormat::size[(U32)format], width, height, format, order),
 			mode(mode)
 		{}
 
