@@ -144,13 +144,13 @@ namespace graphics2d {
 			const auto samplesX = (source_width+source_width/2-1)/width;
 			const auto samplesY = (source_height+source_height/2-1)/height;
 
-			for(U32 y=0; y<height&&startY+y<this->height; y++) for(U32 x=0; x<width&&startX+x<this->width; x++) {
+			for(I32 y=0; y<(I32)height&&startY+y<(I32)this->height; y++) for(I32 x=0; x<(I32)width&&startX+x<(I32)this->width; x++) {
 				I32 sX = source_x+x*source_width/width;
 				I32 sY = source_y+y*source_height/height;
 
 				U32 coverage = 0;
 
-				for(I32 y2=y==0?skipSourceTop:0;y2<(I32)samplesY-(y==height-1u?(I32)skipSourceBottom:0);y2++) for(I32 x2=x==0?skipSourceLeft:0;x2<(I32)samplesX-(x==width-1u?(I32)skipSourceRight:0);x2++) {
+				for(I32 y2=y==0?skipSourceTop:0;y2<(I32)samplesY-(y==(I32)height-1?(I32)skipSourceBottom:0);y2++) for(I32 x2=x==0?skipSourceLeft:0;x2<(I32)samplesX-(x==(I32)width-1?(I32)skipSourceRight:0);x2++) {
 					auto sample = source.get(sX+x2, sY+y2);
 
 					const auto r = bits(sample, 16, 23);
