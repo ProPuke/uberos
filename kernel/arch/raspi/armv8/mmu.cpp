@@ -44,7 +44,8 @@ namespace mmu {
 		kernelMapping.add_mapping(video_start, video_end, RegionType::deviceMemory);
 		kernelMapping.add_mapping(video_end, peripheral_start, RegionType::device);
 		kernelMapping.add_mapping(peripheral_start, peripheral_end, RegionType::device);
-		kernelMapping.add_mapping(peripheral_end, (void*)0xf'ffff'ffff, RegionType::memory);
+		// kernelMapping.add_mapping(peripheral_end, (void*)0xf'ffff'ffff, RegionType::memory);
+		kernelMapping.add_mapping(peripheral_end, (void*)0x10'0000'0000, RegionType::memory);
 
 		// 0xff800000 peripheral_end
 		// 0xfe000000 peripheral_start
