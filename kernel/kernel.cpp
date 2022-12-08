@@ -220,7 +220,7 @@ namespace kernel {
 					(void) height;
 					(void) framebuffer;
 
-					auto view = graphics2d::create_view(*thread::currentThread, rand()%((U32)framebuffer.width-width), rand()%((U32)framebuffer.height-height), width, height, scale);
+					auto view = graphics2d::create_view(thread::currentThread, graphics2d::ViewLayer::regular, rand()%((U32)framebuffer.width-width), rand()%((U32)framebuffer.height-height), width, height, scale);
 					if(!view) {
 						log.print_error("Error: didn't get a view");
 						return 0;
@@ -307,7 +307,7 @@ namespace kernel {
 				I32 y = rand()%500;
 				I32 speed = rand()%6+1;
 
-				auto view = graphics2d::create_view(*thread::currentThread, x, y, width, height, 1.0);
+				auto view = graphics2d::create_view(thread::currentThread, graphics2d::ViewLayer::regular, x, y, width, height, 1.0);
 
 				auto &buffer = view->buffer;
 

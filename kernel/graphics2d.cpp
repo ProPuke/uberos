@@ -30,7 +30,7 @@ namespace graphics2d {
 		_update_background();
 	}
 
-	View* _create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale) {
+	View* _create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
 
 		#ifdef DEBUG_MEMORY
 			stdio::Section section("create_view ", x, ", ", y, " ", width, "x", height);
@@ -53,11 +53,25 @@ namespace graphics2d {
 
 		bzero(buffer, width*height*bpp);
 
-		auto view = new View(thread, buffer, width*height*bpp, framebuffer.format, x, y, width, height, scale);
+		auto view = new View(thread, buffer, layer, width*height*bpp, framebuffer.format, x, y, width, height, scale);
 		if(!view) return nullptr;
-		views.push_back(*view);
 
-		thread.on_deleted.push_front(view->handle_thread_deleted);
+		if(views.size<1){
+			views.push_back(*view);
+		}else{
+			for(auto other = views.tail;other;other = other->prev){
+				if(other->layer<=view->layer){
+					views.insert_after(*other, *view);
+					goto inserted;
+				}
+			}
+			views.insert_before(*views.head, *view);
+			inserted:;
+		}
+
+		if(thread){
+			thread->on_deleted.push_front(view->handle_thread_deleted);
+		}
 
 		#ifdef DEBUG_MEMORY
 			stdio::print_debug("created view ", view);
@@ -73,7 +87,9 @@ namespace graphics2d {
 
 		Rect area = {x, y, x+(I32)buffer.width*(I32)scale, y+(I32)buffer.height*(I32)scale};
 
-		thread.on_deleted.pop(handle_thread_deleted);
+		if(thread){
+			thread->on_deleted.pop(handle_thread_deleted);
+		}
 		delete buffer.address;
 		views.pop(*this);
 
@@ -178,6 +194,25 @@ namespace graphics2d {
 		_update_area({oldX, oldY, oldX+(I32)view.buffer.width*(I32)view.scale, oldY+(I32)view.buffer.height*(I32)view.scale}, &view);
 	}
 
+	void _raise_view(View &view) {
+		if(!views.contains(view)) return; //if not in the list it's already been recycled ¯\_(ツ)_/¯
+
+		views.pop(view);
+
+		if(views.size<1){
+			views.push_back(view);
+		}else{
+			for(auto other = views.tail;other;other = other->prev){
+				if(other->layer<=view.layer){
+					views.insert_after(*other, view);
+					goto inserted;
+				}
+			}
+			views.insert_before(*views.head, view);
+			inserted:;
+		}
+	}
+
 	template <unsigned scale>
 	void _update_view_area(View &view, Rect rect);
 
@@ -238,7 +273,7 @@ namespace graphics2d {
 
 						if(scale==1){
 							U8 *target = &framebuffer.address[((view.y+y)*framebuffer.width+view.x+startX)*bpp];
-							U8 *source = &view.buffer.address[((y/scale)*view.buffer.width+startX/scale)*bpp];
+							U8 *source = &view.buffer.address[(y*view.buffer.width+startX)*bpp];
 							U32 length = (endX-startX)*bpp;
 
 							// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
@@ -285,10 +320,10 @@ namespace graphics2d {
 		return _set_background_colour(colour);
 	}
 
-	View* create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale) {
+	View* create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
 		Spinlock_Guard guard(spinlock, "create_view");
 
-		return _create_view(thread, x, y, width, height, scale);
+		return _create_view(thread, layer, x, y, width, height, scale);
 	}
 
 	Buffer get_screen_buffer(U32 framebuffer_id, Rect rect) {
@@ -325,6 +360,12 @@ namespace graphics2d {
 		Spinlock_Guard guard(spinlock);
 
 		return _move_view_to(view, x, y);
+	}
+
+	void raise_view(View &view) {
+		Spinlock_Guard guard(spinlock);
+
+		return _raise_view(view);
 	}
 
 	void update_view_area(View &view, Rect rect) {

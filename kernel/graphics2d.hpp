@@ -18,11 +18,20 @@ namespace graphics2d {
 		transparent
 	};
 
+	enum struct ViewLayer: U8 {
+		background = 0,
+		bottomMost = 64,
+		regular = 128,
+		topMost = 192,
+		kernelOverlay = 255
+	};
+
 	struct View: LListItem<View> {
-		/**/ View(Thread &thread, U8 *address, U32 size, graphics2d::BufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
+		/**/ View(Thread *thread, U8 *address, ViewLayer layer, U32 size, graphics2d::BufferFormat format, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, ViewMode mode = ViewMode::solid):
 			thread(thread),
 			x(x),
 			y(y),
+			layer(layer),
 			scale(scale),
 			buffer(address, size, width*graphics2d::bufferFormat::size[(U32)format], width, height, format),
 			mode(mode)
@@ -30,9 +39,10 @@ namespace graphics2d {
 
 		/**/~View();
 
-		Thread &thread;
+		Thread *thread;
 
 		I32 x, y;
+		ViewLayer layer;
 		U8 scale;
 		Buffer buffer;
 		ViewMode mode;
@@ -52,8 +62,9 @@ namespace graphics2d {
 
 	void set_background_colour(U32 colour);
 
-	auto create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
+	auto create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
 	void move_view_to(View &view, I32 x, I32 y);
+	void raise_view(View &view);
 	void update_background();
 	void update_background_area(Rect rect);
 	void update_area(Rect rect, View *below = nullptr);
@@ -66,8 +77,9 @@ namespace graphics2d {
 
 	void _set_background_colour(U32 colour);
 
-	auto _create_view(Thread &thread, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
+	auto _create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
 	void _move_view_to(View &view, I32 x, I32 y);
+	void _raise_view(View &view);
 	void _update_background();
 	void _update_background_area(Rect rect);
 	void _update_area(Rect rect, View *below = nullptr);
