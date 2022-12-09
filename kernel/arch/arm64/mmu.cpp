@@ -381,6 +381,8 @@ namespace mmu {
 
 			sctlr_el1.save_el1();
 		}
+
+		_is_enabled = true;
 	}
 
 	void disable() {
@@ -396,6 +398,8 @@ namespace mmu {
 
 			sctlr_el1.save_el1();
 		}
+
+		_is_enabled = false;
 	}
 
 	void set_kernelspace_mapping(MemoryMapping &memoryMapping) {
