@@ -151,7 +151,7 @@ namespace graphics2d {
 					if(endX>startX){
 						const I32 edge = 64;
 						I32 x = startX;
-						for(;x<edge;x++) {
+						for(;x<min(endX,edge);x++) {
 							const U32 fade = edge-x;
 							const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
 							I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
