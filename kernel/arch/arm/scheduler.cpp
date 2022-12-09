@@ -6,7 +6,7 @@
 #include <kernel/kernel.h>
 #include <kernel/memory.hpp>
 #include <kernel/mmu.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/ThreadCpuState.hpp>
 #include <kernel/arch/raspi/irq.hpp>
@@ -47,63 +47,63 @@ namespace scheduler {
 			Spinlock threadLock("scheduler threadLock");
 
 			void init() {
-				stdio::Section section("scheduler::arch::arm::init...");
+				log::Section section("scheduler::arch::arm::init...");
 
-				stdio::print_info("installing interrupt timer...");
+				log::print_info("installing interrupt timer...");
 
 				U64 sp;
 				asm volatile("mov %0, sp" : "=r" (sp));
 
-				stdio::print_info("sp @ ", format::Hex64{sp});
-				stdio::print_info("controller @ ", (void*)&irq::arch::raspi::interruptController.state);
-				stdio::print_info("distance = ", sp-(I64)&irq::arch::raspi::interruptController.state);
+				log::print_info("sp @ ", format::Hex64{sp});
+				log::print_info("controller @ ", (void*)&irq::arch::raspi::interruptController.state);
+				log::print_info("distance = ", sp-(I64)&irq::arch::raspi::interruptController.state);
 
 				// {
-				// 	stdio::print_debug("creating test spinlock");
+				// 	log::print_debug("creating test spinlock");
 				// 	Spinlock testlock("testlock");
 				// 	Spinlock *testlock2 = (Spinlock*)0xdf000;
-				// 	stdio::print_debug("spinlock @ ", &testlock);
-				// 	stdio::print_debug("spinlock2 @ ", testlock2);
+				// 	log::print_debug("spinlock @ ", &testlock);
+				// 	log::print_debug("spinlock2 @ ", testlock2);
 				// 	testlock2->_lock = 0;
-				// 	stdio::print_debug("testing test spinlock 2");
+				// 	log::print_debug("testing test spinlock 2");
 				// 	{
 				// 		Spinlock_Guard _guard(*testlock2, "testlock tester", true);
 
-				// 		stdio::print_debug("mid test 2");
+				// 		log::print_debug("mid test 2");
 				// 	}
-				// 	stdio::print_debug("testing test spinlock 1");
+				// 	log::print_debug("testing test spinlock 1");
 				// 	{
 				// 		Spinlock_Guard _guard(testlock, "testlock tester", true);
 
-				// 		stdio::print_debug("mid test 1");
+				// 		log::print_debug("mid test 1");
 				// 	}
-				// 	stdio::print_debug("tested test spinlock");
+				// 	log::print_debug("tested test spinlock");
 				// }
 				timer::set_timer(timer::Timer::cpu_scheduler, 1000000);
 
 				{
 					I64 distance = sp-(I64)&irq::arch::raspi::interruptController.state;
 
-					stdio::print_debug("== before ==");
-					stdio::print_debug(distance>10000?"far1":"near");
-					stdio::print_debug(distance>1000?"far2":"near");
-					stdio::print_debug(distance>100?"far3":"near");
-					stdio::print_debug(distance>10?"far4":"near");
-					stdio::print_debug(distance<0?"before":"after");
-					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::disabled?"disabled":"?");
-					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::enabled?"enabled":"?");
-					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::restarting?"restarting":"?");
-					stdio::print_debug(irq::arch::raspi::interruptController.state==Driver::State::failed?"failed":"?");
-					stdio::print_debug((U32)irq::arch::raspi::interruptController.state>65536?"high":"low");
-					stdio::print_debug("== /before ==");
+					log::print_debug("== before ==");
+					log::print_debug(distance>10000?"far1":"near");
+					log::print_debug(distance>1000?"far2":"near");
+					log::print_debug(distance>100?"far3":"near");
+					log::print_debug(distance>10?"far4":"near");
+					log::print_debug(distance<0?"before":"after");
+					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::disabled?"disabled":"?");
+					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::enabled?"enabled":"?");
+					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::restarting?"restarting":"?");
+					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::failed?"failed":"?");
+					log::print_debug((U32)irq::arch::raspi::interruptController.state>65536?"high":"low");
+					log::print_debug("== /before ==");
 				}
 
 				// while(true);
 
-				// stdio::print_info("test kmalloc");
+				// log::print_info("test kmalloc");
 				// memory::kmalloc(123);
 
-				stdio::print_info("allocating main process...");
+				log::print_info("allocating main process...");
 				auto mainProcess = new Process("kernel");
 				auto &kernelStack = memory::Transaction().get_memory_page(&__end);
 				auto mainThread = mainProcess->create_current_thread(kernelStack, KERNEL_STACK_SIZE);
@@ -112,7 +112,7 @@ namespace scheduler {
 				::thread::currentThread = mainThread;
 
 				#if defined(ARCH_RASPI)
-					stdio::print_info("managed by timer::arch::raspi");
+					log::print_info("managed by timer::arch::raspi");
 					timer::set_timer(timer::Timer::cpu_scheduler, interval);
 					timer::set_timer(timer::Timer::cpu_slow_scheduler, interval);
 
@@ -130,7 +130,7 @@ namespace scheduler {
 			void on_slow_timer() {
 				// threadLock.lock("on_slower_timer() threadLock");
 
-				// // stdio::print("ping ", now, "\n");
+				// // log::print("ping ", now, "\n");
 
 
 				// threadLock.unlock(false);
@@ -147,7 +147,7 @@ namespace scheduler {
 	}
 
 	void yield() {
-		// stdio::print_debug("yield");
+		// log::print_debug("yield");
 		
 		if(lock_depth>0){
 			deferredYields++;
@@ -162,9 +162,9 @@ namespace scheduler {
 		auto now = timer::now();
 
 		// if(now-lastSchedule<interval*3/4){
-		// 	stdio::print_info("fast: ", now-lastSchedule);
+		// 	log::print_info("fast: ", now-lastSchedule);
 		// }else if(now-lastSchedule>interval*6/5){
-		// 	stdio::print_info("slow: ", now-lastSchedule);
+		// 	log::print_info("slow: ", now-lastSchedule);
 		// }
 		lastSchedule = now;
 
@@ -227,14 +227,14 @@ namespace scheduler {
 			#endif
 
 			// if(oldThread){
-			// 	stdio::print_debug("jump from ", oldThread, " pc = ", format::Hex64{oldThread->storedState->pc}, " lr = ", format::Hex64{oldThread->storedState->lr});
+			// 	log::print_debug("jump from ", oldThread, " pc = ", format::Hex64{oldThread->storedState->pc}, " lr = ", format::Hex64{oldThread->storedState->lr});
 			// }
-			// stdio::print_debug("jump to   ", &newThread, " pc = ", format::Hex64{newThread.storedState->pc}, " lr = ", format::Hex64{newThread.storedState->lr});
+			// log::print_debug("jump to   ", &newThread, " pc = ", format::Hex64{newThread.storedState->pc}, " lr = ", format::Hex64{newThread.storedState->lr});
 
 			Thread::swap_state(*oldThread, newThread);
 
 			CriticalSection::unlock();
-			// stdio::print_debug("swapped");
+			// log::print_debug("swapped");
 
 		}
 	}

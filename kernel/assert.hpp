@@ -5,7 +5,7 @@
 	inline void assert(bool assertion, Params ...messageParams) {}
 
 #else
-	#include "stdio.hpp"
+	#include "log.hpp"
 
 	#if 0
 		// C++20
@@ -13,7 +13,7 @@
 
 		template<typename ...Params>
 		inline void assert(bool assertion, Params ...messageParams, const std::source_location location = std::source_location::current()) {
-			stdio::print_error("CRITICAL ERROR in ", location.file_name, ':', location.line, " in ", location.function_name, "() ", ...messageParams);
+			log::print_error("CRITICAL ERROR in ", location.file_name, ':', location.line, " in ", location.function_name, "() ", ...messageParams);
 			while(true);
 		}
 
@@ -24,7 +24,7 @@
 		template<typename ...Params>
 		inline void _assert(bool assertion, const char *filename, unsigned linenumber, Params ...messageParams) {
 			if(!assertion){
-				stdio::print_error("CRITICAL ERROR in ", filename, ':', linenumber, ' ', messageParams...);
+				log::print_error("CRITICAL ERROR in ", filename, ':', linenumber, ' ', messageParams...);
 				while(true);
 			}
 		}

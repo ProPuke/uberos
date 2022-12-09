@@ -2,7 +2,7 @@
 
 #include <common/types.hpp>
 
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 #include <kernel/Cli.hpp>
 
 #include <atomic>
@@ -14,9 +14,9 @@ namespace exceptions {
 	Cli cli;
 
 	void after_failure() {
-		stdio::print_info("");
-		stdio::print_info("Dropping you into the backrooms...");
-		stdio::print_info("");
+		log::print_info("");
+		log::print_info("Dropping you into the backrooms...");
+		log::print_info("");
 
 		while(true){
 			cli.prompt();

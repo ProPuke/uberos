@@ -6,6 +6,7 @@
 #include <kernel/framebuffer.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/scheduler.hpp>
+#include <kernel/log.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/mmio.hpp>
 
@@ -33,20 +34,20 @@ namespace graphics2d {
 	View* _create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
 
 		#ifdef DEBUG_MEMORY
-			stdio::Section section("create_view ", x, ", ", y, " ", width, "x", height);
+			log::Section section("create_view ", x, ", ", y, " ", width, "x", height);
 		#endif
 
 		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
 		auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
 
 		#ifdef DEBUG_MEMORY
-			stdio::print("new U8 ", width, "x", height, "@", bpp, "\n");
+			log::print("new U8 ", width, "x", height, "@", bpp, "\n");
 		#endif
 
 		auto buffer = new U8[width*height*bpp]; //TODO:allocate from pages and map to current thread
 
 		#ifdef DEBUG_MEMORY
-			stdio::print("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
+			log::print("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
 		#endif
 
 		if(!buffer) return nullptr;
@@ -74,7 +75,7 @@ namespace graphics2d {
 		}
 
 		#ifdef DEBUG_MEMORY
-			stdio::print_debug("created view ", view);
+			log::print_debug("created view ", view);
 		#endif
 
 		return view;
@@ -114,7 +115,7 @@ namespace graphics2d {
 	void _update_background_area(Rect rect) {
 		mmio::PeripheralAccessGuard guard;
 
-		// stdio::print_info("update background area");
+		// log::print_info("update background area");
 
 		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 			auto &framebuffer = *framebuffer::get_framebuffer(i);
@@ -125,10 +126,10 @@ namespace graphics2d {
 			rect.x2 = min<I32>(rect.x2, framebuffer.width);
 			rect.y2 = min<I32>(rect.y2, framebuffer.height);
 
-			// stdio::print_info("paint background ", rect.y1, " to ", rect.y2);
+			// log::print_info("paint background ", rect.y1, " to ", rect.y2);
 
 			for(auto y=rect.y1;y<rect.y2;y++){
-				// stdio::print("y = ", y, "\n");
+				// log::print("y = ", y, "\n");
 				auto startX = rect.x1;
 				while(startX<rect.x2){
 					auto endX = rect.x2;
@@ -266,9 +267,9 @@ namespace graphics2d {
 						// U8 *source = &view.buffer.address[((y/scale)*view.buffer.width+startX/scale)*bpp];
 						// U32 length = (endX-startX)*bpp;
 						// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
-						// 	stdio::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
+						// 	log::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 						// }
-						// stdio::print(source, " -> ", source+length, "\n");
+						// log::print(source, " -> ", source+length, "\n");
 						// memcpy_aligned(target, source, length);
 
 						if(scale==1){
@@ -277,7 +278,7 @@ namespace graphics2d {
 							U32 length = (endX-startX)*bpp;
 
 							// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
-							// 	stdio::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
+							// 	log::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 							// }
 							memcpy_aligned(target, source, length);
 
@@ -289,7 +290,7 @@ namespace graphics2d {
 								U8 *sourceData = &source[(x/scale)*bpp]; 
 								for(unsigned i=0;i<bpp;i++){
 									// if(sourceData<view.buffer.address||source>=view.buffer.address+view.buffer.size){
-									// 	stdio::print("READ OUT OF BUFFER! ", source, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
+									// 	log::print("READ OUT OF BUFFER! ", source, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 									// }
 									*target++ = *sourceData++;
 								}

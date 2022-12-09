@@ -1,7 +1,7 @@
 #include "Arm_raspi_legacy.hpp"
 
 #include <kernel/mmio.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 namespace driver {
 	namespace interrupt {

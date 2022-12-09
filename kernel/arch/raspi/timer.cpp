@@ -7,7 +7,7 @@
 
 #include <kernel/arch/arm/scheduler.hpp>
 #include <kernel/CriticalSection.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 namespace mmio {
 	using namespace arch::raspi;
@@ -51,14 +51,14 @@ namespace timer {
 			}
 			
 			void init() {
-				stdio::Section section("timer::arch::raspi::init...");
+				log::Section section("timer::arch::raspi::init...");
 
-				// stdio::print_info("timer control: ", mmio::read_address(mmio::Address::core_timer_control));
-				// stdio::print_info("timer prescaler: ", mmio::read_address(mmio::Address::core_timer_prescaler));
+				// log::print_info("timer control: ", mmio::read_address(mmio::Address::core_timer_control));
+				// log::print_info("timer prescaler: ", mmio::read_address(mmio::Address::core_timer_prescaler));
 			}
 
 			void set_timer(Timer timer, U32 usecs) {
-				// stdio::print_debug("set timer ", (unsigned)timer);
+				// log::print_debug("set timer ", (unsigned)timer);
 
 				CriticalSection guard;
 
@@ -83,7 +83,7 @@ namespace timer {
 					}
 				}
 
-				// stdio::print_debug("set timer ", (U32)timer, ", ", usecs);
+				// log::print_debug("set timer ", (U32)timer, ", ", usecs);
 
 				switch(timer){
 					case Timer::gpu0:

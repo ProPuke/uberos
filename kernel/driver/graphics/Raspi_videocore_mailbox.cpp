@@ -79,7 +79,7 @@ namespace driver {
 		auto Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> bool {
 			if(framebufferId>0) return false;
 
-			stdio::Section section("device::", name, "::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
+			log::Section section("device::", name, "::set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
 
 			framebuffer.driver = nullptr; // initially invalid
 
@@ -100,7 +100,7 @@ namespace driver {
 			tags[3].tag = mailbox::PropertyTag::null_tag;
 
 			if(!send_messages(tags)){
-				stdio::print_info("Unable to initialise");
+				log::print_info("Unable to initialise");
 				return false;
 			}
 
@@ -116,21 +116,21 @@ namespace driver {
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!send_messages(tags)){
-				stdio::print_info("Unable to allocate framebuffer");
+				log::print_info("Unable to allocate framebuffer");
 				return false;
 			}
 
 			if(assignBitdepth!=bitdepth){
-				stdio::print_warning("Warning: Unable to allocate framebuffer with bitdepth ", bitdepth);
+				log::print_warning("Warning: Unable to allocate framebuffer with bitdepth ", bitdepth);
 				if(!assignBitdepth){
 					return false;
 				}
 				
 				if(!acceptSuggestion){
 					if(framebuffer.width==width&&framebuffer.height==height){
-						stdio::print_warning("a ", bitdepth, " bit buffer was suggested, instead");
+						log::print_warning("a ", bitdepth, " bit buffer was suggested, instead");
 					}else{
-						stdio::print_warning("a ", framebuffer.width, "x", framebuffer.height, " ", bitdepth, " bit buffer was suggested, instead");
+						log::print_warning("a ", framebuffer.width, "x", framebuffer.height, " ", bitdepth, " bit buffer was suggested, instead");
 					}
 
 					return false;
@@ -151,10 +151,10 @@ namespace driver {
 						return false;
 				}
 
-				stdio::print_info("accepting a bitdepth of ", bitdepth);
+				log::print_info("accepting a bitdepth of ", bitdepth);
 			}
 
-			// stdio::print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
+			// log::print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
 
 			framebuffer.address = (U8*)(size_t)(tags[0].data.allocate_res.fb_addr&0x3FFFFFFF);
 			framebuffer.size = tags[0].data.allocate_res.fb_size;
@@ -164,7 +164,7 @@ namespace driver {
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!send_messages(tags)){
-				stdio::print_error("Error: Something went wrong requesting framebuffer pitch");
+				log::print_error("Error: Something went wrong requesting framebuffer pitch");
 				return false;
 			}
 
@@ -174,7 +174,7 @@ namespace driver {
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!send_messages(tags)){
-				stdio::print_warning("Warning: Unable to query pixel order");
+				log::print_warning("Warning: Unable to query pixel order");
 			}
 
 			auto pixelOrder = tags[0].data.pixelOrder;
@@ -189,18 +189,18 @@ namespace driver {
 			}
 
 			if(pitch!=framebuffer.width*bitdepth/8){
-				stdio::print_error("Error: Custom pitch of ", tags[0].data.bytesPerRow, " required for framebuffer. This is not supported");
+				log::print_error("Error: Custom pitch of ", tags[0].data.bytesPerRow, " required for framebuffer. This is not supported");
 				return false;
 			}
 
 			if(framebuffer.width!=width||framebuffer.height!=height){
-				stdio::print_warning("Warning: Unable to allocate framebuffer of resolution ", width, "x", height);
+				log::print_warning("Warning: Unable to allocate framebuffer of resolution ", width, "x", height);
 
 				if(!acceptSuggestion){
-					stdio::print_warning("a resolution of ", framebuffer.width, "x", framebuffer.height, " was suggested, instead");
+					log::print_warning("a resolution of ", framebuffer.width, "x", framebuffer.height, " was suggested, instead");
 					return false;
 				}
-				stdio::print_info("accepting a resolution of ", framebuffer.width, "x", framebuffer.height);
+				log::print_info("accepting a resolution of ", framebuffer.width, "x", framebuffer.height);
 			}
 
 			switch(bitdepth){
@@ -246,7 +246,7 @@ namespace driver {
 			tags[2].tag = mailbox::PropertyTag::null_tag;
 
 			if(!send_messages(tags)){
-				stdio::print_error("tag error");
+				log::print_error("tag error");
 				//TODO:ERROR
 				return { 0 };
 			}
@@ -270,13 +270,13 @@ namespace driver {
 				tags[1].tag = mailbox::PropertyTag::null_tag;
 
 				if(!send_messages(tags)){
-					stdio::print_error("Error: unable to query physical display resolution");
+					log::print_error("Error: unable to query physical display resolution");
 					return false;
 				}
 
 				defaultMode.width = tags[0].data.screenSize.width;
 				defaultMode.height = tags[0].data.screenSize.height;
-				stdio::print_debug("detected physical display resolution of ", defaultMode.width, "x", defaultMode.height);
+				log::print_debug("detected physical display resolution of ", defaultMode.width, "x", defaultMode.height);
 			}
 
 			{ //get default format
@@ -288,12 +288,12 @@ namespace driver {
 				tags[1].tag = mailbox::PropertyTag::null_tag;
 
 				if(!send_messages(tags)){
-					stdio::print_error("Error: unable to query default bitdepth");
+					log::print_error("Error: unable to query default bitdepth");
 
 				}else{
 					auto defaultBitdepth = tags[0].data.bitsPerPixel;
 					
-					stdio::print_debug("detected bitdepth of ", defaultBitdepth);
+					log::print_debug("detected bitdepth of ", defaultBitdepth);
 
 					bool found = false;
 
@@ -306,7 +306,7 @@ namespace driver {
 					}
 
 					if(!found){
-						stdio::print_error("Bitdepth of ", defaultBitdepth, " not understood");
+						log::print_error("Bitdepth of ", defaultBitdepth, " not understood");
 					}
 				}
 			}

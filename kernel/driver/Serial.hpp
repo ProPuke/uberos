@@ -1,7 +1,8 @@
 #pragma once
 
+#include <kernel/console.hpp>
 #include <kernel/Driver.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 #include <functional>
 
@@ -20,10 +21,10 @@ namespace driver {
 		virtual auto peekc() -> unsigned char = 0;
 		virtual auto getc() -> unsigned char = 0;
 
-		void bind_stdio() {
+		void bind_to_console() {
 			if(state!=State::enabled) return;
 
-			stdio::bind(this,
+			console::bind(this,
 				[](void *self, unsigned char c) { return ((Serial*)self)->putc(c); },
 				[](void *self) { return ((Serial*)self)->peekc(); },
 				[](void *self) { return ((Serial*)self)->getc(); },

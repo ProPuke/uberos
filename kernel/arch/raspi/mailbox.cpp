@@ -1,6 +1,6 @@
 #include "mailbox.hpp"
 
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 #include <alloca.h>
 
 namespace arch {
@@ -141,18 +141,18 @@ namespace arch {
 				{
 					mmio::PeripheralReadGuard _guard;
 					if(read(Channel::property, 0xffffffff) == 0xffffffff){
-						stdio::print_warning("Error: Mailbox did not respond");
+						log::print_warning("Error: Mailbox did not respond");
 						return false;
 					}
 				}
 
 				if(message->req_res_code==BufferReqResCode::request){
-					stdio::print_warning("Error: Mailbox did not respond with anything useful");
+					log::print_warning("Error: Mailbox did not respond with anything useful");
 					return false;
 				}
 
 				if(message->req_res_code==BufferReqResCode::response_error){
-					stdio::print_warning("Error: Mailbox returned an error"); //TODO:print code?
+					log::print_warning("Error: Mailbox returned an error"); //TODO:print code?
 					return false;
 				}
 

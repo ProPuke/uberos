@@ -21,7 +21,7 @@ namespace thread {
 		{
 			scheduler::Guard guard;
 
-			stdio::print_info("_cleanup_thread");
+			log::print_info("_cleanup_thread");
 			// Spinlock_Guard lock{scheduler::threadLock, __FUNCTION__};
 
 			auto &thread = *currentThread.load();
@@ -39,7 +39,7 @@ namespace thread {
 			}else if(freedThreads.contains(thread)){
 				freedThreads.pop(thread);
 			}else{
-				stdio::print_error("Error: Terminating thread not found in any lists");
+				log::print_error("Error: Terminating thread not found in any lists");
 			}
 
 			memory::Transaction().free_page(*thread.stackPage);

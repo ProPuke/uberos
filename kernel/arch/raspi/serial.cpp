@@ -8,7 +8,7 @@
 #include <kernel/device.hpp>
 #include <kernel/driver/serial/Raspi_uart.hpp>
 #include <kernel/driver/serial/Raspi_mini_uart.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 
 namespace mmio {
@@ -48,19 +48,19 @@ namespace arch {
 				serial.set_baud(115200);
 				serial._on_driver_enable();
 
-				serial.bind_stdio();
+				serial.bind_to_console();
 
 				if(serial.state==Driver::State::enabled) {
-					stdio::Section section("arch::raspi::serial::init...");
+					log::Section section("arch::raspi::serial::init...");
 					#if defined(ARCH_RASPI_UART0)
-						stdio::print_info("UART0 active");
+						log::print_info("UART0 active");
 					#elif defined(ARCH_RASPI_UART1)
-						stdio::print_info("UART1 active");
+						log::print_info("UART1 active");
 					#endif
 
 					// char buffer[1024];
 					// serial.gets(buffer, 1024);
-					// stdio::print_info("got ", (const char *)&buffer[0]);
+					// log::print_info("got ", (const char *)&buffer[0]);
 				}
 			}
 		}

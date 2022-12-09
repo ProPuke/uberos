@@ -5,7 +5,7 @@
 
 #include <kernel/CriticalSection.hpp>
 #include <kernel/device.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 namespace mmio {
 	using namespace arch::raspi;
@@ -39,46 +39,46 @@ namespace irq {
 				asm volatile("mrs %0, SPSel" : "=r" (spsel));
 				switch(bits(CurrentEL,2,3)){
 					case 0:
-						stdio::print_info("CurrentEL = 0");
+						log::print_info("CurrentEL = 0");
 					break;
 					case 1:
-						stdio::print_info("CurrentEL = 1");
+						log::print_info("CurrentEL = 1");
 					break;
 					case 2:
-						stdio::print_info("CurrentEL = 2");
+						log::print_info("CurrentEL = 2");
 					break;
 					case 3:
-						stdio::print_info("CurrentEL = 3");
+						log::print_info("CurrentEL = 3");
 					break;
 					case 4:
-						stdio::print_info("CurrentEL = 4");
+						log::print_info("CurrentEL = 4");
 					break;
 				}
-				stdio::print_info("spsel = ", spsel?"1":"0");
+				log::print_info("spsel = ", spsel?"1":"0");
 
-				stdio::print_debug(distance>10000?"far1":"near");
-				stdio::print_debug(distance>1000?"far2":"near");
-				stdio::print_debug(distance>100?"far3":"near");
-				stdio::print_debug(distance>10?"far4":"near");
-				stdio::print_debug(distance<0?"before":"after");
-				stdio::print_debug(interruptController.state==Driver::State::disabled?"disabled":"?");
-				stdio::print_debug(interruptController.state==Driver::State::enabled?"enabled":"?");
-				stdio::print_debug(interruptController.state==Driver::State::restarting?"restarting":"?");
-				stdio::print_debug(interruptController.state==Driver::State::failed?"failed":"?");
-				stdio::print_debug((U32)interruptController.state>65536?"high":"low");
-				stdio::print_debug("irq?");
+				log::print_debug(distance>10000?"far1":"near");
+				log::print_debug(distance>1000?"far2":"near");
+				log::print_debug(distance>100?"far3":"near");
+				log::print_debug(distance>10?"far4":"near");
+				log::print_debug(distance<0?"before":"after");
+				log::print_debug(interruptController.state==Driver::State::disabled?"disabled":"?");
+				log::print_debug(interruptController.state==Driver::State::enabled?"enabled":"?");
+				log::print_debug(interruptController.state==Driver::State::restarting?"restarting":"?");
+				log::print_debug(interruptController.state==Driver::State::failed?"failed":"?");
+				log::print_debug((U32)interruptController.state>65536?"high":"low");
+				log::print_debug("irq?");
 
-				// stdio::print_info("interrupt state = ", interruptController.state);
+				// log::print_info("interrupt state = ", interruptController.state);
 
 				if(interruptController.state!=Driver::State::enabled) return;
 
-				stdio::print_debug("irq??");
+				log::print_debug("irq??");
 
 				CriticalSection guard;
-				stdio::print_debug("irq");
+				log::print_debug("irq");
 
 				interruptController.handle_interrupt([](U32 irq) {
-					stdio::print_debug("irq ", irq);
+					log::print_debug("irq ", irq);
 
 					switch((Irq)irq){
 						case Irq::system_timer_0:
@@ -117,7 +117,7 @@ namespace irq {
 			}
 
 			void init() {
-				stdio::Section section("irq::arch::raspi::init...");
+				log::Section section("irq::arch::raspi::init...");
 
 				device::install_device(interruptController, true);
 				device::install_device(cpuInterruptController, true);

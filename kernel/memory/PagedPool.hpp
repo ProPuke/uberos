@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../memory.hpp"
-#include "../stdio.hpp"
+#include "../log.hpp"
 #include <common/LList.hpp>
 #include <common/MemoryPool.hpp>
 
@@ -18,7 +18,7 @@ namespace memory {
 
 		void* malloc(size_t size) {
 			#ifdef MEMORY_CHECKS
-				stdio::Section section("PagedPool::malloc ", size);
+				log::Section section("PagedPool::malloc ", size);
 			#endif
 
 			const auto blockHeaderSize = offsetof(MemoryPoolBlock, MemoryPoolBlock::_data);
@@ -29,22 +29,22 @@ namespace memory {
 				if(blockHeaderSize+requiredSize>=memory::pageSize){
 					const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 					#ifdef MEMORY_CHECKS
-						stdio::print_debug("try to add ", pageCount, " pages\n");
+						log::print_debug("try to add ", pageCount, " pages\n");
 					#endif
 					if(!add_pages(pageCount)) {
 						#ifdef MEMORY_CHECKS
-							stdio::print_debug("could not allocate ", pageCount, " pages \n");
+							log::print_debug("could not allocate ", pageCount, " pages \n");
 						#endif
 						return nullptr;
 					}
 
 				}else{
 					#ifdef MEMORY_CHECKS
-						stdio::print_debug("try to add page\n");
+						log::print_debug("try to add page\n");
 					#endif
 					if(!add_page()) {
 						#ifdef MEMORY_CHECKS
-							stdio::print_debug("could not allocate page \n");
+							log::print_debug("could not allocate page \n");
 						#endif
 						return nullptr;
 					}
@@ -52,7 +52,7 @@ namespace memory {
 			}
 
 			#ifdef MEMORY_CHECKS
-				stdio::print_debug("try to malloc 2 ", requiredSize, "\n");
+				log::print_debug("try to malloc 2 ", requiredSize, "\n");
 			#endif
 
 			void *result;
@@ -62,7 +62,7 @@ namespace memory {
 
 				if(!result){
 					#ifdef MEMORY_CHECKS
-						stdio::print_debug("could not allocate ", requiredSize, "\n");
+						log::print_debug("could not allocate ", requiredSize, "\n");
 					#endif
 					if(blockHeaderSize+requiredSize>=memory::pageSize){
 						#ifdef MEMORY_CHECKS
@@ -70,22 +70,22 @@ namespace memory {
 						#endif
 						const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 						#ifdef MEMORY_CHECKS
-							stdio::print_debug("trying to allocate ", pageCount, " pages\n");
+							log::print_debug("trying to allocate ", pageCount, " pages\n");
 						#endif
 						if(!add_pages(pageCount)) {
 							#ifdef MEMORY_CHECKS
-								stdio::print_debug("could not allocate ", pageCount, " pages \n");
+								log::print_debug("could not allocate ", pageCount, " pages \n");
 							#endif
 							return nullptr;
 						}
 						#ifdef MEMORY_CHECKS
-							stdio::print_debug("managed to allocate ", this->available-sizeBefore, "\n");
+							log::print_debug("managed to allocate ", this->available-sizeBefore, "\n");
 						#endif
 
 					}else{
 						if(!add_page()) {
 							#ifdef MEMORY_CHECKS
-								stdio::print_debug("could not allocate page \n");
+								log::print_debug("could not allocate page \n");
 							#endif
 							return nullptr;
 						}
@@ -94,7 +94,7 @@ namespace memory {
 			}while(!result);
 
 			#ifdef MEMORY_CHECKS
-				stdio::print_debug("returned memory ", result, "\n");
+				log::print_debug("returned memory ", result, "\n");
 			#endif
 			
 			return result;

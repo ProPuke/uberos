@@ -8,11 +8,11 @@
 #include <kernel/memory/Page.hpp>
 #include <kernel/memory/PagedPool.hpp>
 #include <kernel/Spinlock.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 extern "C" void memset(U8 *address, U8 value, unsigned int size) {
 	#ifdef MEMORY_CHECKS
-		stdio::print_debug("memset ", format::Hex64{address}, size, "\n");
+		log::print_debug("memset ", format::Hex64{address}, size, "\n");
 	#endif
 	while(--size) *address++ = value;
 }
@@ -56,7 +56,7 @@ namespace memory {
 		for(auto page=freePages.head; page; page=page->next){
 			U32 needed = count-1;
 			for(auto checkPage=page; needed&&checkPage->hasNextPage&&!(checkPage+1)->isAllocated; checkPage++,needed--);
-			// stdio::print("searched\n");
+			// log::print("searched\n");
 
 			if(needed==0){
 				U32 needed = count;
@@ -73,7 +73,7 @@ namespace memory {
 			}
 		}
 
-		// stdio::print("didn't get pages\n");
+		// log::print("didn't get pages\n");
 		return nullptr;
 	}
 
@@ -86,10 +86,10 @@ namespace memory {
 	}
 
 	void* _kmalloc(size_t size) {
-		// stdio::Section section("kmalloc");
+		// log::Section section("kmalloc");
 
 		#ifdef MEMORY_CHECKS
-			stdio::Section section("kmalloc ", size);
+			log::Section section("kmalloc ", size);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks in kmalloc 0");
 		#endif
 
@@ -99,11 +99,11 @@ namespace memory {
 		// void *address = heap->malloc(size);
 
 		if(!address){
-			stdio::print_warning("Warning: Out of memory allocating ", size, "B for kernel");
+			log::print_warning("Warning: Out of memory allocating ", size, "B for kernel");
 		}
 
 		#ifdef MEMORY_CHECKS
-			stdio::print_debug("kmalloc ", size, " @ ", address);
+			log::print_debug("kmalloc ", size, " @ ", address);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
@@ -113,10 +113,10 @@ namespace memory {
 	}
 
 	void _kfree(void *address) {
-		// stdio::Section section("kfree");
+		// log::Section section("kfree");
 
 		#ifdef MEMORY_CHECKS
-			stdio::print_debug("kfree ", address);
+			log::print_debug("kfree ", address);
 		#endif
 
 		if(!address) return;
@@ -128,7 +128,7 @@ namespace memory {
 	void _check_dangerous_address(void *from, void *to) {
 		for(auto block=kernelHeap.availableBlocks.head; block; block=block->next) {
 			if(to>block&&from<&block->_data+block->size){
-				stdio::print_error("Error: DANGEROUS ADDRESS ", from, " -> ", (U8*)to-1, " overlaps block ", block, " -> ", &block->_data+block->size-1);
+				log::print_error("Error: DANGEROUS ADDRESS ", from, " -> ", (U8*)to-1, " overlaps block ", block, " -> ", &block->_data+block->size-1);
 			}
 		}
 	}

@@ -10,7 +10,7 @@
 #include <common/types.hpp>
 
 #include <kernel/kernel.h>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 #include <new>
 
@@ -48,7 +48,7 @@ namespace memory {
 	namespace arch {
 		namespace raspi {			
 			void init() {
-				stdio::Section section("memory::arch::raspi::init...");
+				log::Section section("memory::arch::raspi::init...");
 
 				if(!totalMemory){
 					#if defined(ARCH_RASPI1)
@@ -67,14 +67,14 @@ namespace memory {
 						#error "Unknown model"
 					#endif
 
-					stdio::print_warning("Warning: No memory size specified. Assuming ", totalMemory/1024/1024, "MB");
+					log::print_warning("Warning: No memory size specified. Assuming ", totalMemory/1024/1024, "MB");
 				}
 
-				stdio::print_info("total memory: ", totalMemory/1024/1024, "MB");
-				stdio::print_info("kernel stack: ", stackSize/1024, "KB");
-				// stdio::print("kernel heap: ", heapSize/1024, "KB\n");
+				log::print_info("total memory: ", totalMemory/1024/1024, "MB");
+				log::print_info("kernel stack: ", stackSize/1024, "KB");
+				// log::print("kernel heap: ", heapSize/1024, "KB\n");
 
-				stdio::print_info("page size: ", pageSize/1024, "KB");
+				log::print_info("page size: ", pageSize/1024, "KB");
 
 				#pragma GCC diagnostic push
 				#pragma GCC diagnostic ignored "-Warray-bounds"
@@ -97,51 +97,51 @@ namespace memory {
 				auto vramPageCount = (hwquery::videoMemory+pageSize-1) / pageSize;
 				auto userPageCount = pageCount-kernelPageCount-vramPageCount;
 
-				stdio::print_debug("kernel start @ ", &__end);
-				stdio::print_debug("kernel end @ ", kernelEnd);
+				log::print_debug("kernel start @ ", &__end);
+				log::print_debug("kernel end @ ", kernelEnd);
 
-				stdio::print_debug("text @ ", &__text_start, " - ", &__text_end);
-				stdio::print_debug("rodata @ ", &__rodata_start, " - ", &__rodata_end);
-				stdio::print_debug("data @ ", &__data_start, " - ", &__data_end);
-				stdio::print_debug("bss @ ", &__bss_start, " - ", &__bss_end);
+				log::print_debug("text @ ", &__text_start, " - ", &__text_end);
+				log::print_debug("rodata @ ", &__rodata_start, " - ", &__rodata_end);
+				log::print_debug("data @ ", &__data_start, " - ", &__data_end);
+				log::print_debug("bss @ ", &__bss_start, " - ", &__bss_end);
 
-				stdio::print_info("pages: ", pageCount);
-				stdio::print_info(kernelPageCount, " kernel pages");
-				stdio::print_info(vramPageCount, " vram pages");
-				stdio::print_info(userPageCount, " user pages");
-				stdio::print_info("");
+				log::print_info("pages: ", pageCount);
+				log::print_info(kernelPageCount, " kernel pages");
+				log::print_info(vramPageCount, " vram pages");
+				log::print_info(userPageCount, " user pages");
+				log::print_info("");
 
 				{ // initialise pages
-					stdio::Section section("Clearing pages...");
+					log::Section section("Clearing pages...");
 
 					auto i = 0u;
 
 					{ // kernel pages
-						// stdio::Section section("Clearing kernel...");
+						// log::Section section("Clearing kernel...");
 
-						// stdio::print_info_start();
+						// log::print_info_start();
 
 						for(;i<kernelPageCount;i++) {
-							// stdio::print("kernel page ", i, "\n");
+							// log::print("kernel page ", i, "\n");
 							auto page = new (&pageData[i]) Page((void*)(i*pageSize));
 							page->virtualAddress = i*pageSize;
 							page->isAllocated = true;
 							page->isKernel = true;
 							page->hasNextPage = i+1<kernelPageCount;
 
-							// stdio::print_inline('.');
+							// log::print_inline('.');
 						}
 
-						// stdio::print_end();
+						// log::print_end();
 					}
 
 					{ // user pages
-						// stdio::Section section("Clearing user...");
+						// log::Section section("Clearing user...");
 
-						// stdio::print_info_start();
+						// log::print_info_start();
 
 						for(;i<pageCount;i++) {
-							// stdio::print("user page ", i, "\n");
+							// log::print("user page ", i, "\n");
 							const auto address = (void*)(i*pageSize);
 							auto page = new (&pageData[i]) Page(address);
 							page->hasNextPage = i+1<pageCount;
@@ -155,10 +155,10 @@ namespace memory {
 							}
 							// return;
 
-							// stdio::print_inline('.');
+							// log::print_inline('.');
 						}
 
-						// stdio::print_end();
+						// log::print_end();
 					}
 				}
 			}

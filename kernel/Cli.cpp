@@ -2,6 +2,7 @@
 
 #include <common/Box.hpp>
 
+#include <kernel/console.hpp>
 #include <kernel/device.hpp>
 #include <kernel/Driver.hpp>
 #include <kernel/driver/Processor.hpp>
@@ -12,7 +13,7 @@
 #include <kernel/mmio.hpp>
 #include <kernel/Process.hpp>
 #include <kernel/scheduler.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 namespace cli {
 	namespace {
@@ -116,36 +117,36 @@ namespace cli {
 		auto print_verbs(const char *indent) -> bool override {
 			switch(driver.state){
 				case Driver::State::enabled:
-					stdio::print_info(indent, "This device is already enabled");
+					log::print_info(indent, "This device is already enabled");
 				break;
 				case Driver::State::restarting:
-					stdio::print_info(indent, "This device is restarting");
+					log::print_info(indent, "This device is restarting");
 				break;
 				default:
-					stdio::print_info(indent, format_verb, "enable", format_none, " - Enable this device");
+					log::print_info(indent, format_verb, "enable", format_none, " - Enable this device");
 			}
 			if(driver.can_disable_driver()){
-				stdio::print_info(indent, format_verb, "disable", format_none, " - Disable this device");
+				log::print_info(indent, format_verb, "disable", format_none, " - Disable this device");
 			}else{
-				stdio::print_info(indent, "This device cannot be disabled");
+				log::print_info(indent, "This device cannot be disabled");
 			}
 			if(driver.can_restart_driver()){
-				stdio::print_info(indent, format_verb, "restart", format_none, " - Restart this device");
+				log::print_info(indent, format_verb, "restart", format_none, " - Restart this device");
 			}else{
-				stdio::print_info(indent, "This device cannot be restarted");
+				log::print_info(indent, "This device cannot be restarted");
 			}
 
 			if(!strcmp(driver.type, "processor")){
-				stdio::print_info(indent, format_verb, "set . ", format_none, format_param, "<CLOCK>", format_none, format_verb, " <SPEED>", format_none, " - Set clock speed");
+				log::print_info(indent, format_verb, "set . ", format_none, format_param, "<CLOCK>", format_none, format_verb, " <SPEED>", format_none, " - Set clock speed");
 
 			}else if(!strcmp(driver.type, "graphics")){
-				stdio::print_info(indent, format_verb, "mode . ", format_none, format_param, "<FRAMEBUFFER>", format_none, format_verb, " <WIDTH> <HEIGHT> <FORMAT> [exact|nearest]", format_none, " - Set framebuffer display mode");
+				log::print_info(indent, format_verb, "mode . ", format_none, format_param, "<FRAMEBUFFER>", format_none, format_verb, " <WIDTH> <HEIGHT> <FORMAT> [exact|nearest]", format_none, " - Set framebuffer display mode");
 
 			}else if(!strcmp(driver.type, "serial")){
 				if(driver.state!=Driver::State::enabled){
-					stdio::print_info(indent, "This device is not currently enabled and cannot be sent to");
+					log::print_info(indent, "This device is not currently enabled and cannot be sent to");
 				}else{
-					stdio::print_info(indent, format_verb, "send . ", format_none, format_verb, "<DATA>", format_none, " - Send/write data to this serial device");
+					log::print_info(indent, format_verb, "send . ", format_none, format_verb, "<DATA>", format_none, " - Send/write data to this serial device");
 				}
 			}
 
@@ -155,7 +156,7 @@ namespace cli {
 		auto print_summary(const char *indent, bool showContents) -> bool override {
 			device::print_device_summary(indent, driver);
 			if(showContents){
-				stdio::print_info("");
+				log::print_info("");
 				device::print_device_details(indent, driver, format_param, format_none);
 			}
 			return true;
@@ -164,29 +165,29 @@ namespace cli {
 		auto execute(Cli &cli, const char *verb, const char *parameters) -> bool override {
 			if(!strcmp(verb, "enable")){
 				if(!device::start_device(driver)){
-					stdio::print_warning("This device driver cannot be enabled");
+					log::print_warning("This device driver cannot be enabled");
 					return true;
 				}
 
-				stdio::print_info("Device enabled");
+				log::print_info("Device enabled");
 				return true;
 
 			}else if(!strcmp(verb, "disable")){
 				if(!device::stop_device(driver)){
-					stdio::print_warning("This device driver cannot be disabled");
+					log::print_warning("This device driver cannot be disabled");
 					return true;
 				}
 
-				stdio::print_info("Device disabled");
+				log::print_info("Device disabled");
 				return true;
 
 			}else if(!strcmp(verb, "restart")){
 				if(!device::restart_device(driver)){
-					stdio::print_warning("This device driver cannot be restarted");
+					log::print_warning("This device driver cannot be restarted");
 					return true;
 				}
 
-				stdio::print_info("Device restarted");
+				log::print_info("Device restarted");
 				return true;
 
 			}else{
@@ -196,7 +197,7 @@ namespace cli {
 					if(!strcmp(verb, "set")){
 						//read clock name
 						//read speed
-						stdio::print_warning("TODO:Implement");
+						log::print_warning("TODO:Implement");
 						return true;
 					}
 
@@ -209,7 +210,7 @@ namespace cli {
 						//read height
 						//read format
 						//read exact|nearest
-						stdio::print_warning("TODO:Implement");
+						log::print_warning("TODO:Implement");
 						return true;
 					}
 
@@ -218,7 +219,7 @@ namespace cli {
 
 					if(!strcmp(verb, "send")){
 						if(serial.state!=Driver::State::enabled){
-							stdio::print_warning("Cannot send, this serial device is not currently enabled");
+							log::print_warning("Cannot send, this serial device is not currently enabled");
 							return true;
 						}
 
@@ -325,7 +326,7 @@ namespace cli {
 				count++;
 			}
 
-			stdio::print_info(indent, count, ' ', count==1?"device":"devices", " present");
+			log::print_info(indent, count, ' ', count==1?"device":"devices", " present");
 
 			return true;
 		}
@@ -340,7 +341,7 @@ namespace cli {
 
 		bool print_summary(const char *indent, bool showContents) override {
 			auto count = process::get_count();
-			stdio::print_info(indent, count, ' ', count==1?"process":"processes", " active");
+			log::print_info(indent, count, ' ', count==1?"process":"processes", " active");
 
 			return true;
 		}
@@ -387,31 +388,31 @@ namespace cli {
 	Verb verbs[4] = {
 		{ "?", "help", "Show help",
 			[](Cli &cli, VerbObject *object, const char *path, const char *parameters) {
-				stdio::print_info("Use ", format_verb, "verbs", format_none, " to list all currently valid actions");
-				stdio::print_info("");
-				stdio::print_info("Actions take the form `verb [path [parameters]]`");
+				log::print_info("Use ", format_verb, "verbs", format_none, " to list all currently valid actions");
+				log::print_info("");
+				log::print_info("Actions take the form `verb [path [parameters]]`");
 			}
 		},
 		{ "v", "verbs", "List all valid verbs",
 			[](Cli &cli, VerbObject *object, const char *path, const char *parameters) {
-				stdio::print_info("Global verbs:");
+				log::print_info("Global verbs:");
 
 				for(U32 i=0;i<sizeof(verbs)/sizeof(verbs[0]);i++){
 					auto &verb = verbs[i];
-					stdio::print_info_start();
+					log::print_info_start();
 					if(verb.verb[0]){
-						stdio::print_inline("  ", format_verb, verb.verbShort, format_none, " / ", format_verb, verb.verb, format_none, " - ", verb.description);
+						log::print_inline("  ", format_verb, verb.verbShort, format_none, " / ", format_verb, verb.verb, format_none, " - ", verb.description);
 					}else{
-						stdio::print_inline("  ", format_verb, format_verb, verb.verbShort, format_none, " - ", verb.description);
+						log::print_inline("  ", format_verb, format_verb, verb.verbShort, format_none, " - ", verb.description);
 					}
-					stdio::print_end();
+					log::print_end();
 				}
 
 				if(object&&object->has_verbs()){
-					stdio::print_info("");
-					stdio::print_info("Local verbs:");
+					log::print_info("");
+					log::print_info("Local verbs:");
 					if(!object->print_verbs("  ")){
-						stdio::print_info("  None available here");
+						log::print_info("  None available here");
 					}
 				}
 			}
@@ -419,30 +420,30 @@ namespace cli {
 		{ "ls", "", "List contents of current path",
 			[](Cli &cli, VerbObject *object, const char *path, const char *parameters) {
 				if(!object){
-					stdio::print_warning("Path not found: ", path);
-					stdio::print_info();
+					log::print_warning("Path not found: ", path);
+					log::print_info();
 					return;
 				}
 
 				if(object->print_summary("", true)){
-					stdio::print_info();
+					log::print_info();
 				}
 
 				object->get_children([](const char *name, const char *description, VerbObject &object) {
-					stdio::print_info_start();
-					stdio::print_inline(format_object, name, format_none);
+					log::print_info_start();
+					log::print_inline(format_object, name, format_none);
 					if(description){
-						stdio::print_inline(" - ", description);
+						log::print_inline(" - ", description);
 					}
-					stdio::print_end();
+					log::print_end();
 
 					object.print_summary("  ");
 				});
 				
 				if(object->has_verbs()){
-					stdio::print_info("Local verbs:");
+					log::print_info("Local verbs:");
 					if(!object->print_verbs("  ")){
-						stdio::print_info("  None available here");
+						log::print_info("  None available here");
 					}
 				}
 			}
@@ -451,8 +452,8 @@ namespace cli {
 			[](Cli &cli, VerbObject *object, const char *path, const char *parameters) {
 				auto child = RootObject{}.get_child(path);
 				if(!child){
-					stdio::print_warning("Path not found: ", path);
-					stdio::print_info();
+					log::print_warning("Path not found: ", path);
+					log::print_info();
 					return;
 				}
 
@@ -472,22 +473,22 @@ namespace cli {
 }
 
 void Cli::prompt() {
-	stdio::print_info_start();
+	log::print_info_start();
 	{
 		U32 pathLength = strlen(currentPath);
-		stdio::print_inline(cli::format_cwd);
+		log::print_inline(cli::format_cwd);
 		if(pathLength<32){
-			stdio::print_inline(currentPath);
+			log::print_inline(currentPath);
 		}else{
-			stdio::print_inline("...", &currentPath[pathLength-(32-3)]);
+			log::print_inline("...", &currentPath[pathLength-(32-3)]);
 		}
-		stdio::print_inline("> ", cli::format_none);
+		log::print_inline("> ", cli::format_none);
 	}
 	C8 buffer[1024];
-	stdio::print_inline(cli::format_input);
-	stdio::gets(buffer, sizeof(buffer));
-	stdio::print_inline(cli::format_none);
-	stdio::print_end();
+	log::print_inline(cli::format_input);
+	console::gets(buffer, sizeof(buffer));
+	log::print_inline(cli::format_none);
+	log::print_end();
 
 	execute(buffer);
 }
@@ -523,23 +524,23 @@ void Cli::execute(char *command) {
 		if(!strcmp(verb.verbShort, inputVerb)||!strcmp(verb.verb, inputVerb)){
 			commandFound = true;
 			verb.execute(*this, child.get(), inputPath, inputParameters);
-			stdio::print_info();
+			log::print_info();
 			break;
 		}
 	}
 
 	if(!commandFound){
 		if(!child){
-			stdio::print_warning("Path not found: ", inputPath.get());
-			stdio::print_info();
+			log::print_warning("Path not found: ", inputPath.get());
+			log::print_info();
 			return;
 		}
 
 		if(child->execute(*this, inputVerb, inputParameters)){
-			stdio::print_info();
+			log::print_info();
 		}else{
-			stdio::print_warning("I don't know how to `", inputVerb, "` here");
-			stdio::print_info();
+			log::print_warning("I don't know how to `", inputVerb, "` here");
+			log::print_info();
 		}
 	}
 }

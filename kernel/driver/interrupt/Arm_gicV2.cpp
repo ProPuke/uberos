@@ -1,7 +1,7 @@
 #include "Arm_gicV2.hpp"
 
 #include <kernel/mmio.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 #include <kernel/mmio.hpp>
 
 namespace driver {
@@ -203,8 +203,8 @@ namespace driver {
 			// 	mmio::write32(gicd_address+(U32)Gicd_address::icfg+i/16*4, 0b11<<(i%16));
 			// }
 
-			stdio::print_info("interruptCount = ", interruptCount);
-			stdio::print_info("securityExtensionsImplemented = ", gicd.typer.securityExtensionsImplemented?"yes":"no");
+			log::print_info("interruptCount = ", interruptCount);
+			log::print_info("securityExtensionsImplemented = ", gicd.typer.securityExtensionsImplemented?"yes":"no");
 
 			// for(U32 i=0;i<interruptCount;i++){
 			// 	mmio::write32(gicd_address+(U32)Gicd_address::irq_config+4*(i/16), (0b11 << (i%16)) & mmio::read32(gicd_address+(U32)Gicd_address::irq_config+4*(i/16)) | (0b1 << (i%16)));
@@ -214,24 +214,24 @@ namespace driver {
 			// 	mmio::write32(gicd_address+(U32)Gicd_address::irq_target+4*(i), 1<<0);
 			// }
 
-			// stdio::print_info("=== 1 ===");
+			// log::print_info("=== 1 ===");
 
 			// for(U32 i=0;i<interruptCount/8;i++){
-			// 	stdio::print_info("group ",i);
+			// 	log::print_info("group ",i);
 			// 	gicd.interruptGroup[i] = 0x00;
 			// 	// gicd.interruptGroup[i] = 0xff;
-			// 	stdio::print_info("enable ",i);
+			// 	log::print_info("enable ",i);
 			// 	gicd.interruptSetEnable[i] = 0xff;
 			// }
 
-			// stdio::print_info("=== 2 ===");
+			// log::print_info("=== 2 ===");
 
 			// for(U32 i=32;i<interruptCount;i++){
 			// 	gicd.interruptTarget[i] = 1<<(0);
 			// 	// gicd.interruptPriority[i] = 0xa0;
 			// }
 
-			// stdio::print_info("=== 3 ===");
+			// log::print_info("=== 3 ===");
 
 			gicd.ctlr.enableGroup0 = 1;
 			gicd.ctlr.enableGroup1 = 1;

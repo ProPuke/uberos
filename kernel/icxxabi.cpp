@@ -1,11 +1,11 @@
 #include "icxxabi.hpp"
 
-#include "stdio.hpp"
+#include "log.hpp"
 
 extern "C" {
 
 void __cxa_pure_virtual() {
-	stdio::print_error("Error: Pure virtual method called");
+	log::print_error("Error: Pure virtual method called");
 	//TODO:terminate?
 }
 

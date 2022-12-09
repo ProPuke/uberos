@@ -2,7 +2,7 @@
 
 #include "exceptions.hpp"
 
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 namespace exceptions {
 	inline bool _is_active() {
@@ -27,7 +27,7 @@ namespace exceptions {
 	}
 
 	inline void _activate() {
-		// stdio::print_info("exception level ", _get_level());
+		// log::print_info("exception level ", _get_level());
 		asm volatile(
 			"msr daifclr, #0b0010\n"
 		);

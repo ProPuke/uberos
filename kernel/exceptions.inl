@@ -3,7 +3,6 @@
 #include "exceptions.hpp"
 
 #include <common/types.hpp>
-#include <kernel/stdio.hpp>
 #include <atomic>
 
 namespace exceptions {

@@ -8,7 +8,7 @@
 #include <kernel/driver/Interrupt.hpp>
 #include <kernel/driver/Processor.hpp>
 #include <kernel/driver/Serial.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 using namespace maths;
 
@@ -24,15 +24,15 @@ namespace device {
 			const U32 bars = clamp(phase, 0.0, 1.0)*(sizeof(empty)-1)+0.5;
 
 			if(temp>=0&&temp>=safetyMax){
-				stdio::print_warning_start();
+				log::print_warning_start();
 			}else{
-				stdio::print_info_start();
+				log::print_info_start();
 			}
-			stdio::print_inline(indent, indent2, "[");
-			stdio::print_inline(full+30-bars);
-			stdio::print_inline(empty+30-(30-bars));
-			stdio::print_inline(']');
-			stdio::print_end();
+			log::print_inline(indent, indent2, "[");
+			log::print_inline(full+30-bars);
+			log::print_inline(empty+30-(30-bars));
+			log::print_inline(']');
+			log::print_end();
 		}
 	}
 
@@ -46,7 +46,7 @@ namespace device {
 	auto start_device(Driver &device) -> bool {
 		if(device.state==Driver::State::enabled||device.state==Driver::State::restarting) return true;
 
-		stdio::Section section("device::", device.name, "::start");
+		log::Section section("device::", device.name, "::start");
 
 		Driver *disabledDevice = nullptr;
 
@@ -64,7 +64,7 @@ namespace device {
 
 		device._on_driver_enable();
 		if(device.state!=Driver::State::enabled){
-			stdio::print_error("Failed to start device");
+			log::print_error("Failed to start device");
 			//if we failed to start the driver, and stopped a previous in order to try, then restore it
 			if(disabledDevice){
 				start_device(*disabledDevice);
@@ -79,11 +79,11 @@ namespace device {
 		if(device.state==Driver::State::disabled) return true;
 		if(!device.can_disable_driver()) return false;
 
-		stdio::Section section("device::", device.name, "::stop");
+		log::Section section("device::", device.name, "::stop");
 
 		device._on_driver_disable();
 		if(device.state!=Driver::State::disabled){
-			stdio::print_error("Failed to stop device");
+			log::print_error("Failed to stop device");
 			return false;
 		}
 
@@ -94,13 +94,13 @@ namespace device {
 		if(device.state==Driver::State::restarting) return true;
 		if(!device.can_restart_driver()) return false;
 
-		stdio::Section section("device::", device.name, "::restart");
+		log::Section section("device::", device.name, "::restart");
 
 		if(device.state==Driver::State::disabled) return start_device(device);
 
 		device._on_driver_restart();
 		if(device.state==Driver::State::disabled){
-			stdio::print_error("Failed to restart device");
+			log::print_error("Failed to restart device");
 			return false;
 		}
 
@@ -126,56 +126,56 @@ namespace device {
 	}
 
 	void print_device_summary(const char *indent, Driver &device) {
-		stdio::print_info_start();
-		stdio::print_inline(indent);
+		log::print_info_start();
+		log::print_inline(indent);
 
 		switch(device.state){
 			case Driver::State::disabled:
-				stdio::print_inline("[-] ");
+				log::print_inline("[-] ");
 			break;
 			case Driver::State::enabled:
-				stdio::print_inline("[+] ");
+				log::print_inline("[+] ");
 			break;
 			case Driver::State::failed:
-				stdio::print_inline("[!] ");
+				log::print_inline("[!] ");
 			break;
 			case Driver::State::restarting:
-				stdio::print_inline("[?] ");
+				log::print_inline("[?] ");
 			break;
 		}
-		stdio::print_inline(device.name);
+		log::print_inline(device.name);
 		if(device.descriptiveType){
-			stdio::print_inline(" - ", device.descriptiveType);
+			log::print_inline(" - ", device.descriptiveType);
 		}
 		// if(device.address){
-		// 	stdio::print_inline(" @ ", format::Hex64{device.address});
+		// 	log::print_inline(" @ ", format::Hex64{device.address});
 		// }
-		stdio::print_end();
-		// stdio::print_info("   State: ", device.state);
+		log::print_end();
+		// log::print_info("   State: ", device.state);
 		if(device.address){
-			stdio::print_info(indent, "   Address: ", format::Hex64{device.address});
+			log::print_info(indent, "   Address: ", format::Hex64{device.address});
 		}
 		if(!strcmp(device.type, "processor")){
 			auto &processor = *(driver::Processor*)&device;
-			stdio::print_info(indent, "   Architecture: ", processor.processor_arch);
-			stdio::print_info(indent, "   Cores: ", processor.processor_cores);
+			log::print_info(indent, "   Architecture: ", processor.processor_arch);
+			log::print_info(indent, "   Cores: ", processor.processor_cores);
 
 			auto speed = processor.get_clock_value(0);
 			auto temp = processor.get_temperature_value(0);
 
 			if(speed){
 				if(speed>=1000000000){
-					stdio::print_info(indent, "   Speed: ", speed/1000000000.0, " Ghz");
+					log::print_info(indent, "   Speed: ", speed/1000000000.0, " Ghz");
 				}else if(speed>=1000000){
-					stdio::print_info(indent, "   Speed: ", speed/1000000.0, " Mhz");
+					log::print_info(indent, "   Speed: ", speed/1000000.0, " Mhz");
 				}else if(speed>=1000){
-					stdio::print_info(indent, "   Speed: ", speed/1000000.0, " Khz");
+					log::print_info(indent, "   Speed: ", speed/1000000.0, " Khz");
 				}else if(speed>=1000){
-					stdio::print_info(indent, "   Speed: ", speed/1000000.0, " Hz");
+					log::print_info(indent, "   Speed: ", speed/1000000.0, " Hz");
 				}
 			}
 			if(temp){
-				stdio::print_info(indent, "   Temp: ", kelvin_to_celcius(temp), " C");
+				log::print_info(indent, "   Temp: ", kelvin_to_celcius(temp), " C");
 				auto minTemp = celcius_to_kelvin(20);
 				auto maxTemp = processor.get_temperature_max(0);
 
@@ -185,36 +185,36 @@ namespace device {
 			}
 
 			// for(U32 i=0;i<processor.get_voltage_count();i++){
-			// 	stdio::print_info(indent, "   ", processor.get_voltage_name(i), " = ", processor.get_voltage_value(i), " V");
+			// 	log::print_info(indent, "   ", processor.get_voltage_name(i), " = ", processor.get_voltage_value(i), " V");
 			// }
 
 			// for(U32 i=0;i<processor.get_clock_count();i++){
-			// 	stdio::print_info(indent, "   ", processor.get_clock_name(i), " = ", processor.get_clock_value(i)/1000000.0f, " Mhz");
+			// 	log::print_info(indent, "   ", processor.get_clock_name(i), " = ", processor.get_clock_value(i)/1000000.0f, " Mhz");
 			// }
 
 			// for(U32 i=0;i<processor.get_temperature_count();i++){
-			// 	stdio::print_info(indent, "   ", processor.get_temperature_name(i), " = ", processor.get_temperature_value(i), " K");
+			// 	log::print_info(indent, "   ", processor.get_temperature_name(i), " = ", processor.get_temperature_value(i), " K");
 			// }
 		}
 		if(!strcmp(device.type, "serial")){
 			auto &serial = *(driver::Serial*)&device;
 			if(serial.state==driver::Serial::State::enabled){
-				stdio::print_info(indent, "   Baud: ", serial.get_active_baud());
+				log::print_info(indent, "   Baud: ", serial.get_active_baud());
 			}
 		}
 		if(!strcmp(device.type, "graphics")){
 			auto &graphics = *(driver::Graphics*)&device;
-			stdio::print_info(indent, "   Framebuffers: ", graphics.get_framebuffer_count());
+			log::print_info(indent, "   Framebuffers: ", graphics.get_framebuffer_count());
 			auto defaultMode = graphics.get_default_mode();
 			if(defaultMode.width){
-				stdio::print_info(indent, "   Default mode: ", defaultMode.width, "x", defaultMode.height, " @ ", defaultMode.format);
+				log::print_info(indent, "   Default mode: ", defaultMode.width, "x", defaultMode.height, " @ ", defaultMode.format);
 			}else{
-				stdio::print_info(indent, "   Default mode: None");
+				log::print_info(indent, "   Default mode: None");
 			}
 		}
 		if(!strcmp(device.type, "interrupt")){
 			auto &irq = *(driver::Interrupt*)&device;
-			stdio::print_info(indent, "   Interrupts: ", irq.min_irq, " - ", irq.max_irq);
+			log::print_info(indent, "   Interrupts: ", irq.min_irq, " - ", irq.max_irq);
 		}
 	}
 
@@ -236,44 +236,44 @@ namespace device {
 
 				if(!active) active = value;
 
-				stdio::print_info_start();
-					stdio::print_inline(indent, beforeName, "clock", i, afterName, ": ", name, " = ");
+				log::print_info_start();
+					log::print_inline(indent, beforeName, "clock", i, afterName, ": ", name, " = ");
 
 					if(value>=1000000000){
-						stdio::print_inline(value/1000000.0, " Ghz");
+						log::print_inline(value/1000000.0, " Ghz");
 					}else if(value>=1000000){
-						stdio::print_inline(value/1000000.0, " Mhz");
+						log::print_inline(value/1000000.0, " Mhz");
 					}else if(value>=1000){
-						stdio::print_inline(value/1000.0, " Khz");
+						log::print_inline(value/1000.0, " Khz");
 					}else{
-						stdio::print_inline(value, " Hz");
+						log::print_inline(value, " Hz");
 					}
 
 					if(abs(active-value)>active/100){
-						stdio::print_inline(" (currently ");
+						log::print_inline(" (currently ");
 
 						if(active>=1000000000){
-							stdio::print_inline(active/1000000.0, " Ghz");
+							log::print_inline(active/1000000.0, " Ghz");
 						}else if(active>=1000000){
-							stdio::print_inline(active/1000000.0, " Mhz");
+							log::print_inline(active/1000000.0, " Mhz");
 						}else if(active>=1000){
-							stdio::print_inline(active/1000.0, " Khz");
+							log::print_inline(active/1000.0, " Khz");
 						}else{
-							stdio::print_inline(active, " Hz");
+							log::print_inline(active, " Hz");
 						}
 						
-						stdio::print_inline(")");
+						log::print_inline(")");
 					}
 
 					if(changeable){
-						stdio::print_inline(" (adjustable)");
+						log::print_inline(" (adjustable)");
 					}
 
-				stdio::print_end();
+				log::print_end();
 			}
 
 			if(temps&&voltages){
-				stdio::print_info();
+				log::print_info();
 			}
 
 			for(U32 i=0;i<voltages;i++){
@@ -284,19 +284,19 @@ namespace device {
 
 				if(!value) continue;
 
-				stdio::print_info_start();
-				stdio::print_inline(indent, beforeName, "voltage", i, afterName, ": ", name, " = ", value, " V");
+				log::print_info_start();
+				log::print_inline(indent, beforeName, "voltage", i, afterName, ": ", name, " = ", value, " V");
 				if(max&&max!=min){
-					stdio::print_inline(" (", min, " - ", max ," V)");
+					log::print_inline(" (", min, " - ", max ," V)");
 				}
-				stdio::print_end();
+				log::print_end();
 				if(max&&max>min){
 					print_percent_graph(indent, "  ", value, min, max+10, max);
 				}
 			}
 
 			if(voltages&&clocks){
-				stdio::print_info();
+				log::print_info();
 			}
 
 			for(U32 i=0;i<temps;i++){
@@ -307,12 +307,12 @@ namespace device {
 
 				if(!value) continue;
 
-				stdio::print_info_start();
-				stdio::print_inline(indent, beforeName, "temp", i, afterName, ": ", name, " = ", kelvin_to_celcius(value), " C");
+				log::print_info_start();
+				log::print_inline(indent, beforeName, "temp", i, afterName, ": ", name, " = ", kelvin_to_celcius(value), " C");
 				if(max){
-					stdio::print_inline(" (", kelvin_to_celcius(max) ," C max)");
+					log::print_inline(" (", kelvin_to_celcius(max) ," C max)");
 				}
-				stdio::print_end();
+				log::print_end();
 				if(max&&max>min){
 					print_percent_graph(indent, "  ", value, min, max+10, max);
 				}
@@ -328,16 +328,16 @@ namespace device {
 			for(U32 i=0;i<framebuffers;i++){
 				auto name = graphics.get_framebuffer_name(i);
 
-				stdio::print_info_start();
-				stdio::print_inline(indent, beforeName, "fb", i, afterName, ": ", name);
-				stdio::print_end();
+				log::print_info_start();
+				log::print_inline(indent, beforeName, "fb", i, afterName, ": ", name);
+				log::print_end();
 			}
 
 			if(framebuffers){
-				stdio::print_info();
+				log::print_info();
 			}
 
-			stdio::print_info(indent, "Reported video modes:");
+			log::print_info(indent, "Reported video modes:");
 
 			U32 count = 0;
 			for(U32 i=0;i<graphics.get_mode_count();i++){
@@ -345,12 +345,12 @@ namespace device {
 
 				if(!mode.width) continue;
 
-				stdio::print_info(indent, "  ", mode.width, "x", mode.height, " @ ", mode.format);
+				log::print_info(indent, "  ", mode.width, "x", mode.height, " @ ", mode.format);
 				count++;
 			}
 
 			if(!count){
-				stdio::print_warning(indent, "  ", "None found");
+				log::print_warning(indent, "  ", "None found");
 			}
 		}
 
@@ -371,7 +371,7 @@ namespace device {
 	void print_summary() {
 		auto first = true;
 		for(auto &device:iterate_all()){
-			if(!first) stdio::print_info();
+			if(!first) log::print_info();
 			
 			print_device_summary("", device);
 

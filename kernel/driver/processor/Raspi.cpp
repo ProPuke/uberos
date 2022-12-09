@@ -32,7 +32,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting temperature ", index, " from mailbox");
+				log::print_error("Error requesting temperature ", index, " from mailbox");
 				return 0;
 			}
 
@@ -49,7 +49,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting max temperature ", index, " from mailbox");
+				log::print_error("Error requesting max temperature ", index, " from mailbox");
 				return 0;
 			}
 
@@ -81,7 +81,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting voltage ", index, " from mailbox");
+				log::print_error("Error requesting voltage ", index, " from mailbox");
 				return 0;
 			}
 
@@ -97,7 +97,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting min voltage ", index, " from mailbox");
+				log::print_error("Error requesting min voltage ", index, " from mailbox");
 				return 0;
 			}
 
@@ -113,7 +113,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting max voltage ", index, " from mailbox");
+				log::print_error("Error requesting max voltage ", index, " from mailbox");
 				return 0;
 			}
 
@@ -131,7 +131,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error setting voltage ", index, " via mailbox");
+				log::print_error("Error setting voltage ", index, " via mailbox");
 				return false;
 			}
 
@@ -176,7 +176,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting clock ", id, " from mailbox");
+				log::print_error("Error requesting clock ", id, " from mailbox");
 				return 0;
 			}
 
@@ -194,7 +194,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting clock ", id, " from mailbox");
+				log::print_error("Error requesting clock ", id, " from mailbox");
 				return 0;
 			}
 
@@ -212,7 +212,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting min voltage ", id, " from mailbox");
+				log::print_error("Error requesting min voltage ", id, " from mailbox");
 				return 0;
 			}
 
@@ -230,7 +230,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error requesting max voltage ", id, " from mailbox");
+				log::print_error("Error requesting max voltage ", id, " from mailbox");
 				return 0;
 			}
 
@@ -251,7 +251,7 @@ namespace driver {
 			messages[1].tag = mailbox::PropertyTag::null_tag;
 
 			if(!mailbox::send_messages(messages)){
-				stdio::print_error("Error setting clock ", id, " via mailbox");
+				log::print_error("Error setting clock ", id, " via mailbox");
 				return false;
 			}
 

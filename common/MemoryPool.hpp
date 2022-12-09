@@ -38,7 +38,7 @@ struct MemoryPool {
 
 	void* malloc(size_t size) {
 		#ifdef MEMORY_CHECKS
-			stdio::Section section("malloc ", size);
+			log::Section section("malloc ", size);
 
 			debug_llist(availableBlocks, "availableBlocks in malloc 0");
 		#endif
@@ -107,7 +107,7 @@ struct MemoryPool {
 
 	void claim_block(MemoryPoolBlock &reclaim){
 		#ifdef MEMORY_CHECKS
-			stdio::Section section("claim block ", &reclaim, " of size ", reclaim.size);
+			log::Section section("claim block ", &reclaim, " of size ", reclaim.size);
 			debug_llist(availableBlocks, "availableBlocks before");
 		#endif
 
@@ -126,7 +126,7 @@ struct MemoryPool {
 				for(block=availableBlocks.head; block; block=block->next){
 					if(block->size>=reclaim.size){
 						#ifdef MEMORY_CHECKS
-							stdio::print_info("insert_before ", &reclaim);
+							log::print_info("insert_before ", &reclaim);
 						#endif
 						availableBlocks.insert_before(*block, reclaim);
 						break;
@@ -141,7 +141,7 @@ struct MemoryPool {
 				for(block=availableBlocks.tail; block; block=block->prev){
 					if(block->size<=reclaim.size){
 						#ifdef MEMORY_CHECKS
-							stdio::print_info("insert_after ", &reclaim);
+							log::print_info("insert_after ", &reclaim);
 						#endif
 						availableBlocks.insert_after(*block, reclaim);
 						break;
@@ -163,7 +163,7 @@ struct MemoryPool {
 				}
 
 				if(!found){
-					stdio::print_error("Error: NOT FOUND");
+					log::print_error("Error: NOT FOUND");
 					debug_llist(availableBlocks, "availableBlocks after");
 				}
 			}
@@ -190,7 +190,7 @@ struct MemoryPool {
 
 template <>
 inline void debug_llist(LList<MemoryPoolBlock> &list, const char *label) {
-	stdio::Section section(label, ':');
+	log::Section section(label, ':');
 
 	unsigned length = 0;
 	unsigned firstErrorPosition = ~0u;
@@ -199,7 +199,7 @@ inline void debug_llist(LList<MemoryPoolBlock> &list, const char *label) {
 
 	for(auto item=list.head; item; item=item->next){
 		if(last&&item->prev!=last){
-			stdio::print_error("Error: Item ", item, " has missing prev record");
+			log::print_error("Error: Item ", item, " has missing prev record");
 			if(length<firstErrorPosition){
 				firstErrorPosition = length;
 			}
@@ -212,18 +212,18 @@ inline void debug_llist(LList<MemoryPoolBlock> &list, const char *label) {
 	}
 
 	if(length!=list.size){
-		stdio::print_error("Error: Walked length of ", length, " did not match expected size of ", list.size);
+		log::print_error("Error: Walked length of ", length, " did not match expected size of ", list.size);
 	}
 
-	stdio::print_info("size: ", list.size,  " / ", length);
-	stdio::print_info("head: ", list.head);
-	stdio::print_info("tail: ", list.tail);
+	log::print_info("size: ", list.size,  " / ", length);
+	log::print_info("head: ", list.head);
+	log::print_info("tail: ", list.tail);
 
 	{
 		unsigned i=0;
 		for(auto item=list.head; item; item=item->next){
 			if(i+2>=firstErrorPosition&&i<=lastErrorPosition+2){
-				stdio::print_info("item: ", item, " prev = ", item->prev, " next = ", item->next, " size = ", ((MemoryPoolBlock*)item)->size);
+				log::print_info("item: ", item, " prev = ", item->prev, " next = ", item->next, " size = ", ((MemoryPoolBlock*)item)->size);
 			}
 			if(i>lastErrorPosition+2) break;
 			i++;

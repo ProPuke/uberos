@@ -17,7 +17,7 @@
 #include <kernel/scheduler.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/timer.hpp>
 
@@ -64,7 +64,7 @@ namespace kernel {
 
 		cpu::init();
 
-		{ stdio::Section section("kernel init");
+		{ log::Section section("kernel init");
 			exceptions::init();
 	
 			if(init) init();
@@ -72,34 +72,34 @@ namespace kernel {
 			scheduler::init();
 		}
 
-		{ stdio::Section section("kernel startup");
+		{ log::Section section("kernel startup");
 
 			graphics2d::init();
 
-			{ stdio::Section section("device summary");
+			{ log::Section section("device summary");
 
-				stdio::print_info("cpu arch: ", info::cpu_arch);
-				stdio::print_info("device type: ", info::device_type);
-				stdio::print_info("device model: ", info::device_model);
-				stdio::print_info("device revision: ", info::device_revision);
-				stdio::print_info("memory: ", memory::totalMemory/1024/1024, "MB");
+				log::print_info("cpu arch: ", info::cpu_arch);
+				log::print_info("device type: ", info::device_type);
+				log::print_info("device model: ", info::device_model);
+				log::print_info("device revision: ", info::device_revision);
+				log::print_info("memory: ", memory::totalMemory/1024/1024, "MB");
 
-				{ stdio::Section section("displays:");
+				{ log::Section section("displays:");
 
 					for(auto i=0u;i<framebuffer::get_framebuffer_count();i++){
 						auto &framebuffer = *framebuffer::get_framebuffer(i);
 
-						stdio::print_info(framebuffer.width, 'x', framebuffer.height, ", ", framebuffer.format);
+						log::print_info(framebuffer.width, 'x', framebuffer.height, ", ", framebuffer.format);
 					}
 				}
 
-				{ stdio::Section section("devices:");
+				{ log::Section section("devices:");
 
 					device::print_summary();
 				}
 			}
 
-			stdio::print_info("Startup complete.");
+			log::print_info("Startup complete.");
 		}
 
 		if(postinit) postinit();
@@ -136,24 +136,24 @@ namespace kernel {
 
 		log.print_info("Putting on lightshow...");
 
-		// stdio::print_error("Error: BEFORE THREAD");
+		// log::print_error("Error: BEFORE THREAD");
 		// thread::create_kernel_thread("drawing test", []() {
-		// 	stdio::print_error("Error: IN THREAD");
+		// 	log::print_error("Error: IN THREAD");
 
 		// 	auto &framebuffer = framebuffer::framebuffers[0];
 
-		// 	stdio::print("create_view\n");
+		// 	log::print("create_view\n");
 
 		// 	auto view = graphics2d::create_view(100, 100, 640, 480);
 		// 	if(!view) {
-		// 		stdio::print("NO VIEW\n");
+		// 		log::print("NO VIEW\n");
 		// 		return;
 		// 	}
 
 		// 	int dirX = 3;
 		// 	int dirY = 3;
 
-		// 	stdio::print("start drawing\n");
+		// 	log::print("start drawing\n");
 
 		// 	for(auto time=0u;;time++){
 		// 		const auto padding = 2u;
@@ -169,7 +169,7 @@ namespace kernel {
 
 		// 		graphics2d::move_view_to(*view, view->x+dirX, view->y+dirY);
 
-		// 		// stdio::print("update view\n");
+		// 		// log::print("update view\n");
 		// 	}
 		// });
 
@@ -373,11 +373,11 @@ namespace kernel {
 		// while(true){
 		// 	thread::currentThread.load()->sleep(1000000);
 		// 	{
-		// 		stdio::Section section("Status:");
+		// 		log::Section section("Status:");
 
-		// 		stdio::print_debug("Active threads: ", scheduler::get_active_thread_count()-1 /* exclude self since we were sleeping throughout */, '/', scheduler::get_total_thread_count(), "\n");
-		// 		stdio::print_debug("VRAM: ", vramWrites, " writes/sec\n");
-		// 		stdio::print_debug(" RAM: ", ramWrites, " writes/sec\n");
+		// 		log::print_debug("Active threads: ", scheduler::get_active_thread_count()-1 /* exclude self since we were sleeping throughout */, '/', scheduler::get_total_thread_count(), "\n");
+		// 		log::print_debug("VRAM: ", vramWrites, " writes/sec\n");
+		// 		log::print_debug(" RAM: ", ramWrites, " writes/sec\n");
 		// 	}
 		// 	vramWrites = 0;
 		// 	ramWrites = 0;

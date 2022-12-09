@@ -7,7 +7,7 @@
 
 #include <kernel/arch/arm64/systemRegisters.hpp>
 #include <kernel/memory.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 namespace mmu {
 	namespace {
@@ -135,7 +135,7 @@ namespace mmu {
 				assert(((U64)table&bitmask)==(U64)table, "table ", table, " does not align with bitmask ", format::Hex64{bitmask});
 				data = data&~bitmask | (U64)table&bitmask;
 
-				// stdio::print_debug("table ", this, " ", format::Hex64{data});
+				// log::print_debug("table ", this, " ", format::Hex64{data});
 			}
 
 			void set_block(U8 level, void *address) {
@@ -147,7 +147,7 @@ namespace mmu {
 				assert(((U64)address&bitmask)==(U64)address, "block ", address, " does not align with bitmask ", format::Hex64{bitmask});
 				data = data&~bitmask | (U64)address&bitmask;
 
-				// stdio::print_debug("block ", this, " ", format::Hex64{data});
+				// log::print_debug("block ", this, " ", format::Hex64{data});
 			}
 
 			constexpr auto get_table_address() const {
@@ -217,11 +217,11 @@ namespace mmu {
 	void init_kernelMap();
 
 	void init() {
-		stdio::Section section("mmu::arch::arm64::init...");
+		log::Section section("mmu::arch::arm64::init...");
 
-		stdio::print_info("granularity: ", granularity_to_string(granularity));
-		stdio::print_info("address size: ", (int)addressSize, "bit (", addressSize_to_string(addressSize), ")");
-		stdio::print_info("table sizes: ", levelSize[0], " / ", levelSize[1], " / ", levelSize[2], " / ", levelSize[3]);
+		log::print_info("granularity: ", granularity_to_string(granularity));
+		log::print_info("address size: ", (int)addressSize, "bit (", addressSize_to_string(addressSize), ")");
+		log::print_info("table sizes: ", levelSize[0], " / ", levelSize[1], " / ", levelSize[2], " / ", levelSize[3]);
 
 		kernelMapping.init();
 
@@ -240,31 +240,31 @@ namespace mmu {
 			U64 level3 = ((U64)address&get_level_bitmask(3))>>bit_rightmost_position(get_level_bitmask(3));
 			U64 offset = bits((U64)address,0,bit_rightmost_position(get_level_bitmask(3))-1);
 
-			stdio::print_debug("address = ", address);
+			log::print_debug("address = ", address);
 
-			stdio::print_debug("level0 = ", level0);
-			stdio::print_debug("level1 = ", level1);
-			stdio::print_debug("level2 = ", level2);
-			stdio::print_debug("level3 = ", level3);
-			stdio::print_debug("offset = ", offset);
+			log::print_debug("level0 = ", level0);
+			log::print_debug("level1 = ", level1);
+			log::print_debug("level2 = ", level2);
+			log::print_debug("level3 = ", level3);
+			log::print_debug("offset = ", offset);
 
 			const auto &entry2 = kernelMapping.initialTable[level2];
-			stdio::print_debug("table2 = ", format::Hex64{entry2.data});
+			log::print_debug("table2 = ", format::Hex64{entry2.data});
 
 			if(entry2.isTable){
 				const auto &entry3 = entry2.get_table_address()[level3];
-				stdio::print_debug("table3 = ", format::Hex64{entry3.data});
+				log::print_debug("table3 = ", format::Hex64{entry3.data});
 
 				auto page = entry3.get_block_address(3);
-				stdio::print_debug("page   = ", (U64)page);
-				stdio::print_debug("destination = ", (void*)((U64)page+offset));
-				stdio::print_debug("address     = ", address);
+				log::print_debug("page   = ", (U64)page);
+				log::print_debug("destination = ", (void*)((U64)page+offset));
+				log::print_debug("address     = ", address);
 
 			}else{
 				auto page = entry2.get_block_address(2);
-				stdio::print_debug("page   = ", (U64)page);
-				stdio::print_debug("destination = ", (void*)((U64)page+((U64)address&get_level_bitmask(3))|offset));
-				stdio::print_debug("address     = ", address);
+				log::print_debug("page   = ", (U64)page);
+				log::print_debug("destination = ", (void*)((U64)page+((U64)address&get_level_bitmask(3))|offset));
+				log::print_debug("address     = ", address);
 			}
 
 			// while(true);
@@ -277,7 +277,7 @@ namespace mmu {
 	}
 		
 	void enable() {
-		stdio::Section section("mmu::arch::arm64::enable...");
+		log::Section section("mmu::arch::arm64::enable...");
 
 		U8 tg0GranuleSize; // NOTE: these two don't match in format cos arm is weird
 		U8 tg1GranuleSize;
@@ -322,7 +322,7 @@ namespace mmu {
 		}
 
 		{
-			stdio::Section section("tcr_el1");
+			log::Section section("tcr_el1");
 
 			Tcr tcr_el1;
 			tcr_el1.load_el1();
@@ -351,7 +351,7 @@ namespace mmu {
 		}
 
 		{
-			stdio::Section section("mair_el1");
+			log::Section section("mair_el1");
 
 			Mair mair_el1;
 			mair_el1.load_el1();
@@ -364,7 +364,7 @@ namespace mmu {
 		}
 
 		{
-			stdio::Section section("sctlr_el1");
+			log::Section section("sctlr_el1");
 
 			Sctlr sctlr_el1;
 			sctlr_el1.load_el1();
@@ -386,10 +386,10 @@ namespace mmu {
 	}
 
 	void disable() {
-		stdio::Section section("mmu::arch::arm64::disable...");
+		log::Section section("mmu::arch::arm64::disable...");
 
 		{
-			stdio::Section section("sctlr_el1");
+			log::Section section("sctlr_el1");
 
 			Sctlr sctlr_el1;
 			sctlr_el1.load_el1();
@@ -499,7 +499,7 @@ namespace mmu {
 		// if this becomes a problem
 
 		inline void* _insert(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
-			// stdio::Section section("insert ", pages, ' ', regionType_to_string(regionType), " pages into level ", level, "...");
+			// log::Section section("insert ", pages, ' ', regionType_to_string(regionType), " pages into level ", level, "...");
 
 			void *baseVirtualAddress = nullptr;
 			bool firstAddress = true;
@@ -508,7 +508,7 @@ namespace mmu {
 				auto &entry = table[i];
 
 				if(!entry.isValid){
-					// stdio::print_debug("entry ", i, " is free...");
+					// log::print_debug("entry ", i, " is free...");
 
 					//empty slot
 					const U64 entrySize = level+1>3?1:(U64)levelSize[level+1]*(level+2>3?1:(U64)levelSize[level+2]*(level+3>3?1:(U64)levelSize[level+3]));
@@ -517,9 +517,9 @@ namespace mmu {
 						if(firstAddress){
 							firstAddress = false;
 							baseVirtualAddress = (void*)(i*bit_rightmost(get_level_bitmask(level)));
-							// stdio::print_debug("got base address of ", baseVirtualAddress);
+							// log::print_debug("got base address of ", baseVirtualAddress);
 						}
-						// stdio::print_debug("insert ", pages, " pages into ", entrySize, " slot");
+						// log::print_debug("insert ", pages, " pages into ", entrySize, " slot");
 						entry.set_block(level, address);
 						entry.accessPermission = Stage1TableDescriptor::AccessPermission::kernelReadWrite;
 						switch(regionType){
@@ -554,17 +554,17 @@ namespace mmu {
 								entry.block_executeNever = false;
 							break;
 						}
-						// stdio::print_debug("block ", &entry, " ", format::Hex64{entry.data});
-						// stdio::print_debug("allocating block of ", entrySize, "...");
+						// log::print_debug("block ", &entry, " ", format::Hex64{entry.data});
+						// log::print_debug("allocating block of ", entrySize, "...");
 						pages -= entrySize;
 						address = (void*)((U64)address+entrySize*memory::pageSize);
-						// stdio::print_debug("address is now ", address);
+						// log::print_debug("address is now ", address);
 						if(!pages) return baseVirtualAddress;
 						continue;
 
 					}else{
-						// stdio::print_debug("too big (", entrySize, ')');
-						// stdio::print_debug("allocating a subtable...");
+						// log::print_debug("too big (", entrySize, ')');
+						// log::print_debug("allocating a subtable...");
 
 						//allocate a subtable
 						const auto requiredSize = levelSize[level+1]*sizeof(TableDescriptor);
@@ -576,33 +576,33 @@ namespace mmu {
 					}
 
 				}else if(!entry.isTable||level>=3){
-					// stdio::print_debug("skipping existing block...");
+					// log::print_debug("skipping existing block...");
 
 					//existing block
 					continue;
 
 				}else{
 					//existing table
-					// stdio::print_debug("existing table...");
+					// log::print_debug("existing table...");
 
-					// if(i+1<levelSize[level]&&table[i+1].isValid) stdio::print_debug("skipping existing table, as there's a next one...");
+					// if(i+1<levelSize[level]&&table[i+1].isValid) log::print_debug("skipping existing table, as there's a next one...");
 					if(i+1<levelSize[level]&&table[i+1].isValid) continue; //jump forward if there is a next valid item ahead
 
 					auto subtable = entry.get_table_address();
-					// if(subtable[levelSize[level+1]-1].isValid) stdio::print_debug("skipping existing table, as its child slots are all full...");
+					// if(subtable[levelSize[level+1]-1].isValid) log::print_debug("skipping existing table, as its child slots are all full...");
 					if(subtable[levelSize[level+1]-1].isValid) continue; //jump forward if subtable is filled
 
-					// stdio::print_debug("inserting into existing table...");
+					// log::print_debug("inserting into existing table...");
 				}
 
 				auto virtualAddress = _insert(entry.get_table_address(), level+1, address, pages, regionType, transaction);
 				if(firstAddress){
 					firstAddress = false;
 					baseVirtualAddress = (void*)(i*bit_rightmost(get_level_bitmask(level))|(U64)virtualAddress);
-					// stdio::print_debug("got base address of ", baseVirtualAddress);
+					// log::print_debug("got base address of ", baseVirtualAddress);
 				}
 
-				// if(!pages) stdio::print_debug("all pages added");
+				// if(!pages) log::print_debug("all pages added");
 				if(!pages) return baseVirtualAddress;
 			}
 
@@ -674,11 +674,11 @@ namespace mmu {
 	}
 
 	void* MemoryMapping::add_mapping(void *addressStart, void *addressEnd, RegionType regionType) {
-		stdio::print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
+		log::print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
 
 		const auto pageCount = ((U64)addressEnd-(U64)addressStart+memory::pageSize-1)/memory::pageSize;
 		auto virtualAddress = add_mapping(addressStart, pageCount, regionType);
-		// stdio::print_debug("  = ", virtualAddress);
+		// log::print_debug("  = ", virtualAddress);
 
 		return virtualAddress;
 	}

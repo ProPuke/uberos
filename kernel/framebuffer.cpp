@@ -1,17 +1,18 @@
 #include "framebuffer.hpp"
 
-#include <kernel/driver/Graphics.hpp>
 #include <kernel/device.hpp>
+#include <kernel/driver/Graphics.hpp>
+#include <kernel/log.hpp>
 
 namespace framebuffer {
 	void init() {
-		stdio::Section section("framebuffer::init...");
+		log::Section section("framebuffer::init...");
 
 		{
-			stdio::Section section("Devices:");
+			log::Section section("Devices:");
 
 			for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
-				stdio::print_info(graphics.name);
+				log::print_info(graphics.name);
 			}
 		}
 

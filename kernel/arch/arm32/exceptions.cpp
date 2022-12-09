@@ -2,7 +2,7 @@
 
 #include <common/types.hpp>
 
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 #include <atomic>
 
@@ -12,32 +12,32 @@ namespace exceptions {
 	namespace arch {
 		namespace arm32 {
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_reset() {
-				stdio::print_error("RESET HANDLER");
+				log::print_error("RESET HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_prefetch_abort() {
-				stdio::print_error("PREFETCH ABORT HANDLER");
+				log::print_error("PREFETCH ABORT HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_data_abort() {
-				stdio::print_error("DATA ABORT HANDLER");
+				log::print_error("DATA ABORT HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("UNDEF"))) interrupt_undefined_instruction() {
-				stdio::print_error("UNDEFINED INSTRUCTION HANDLER");
+				log::print_error("UNDEFINED INSTRUCTION HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("SWI"))) interrupt_software_interrupt() {
-				stdio::print_error("SWI HANDLER");
+				log::print_error("SWI HANDLER");
 				while(true);
 			}
 			extern "C" void __attribute__ ((interrupt ("FIQ"))) interrupt_fast_irq() {
-				stdio::print_error("FIQ HANDLER");
+				log::print_error("FIQ HANDLER");
 				while(true);
 			}
 
 			void init() {
-				stdio::Section section("exceptions::arch::arm32::init...");
+				log::Section section("exceptions::arch::arm32::init...");
 
 				install_exception_handlers();
 

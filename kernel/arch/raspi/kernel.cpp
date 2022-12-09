@@ -19,7 +19,7 @@
 #include <kernel/kernel.hpp>
 #include <kernel/mmu.hpp>
 #include <kernel/Spinlock.hpp>
-#include <kernel/stdio.hpp>
+#include <kernel/log.hpp>
 
 extern U8 __end;
 
@@ -116,8 +116,8 @@ namespace kernel {
 						usb::init();
 						timer::init();
 
-						stdio::print_info("interruptController @ ", (void*)&irq::interruptController);
-						stdio::print_info("uart0 @ ", (void*)&::arch::raspi::serial::uart0);
+						log::print_info("interruptController @ ", (void*)&irq::interruptController);
+						log::print_info("uart0 @ ", (void*)&::arch::raspi::serial::uart0);
 
 						U64 CurrentEL;
 						U64 spsel;
@@ -135,12 +135,12 @@ namespace kernel {
 						// asm volatile("msr SPSel, #0\n mov %0, sp" : "=r" (sp_el0));
 						// asm volatile("msr SPSel, #1\n mov %0, sp" : "=r" (sp_el1));
 
-						stdio::print_info("CurrentEL = ", bits(CurrentEL,2,3));
-						stdio::print_info("spsel = ", spsel);
-						stdio::print_info("sp = ", format::Hex64{sp});
-						// stdio::print_info("sp_el0 = ", format::Hex64{sp_el0});
-						// stdio::print_info("sp_el1 = ", format::Hex64{sp_el1});
-						// stdio::print_info("sp_el2 = ", format::Hex64{sp_el2});
+						log::print_info("CurrentEL = ", bits(CurrentEL,2,3));
+						log::print_info("spsel = ", spsel);
+						log::print_info("sp = ", format::Hex64{sp});
+						// log::print_info("sp_el0 = ", format::Hex64{sp_el0});
+						// log::print_info("sp_el1 = ", format::Hex64{sp_el1});
+						// log::print_info("sp_el2 = ", format::Hex64{sp_el2});
 					},
 
 					[] {
