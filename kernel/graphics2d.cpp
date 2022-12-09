@@ -135,17 +135,18 @@ namespace graphics2d {
 					auto endX = rect.x2;
 					auto nextX = startX;
 					for(auto view=views.head; view; view=view->next){
-						if(view->y>y||view->y+(I32)view->buffer.height*(I32)view->scale<=y) continue;
+						Rect viewArea = { view->x, view->y, view->x+(I32)view->buffer.width*(I32)view->scale, view->y+(I32)view->buffer.height*(I32)view->scale };
 
-						if(view->x<=startX){
-							startX = max(startX, view->x+(I32)view->buffer.width*(I32)view->scale);
+						if(viewArea.y1>y||viewArea.y2<=y) continue;
+
+						if(viewArea.x1<=startX){
+							startX = max(startX, viewArea.x2);
 							if(startX>=endX) break;
 
-						}else if(view->x<endX){
-							endX = view->x;
-							nextX = max(nextX, view->x+(I32)view->buffer.width*(I32)view->scale);
+						}else if(viewArea.x1<endX){
+							endX = viewArea.x1;
+							nextX = max(nextX, viewArea.x2);
 						}
-
 					}
 
 					if(endX>startX){
