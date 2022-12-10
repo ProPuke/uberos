@@ -3,6 +3,7 @@
 #include <common/types.hpp>
 
 #include "BufferFormat.hpp"
+#include "Rect.hpp"
 
 namespace graphics2d {
 	struct Font;
@@ -10,6 +11,7 @@ namespace graphics2d {
 	struct DrawTextResult {
 		I32 x, y;
 		I32 maxX;
+		Rect updatedArea;
 	};
 
 	struct Buffer {

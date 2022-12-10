@@ -316,8 +316,8 @@ namespace kernel {
 				buffer.draw_rect(0, 0, width, height, bgColour<<16|bgColour<<8|bgColour);
 
 				auto startTime = timer::now();
-				buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 128*scale, 128*scale, 0x000000);
-				buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 128*scale, 128*scale, 0xdddddd);
+				buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 128*scale, 0x000000);
+				buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 128*scale, 0xdddddd);
 				log.print_debug("blitted in ", timer::now()-startTime);
 
 				auto possibleFramebuffer = framebuffer::get_framebuffer(0);

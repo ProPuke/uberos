@@ -11,6 +11,15 @@ namespace graphics2d {
 			y1 += y;
 			y2 += y;
 		}
+
+		void include(Rect with){
+			x1 = min(x1, with.x1);
+			x2 = max(x2, with.x2);
+			y1 = min(y1, with.y1);
+			y2 = max(y2, with.y2);
+		}
+
+		bool isNonzero() const { return x1||y1||x2||y2; }
 	};
 
 }

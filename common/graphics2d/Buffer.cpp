@@ -5,13 +5,15 @@
 #include <common/maths/Fixed.hpp>
 
 namespace graphics2d {
-	auto Buffer::draw_text(Font &font, const char *text, I32 startX, I32 startY, U32 size, U32 lineheight, U32 colour, I32 cursorX) -> DrawTextResult {
+	auto Buffer::draw_text(Font &font, const char *text, I32 startX, I32 startY, U32 size, U32 colour, U32 lineheight, I32 cursorX) -> DrawTextResult {
 		auto x = FixedI32::whole(cursorX);
 		auto y = FixedI32::whole(startY);
 
-		auto maxX = startX;
+		auto maxX = cursorX;
 
 		auto scale = FixedI32::divide(size, font.size);
+
+		Rect updatedArea = {cursorX,startY, cursorX,startY};
 
 		for(const char *c=text;*c;c++){
 			switch(*c){
@@ -50,6 +52,11 @@ namespace graphics2d {
 						}
 
 						draw_msdf(displayX1, displayY1, displayX2-displayX1, displayY2-displayY1, font.atlas, (I32)character->atlasX-skipLeft, (I32)character->atlasY-skipTop, character->atlasWidth+skipLeft+skipRight, character->atlasHeight+skipTop+skipBottom, colour, skipLeft, skipTop, skipRight, skipBottom);
+
+						updatedArea.x1 = min(updatedArea.x1, displayX1);
+						updatedArea.y1 = min(updatedArea.y1, displayY1);
+						updatedArea.x2 = max(updatedArea.x2, displayX2);
+						updatedArea.y2 = max(updatedArea.y2, displayY2);
 					}
 
 					x += character->advance.cast<I32>()*(I32)font.size*scale;
@@ -61,7 +68,8 @@ namespace graphics2d {
 
 		return {
 			x.round_up(), y.round_up(),
-			maxX
+			maxX,
+			updatedArea,
 		};
 	}
 }
