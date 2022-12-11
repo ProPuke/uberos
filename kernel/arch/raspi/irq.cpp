@@ -27,58 +27,58 @@ namespace irq {
 			extern "C" void handle_interrupt() {
 				asm volatile("" ::: "memory");
 
-				U64 sp;
-				asm volatile("mov %0, sp" : "=r" (sp));
+				// U64 sp;
+				// asm volatile("mov %0, sp" : "=r" (sp));
 
-				// I64 distance = sp-(I64)&interruptController.state;
-				I64 distance = sp-(I64)0x00000000000EE0B0;
+				// // I64 distance = sp-(I64)&interruptController.state;
+				// I64 distance = sp-(I64)0x00000000000EE0B0;
 
-				U64 CurrentEL;
-				U64 spsel;
-				asm volatile("mrs %0, CurrentEL" : "=r" (CurrentEL));
-				asm volatile("mrs %0, SPSel" : "=r" (spsel));
-				switch(bits(CurrentEL,2,3)){
-					case 0:
-						log::print_info("CurrentEL = 0");
-					break;
-					case 1:
-						log::print_info("CurrentEL = 1");
-					break;
-					case 2:
-						log::print_info("CurrentEL = 2");
-					break;
-					case 3:
-						log::print_info("CurrentEL = 3");
-					break;
-					case 4:
-						log::print_info("CurrentEL = 4");
-					break;
-				}
-				log::print_info("spsel = ", spsel?"1":"0");
+				// U64 CurrentEL;
+				// U64 spsel;
+				// asm volatile("mrs %0, CurrentEL" : "=r" (CurrentEL));
+				// asm volatile("mrs %0, SPSel" : "=r" (spsel));
+				// switch(bits(CurrentEL,2,3)){
+				// 	case 0:
+				// 		log::print_info("CurrentEL = 0");
+				// 	break;
+				// 	case 1:
+				// 		log::print_info("CurrentEL = 1");
+				// 	break;
+				// 	case 2:
+				// 		log::print_info("CurrentEL = 2");
+				// 	break;
+				// 	case 3:
+				// 		log::print_info("CurrentEL = 3");
+				// 	break;
+				// 	case 4:
+				// 		log::print_info("CurrentEL = 4");
+				// 	break;
+				// }
+				// log::print_info("spsel = ", spsel?"1":"0");
 
-				log::print_debug(distance>10000?"far1":"near");
-				log::print_debug(distance>1000?"far2":"near");
-				log::print_debug(distance>100?"far3":"near");
-				log::print_debug(distance>10?"far4":"near");
-				log::print_debug(distance<0?"before":"after");
-				log::print_debug(interruptController.state==Driver::State::disabled?"disabled":"?");
-				log::print_debug(interruptController.state==Driver::State::enabled?"enabled":"?");
-				log::print_debug(interruptController.state==Driver::State::restarting?"restarting":"?");
-				log::print_debug(interruptController.state==Driver::State::failed?"failed":"?");
-				log::print_debug((U32)interruptController.state>65536?"high":"low");
-				log::print_debug("irq?");
+				// log::print_debug(distance>10000?"far1":"near");
+				// log::print_debug(distance>1000?"far2":"near");
+				// log::print_debug(distance>100?"far3":"near");
+				// log::print_debug(distance>10?"far4":"near");
+				// log::print_debug(distance<0?"before":"after");
+				// log::print_debug(interruptController.state==Driver::State::disabled?"disabled":"?");
+				// log::print_debug(interruptController.state==Driver::State::enabled?"enabled":"?");
+				// log::print_debug(interruptController.state==Driver::State::restarting?"restarting":"?");
+				// log::print_debug(interruptController.state==Driver::State::failed?"failed":"?");
+				// log::print_debug((U32)interruptController.state>65536?"high":"low");
+				// log::print_debug("irq?");
 
 				// log::print_info("interrupt state = ", interruptController.state);
 
 				if(interruptController.state!=Driver::State::enabled) return;
 
-				log::print_debug("irq??");
+				// log::print_debug("irq??");
 
 				CriticalSection guard;
-				log::print_debug("irq");
+				// log::print_debug("irq");
 
 				interruptController.handle_interrupt([](U32 irq) {
-					log::print_debug("irq ", irq);
+					// log::print_debug("irq ", irq);
 
 					switch((Irq)irq){
 						case Irq::system_timer_0:
