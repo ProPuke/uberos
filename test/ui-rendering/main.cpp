@@ -12,38 +12,53 @@ namespace ui2d {
 	extern graphics2d::Buffer test;
 }
 
-void draw_window(graphics2d::Buffer &buffer, U32 x, U32 y, U32 width, U32 height) {
-	// const auto windowColour = 0xeeeeee;
-	const auto borderColor = 0xcccccc;
+void draw_window(graphics2d::Buffer &buffer, U32 x, U32 y, U32 width, U32 height, bool showStatusbar = false) {
+	const auto windowColour = 0xeeeeee;
+	const auto borderColor = 0xc5c5c5;
 	const auto borderWidth = 1;
+	const auto borderRadius = 4;
 	const auto titleHeight = 29;
 	const auto titleFontSize = 15;
-	// const auto titleColour = 0xffffff;
-	const auto titleTextColour = 0x222222;
-	// const auto titleAlpha = (U8)0xff;
+	const auto titleColour = 0xf9f9f9;
+	const auto titleTextColour = 0x333333;
+	const auto statusbarHeight = showStatusbar?24:borderRadius+borderWidth*2;
 
-	U32 windowCorners20[20+1];
-	buffer.create_round_corner(20, windowCorners20);
+	U32 windowCorners[borderRadius+1];
+	buffer.create_round_corner(borderRadius, windowCorners);
 
-	U32 windowCorners40[40+1];
-	buffer.create_round_corner(40, windowCorners40);
+	//titlebar
+	buffer.draw_rect(x, y+borderWidth, width, titleHeight, titleColour, windowCorners, windowCorners, nullptr, nullptr);
 
-	buffer.draw_rect_outline(x, y, width, height, borderColor, borderWidth, windowCorners20, windowCorners20, windowCorners20, windowCorners20);
-	// buffer.draw_rect(x+borderWidth, y+borderWidth, width-borderWidth*2, titleHeight, graphics2d::blend_rgb(windowColour, titleColour, titleAlpha), windowCorners20, windowCorners20, nullptr, nullptr);
-	// buffer.draw_text(*graphics2d::font::default_sans, "Test Window", x, y+borderWidth+titleHeight-4, 100, titleTextColour);
-	buffer.draw_text(*graphics2d::font::default_sans, "Test Window", x, y+borderWidth+titleHeight-(titleHeight-(titleFontSize*3/5))/2, titleFontSize, titleTextColour);
-	// buffer.draw_rect(x+borderWidth, y+borderWidth+titleHeight, width-borderWidth*2, height-titleHeight-borderWidth*2, windowColour, nullptr, nullptr, windowCorners20, windowCorners20);
+	//body
+	buffer.draw_rect(x, y+borderWidth+titleHeight+1, width, height-borderWidth*2-titleHeight, windowColour, nullptr, nullptr, windowCorners, windowCorners);
 
-	buffer.draw_rect(200,200, 40,40, borderColor, windowCorners20, windowCorners20, windowCorners20, windowCorners20);
+	//statusbar
+	buffer.draw_rect(x, y+height-borderWidth-statusbarHeight, width, statusbarHeight, titleColour, nullptr, nullptr, windowCorners, windowCorners);
 
-	buffer.draw_rect(350,350, 80,80, borderColor, windowCorners40, windowCorners40, windowCorners40, windowCorners40);
+	//outline
+	buffer.draw_rect_outline(x, y, width, height, borderColor, borderWidth, windowCorners, windowCorners, windowCorners, windowCorners);
 
-	buffer.draw_rect_outline(500,500, 80,80, borderColor, 10, windowCorners40, windowCorners40, windowCorners40, windowCorners40);
+	//title
+	auto titleSize = buffer.measure_text(*graphics2d::font::default_sans, "Test Window", x, y+borderWidth+titleHeight-(titleHeight-(titleFontSize*3/5))/2, titleFontSize);
+	buffer.draw_text(*graphics2d::font::default_sans, "Test Window", x+width/2-(titleSize.maxX-x)/2, y+borderWidth+titleHeight-(titleHeight-(titleFontSize*3/5))/2, titleFontSize, titleTextColour);
+
+	//titlebar bottom border
+	buffer.draw_rect(x+borderWidth, y+borderWidth+titleHeight, width-borderWidth*2, 1, borderColor);
+
+	//statusbar bottom border
+	buffer.draw_rect(x+borderWidth, y+height-borderWidth-statusbarHeight-1, width-borderWidth*2, 1, borderColor);
 }
 
 void draw_text(graphics2d::Buffer &buffer) {
 	auto y = 2;
-	for(U32 size=6;size<256;size+=size>10?size/5:1){
+	U32 size = 6;
+	for(;size<=32;size++){
+		auto nextY = y+size;
+		buffer.draw_text(*graphics2d::font::default_sans, to_string(size), 2, nextY, size, 0xffffff);
+		buffer.draw_text(*graphics2d::font::default_sans, "This is example text", 300, nextY, size, 0xffffff);
+		y = nextY;
+	}
+	for(;size<256;size+=size>10?size/5:1){
 		auto nextY = y+size;
 		buffer.draw_text(*graphics2d::font::default_sans, to_string(size), 2, nextY, size, 0xffffff);
 		buffer.draw_text(*graphics2d::font::default_sans, "This is example text", 300, nextY, size, 0xffffff);
@@ -52,18 +67,15 @@ void draw_text(graphics2d::Buffer &buffer) {
 }
 
 void draw_windows(graphics2d::Buffer &buffer) {
-	buffer.draw_rect(20,20,40,40,0x0000ff);
-	buffer.draw_text(*graphics2d::font::default_sans, "This is example text", 50, 50, 50, 0xffffff);
-
-	draw_window(buffer, 50, 50, 400, 350);
-	draw_window(buffer, 160, 160, 400, 350);
-	draw_window(buffer, 600, 600, 400, 350);
+	draw_window(buffer, 650, 50, 400, 350);
+	draw_window(buffer, 760, 160, 400, 350);
+	draw_window(buffer, 1100, 600, 400, 350);
 
 // buffer.draw_4slice(900, 900, 200, 200, ui2d::test);
 }
 
 void draw(graphics2d::Buffer &buffer) {
-	// draw_text(buffer);
+	draw_text(buffer);
 	draw_windows(buffer);
 }
 
@@ -106,14 +118,14 @@ int main() {
 			}
 		}
 
-		buffer.draw_rect(0,0,buffer.width,buffer.height, 0x000000);
+		buffer.draw_rect(0,0,buffer.width,buffer.height, 0x666666);
 		draw(buffer);
 
 		SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
 		SDL_BlitSurface(surface, nullptr, windowSurface, nullptr);
 		SDL_UpdateWindowSurface(window);
 
-		sleep(1);
+		SDL_Delay(500);
 	}
 
 	SDL_DestroyWindow(window);

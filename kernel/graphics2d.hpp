@@ -46,6 +46,7 @@ namespace graphics2d {
 		U8 scale;
 		Buffer buffer;
 		ViewMode mode;
+		bool isVisible = true;
 
 		struct Handle_thread_deleted:Callback {
 			/**/ Handle_thread_deleted(View &view):Callback(&view){}
@@ -65,6 +66,8 @@ namespace graphics2d {
 	auto create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
 	void move_view_to(View &view, I32 x, I32 y);
 	void raise_view(View &view);
+	void show_view(View &view);
+	void hide_view(View &view);
 	void update_background();
 	void update_background_area(Rect rect);
 	void update_area(Rect rect, View *below = nullptr);
@@ -80,6 +83,8 @@ namespace graphics2d {
 	auto _create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> View*;
 	void _move_view_to(View &view, I32 x, I32 y);
 	void _raise_view(View &view);
+	void _show_view(View &view);
+	void _hide_view(View &view);
 	void _update_background();
 	void _update_background_area(Rect rect);
 	void _update_area(Rect rect, View *below = nullptr);

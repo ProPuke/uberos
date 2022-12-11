@@ -1,5 +1,8 @@
 #pragma once
 
+#include <common/types.hpp>
+#include <common/stdlib.hpp>
+
 namespace graphics2d {
 
 	struct Rect {

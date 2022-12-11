@@ -1,9 +1,27 @@
 #pragma once
 
-#include "types.hpp"
+#include <common/types.hpp>
 
 namespace maths {
 	auto rand() -> U16;
+
+	constexpr F64 pi = 3.14159265358979323846;
+	constexpr F64 tau = pi*2;
+
+	extern "C" F64 cos(F64);
+	extern "C" F64 acos(F64);
+	extern "C" F64 sin(F64);
+	extern "C" F64 asin(F64);
+	extern "C" F64 tan(F64);
+	extern "C" F64 atan(F64);
+	extern "C" F32 cosf(F32);
+	extern "C" F32 acosf(F32);
+	extern "C" F32 sinf(F32);
+	extern "C" F32 asinf(F32);
+	extern "C" F32 tanf(F32);
+	extern "C" F32 atanf(F32);
+	extern "C" F64 sqrt(F64);
+	extern "C" F32 sqrtf(F32);
 
 	template <typename Type>
 	constexpr auto min(Type x, Type y) -> Type { return x<=y?x:y; }

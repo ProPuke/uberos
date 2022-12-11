@@ -1,11 +1,9 @@
 #include "graphics2d.hpp"
 
-#include <common/graphics2d/Font.hpp>
 #include <common/stdlib.hpp>
 
 #include <kernel/framebuffer.hpp>
 #include <kernel/memory.hpp>
-#include <kernel/scheduler.hpp>
 #include <kernel/log.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/mmio.hpp>
@@ -102,6 +100,8 @@ namespace graphics2d {
 
 		for(auto view=views.head; view; view=view->next){
 			if(view==below) break;
+			if(!view->isVisible) continue;
+
 			_update_view_area(*view, {rect.x1-view->x, rect.y1-view->y, rect.x2-view->x, rect.y2-view->y});
 		}
 	}
@@ -112,6 +112,8 @@ namespace graphics2d {
 		_update_background_area({0, 0, (I32)framebuffer.width, (I32)framebuffer.height});
 	}
 
+	#pragma GCC push_options
+	#pragma GCC optimize ("-O3")
 	void _update_background_area(Rect rect) {
 		mmio::PeripheralAccessGuard guard;
 
@@ -135,6 +137,8 @@ namespace graphics2d {
 					auto endX = rect.x2;
 					auto nextX = startX;
 					for(auto view=views.head; view; view=view->next){
+						if(!view->isVisible) continue;
+
 						Rect viewArea = { view->x, view->y, view->x+(I32)view->buffer.width*(I32)view->scale, view->y+(I32)view->buffer.height*(I32)view->scale };
 
 						if(viewArea.y1>y||viewArea.y2<=y) continue;
@@ -183,6 +187,7 @@ namespace graphics2d {
 			}
 		}
 	}
+	#pragma GCC pop_options
 
 	void _move_view_to(View &view, I32 x, I32 y) {
 		if(view.x==x&&view.y==y) return;
@@ -192,12 +197,17 @@ namespace graphics2d {
 
 		view.x = x;
 		view.y = y;
-		_update_view(view);
-		_update_area({oldX, oldY, oldX+(I32)view.buffer.width*(I32)view.scale, oldY+(I32)view.buffer.height*(I32)view.scale}, &view);
+
+		if(view.isVisible){
+			_update_view(view);
+			_update_area({oldX, oldY, oldX+(I32)view.buffer.width*(I32)view.scale, oldY+(I32)view.buffer.height*(I32)view.scale}, &view);
+		}
 	}
 
 	void _raise_view(View &view) {
 		if(!views.contains(view)) return; //if not in the list it's already been recycled ¯\_(ツ)_/¯
+
+		if(!view.next||view.next->layer>view.layer) return; //already topmost
 
 		views.pop(view);
 
@@ -213,12 +223,32 @@ namespace graphics2d {
 			views.insert_before(*views.head, view);
 			inserted:;
 		}
+
+		_update_view(view); //technically we only need to draw the parts that were previously obscured, oh well..
+	}
+
+	void _show_view(View &view) {
+		if(view.isVisible) return;
+
+		view.isVisible = true;
+
+		_update_view(view);
+	}
+
+	void _hide_view(View &view) {
+		if(!view.isVisible) return;
+
+		view.isVisible = false;
+
+		_update_area({view.x, view.y, view.x+(I32)view.buffer.width*(I32)view.scale, view.y+(I32)view.buffer.height*(I32)view.scale}, &view);
 	}
 
 	template <unsigned scale>
 	void _update_view_area(View &view, Rect rect);
 
 	void _update_view_area(View &view, Rect rect) {
+		if(!view.isVisible) return;
+		
 		switch(view.scale){
 			case 1: _update_view_area<1>(view, rect); break;
 			case 2: _update_view_area<2>(view, rect); break;
@@ -227,6 +257,8 @@ namespace graphics2d {
 		}
 	}
 
+	#pragma GCC push_options
+	#pragma GCC optimize ("-O3")
 	template <unsigned scale>
 	void _update_view_area(View &view, Rect rect) {
 		//TODO: do not occlude against transparent views, and after loop, continue forward through each transparent view, updating them over the same local rect
@@ -246,6 +278,8 @@ namespace graphics2d {
 					auto endX = rect.x2;
 					auto nextX = startX;
 					for(auto viewAbove=view.next; viewAbove; viewAbove=viewAbove->next){
+						if(!viewAbove->isVisible) continue;
+
 						Rect aboveArea = { viewAbove->x, viewAbove->y, viewAbove->x+(I32)viewAbove->buffer.width*(I32)viewAbove->scale, viewAbove->y+(I32)viewAbove->buffer.height*(I32)viewAbove->scale };
 						aboveArea.offset(-view.x, -view.y);
 
@@ -308,6 +342,7 @@ namespace graphics2d {
 			}
 		}
 	}
+	#pragma GCC pop_options
 
 	Buffer _get_screen_buffer(U32 framebuffer_id, Rect rect) {
 		auto possibleFramebuffer = framebuffer::get_framebuffer(framebuffer_id);
@@ -368,6 +403,18 @@ namespace graphics2d {
 		Spinlock_Guard guard(spinlock);
 
 		return _raise_view(view);
+	}
+
+	void show_view(View &view) {
+		Spinlock_Guard guard(spinlock);
+
+		return _show_view(view);
+	}
+
+	void hide_view(View &view) {
+		Spinlock_Guard guard(spinlock);
+
+		return _hide_view(view);
 	}
 
 	void update_view_area(View &view, Rect rect) {

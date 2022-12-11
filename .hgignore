@@ -3,6 +3,7 @@ build
 *.o
 node_modules
 kernel/.kernelSymbols.c
+test/ui-rendering/test
 
 syntax: regexp
 ^tools/

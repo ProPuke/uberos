@@ -20,6 +20,7 @@
 #include <kernel/log.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/timer.hpp>
+#include <kernel/utils/logWindow.hpp>
 
 using namespace maths;
 
@@ -76,6 +77,8 @@ namespace kernel {
 
 			graphics2d::init();
 
+			utils::logWindow::install();
+
 			{ log::Section section("device summary");
 
 				log::print_info("cpu arch: ", info::cpu_arch);
@@ -103,6 +106,8 @@ namespace kernel {
 		}
 
 		if(postinit) postinit();
+
+		utils::logWindow::hide();
 
 		#ifdef MEMORY_CHECKS
 			debug_llist(memory::kernelHeap.availableBlocks, "availableBlocks 1");

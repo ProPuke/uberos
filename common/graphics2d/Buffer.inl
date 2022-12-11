@@ -178,34 +178,102 @@ namespace graphics2d {
 		;
 	}
 
-	inline void Buffer::draw_rect(U32 startX, U32 startY, U32 width, U32 height, U32 colour) {
-		for(U32 y=0;y<height;y++) for(U32 x=0;x<width;x++) {
-			set(startX+x, startY+y, colour);
+	inline void Buffer::draw_rect(U32 startX, U32 startY, U32 width, U32 height, U32 colour, U32 topLeftCorners[], U32 topRightCorners[], U32 bottomLeftCorners[], U32 bottomRightCorners[]) {
+		U32 topLeftRadius = 0; if(topLeftCorners) while(topLeftRadius[topLeftCorners]!=~0u) topLeftRadius++;
+		U32 topRightRadius = 0; if(topRightCorners) while(topRightRadius[topRightCorners]!=~0u) topRightRadius++;
+		U32 bottomLeftRadius = 0; if(bottomLeftCorners) while(bottomLeftRadius[bottomLeftCorners]!=~0u) bottomLeftRadius++;
+		U32 bottomRightRadius = 0; if(bottomRightCorners) while(bottomRightRadius[bottomRightCorners]!=~0u) bottomRightRadius++;
+
+		U32 y = 0;
+		for(;y<height;y++){
+			const auto left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			const auto right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+			for(U32 x=left;x<right;x++) {
+				set(startX+x, startY+y, colour);
+			}
 		}
 	}
 
-	inline void Buffer::draw_rect_outline(U32 startX, U32 startY, U32 width, U32 height, U32 colour, U32 borderWidth) {
+	inline void Buffer::draw_rect_outline(U32 startX, U32 startY, U32 width, U32 height, U32 colour, U32 borderWidth, U32 topLeftCorners[], U32 topRightCorners[], U32 bottomLeftCorners[], U32 bottomRightCorners[]) {
+		if(width<1||height<1) return;
+		if(borderWidth<1) return;
+
+		U32 topLeftRadius = 0; if(topLeftCorners) while(topLeftRadius[topLeftCorners]!=~0u) topLeftRadius++;
+		U32 topRightRadius = 0; if(topRightCorners) while(topRightRadius[topRightCorners]!=~0u) topRightRadius++;
+		U32 bottomLeftRadius = 0; if(bottomLeftCorners) while(bottomLeftRadius[bottomLeftCorners]!=~0u) bottomLeftRadius++;
+		U32 bottomRightRadius = 0; if(bottomRightCorners) while(bottomRightRadius[bottomRightCorners]!=~0u) bottomRightRadius++;
+
 		U32 y = 0;
-		
-		for(;y<height&&y<borderWidth;y++) for(U32 x=0;x<width;x++) {
-			set(startX+x, startY+y, colour);
-		}
 
-		for(;y<height-borderWidth;y++){
-			for(U32 x=0;x<borderWidth&&x<width;x++){
+		U32 lastLeft1 = startX;
+		U32 lastLeft2 = startX+width;
+		U32 lastRight1 = lastLeft1;
+		U32 lastRight2 = lastLeft2;
+
+		for(;y<height/2&&y<borderWidth;y++){
+			const auto left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			const auto right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			for(U32 x=left;x<right;x++) {
 				set(startX+x, startY+y, colour);
-				set(startX+width-1-x, startY+y, colour);
 			}
+
+			lastLeft1 = left;
+			lastLeft2 = right;
+			lastRight1 = left;
+			lastRight2 = right;
 		}
 
-		for(;y<height;y++) for(U32 x=0;x<width;x++) {
-			set(startX+x, startY+y, colour);
+		for(;y<height&&y<height-borderWidth;y++){
+			const auto left1 = maths::min(width-1, maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0));
+			const auto left2 = maths::min(width, left1+borderWidth);
+			const auto right2 = (U32)maths::max(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
+			const auto right1 = (U32)maths::max(0, (I32)right2-(I32)borderWidth);
+
+			for(U32 x=maths::min(left1, lastLeft2);x<maths::max(left2, lastLeft1);x++){
+				set(startX+x, startY+y, colour);
+			}
+			
+			for(U32 x=maths::min(right1, lastRight2);x<maths::max(right2, lastRight1);x++){
+				set(startX+x, startY+y, colour);
+			}
+
+			lastLeft1 = left1;
+			lastLeft2 = left2;
+			lastRight1 = right1;
+			lastRight2 = right2;
+		}
+
+		bool topRow = true;
+		for(;y<height;y++){
+			const auto left1 = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			const auto right2 = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			if(topRow){
+				for(U32 x=lastLeft2;x<left1;x++) {
+					set(startX+x, startY-1+y, colour);
+				}
+				for(U32 x=right2;x<lastRight1;x++) {
+					// set(startX+x, startY-1+y, colour);
+					set(startX+x, startY-1+y, colour);
+				}
+				for(U32 x=maths::max(left1, lastLeft2);x<maths::min(right2, lastRight2);x++) {
+					set(startX+x, startY+y, colour);
+				}
+				topRow = false;
+
+			}else{
+				for(U32 x=left1;x<right2;x++) {
+					set(startX+x, startY+y, colour);
+				}
+			}
 		}
 	}
 
 	inline void Buffer::draw_msdf(I32 startX, I32 startY, U32 width, U32 height, Buffer &source, I32 source_x, I32 source_y, U32 source_width, U32 source_height, U32 colour, U32 skipSourceLeft, U32 skipSourceTop, U32 skipSourceRight, U32 skipSourceBottom) {
 		if(width<1||height<1) return;
 
+		//minify by sampling multiple times (looks best when <= halfsize)
 		if(width<=source_width/2&&height<=source_height/2){
 			const auto samplesX = (source_width+source_width/2-1)/width;
 			const auto samplesY = (source_height+source_height/2-1)/height;
@@ -239,6 +307,7 @@ namespace graphics2d {
 				set(startX+x, startY+y, blend_rgb(get(startX+x, startY+y), colour, (U8)coverage));
 			}
 
+		//bilinear filter the msdf (looks best at half size and up, although blurs some letters slightly)
 		}else{
 			const I32 sdfRange = 1;
 			const I32 scale = maths::max(1u, ((width+source_width-1)/source_width + (height+source_height-1)/source_height)/2);
@@ -277,6 +346,49 @@ namespace graphics2d {
 			}
 		}
 	}
+
+	inline void Buffer::draw_buffer_area(I32 destX, I32 destY, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image) {
+		if(destX>=(I32)this->width||destY>=(I32)this->height||destX+width<=0||destY+height<=0) return;
+
+		for(U32 y=maths::max(0, -destX); y<maths::min(maths::min(height, image.height-sourceX), height-destX); y++){
+			for(U32 x=maths::max(0, -destY); x<maths::min(maths::min(width, image.width-sourceY), width-destY); x++){
+				set(destX+x, destY+y, image.get(sourceX+x, sourceY+y));
+			}
+		}
+	}
+
+	inline void Buffer::draw_4slice(I32 startX, I32 startY, U32 width, U32 height, Buffer &image) {
+		if(startX>=(I32)this->width||startY>=(I32)this->height||startX+width<=0||startY+height<=0) return;
+
+		U32 cornerWidth = maths::min(width/2, image.width);
+		U32 cornerHeight = maths::min(height/2, image.height);
+
+		draw_buffer_area(startX, startY, 0, 0, cornerWidth, cornerHeight, image);
+		draw_buffer_area(startX+width-cornerWidth, startY, image.width-cornerWidth, 0, cornerWidth, cornerHeight, image);
+		draw_buffer_area(startX, startY+height-cornerHeight, 0, image.height-cornerHeight, cornerWidth, cornerHeight, image);
+		draw_buffer_area(startX+width-cornerWidth, startY+height-cornerHeight, image.width-cornerWidth, image.height-cornerHeight, cornerWidth, cornerHeight, image);
+
+		for(U32 x=startX+cornerWidth;x<width-cornerWidth;x++){
+			for(U32 y=0;y<cornerHeight;y++){
+				set(x, startY+y, image.get(image.width-1,y));
+			}
+			for(U32 y=cornerHeight;y<height-cornerHeight;y++){
+				set(x, startY+y, image.get(image.width-1,image.height-1));
+			}
+			for(U32 y=0;y<height-cornerHeight+cornerHeight;y++){
+				set(x, startY+height-cornerHeight+y, image.get(image.width-1,cornerHeight+y));
+			}
+		}
+
+		for(U32 y=startY+cornerHeight;y<height-cornerHeight;y++){
+			for(U32 x=0;x<cornerWidth;x++){
+				set(startX+x, y, image.get(x, image.height-1));
+			}
+			for(U32 x=0;x<width-cornerWidth+cornerWidth;x++){
+				set(startX+width-cornerWidth+x, y, image.get(cornerWidth+x, image.height-1));
+			}
+		}
+	}
 	
 	inline void Buffer::scroll(I32 scrollX, I32 scrollY) {
 		if(!scrollX&&!scrollY) return;
@@ -311,6 +423,7 @@ namespace graphics2d {
 				memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
 			}
 		}else{
+			// for(I32 y=height+scrollY-1;y>=0;y--){
 			for(U32 y=0;y<height+scrollY;y++){
 				memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
 			}
@@ -331,5 +444,20 @@ namespace graphics2d {
 			|((U32)(((a&0x00ff00)>> 8)*(255-phase)/255 + ((b&0x00ff00)>> 8)*(0+phase)/255))<< 8
 			|((U32)(((a&0x0000ff)>> 0)*(255-phase)/255 + ((b&0x0000ff)>> 0)*(0+phase)/255))<< 0
 		;
+	}
+
+	inline void Buffer::create_round_corner(U32 radius, U32 corner[]) {
+		for(auto i=0u;i<radius;i++){
+			auto y = radius-i;
+			corner[i] = radius-U32(maths::sqrt(radius*radius-((y*y))));
+		}
+		corner[radius] = -1;
+	}
+
+	inline void Buffer::create_diagonal_corner(U32 radius, U32 corner[]) {
+		for(auto i=0u;i<radius;i++){
+			corner[i] = radius-i;
+		}
+		corner[radius] = -1;
 	}
 }

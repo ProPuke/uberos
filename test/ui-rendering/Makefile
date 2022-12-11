@@ -11,11 +11,11 @@ BUILD ?= debug
 
 CFLAGS   := -Werror -Wall
 CXXFLAGS := -Wall -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions
-LFLAGS   :=
+LFLAGS   := -lm -lSDL2
 
 ifeq ($(BUILD),debug)
-	CFLAGS   := $(CFLAGS) -g -D DEBUG
-	CXXFLAGS := $(CXXFLAGS) -g -D DEBUG
+	CFLAGS   := $(CFLAGS) -g -Og -D DEBUG
+	CXXFLAGS := $(CXXFLAGS) -g -Og -D DEBUG
 
 else ifeq ($(BUILD),release)
 	CFLAGS   := $(CFLAGS) -O2
@@ -30,7 +30,7 @@ LD  := gcc
 all: test
 
 test: Makefile $(OBJS) $(COMMON_OBJS)
-	@$(LD) -o $@ $(LFLAGS) $(OBJS) $(COMMON_OBJS) -lSDL2
+	@$(LD) -o $@ $(LFLAGS) $(OBJS) $(COMMON_OBJS) $(LFLAGS)
 
 %.c.o: %.c Makefile $(HEADERS) $(COMMON_HEADERS)
 	@echo "C    " $<
