@@ -17,6 +17,8 @@
 	https://github.com/valvers/arm-tutorial-rpi
 	https://www.valvers.com/open-software/raspberry-pi/bare-metal-programming-in-c-part-1/
 
+	https://github.com/rust-embedded/rust-raspberrypi-OS-tutorials
+
 # kernel references:
 	https://github.com/xinu-os/xinu/tree/master/system/arch/arm
 
@@ -30,3 +32,14 @@
 	some code samples
 	https://github.com/raspberrypi/firmware/tree/master/hardfp/opt/vc
 	
+
+# stack pointers
+
+	`msr SPSel, #0` Use SP_EL0 for all exception levels
+	`msr SPSel, #1` Use SP_ELx for each exception level
+
+## stackpointer selection
+	see https://developer.arm.com/documentation/ddi0488/d/programmers-model/armv8-architecture-concepts/stack-pointer-selection
+
+	`ELxt` means "use SP_EL0" (thread)
+	`Elxh` means "use SP_ELx" (handler)
