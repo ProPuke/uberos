@@ -4,6 +4,7 @@
 #include <common/format.hpp>
 
 #include <kernel/arch/raspi/memory.hpp>
+#include <kernel/CriticalSection.hpp>
 #include <kernel/debugSymbols.hpp>
 #include <kernel/log.hpp>
 
@@ -277,81 +278,97 @@ namespace exceptions {
 			}
 
 			extern "C" void interrupt_sync_el1t() {
+				CriticalSection::lock();
 				log::print_error("");
 				handle_error("sync_el1t");
 				while(true);
 			}
 			extern "C" void interrupt_irq_el1t() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt irq_el1t");
 				while(true);
 			}
 			extern "C" void interrupt_fiq_el1t() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt fiq_el1t");
 				while(true);
 			}
 			extern "C" void interrupt_error_el1t() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt error_el1t");
 				while(true);
 			}
 			extern "C" void interrupt_sync_el1h() {
+				CriticalSection::lock();
 				log::print_error("");
 				handle_error("sync_el1h");
 				while(true);
 			}
 			extern "C" void interrupt_el1_irq() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt el1_irq");
 				while(true);
 			}
 			extern "C" void interrupt_fiq_el1h() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt fiq_el1h");
 				while(true);
 			}
 			extern "C" void interrupt_error_el1h() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt error_el1h");
 				while(true);
 			}
 			extern "C" void interrupt_sync_el0_64() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt sync_el0_64");
 				while(true);
 			}
 			extern "C" void interrupt_irq_el0_64() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt irq_el0_64");
 				while(true);
 			}
 			extern "C" void interrupt_fiq_el0_64() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt fiq_el0_64");
 				while(true);
 			}
 			extern "C" void interrupt_error_el0_64() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt error_el0_64");
 				while(true);
 			}
 			extern "C" void interrupt_sync_el0_32() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt sync_el0_32");
 				while(true);
 			}
 			extern "C" void interrupt_irq_el0_32() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt irq_el0_32");
 				while(true);
 			}
 			extern "C" void interrupt_fiq_el0_32() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt fiq_el0_32");
 				while(true);
 			}
 			extern "C" void interrupt_error_el0_32() {
+				CriticalSection::lock();
 				log::print_error("");
 				log::print_error("Error: interrupt error_el0_32");
 				while(true);
