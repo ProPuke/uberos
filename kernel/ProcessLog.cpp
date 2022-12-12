@@ -19,7 +19,7 @@ void ProcessLog::print_start(ProcessLogType type) {
 			puts(":    ");
 		break;
 		case ProcessLogType::debug:
-			log::print_info_start();
+			log::print_debug_start();
 			puts(process.name);
 			puts(":DBG ");
 		break;

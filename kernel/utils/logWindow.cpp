@@ -7,17 +7,21 @@
 #include <kernel/console.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/graphics2d.hpp>
+#include <kernel/log.hpp>
+#include <kernel/memory.hpp>
 
 namespace utils {
 	namespace logWindow {
 		namespace {
 			graphics2d::View *view = nullptr;
+			log::Handler *logHandler = nullptr;
 
 			auto fontSize = 16;
 			auto lineHeight = fontSize*5/4;
 			auto leftMargin = 4;
 			auto cursorX = leftMargin;
 			auto cursorY = lineHeight;
+			auto textColour = 0xffffff;
 			auto bgColour = 0x202080;
 
 			graphics2d::Rect dirtyArea;
@@ -30,7 +34,7 @@ namespace utils {
 				}
 
 				auto &buffer = view->buffer;
-				auto textResult = buffer.draw_text(*graphics2d::font::default_sans, text, leftMargin, cursorY, fontSize, 0xffffff, lineHeight, cursorX);
+				auto textResult = buffer.draw_text(*graphics2d::font::default_sans, text, leftMargin, cursorY, fontSize, textColour, lineHeight, cursorX);
 				if(max(cursorY, textResult.updatedArea.y2)>=(I32)buffer.height){
 					auto scroll = lineHeight*8;
 					buffer.scroll(0, -scroll);
@@ -39,7 +43,7 @@ namespace utils {
 
 					//redraw as it was clipped off last time
 					buffer.draw_rect(0, cursorY-lineHeight, buffer.width, buffer.height-(cursorY-lineHeight), bgColour); //clear the old text as well as the bottom first (to avoid bolding from double text drawing) ...
-					textResult = buffer.draw_text(*graphics2d::font::default_sans, text, leftMargin, cursorY, fontSize, 0xffffff, lineHeight, cursorX); //...then redraw the text
+					textResult = buffer.draw_text(*graphics2d::font::default_sans, text, leftMargin, cursorY, fontSize, textColour, lineHeight, cursorX); //...then redraw the text
 					graphics2d::update_view(*view);
 					dirtyArea = {0,0,0,0};
 
@@ -49,11 +53,6 @@ namespace utils {
 					}else{
 						dirtyArea = textResult.updatedArea;
 					}
-
-					// if(textResult.y!=cursorY){
-						graphics2d::update_view_area(*view, dirtyArea);
-						dirtyArea = {0,0,0,0};
-					// }
 				}
 				cursorX = textResult.x;
 				cursorY = textResult.y;
@@ -73,31 +72,39 @@ namespace utils {
 
 			graphics2d::update_view(*view);
 
-			console::bind(nullptr
-				,[](void*, unsigned char c) {
-					switch(c){
-						case '\n':
-							cursorX = 4;
-							cursorY += lineHeight;
+			logHandler = new log::Handler(
+				[](U32 indent, log::PrintType type) {
+					while(indent--) print_text("  ");
+					switch(type){
+						case log::PrintType::info:
+							textColour = 0xffffff;
 						break;
-						default: {
-							char str[2] = {c, '\0'};
-							print_text(str);
-						}
+						case log::PrintType::debug:
+							textColour = 0xffff00;
+						break;
+						case log::PrintType::warning:
+							textColour = 0xff8000;
+						break;
+						case log::PrintType::error:
+							textColour = 0xff0000;
+						break;
 					}
-				}
-				,[](void*) {
-					return (unsigned char)'\0';
-				}
-				,[](void*) {
-					return (unsigned char)'\0';
-				}
-				,[](void*, const char *str) {
+				},
+				[](char c) {
+					char str[2] = {c, '\0'};
 					print_text(str);
+				},
+				[](const char *str) {
+					print_text(str);
+				},
+				[]() {
+					print_text("\n");
+					graphics2d::update_view_area(*view, dirtyArea);
+					dirtyArea = {0,0,0,0};
 				}
-				,nullptr/*[](void*, char *buf, U32 length) {
-				}*/
 			);
+
+			log::install_handler(*logHandler);
 		}
 
 		void show() {

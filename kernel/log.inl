@@ -8,18 +8,33 @@
 
 namespace log {
 	extern U32 indent;
+	extern LList<Handler> handlers;
 
 	template<typename Type>
 	inline void _print(Type x){
-		console::puts(to_string(x));
+		print_inline(to_string(x));
 	}
 	template<> inline void _print(char x){
-		console::putc(x);
+		print_inline(x);
 	}
 	template<> inline void _print(char *x){
-		console::puts(x);
+		print_inline(x);
 	}
 	template<> inline void _print(const char *x){
+		print_inline(x);
+	}
+
+	inline void print_inline(char x){
+		for(auto handler=handlers.head;handler;handler=handler->next){
+			handler->print_inline_char(x);
+		}
+		console::putc(x);
+	}
+	
+	inline void print_inline(const char * x){
+		for(auto handler=handlers.head;handler;handler=handler->next){
+			handler->print_inline_string(x);
+		}
 		console::puts(x);
 	}
 
@@ -29,32 +44,40 @@ namespace log {
 	}
 
 	inline void print_start(PrintType type){
+		for(auto handler=handlers.head;handler;handler=handler->next){
+			handler->print_start(indent, type);
+		}
+
 		for(U32 i=0;i<indent;i++){
-			_print(' ');
-			_print(' ');
-		};
+			console::putc(' ');
+			console::putc(' ');
+		}
 		#if STDIO_COLOUR == 1
 			switch(type){
 				case PrintType::info:
 				break;
 				case PrintType::debug:
-					_print("\x1b[33;1m");
+					console::puts("\x1b[33;1m");
 				break;
 				case PrintType::warning:
-					_print("\x1b[31;1m");
+					console::puts("\x1b[31;1m");
 				break;
 				case PrintType::error:
-					_print("\x1b[30;41;1m");
+					console::puts("\x1b[30;41;1m");
 				break;
 			}
 		#endif
 	}
 
 	inline void print_end() {
+		for(auto handler=handlers.head;handler;handler=handler->next){
+			handler->print_end();
+		}
+
 		#if STDIO_COLOUR == 1
-			_print("\x1b[0m\n");
+			console::puts("\x1b[0m\n");
 		#else
-			_print('\n');
+			console::putc('\n');
 		#endif
 	}
 
