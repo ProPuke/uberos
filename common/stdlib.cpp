@@ -7,26 +7,45 @@
 		if(dest==src) return dest;
 		return memcpy_forwards(dest, src, bytes);
 	}
-#endif
 
-extern "C" void* __attribute__ ((optimize(1))) memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
-	if(dest==src) return dest;
-	return memcpy_forwards(dest, src, bytes);
-}
+	extern "C" void* __attribute__ ((optimize(1))) memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
+		if(dest==src) return dest;
+		return memcpy_forwards(dest, src, bytes);
+	}
 
-extern "C" void* __attribute__ ((optimize(1))) memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
-	char *d = (char*)dest, *s = (char*)src;
-	while(bytes--) *d++ = *s++;
-	return dest;
-}
+	extern "C" void* memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
+		auto d = (char*)dest;
+		auto s = (const char*)src;
 
-extern "C" void* __attribute__ ((optimize(1))) memcpy_backwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
-	char *d = (char*)dest+bytes, *s = (char*)src+bytes;
-	while(bytes--) *d-- = *s--;
-	return dest;
-}
+		if(bytes>=16){
+			if((uintptr_t)s&15==(uintptr_t)d&15){
+				while((uintptr_t)s&15){
+					*d++ = *s++;
+					bytes--;
+				}
+			}
+			while(bytes>=16){
+				*(U128*)d = *(U128*)s;
+				s+=16;
+				d+=16;
+				bytes -= 16;
+			}
+		}
 
-#ifndef USE_STDLIB_ASM
+		while(bytes--) *d++ = *s++;
+
+		return dest;
+	}
+
+	extern "C" void* __attribute__ ((optimize(1))) memcpy_backwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
+		auto d = (char*)dest+bytes;
+		auto s = (const char*)src+bytes;
+
+		while(bytes--) *d-- = *s--;
+
+		return dest;
+	}
+
 	extern "C" void* __attribute__ ((optimize(1))) memmove(void *dest, const void *src, size_t bytes) {
 		if(dest>=src){
 			return memcpy_backwards(dest, src, bytes);
@@ -34,9 +53,7 @@ extern "C" void* __attribute__ ((optimize(1))) memcpy_backwards(void *__restrict
 			return memcpy_forwards(dest, src, bytes);
 		}
 	}
-#endif
 
-#ifndef USE_STDLIB_ASM
 	extern "C" int __attribute__ ((optimize(1))) memcmp(const void *a, const void *b, size_t bytes) {
 		while(bytes--){
 			const auto diff = *((C8*)a)-*((C8*)b);
@@ -50,10 +67,16 @@ extern "C" void* __attribute__ ((optimize(1))) memcpy_backwards(void *__restrict
 	}
 #endif
 
-extern "C" void __attribute__ ((optimize(1))) bzero(void *dest, size_t bytes) {
-	char *d = (char*)dest;
-	while(bytes--) *d++ = 0;
-}
+#ifdef USE_STDLIB_ASM
+	extern "C" void __attribute__ ((optimize(1))) bzero(void *dest, size_t bytes) {
+		memset(dest, 0, bytes);
+	}
+#else
+	extern "C" void __attribute__ ((optimize(1))) bzero(void *dest, size_t bytes) {
+		char *d = (char*)dest;
+		while(bytes--) *d++ = 0;
+	}
+#endif
 
 #ifndef USE_STDLIB_ASM
 	extern "C" size_t __attribute__ ((optimize(1))) strlen(const C8 *str) {
@@ -80,9 +103,7 @@ extern "C" char* __attribute__ ((optimize(1))) strcat(char *destination, const c
 		*x = '\0';
 		return destination;
 	}
-#endif
 
-#ifndef USE_STDLIB_ASM
 	extern "C" int __attribute__ ((optimize(1))) strcmp(const char* str1, const char* str2) {
 		while(*str1&&*str2){
 			int diff = *str1-*str2;

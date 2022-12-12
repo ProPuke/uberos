@@ -10,12 +10,16 @@
 #include <kernel/Spinlock.hpp>
 #include <kernel/log.hpp>
 
-extern "C" void memset(U8 *address, U8 value, unsigned int size) {
-	#ifdef MEMORY_CHECKS
-		log::print_debug("memset ", format::Hex64{address}, size, "\n");
-	#endif
-	while(--size) *address++ = value;
-}
+#ifndef USE_STDLIB_ASM
+	extern "C" auto memset(void *dest, int value, size_t size) -> void* {
+		#ifdef MEMORY_CHECKS
+			log::print_debug("memset ", format::Hex64{dest}, size, "\n");
+		#endif
+		auto d = (char*)dest;
+		while(--size) *d++ = value;
+		return dest;
+	}
+#endif
 
 namespace memory {
 	U64 totalMemory = 0;

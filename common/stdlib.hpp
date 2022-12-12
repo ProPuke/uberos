@@ -5,11 +5,14 @@
 #include "stdlib.h"
 
 extern "C" auto memcpy(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-extern "C" auto memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-extern "C" auto memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-extern "C" auto memcpy_backwards(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
+#ifndef USE_STDLIB_ASM
+	extern "C" auto memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
+	extern "C" auto memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
+	extern "C" auto memcpy_backwards(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
+#endif
 extern "C" auto memmove(void *dest, const void *src, size_t bytes) -> void*;
-extern "C" auto memcmp(const void *a, const void *b, size_t length) -> int;
+extern "C" auto memcmp(const void *a, const void *b, size_t bytes) -> int;
+extern "C" auto memset(void *dest, int value, size_t bytes) -> void*;
 
 extern "C" auto bzero(void *dest, size_t bytes) -> void;
 

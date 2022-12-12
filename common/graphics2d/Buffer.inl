@@ -410,22 +410,38 @@ namespace graphics2d {
 		if(scrollY==0){
 			if(scrollX>0){
 				for(U32 y=0;y<height+scrollY;y++){
-					memcpy_backwards(&address[y*stride+x1], &address[y*stride+x2], width);
+					#ifdef USE_STDLIB_ASM
+						memmove(&address[y*stride+x1], &address[y*stride+x2], width);
+					#else
+						memcpy_backwards(&address[y*stride+x1], &address[y*stride+x2], width);
+					#endif
 				}
 			}else{
 				for(U32 y=0;y<height+scrollY;y++){
-					memcpy_forwards(&address[y*stride+x1], &address[y*stride+x2], width);
+					#ifdef USE_STDLIB_ASM
+						memmove(&address[y*stride+x1], &address[y*stride+x2], width);
+					#else
+						memcpy_forwards(&address[y*stride+x1], &address[y*stride+x2], width);
+					#endif
 				}
 			}
 
 		}else if(scrollY>0){
 			for(U32 y=height-1;y>(U32)scrollY;y--){
-				memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+				#ifdef USE_STDLIB_ASM
+					memmove(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+				#else
+					memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+				#endif
 			}
 		}else{
 			// for(I32 y=height+scrollY-1;y>=0;y--){
 			for(U32 y=0;y<height+scrollY;y++){
-				memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+				#ifdef USE_STDLIB_ASM
+					memmove(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+				#else
+					memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+				#endif
 			}
 		}
 	}
