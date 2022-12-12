@@ -78,18 +78,24 @@ namespace graphics2d {
 
 	inline void Buffer::set_rgba8(U32 x, U32 y, U32 colour) {
 		auto offset = (y*width+x)*4;
-		address[offset+0] = (colour&0x00ff0000)>>16;
-		address[offset+1] = (colour&0x0000ff00)>> 8;
-		address[offset+2] = (colour&0x000000ff)>> 0;
-		address[offset+3] = (colour&0xff000000)>>24;
+
+		*(U32*)&address[offset] = 0
+			|((colour&0x00ff0000)>>16)<< 0
+			|((colour&0x0000ff00)>> 8)<< 8
+			|((colour&0x000000ff)>> 0)<<16
+			|((colour&0xff000000)>>24)<<24
+		;
 	}
 
 	inline void Buffer::set_bgra8(U32 x, U32 y, U32 colour) {
 		auto offset = (y*width+x)*4;
-		address[offset+0] = (colour&0x000000ff)>> 0;
-		address[offset+1] = (colour&0x0000ff00)>> 8;
-		address[offset+2] = (colour&0x00ff0000)>>16;
-		address[offset+3] = (colour&0xff000000)>>24;
+
+		*(U32*)&address[offset] = 0
+			|((colour&0x000000ff)>> 0)<< 0
+			|((colour&0x0000ff00)>> 8)<< 8
+			|((colour&0x00ff0000)>>16)<<16
+			|((colour&0xff000000)>>24)<<24
+		;
 	}
 
 	inline U32 Buffer::get(I32 x, I32 y) {
