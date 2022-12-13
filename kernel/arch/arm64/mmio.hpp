@@ -6,6 +6,8 @@
 namespace mmio {
 	void barrier();
 
+	//TODO:periperal bus spinlock to stop other cores jumping into different peripherals at the same time
+
 	struct PeripheralAccessGuard {
 		/**/ PeripheralAccessGuard(){ CriticalSection::lock(); barrier(); };
 		/**/~PeripheralAccessGuard(){ barrier(); CriticalSection::unlock(); };
