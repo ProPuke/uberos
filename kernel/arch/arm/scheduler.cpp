@@ -79,7 +79,6 @@ namespace scheduler {
 				// 	}
 				// 	log::print_debug("tested test spinlock");
 				// }
-				timer::set_timer(timer::Timer::cpu_scheduler, 1000000);
 
 				{
 					I64 distance = sp-(I64)&irq::arch::raspi::interruptController.state;
