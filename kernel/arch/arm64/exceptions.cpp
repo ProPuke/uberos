@@ -10,7 +10,7 @@
 
 extern "C" void install_exception_handlers();
 
-struct __attribute__((packed)) Registers {
+struct Registers {
 	U64 x[29];
 	U64 fp;
 	U64 lr;
@@ -187,14 +187,14 @@ namespace exceptions {
 						U32 *to = (size_t)(void*)current<SIZE_MAX-(1+10)*sizeof(U32)?current+10+1:((U32*)SIZE_MAX)-1;
 
 						for(U32 *i=from; i<current; i++){
-							log::print_error("Error:     ", format::Hex64{i}, " : ", disassemble::arm64::to_string(*i, (U64)(void*)i));
+							log::print_error("Error:     ", format::Hex64{i}, " : ", (uintptr_t)i%4?"UNALIGNED":disassemble::arm64::to_string(*i, (U64)(void*)i));
 						}
 						{
 							U32 *i = current;
-							log::print_error("Error:   > ", format::Hex64{i}, " : ", disassemble::arm64::to_string(*current, (U64)(void*)i));
+							log::print_error("Error:   > ", format::Hex64{i}, " : ", (uintptr_t)current%4?"UNALIGNED":disassemble::arm64::to_string(*current, (U64)(void*)i));
 						}
 						for(U32 *i=current+1; i<to; i++){
-							log::print_error("Error:     ", format::Hex64{i}, " : ", disassemble::arm64::to_string(*i, (U64)(void*)i));
+							log::print_error("Error:     ", format::Hex64{i}, " : ", (uintptr_t)i%4?"UNALIGNED":disassemble::arm64::to_string(*i, (U64)(void*)i));
 						}
 
 					}else{
@@ -209,7 +209,11 @@ namespace exceptions {
 						unsigned x = 0;
 						for(U32 *data = from;data<to;data++){
 							if(false){
-								log::print_inline(format::Hex32{(*data)});
+								if((uintptr_t)data&0x4){
+									log::print_inline("UNALIGNED");
+								}else{
+									log::print_inline(format::Hex32{(*data)});
+								}
 								x += 8;
 								if(x>=120){
 									log::print_end();
@@ -262,6 +266,12 @@ namespace exceptions {
 
 						sp = fp + 0x10;
 						fp = *(U32*)fp;
+
+						if(fp&0xf){
+							log::print_error("Error:     - Non-aligned fp");
+							break;
+						}
+
 						pc = *(U32*)(fp+8);
 
 						auto symbol = debugSymbols::get_symbol_by_address((void*)pc);
