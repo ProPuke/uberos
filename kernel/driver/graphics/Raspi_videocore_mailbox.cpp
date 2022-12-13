@@ -58,9 +58,9 @@ namespace driver {
 			detect_default_mode();
 
 			#if true
-				set_mode(0, 1280, 720, graphics2d::BufferFormat::rgb8);
+				set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8);
 			#else
-				set_mode(0, default_resolution[0], default_resolution[1], graphics2d::BufferFormat::rgb8);
+				set_mode(0, default_resolution[0], default_resolution[1], graphics2d::BufferFormat::rgba8);
 			#endif
 
 			state = State::enabled;
