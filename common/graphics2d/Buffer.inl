@@ -505,7 +505,7 @@ namespace graphics2d {
 				#ifdef USE_STDLIB_ASM
 					memmove(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
 				#else
-					memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+					memcpy(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
 				#endif
 			}
 		}else{
@@ -514,7 +514,7 @@ namespace graphics2d {
 				#ifdef USE_STDLIB_ASM
 					memmove(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
 				#else
-					memcpy_forwards(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
+					memcpy(&address[y*stride+x1], &address[(y-scrollY)*stride+x2], stride);
 				#endif
 			}
 		}
