@@ -17,12 +17,10 @@
 		auto d = (char*)dest;
 		auto s = (const char*)src;
 
-		if(bytes>=16){
-			if((uintptr_t)s&15==(uintptr_t)d&15){
-				while((uintptr_t)s&15){
-					*d++ = *s++;
-					bytes--;
-				}
+		if(bytes>=16&&(uintptr_t)s&15==(uintptr_t)d&15){
+			while((uintptr_t)s&15){
+				*d++ = *s++;
+				bytes--;
 			}
 			while(bytes>=16){
 				*(U128*)d = *(U128*)s;
