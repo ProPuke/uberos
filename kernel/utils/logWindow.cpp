@@ -66,7 +66,7 @@ namespace utils {
 
 			auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
 
-			view = graphics2d::create_view(nullptr, graphics2d::ViewLayer::topMost, margin, margin, min(1300u, framebuffer.width-margin*2), min(800u, framebuffer.height-margin*2));
+			view = graphics2d::create_view(nullptr, graphics2d::ViewLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), min(800u, framebuffer.buffer.height-margin*2));
 
 			view->buffer.draw_rect(0, 0, view->buffer.width, view->buffer.height, bgColour);
 
