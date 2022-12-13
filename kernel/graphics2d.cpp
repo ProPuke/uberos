@@ -36,7 +36,7 @@ namespace graphics2d {
 		#endif
 
 		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
-		auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
+		auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
 
 		#ifdef DEBUG_MEMORY
 			log::print("new U8 ", width, "x", height, "@", bpp, "\n");
@@ -52,7 +52,7 @@ namespace graphics2d {
 
 		bzero(buffer, width*height*bpp);
 
-		auto view = new View(thread, buffer, layer, width*height*bpp, framebuffer.format, framebuffer.order, x, y, width, height, scale);
+		auto view = new View(thread, buffer, layer, width*height*bpp, framebuffer.buffer.format, framebuffer.buffer.order, x, y, width, height, scale);
 		if(!view) return nullptr;
 
 		if(views.size<1){
@@ -90,6 +90,7 @@ namespace graphics2d {
 			thread->on_deleted.pop(handle_thread_deleted);
 		}
 		delete buffer.address;
+		buffer.address = nullptr;
 		views.pop(*this);
 
 		_update_area(area);
@@ -109,24 +110,24 @@ namespace graphics2d {
 	void _update_background() {
 		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME:handle 0 framebuffers
 
-		_update_background_area({0, 0, (I32)framebuffer.width, (I32)framebuffer.height});
+		_update_background_area({0, 0, (I32)framebuffer.buffer.width, (I32)framebuffer.buffer.height});
 	}
 
 	#pragma GCC push_options
 	#pragma GCC optimize ("-O3")
 	void _update_background_area(Rect rect) {
-		mmio::PeripheralAccessGuard guard;
+		mmio::PeripheralWriteGuard guard;
 
 		// log::print_info("update background area");
 
 		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 			auto &framebuffer = *framebuffer::get_framebuffer(i);
-			// auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
+			// auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
 
 			rect.x1 = max<I32>(rect.x1, 0);
 			rect.y1 = max<I32>(rect.y1, 0);
-			rect.x2 = min<I32>(rect.x2, framebuffer.width);
-			rect.y2 = min<I32>(rect.y2, framebuffer.height);
+			rect.x2 = min<I32>(rect.x2, framebuffer.buffer.width);
+			rect.y2 = min<I32>(rect.y2, framebuffer.buffer.height);
 
 			// log::print_info("paint background ", rect.y1, " to ", rect.y2);
 
@@ -164,12 +165,17 @@ namespace graphics2d {
 							I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
 							framebuffer.set(x, y, r<<16|g<<8|b);
 						}
-						for(;x<min(endX,(I32)framebuffer.width-(I32)edge);x++) {
-							const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
-							framebuffer.set(x, y, colour);
+						{
+							auto right = min(endX,(I32)framebuffer.buffer.width-(I32)edge);
+							while(x<right){
+								const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
+								auto next = min(((x/30)+1)*30, right);
+								framebuffer.set(x, y, colour, next-x);
+								x = next;
+							}
 						}
 						for(;x<endX;x++) {
-							const U32 fade = edge-(framebuffer.width-x);
+							const U32 fade = edge-(framebuffer.buffer.width-x);
 							const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
 							I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
 							I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
@@ -261,16 +267,18 @@ namespace graphics2d {
 	#pragma GCC optimize ("-O3")
 	template <unsigned scale>
 	void _update_view_area(View &view, Rect rect) {
+		mmio::PeripheralAccessGuard guard;
+
 		//TODO: do not occlude against transparent views, and after loop, continue forward through each transparent view, updating them over the same local rect
 		
 		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 			auto &framebuffer = *framebuffer::get_framebuffer(i);
-			auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
+			auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
 
 			rect.x1 = max<I32>(rect.x1, max<I32>(0, -view.x));
 			rect.y1 = max<I32>(rect.y1, max<I32>(0, -view.y));
-			rect.x2 = min<I32>(rect.x2, min<I32>(view.buffer.width*(I32)view.scale, ((I32)framebuffer.width)-view.x));
-			rect.y2 = min<I32>(rect.y2, min<I32>(view.buffer.height*(I32)view.scale, ((I32)framebuffer.height)-view.y));
+			rect.x2 = min<I32>(rect.x2, min<I32>(view.buffer.width*(I32)view.scale, ((I32)framebuffer.buffer.width)-view.x));
+			rect.y2 = min<I32>(rect.y2, min<I32>(view.buffer.height*(I32)view.scale, ((I32)framebuffer.buffer.height)-view.y));
 
 			for(auto y=rect.y1; y<rect.y2; y++){
 				auto startX = rect.x1;
@@ -298,7 +306,7 @@ namespace graphics2d {
 
 					if(endX>startX){
 
-						// U8 *target = &framebuffer.address[((view.y+y)*framebuffer.width+view.x+startX)*bpp];
+						// U8 *target = &framebuffer.buffer.address[((view.y+y)*framebuffer.buffer.width+view.x+startX)*bpp];
 						// U8 *source = &view.buffer.address[((y/scale)*view.buffer.width+startX/scale)*bpp];
 						// U32 length = (endX-startX)*bpp;
 						// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
@@ -308,7 +316,7 @@ namespace graphics2d {
 						// memcpy_aligned(target, source, length);
 
 						if(scale==1){
-							U8 *target = &framebuffer.address[((view.y+y)*framebuffer.width+view.x+startX)*bpp];
+							U8 *target = &framebuffer.buffer.address[((view.y+y)*framebuffer.buffer.width+view.x+startX)*bpp];
 							U8 *source = &view.buffer.address[(y*view.buffer.width+startX)*bpp];
 							U32 length = (endX-startX)*bpp;
 
@@ -318,7 +326,7 @@ namespace graphics2d {
 							memcpy(target, source, length);
 
 						}else{
-							U8 *target = &framebuffer.address[((view.y+y)*framebuffer.width+view.x+startX)*bpp];
+							U8 *target = &framebuffer.buffer.address[((view.y+y)*framebuffer.buffer.width+view.x+startX)*bpp];
 							U8 *source = &view.buffer.address[((y/scale)*view.buffer.width)*bpp];
 
 							for(I32 x=startX;x<endX;x++){
@@ -347,8 +355,8 @@ namespace graphics2d {
 	Buffer _get_screen_buffer(U32 framebuffer_id, Rect rect) {
 		auto possibleFramebuffer = framebuffer::get_framebuffer(framebuffer_id);
 		const auto &framebuffer = *possibleFramebuffer; //FIXME: handle invalid framebuffer
-		const auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.format];
-		return Buffer(framebuffer.address, framebuffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.format, framebuffer.order);
+		const auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
+		return Buffer(framebuffer.buffer.address, framebuffer.buffer.size, (rect.x2-rect.x1)*bpp , rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.buffer.format, framebuffer.buffer.order);
 	}
 
 	void set_background_colour(U32 colour) {

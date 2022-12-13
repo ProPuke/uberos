@@ -106,8 +106,8 @@ namespace driver {
 
 			auto assignBitdepth = tags[2].data.bitsPerPixel;
 
-			framebuffer.width = tags[1].data.screenSize.width;
-			framebuffer.height = tags[1].data.screenSize.height;
+			framebuffer.buffer.width = tags[1].data.screenSize.width;
+			framebuffer.buffer.height = tags[1].data.screenSize.height;
 
 			tags[0].tag = mailbox::PropertyTag::allocate_buffer;
 			tags[0].data.screenSize.width = 0;
@@ -127,10 +127,10 @@ namespace driver {
 				}
 				
 				if(!acceptSuggestion){
-					if(framebuffer.width==width&&framebuffer.height==height){
+					if(framebuffer.buffer.width==width&&framebuffer.buffer.height==height){
 						log::print_warning("a ", bitdepth, " bit buffer was suggested, instead");
 					}else{
-						log::print_warning("a ", framebuffer.width, "x", framebuffer.height, " ", bitdepth, " bit buffer was suggested, instead");
+						log::print_warning("a ", framebuffer.buffer.width, "x", framebuffer.buffer.height, " ", bitdepth, " bit buffer was suggested, instead");
 					}
 
 					return false;
@@ -156,9 +156,10 @@ namespace driver {
 
 			// log::print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
 
-			framebuffer.address = (U8*)(size_t)(tags[0].data.allocate_res.fb_addr&0x3FFFFFFF);
-			framebuffer.size = tags[0].data.allocate_res.fb_size;
-			framebuffer.format = format;
+			framebuffer.buffer.stride = framebuffer.buffer.width*bitdepth;
+			framebuffer.buffer.address = (U8*)(size_t)(tags[0].data.allocate_res.fb_addr&0x3FFFFFFF);
+			framebuffer.buffer.size = tags[0].data.allocate_res.fb_size;
+			framebuffer.buffer.format = format;
 
 			tags[0].tag = mailbox::PropertyTag::get_bytes_per_row;
 			tags[1].tag = mailbox::PropertyTag::null_tag;
@@ -181,26 +182,26 @@ namespace driver {
 
 			switch(pixelOrder){
 				case mailbox::PropertyMessage::Data::PixelOrder::rgb:
-					framebuffer.order = graphics2d::BufferFormatOrder::rgb;
+					framebuffer.buffer.order = graphics2d::BufferFormatOrder::rgb;
 				break;
 				case mailbox::PropertyMessage::Data::PixelOrder::bgr:
-					framebuffer.order = graphics2d::BufferFormatOrder::bgr;
+					framebuffer.buffer.order = graphics2d::BufferFormatOrder::bgr;
 				break;
 			}
 
-			if(pitch!=framebuffer.width*bitdepth/8){
+			if(pitch!=framebuffer.buffer.width*bitdepth/8){
 				log::print_error("Error: Custom pitch of ", tags[0].data.bytesPerRow, " required for framebuffer. This is not supported");
 				return false;
 			}
 
-			if(framebuffer.width!=width||framebuffer.height!=height){
+			if(framebuffer.buffer.width!=width||framebuffer.buffer.height!=height){
 				log::print_warning("Warning: Unable to allocate framebuffer of resolution ", width, "x", height);
 
 				if(!acceptSuggestion){
-					log::print_warning("a resolution of ", framebuffer.width, "x", framebuffer.height, " was suggested, instead");
+					log::print_warning("a resolution of ", framebuffer.buffer.width, "x", framebuffer.buffer.height, " was suggested, instead");
 					return false;
 				}
-				log::print_info("accepting a resolution of ", framebuffer.width, "x", framebuffer.height);
+				log::print_info("accepting a resolution of ", framebuffer.buffer.width, "x", framebuffer.buffer.height);
 			}
 
 			switch(bitdepth){

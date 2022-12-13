@@ -6,96 +6,150 @@
 
 namespace graphics2d {
 
-	inline void Buffer::set(I32 x, I32 y, U32 colour) {
+	inline void Buffer::set(I32 x, I32 y, U32 colour, U32 length) {
 		if(x<0||y<0||(U32)x>=width||(U32)y>=height) return;
 
-		return set((U32)x, (U32)y, colour);
+		return set((U32)x, (U32)y, colour, length);
 	}
 
-	inline void Buffer::set(U32 x, U32 y, U32 colour) {
+	inline void Buffer::set(U32 x, U32 y, U32 colour, U32 length) {
 		// return _set(x, y, colour);
 
 		static_assert((int)BufferFormatOrder::max<2);
 		
 		switch((int)format<<1|(int)order){ //the switch is faster ¯\_(ツ)_/¯
 			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::rgb:
-			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgr: return set_grey8(x, y, colour);
-			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::rgb: return set_rgb565(x, y, colour);
-			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgr: return set_bgr565(x, y, colour);
-			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::rgb: return set_rgb8(x, y, colour);
-			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgr: return set_bgr8(x, y, colour);
-			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::rgb: return set_rgba8(x, y, colour);
-			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgr: return set_bgra8(x, y, colour);
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgr: return set_grey8(x, y, colour, length);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::rgb: return set_rgb565(x, y, colour, length);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgr: return set_bgr565(x, y, colour, length);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::rgb: return set_rgb8(x, y, colour, length);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgr: return set_bgr8(x, y, colour, length);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::rgb: return set_rgba8(x, y, colour, length);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgr: return set_bgra8(x, y, colour, length);
 		}
 	}
 
-	inline void Buffer::set_grey8(U32 x, U32 y, U32 colour) {
+	inline void Buffer::set_grey8(U32 x, U32 y, U32 colour, U32 length) {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
-		auto offset = y*width+x;
-		*(U16*)&address[offset] = (0
+		auto data = (U16*)&address[y*width+x];
+		U8 value = (0
 			+ (int)((colour&0x0000ff)>> 0)
 			+ (int)((colour&0x00ff00)>> 8)
 			+ (int)((colour&0xff0000)>>16)
 		) / 3;
+
+		memset(data, value, length);
 	}
 
-	inline void Buffer::set_rgb565(U32 x, U32 y, U32 colour) {
+	inline void Buffer::set_rgb565(U32 x, U32 y, U32 colour, U32 length) {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
-		auto offset = (y*width+x)*2;
-		*(U16*)&address[offset] = 0
+		auto data = (U16*)&address[(y*width+x)*2];
+		U16 value = 0
 			|(((colour&0x0000ff)>> 0)>>3)<< 0
 			|(((colour&0x00ff00)>> 8)>>2)<< 5
 			|(((colour&0xff0000)>>16)>>3)<<11
 		;
+
+		//TODO:optimise
+		while(length--) *data++ = value;
 	}
 
-	inline void Buffer::set_bgr565(U32 x, U32 y, U32 colour) {
+	inline void Buffer::set_bgr565(U32 x, U32 y, U32 colour, U32 length) {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
-		auto offset = (y*width+x)*2;
-		*(U16*)&address[offset] = 0
+		auto data = (U16*)&address[(y*width+x)*2];
+		U16 value = 0
 			|(((colour&0x0000ff)>> 0)>>3)<<11
 			|(((colour&0x00ff00)>> 8)>>2)<< 5
 			|(((colour&0xff0000)>>16)>>3)<< 0
 		;
+
+		//TODO:optimise
+		while(length--) *data++ = value;
 	}
 
-	inline void Buffer::set_rgb8(U32 x, U32 y, U32 colour) {
-		auto offset = (y*width+x)*3;
-		address[offset+0] = (colour&0xff0000)>>16;
-		address[offset+1] = (colour&0x00ff00)>> 8;
-		address[offset+2] = (colour&0x0000ff)>> 0;
+	inline void Buffer::set_rgb8(U32 x, U32 y, U32 colour, U32 length) {
+		auto data = (U8*)&address[(y*width+x)*3];
+
+		//TODO:optimise
+		while(length--){
+			data[0] = (colour&0xff0000)>>16;
+			data[1] = (colour&0x00ff00)>> 8;
+			data[2] = (colour&0x0000ff)>> 0;
+			data += 3;
+		}
 	}
 
-	inline void Buffer::set_bgr8(U32 x, U32 y, U32 colour) {
-		auto offset = (y*width+x)*3;
-		address[offset+0] = (colour&0x0000ff)>> 0;
-		address[offset+1] = (colour&0x00ff00)>> 8;
-		address[offset+2] = (colour&0xff0000)>>16;
+	inline void Buffer::set_bgr8(U32 x, U32 y, U32 colour, U32 length) {
+		auto data = (U8*)&address[(y*width+x)*3];
+
+		//TODO:optimise
+		while(length--){
+			data[0] = (colour&0x0000ff)>> 0;
+			data[1] = (colour&0x00ff00)>> 8;
+			data[2] = (colour&0xff0000)>>16;
+			data += 3;
+		}
 	}
 
-	inline void Buffer::set_rgba8(U32 x, U32 y, U32 colour) {
-		auto offset = (y*width+x)*4;
-
-		*(U32*)&address[offset] = 0
+	inline void Buffer::set_rgba8(U32 x, U32 y, U32 colour, U32 length) {
+		auto data = (U32*)&address[(y*width+x)*4];
+		U32 value = 0
 			|((colour&0x00ff0000)>>16)<< 0
 			|((colour&0x0000ff00)>> 8)<< 8
 			|((colour&0x000000ff)>> 0)<<16
 			|((colour&0xff000000)>>24)<<24
 		;
+
+		if(length>=16/4&&(uintptr_t)address&3==0){
+			while((uintptr_t)address&15){
+				*data++ = value;
+				length--;
+			}
+
+			auto phatValue = (U128)value|(U128)value<<32|(U128)value<<64|(U128)value<<96;
+			auto phatData = (U128*)data;
+
+			while(length>=16/4){
+				*phatData++ = phatValue;
+				length-=16/4;
+			}
+
+			data = (U32*)phatData;
+		}
+
+		while(length--) *data++ = value;
 	}
 
-	inline void Buffer::set_bgra8(U32 x, U32 y, U32 colour) {
-		auto offset = (y*width+x)*4;
-
-		*(U32*)&address[offset] = 0
+	inline void Buffer::set_bgra8(U32 x, U32 y, U32 colour, U32 length) {
+		auto data = (U32*)&address[(y*width+x)*4];
+		U32 value = 0
 			|((colour&0x000000ff)>> 0)<< 0
 			|((colour&0x0000ff00)>> 8)<< 8
 			|((colour&0x00ff0000)>>16)<<16
 			|((colour&0xff000000)>>24)<<24
 		;
+
+		if(length>=16/4&&(uintptr_t)address&3==0){
+			while((uintptr_t)address&15){
+				*data++ = value;
+				length--;
+			}
+
+			auto phatValue = (U128)value|(U128)value<<32|(U128)value<<64|(U128)value<<96;
+			auto phatData = (U128*)data;
+
+			while(length>=16/4){
+				*phatData++ = phatValue;
+				length-=16/4;
+			}
+
+			data = (U32*)phatData;
+		}
+
+		while(length--) *data++ = value;
 	}
 
 	inline U32 Buffer::get(I32 x, I32 y) {
@@ -194,8 +248,8 @@ namespace graphics2d {
 		for(;y<height;y++){
 			const auto left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
 			const auto right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
-			for(U32 x=left;x<right;x++) {
-				set(startX+x, startY+y, colour);
+			if(left<right){
+				set(startX+left, startY+y, colour, right-left);
 			}
 		}
 	}
@@ -220,8 +274,8 @@ namespace graphics2d {
 			const auto left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
 			const auto right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
 
-			for(U32 x=left;x<right;x++) {
-				set(startX+x, startY+y, colour);
+			if(left<right){
+				set(startX+left, startY+y, colour, right-left);
 			}
 
 			lastLeft1 = left;
@@ -236,12 +290,20 @@ namespace graphics2d {
 			const auto right2 = (U32)maths::max(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
 			const auto right1 = (U32)maths::max(0, (I32)right2-(I32)borderWidth);
 
-			for(U32 x=maths::min(left1, lastLeft2);x<maths::max(left2, lastLeft1);x++){
-				set(startX+x, startY+y, colour);
+			{
+				U32 left  = maths::min(left1, lastLeft2);
+				U32 right = maths::max(left2, lastLeft1);
+				if(left<right){
+					set(startX+left, startY+y, colour, right-left);
+				}
 			}
 			
-			for(U32 x=maths::min(right1, lastRight2);x<maths::max(right2, lastRight1);x++){
-				set(startX+x, startY+y, colour);
+			{
+				U32 left  = maths::min(right1, lastRight2);
+				U32 right = maths::max(right2, lastRight1);
+				if(left<right){
+					set(startX+left, startY+y, colour, right-left);
+				}
 			}
 
 			lastLeft1 = left1;
@@ -256,21 +318,27 @@ namespace graphics2d {
 			const auto right2 = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
 
 			if(topRow){
-				for(U32 x=lastLeft2;x<left1;x++) {
-					set(startX+x, startY-1+y, colour);
+				if(lastLeft2<left1){
+					set(startX+left1, startY-1+y, colour, left1-lastLeft2);
 				}
-				for(U32 x=right2;x<lastRight1;x++) {
-					// set(startX+x, startY-1+y, colour);
-					set(startX+x, startY-1+y, colour);
+
+				if(right2<lastRight1){
+					set(startX+lastRight1, startY-1+y, colour, lastRight1-right2);
 				}
-				for(U32 x=maths::max(left1, lastLeft2);x<maths::min(right2, lastRight2);x++) {
-					set(startX+x, startY+y, colour);
+
+				{
+					U32 left = maths::max(left1, lastLeft2);
+					U32 right = maths::min(right2, lastRight2);
+					if(left<right){
+						set(startX+left, startY+y, colour, right-left);
+					}
 				}
+				
 				topRow = false;
 
 			}else{
-				for(U32 x=left1;x<right2;x++) {
-					set(startX+x, startY+y, colour);
+				if(left1<right2){
+					set(startX+left1, startY+y, colour, right2-left1);
 				}
 			}
 		}

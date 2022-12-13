@@ -92,7 +92,7 @@ namespace kernel {
 					for(auto i=0u;i<framebuffer::get_framebuffer_count();i++){
 						auto &framebuffer = *framebuffer::get_framebuffer(i);
 
-						log::print_info(framebuffer.width, 'x', framebuffer.height, ", ", framebuffer.format);
+						log::print_info(framebuffer.buffer.width, 'x', framebuffer.buffer.height, ", ", framebuffer.buffer.format);
 					}
 				}
 
@@ -169,8 +169,8 @@ namespace kernel {
 
 		// 		// graphics2d::update_view(*view);
 
-		// 		if(dirX<0&&view->x+dirX<-30||dirX>0&&view->x+view->buffer.width+dirX>=framebuffer.width+30) dirX *= -1;
-		// 		if(dirY<0&&view->y+dirY<-30||dirY>0&&view->y+view->buffer.height+dirY>=framebuffer.height+30) dirY *= -1;
+		// 		if(dirX<0&&view->x+dirX<-30||dirX>0&&view->x+view->buffer.width+dirX>=framebuffer.buffer.width+30) dirX *= -1;
+		// 		if(dirY<0&&view->y+dirY<-30||dirY>0&&view->y+view->buffer.height+dirY>=framebuffer.buffer.height+30) dirY *= -1;
 
 		// 		graphics2d::move_view_to(*view, view->x+dirX, view->y+dirY);
 
@@ -225,7 +225,7 @@ namespace kernel {
 					(void) height;
 					(void) framebuffer;
 
-					auto view = graphics2d::create_view(thread::currentThread, graphics2d::ViewLayer::regular, rand()%((U32)framebuffer.width-width), rand()%((U32)framebuffer.height-height), width, height, scale);
+					auto view = graphics2d::create_view(thread::currentThread, graphics2d::ViewLayer::regular, rand()%((U32)framebuffer.buffer.width-width), rand()%((U32)framebuffer.buffer.height-height), width, height, scale);
 					if(!view) {
 						log.print_error("Error: didn't get a view");
 						return 0;
@@ -261,11 +261,11 @@ namespace kernel {
 						// I32 deltaX = dirX * 3;
 						// I32 deltaY = dirY * 3;
 
-						if(deltaX<0&&view->x+deltaX<-30||deltaX>0&&view->x+view->buffer.width*view->scale+deltaX>=framebuffer.width+30){
+						if(deltaX<0&&view->x+deltaX<-30||deltaX>0&&view->x+view->buffer.width*view->scale+deltaX>=framebuffer.buffer.width+30){
 							dirX *= -1;
 							deltaX *= -1;
 						}
-						if(deltaY<0&&view->y+deltaY<-30||deltaY>0&&view->y+view->buffer.height*view->scale+deltaY>=framebuffer.height+30){
+						if(deltaY<0&&view->y+deltaY<-30||deltaY>0&&view->y+view->buffer.height*view->scale+deltaY>=framebuffer.buffer.height+30){
 							dirY *= -1;
 							deltaY *= -1;
 						}
@@ -344,7 +344,7 @@ namespace kernel {
 					x -= speed*4;
 
 					if(x+width<1){
-						x = framebuffer.width;
+						x = framebuffer.buffer.width;
 						y = rand()%550-50;
 						// break;
 					}

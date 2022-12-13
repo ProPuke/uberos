@@ -15,6 +15,16 @@ namespace graphics2d {
 	};
 
 	struct Buffer {
+		/**/ Buffer():
+			format(BufferFormat::rgba8),
+			order(BufferFormatOrder::rgb),
+			address(nullptr),
+			size(0),
+			stride(0),
+			width(0),
+			height(0)
+		{}
+		
 		/**/ Buffer(U8 *address, U32 size, U32 stride, U32 width, U32 height, BufferFormat format, BufferFormatOrder order):
 			format(format),
 			order(order),
@@ -32,15 +42,15 @@ namespace graphics2d {
 		U32 stride;
 		U32 width, height;
 
-		void set(I32 x, I32 y, U32 colour);
-		void set(U32 x, U32 y, U32 colour);
-		void set_grey8(U32 x, U32 y, U32 colour);
-		void set_rgb565(U32 x, U32 y, U32 colour);
-		void set_bgr565(U32 x, U32 y, U32 colour);
-		void set_rgb8(U32 x, U32 y, U32 colour);
-		void set_bgr8(U32 x, U32 y, U32 colour);
-		void set_rgba8(U32 x, U32 y, U32 colour);
-		void set_bgra8(U32 x, U32 y, U32 colour);
+		void set(I32 x, I32 y, U32 colour, U32 length = 1);
+		void set(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_grey8(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_rgb565(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_bgr565(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_rgb8(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_bgr8(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_rgba8(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_bgra8(U32 x, U32 y, U32 colour, U32 length = 1);
 
 		auto get(I32 x, I32 y) -> U32;
 		auto get(U32 x, U32 y) -> U32;
