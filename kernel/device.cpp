@@ -169,9 +169,9 @@ namespace device {
 				}else if(speed>=1000000){
 					log::print_info(indent, "   Speed: ", speed/1000000.0, " Mhz");
 				}else if(speed>=1000){
-					log::print_info(indent, "   Speed: ", speed/1000000.0, " Khz");
-				}else if(speed>=1000){
-					log::print_info(indent, "   Speed: ", speed/1000000.0, " Hz");
+					log::print_info(indent, "   Speed: ", speed/1000.0, " Khz");
+				}else{
+					log::print_info(indent, "   Speed: ", speed, " Hz");
 				}
 			}
 			if(temp){
