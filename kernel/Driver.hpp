@@ -36,7 +36,7 @@ struct Driver: LListItem<Driver> {
 	virtual auto can_disable_driver() -> bool { return true; }
 	virtual auto can_restart_driver() -> bool { return true; }
 
-private:
+protected:
 
 	friend auto device::start_device(Driver &device) -> bool;
 	friend auto device::stop_device(Driver &device) -> bool;
