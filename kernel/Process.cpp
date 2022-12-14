@@ -8,10 +8,14 @@
 namespace process {
 	LList<Process> processes;
 
-	auto create_kernel(const char *name, void(*entrypoint)()) -> Process& {
+	auto create_kernel(const char *name, I32(*entrypoint)()) -> Process& {
 		auto &process = *new Process(name, nullptr);
 
 		processes.push_back(process);
+
+		if(entrypoint){
+			process.create_kernel_thread(entrypoint);
+		}
 
 		return process;
 	}

@@ -11,7 +11,7 @@
 struct Process;
 
 namespace process {
-	auto create_kernel(const char *name, void(*entrypoint)()) -> Process&;
+	auto create_kernel(const char *name, I32(*entrypoint)() = nullptr) -> Process&;
 	auto get_count() -> U32;
 }
 

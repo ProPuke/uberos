@@ -178,11 +178,7 @@ namespace kernel {
 		// 	}
 		// });
 
-		auto process = process::create_kernel("lightshow", [](){
-			while(true) {
-				thread::currentThread.load()->sleep(1000);
-			}
-		});
+		auto process = process::create_kernel("lightshow");
 
 		// for(auto i=0;i<2;i++)process.create_kernel_thread([]() {
 		// 	auto &log = thread::currentThread.load()->process.log;
