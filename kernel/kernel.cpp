@@ -252,7 +252,7 @@ namespace kernel {
 						// graphics2d::update_view(*view);
 
 						auto now = timer::now();
-						U32 steps = (U32)(now-lastTime)/pixelTime;
+						U32 steps = (U32)(min(30000u, now-lastTime))/pixelTime;
 						lastTime += steps * pixelTime;
 
 						I32 deltaX = dirX * (I32)steps;
