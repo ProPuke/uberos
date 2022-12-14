@@ -7,6 +7,7 @@
 #include <kernel/Cli.hpp>
 #include <kernel/cpu.hpp>
 #include <kernel/device.hpp>
+#include <kernel/driver/Processor.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/graphics2d.hpp>
@@ -71,6 +72,11 @@ namespace kernel {
 			if(init) init();
 
 			scheduler::init();
+		}
+
+		{ // max out cpu clock
+			auto processor = device::find_first_type<driver::Processor>("processor");
+			processor->set_clock_value(0, processor->get_clock_max(0));
 		}
 
 		{ log::Section section("kernel startup");
