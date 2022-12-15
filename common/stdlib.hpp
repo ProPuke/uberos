@@ -5,11 +5,9 @@
 #include "stdlib.h"
 
 extern "C" auto memcpy(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-#ifndef USE_STDLIB_ASM
-	extern "C" auto memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-	extern "C" auto memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-	extern "C" auto memcpy_backwards(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
-#endif
+extern "C" auto memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
+extern "C" auto memcpy_forwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
+extern "C" auto memcpy_backwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) -> void*;
 extern "C" auto memmove(void *dest, const void *src, size_t bytes) -> void*;
 extern "C" auto memcmp(const void *a, const void *b, size_t bytes) -> int;
 extern "C" auto memset(void *dest, int value, size_t bytes) -> void*;
@@ -139,7 +137,7 @@ void* __attribute__ ((optimize(2))) memory_copy_forwards(void *__restrict dest, 
 	return dest;
 }
 
-// inline void* memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
+// inline void* memcpy_forwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
 // 	return memory_copy_forwards<true>(dest, src, bytes);
 // }
 
@@ -159,8 +157,6 @@ void* __attribute__ ((optimize(2))) memory_copy_forwards(void *__restrict dest, 
 	inline auto to_string_hex_trim(unsigned int i) -> const char* { return to_string_hex_trim((U32)i); }
 #endif
 
-#ifdef USE_STDLIB_ASM
-	#if defined(ARCH_ARM64)
-		#include "arch/arm64/stdlib.hpp"
-	#endif
+#if defined(ARCH_ARM64)
+	#include "arch/arm64/stdlib.hpp"
 #endif

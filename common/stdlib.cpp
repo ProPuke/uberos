@@ -2,57 +2,58 @@
 
 #include <common/maths.hpp>
 
-#ifndef USE_STDLIB_ASM
-	extern "C" void* __attribute__ ((optimize(1))) memcpy(void *__restrict dest, const void *__restrict src, size_t bytes) {
-		if(dest==src) return dest;
-		return memcpy_forwards(dest, src, bytes);
+#ifndef HAS_UNALIGNED_ACCESS
+	extern "C" void* memcpy(void *__restrict dest, const void *__restrict src, size_t bytes) {
+		return memcpy_aligned(dest, src, bytes);
 	}
+#endif
 
-	extern "C" void* __attribute__ ((optimize(1))) memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
-		if(dest==src) return dest;
-		return memcpy_forwards(dest, src, bytes);
-	}
+extern "C" void* memcpy_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
+	if(dest==src) return dest;
+	return memcpy_forwards_aligned(dest, src, bytes);
+}
 
-	extern "C" void* memcpy_forwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
-		auto d = (char*)dest;
-		auto s = (const char*)src;
+extern "C" void* memcpy_forwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
+	auto d = (char*)dest;
+	auto s = (const char*)src;
 
-		if(bytes>=16&&(uintptr_t)s&15==(uintptr_t)d&15){
-			while((uintptr_t)s&15){
-				*d++ = *s++;
-				bytes--;
-			}
-			while(bytes>=16){
-				*(U128*)d = *(U128*)s;
-				s+=16;
-				d+=16;
-				bytes -= 16;
-			}
+	if(bytes>=16&&(uintptr_t)s&15==(uintptr_t)d&15){
+		while((uintptr_t)s&15){
+			*d++ = *s++;
+			bytes--;
 		}
-
-		while(bytes--) *d++ = *s++;
-
-		return dest;
+		while(bytes>=16){
+			*(U128*)d = *(U128*)s;
+			s+=16;
+			d+=16;
+			bytes -= 16;
+		}
 	}
 
-	extern "C" void* __attribute__ ((optimize(1))) memcpy_backwards(void *__restrict dest, const void *__restrict src, size_t bytes) {
-		auto d = (char*)dest+bytes;
-		auto s = (const char*)src+bytes;
+	while(bytes--) *d++ = *s++;
 
-		while(bytes--) *d-- = *s--;
+	return dest;
+}
 
-		return dest;
-	}
+extern "C" void* memcpy_backwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
+	auto d = (char*)dest+bytes;
+	auto s = (const char*)src+bytes;
 
-	extern "C" void* __attribute__ ((optimize(1))) memmove(void *dest, const void *src, size_t bytes) {
+	while(bytes--) *d-- = *s--;
+
+	return dest;
+}
+
+#ifndef HAS_UNALIGNED_ACCESS
+	extern "C" void* memmove(void *dest, const void *src, size_t bytes) {
 		if(dest>=src){
-			return memcpy_backwards(dest, src, bytes);
+			return memcpy_backwards_aligned(dest, src, bytes);
 		}else{
-			return memcpy_forwards(dest, src, bytes);
+			return memcpy_forwards_aligned(dest, src, bytes);
 		}
 	}
 
-	extern "C" int __attribute__ ((optimize(1))) memcmp(const void *a, const void *b, size_t bytes) {
+	extern "C" int memcmp(const void *a, const void *b, size_t bytes) {
 		while(bytes--){
 			const auto diff = *((C8*)a)-*((C8*)b);
 			a = (C8*)a+1;
@@ -65,19 +66,19 @@
 	}
 #endif
 
-#ifdef USE_STDLIB_ASM
-	extern "C" void __attribute__ ((optimize(1))) bzero(void *dest, size_t bytes) {
+#ifdef HAS_UNALIGNED_ACCESS
+	extern "C" void bzero(void *dest, size_t bytes) {
 		memset(dest, 0, bytes);
 	}
 #else
-	extern "C" void __attribute__ ((optimize(1))) bzero(void *dest, size_t bytes) {
+	extern "C" void bzero(void *dest, size_t bytes) {
 		char *d = (char*)dest;
 		while(bytes--) *d++ = 0;
 	}
 #endif
 
-#ifndef USE_STDLIB_ASM
-	extern "C" size_t __attribute__ ((optimize(1))) strlen(const C8 *str) {
+#ifndef HAS_UNALIGNED_ACCESS
+	extern "C" size_t strlen(const C8 *str) {
 		U64 length = 0;
 		while(*str){
 			length++;
@@ -87,13 +88,13 @@
 	}
 #endif
 
-extern "C" char* __attribute__ ((optimize(1))) strcat(char *destination, const char *source) {
+extern "C" char* strcat(char *destination, const char *source) {
 	strcpy(destination+strlen(destination), source);
 	return destination;
 }
 
-#ifndef USE_STDLIB_ASM
-	extern "C" char* __attribute__ ((optimize(1))) strcpy(char *__restrict destination, const char *__restrict source) {
+#ifndef HAS_UNALIGNED_ACCESS
+	extern "C" char* strcpy(char *__restrict destination, const char *__restrict source) {
 		char *x = destination;
 		while(*source){
 			*x++ = *source++;
@@ -102,7 +103,7 @@ extern "C" char* __attribute__ ((optimize(1))) strcat(char *destination, const c
 		return destination;
 	}
 
-	extern "C" int __attribute__ ((optimize(1))) strcmp(const char* str1, const char* str2) {
+	extern "C" int strcmp(const char* str1, const char* str2) {
 		while(*str1&&*str2){
 			int diff = *str1-*str2;
 			if(diff) return diff;

@@ -323,7 +323,7 @@ namespace graphics2d {
 							// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
 							// 	log::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 							// }
-							memcpy(target, source, length);
+							memcpy_aligned(target, source, length);
 
 						}else{
 							U8 *target = &framebuffer.buffer.address[((view.y+y)*framebuffer.buffer.width+view.x+startX)*bpp];

@@ -10,7 +10,7 @@
 #include <kernel/Spinlock.hpp>
 #include <kernel/log.hpp>
 
-#ifndef USE_STDLIB_ASM
+#ifndef HAS_UNALIGNED_ACCESS
 	extern "C" auto memset(void *dest, int value, size_t size) -> void* {
 		#ifdef MEMORY_CHECKS
 			log::print_debug("memset ", format::Hex64{dest}, size, "\n");

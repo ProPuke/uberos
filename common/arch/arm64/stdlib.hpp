@@ -1,6 +1,6 @@
 #include <common/stdlib.h>
 
-#ifdef USE_STDLIB_ASM
+#ifdef HAS_UNALIGNED_ACCESS
 
 	extern "C" {
 

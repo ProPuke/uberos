@@ -1,1 +1,3 @@
-// #define USE_STDLIB_ASM
+#ifdef HAS_MMU
+	#define HAS_UNALIGNED_ACCESS
+#endif

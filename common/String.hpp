@@ -34,7 +34,7 @@ struct String {
 		if(newSize==allocated) return;
 
 		if(newSize==localBufferSize){
-			memcopy(localData, data, length);
+			memcpy(localData, data, length);
 			return;
 		}
 
