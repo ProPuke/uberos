@@ -5,6 +5,7 @@
 #include <common/stdlib.hpp>
 
 #include <kernel/console.hpp>
+#include <kernel/timer.hpp>
 
 namespace log {
 	extern U32 indent;
@@ -48,10 +49,6 @@ namespace log {
 			handler->print_start(indent, type);
 		}
 
-		for(U32 i=0;i<indent;i++){
-			console::putc(' ');
-			console::putc(' ');
-		}
 		#if STDIO_COLOUR == 1
 			switch(type){
 				case PrintType::info:
@@ -67,6 +64,26 @@ namespace log {
 				break;
 			}
 		#endif
+
+		console::putc('[');
+		auto time = timer::now64();
+		auto seconds = time/1000000;
+		auto micros = time-seconds*1000000;
+		auto str = to_string(seconds);
+		console::puts("     "+strlen(str));
+		console::puts(str);
+		console::putc('.');
+
+		str = to_string(micros);
+		console::puts("000000"+strlen(str));
+		console::puts(str);
+		console::putc(']');
+		console::putc(' ');
+
+		for(U32 i=0;i<indent;i++){
+			console::putc(' ');
+			console::putc(' ');
+		}
 	}
 
 	inline void print_end() {
