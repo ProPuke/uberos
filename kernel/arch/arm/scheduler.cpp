@@ -58,50 +58,6 @@ namespace scheduler {
 				log::print_info("controller @ ", (void*)&irq::arch::raspi::interruptController.state);
 				log::print_info("distance = ", sp-(I64)&irq::arch::raspi::interruptController.state);
 
-				// {
-				// 	log::print_debug("creating test spinlock");
-				// 	Spinlock testlock("testlock");
-				// 	Spinlock *testlock2 = (Spinlock*)0xdf000;
-				// 	log::print_debug("spinlock @ ", &testlock);
-				// 	log::print_debug("spinlock2 @ ", testlock2);
-				// 	testlock2->_lock = 0;
-				// 	log::print_debug("testing test spinlock 2");
-				// 	{
-				// 		Spinlock_Guard _guard(*testlock2, "testlock tester", true);
-
-				// 		log::print_debug("mid test 2");
-				// 	}
-				// 	log::print_debug("testing test spinlock 1");
-				// 	{
-				// 		Spinlock_Guard _guard(testlock, "testlock tester", true);
-
-				// 		log::print_debug("mid test 1");
-				// 	}
-				// 	log::print_debug("tested test spinlock");
-				// }
-
-				{
-					I64 distance = sp-(I64)&irq::arch::raspi::interruptController.state;
-
-					log::print_debug("== before ==");
-					log::print_debug(distance>10000?"far1":"near");
-					log::print_debug(distance>1000?"far2":"near");
-					log::print_debug(distance>100?"far3":"near");
-					log::print_debug(distance>10?"far4":"near");
-					log::print_debug(distance<0?"before":"after");
-					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::disabled?"disabled":"?");
-					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::enabled?"enabled":"?");
-					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::restarting?"restarting":"?");
-					log::print_debug(irq::arch::raspi::interruptController.state==Driver::State::failed?"failed":"?");
-					log::print_debug((U32)irq::arch::raspi::interruptController.state>65536?"high":"low");
-					log::print_debug("== /before ==");
-				}
-
-				// while(true);
-
-				// log::print_info("test kmalloc");
-				// memory::kmalloc(123);
-
 				log::print_info("allocating main process...");
 				auto mainProcess = new Process("kernel");
 				auto &kernelStack = memory::Transaction().get_memory_page(&__end);
@@ -244,10 +200,10 @@ namespace scheduler {
 
 	void unlock() {
 		// if(lock_depth.fetch_sub(1)==1){
-		// 	if(deferredYields>0){
-		// 		deferredYields = 0;
-		// 		yield();
-		// 	}
+			if(deferredYields>0){
+				deferredYields = 0;
+				yield();
+			}
 		// }
 	}
 
