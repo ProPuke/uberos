@@ -2,10 +2,6 @@
 
 #include <common/types.hpp>
 
-#if defined(ARCH_ARM64)
-	// #define HAS_MMU
-#endif
-
 #ifdef HAS_MMU
 	namespace mmu {
 		struct MemoryMapping;
