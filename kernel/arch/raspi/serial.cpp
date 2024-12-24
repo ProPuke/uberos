@@ -1,15 +1,14 @@
 #include "serial.hpp"
 
-#include "mmio.hpp"
-#include "mailbox.hpp"
+#include <kernel/arch/raspi/mailbox.hpp>
+#include <kernel/arch/raspi/mmio.hpp>
+#include <kernel/arch/raspi/mmio.hpp>
+#include <kernel/drivers.hpp>
+#include <kernel/drivers/raspi/serial/Raspi_mini_uart.hpp>
+#include <kernel/drivers/raspi/serial/Raspi_uart.hpp>
+#include <kernel/log.hpp>
 
 #include <common/types.hpp>
-
-#include <kernel/device.hpp>
-#include <kernel/driver/serial/Raspi_uart.hpp>
-#include <kernel/driver/serial/Raspi_mini_uart.hpp>
-#include <kernel/log.hpp>
-#include <kernel/arch/raspi/mmio.hpp>
 
 namespace mmio {
 	using namespace arch::raspi;
@@ -28,13 +27,13 @@ namespace arch {
 			#endif
 
 			void init() {
-				device::install_device(uart0, false);
-				device::install_device(uart1, false);
+				drivers::install_driver(uart0, false);
+				drivers::install_driver(uart1, false);
 				#if defined(ARCH_RASPI4)
-					device::install_device(uart2, false);
-					device::install_device(uart3, false);
-					device::install_device(uart4, false);
-					device::install_device(uart5, false);
+					drivers::install_driver(uart2, false);
+					drivers::install_driver(uart3, false);
+					drivers::install_driver(uart4, false);
+					drivers::install_driver(uart5, false);
 				#endif
 
 				auto &serial =
@@ -46,7 +45,7 @@ namespace arch {
 				;
 
 				serial.set_baud(115200);
-				serial._on_driver_enable();
+				drivers::activate_driver(serial);
 
 				serial.bind_to_console();
 

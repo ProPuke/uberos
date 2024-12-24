@@ -7,13 +7,13 @@ namespace maths {
 	template <typename Type, unsigned divisor>
 	struct Fixed {
 	private:
-		/**/ explicit Fixed(Type value): value(value) {};
+		constexpr /**/ explicit Fixed(Type value): value(value) {};
 
 	public:
-		/**/ Fixed(const Fixed<Type, divisor> &copy): value(copy.value) {};
+		constexpr /**/ Fixed(const Fixed<Type, divisor> &copy): value(copy.value) {};
 		
-		static auto whole(Type a) { return Fixed(a*divisor); }
-		static auto fraction(Type a) { return Fixed(a); }
+		static constexpr auto whole(Type a) { return Fixed(a*divisor); }
+		static constexpr auto fraction(Type a) { return Fixed(a); }
 
 		Type value;
 

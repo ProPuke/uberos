@@ -1,11 +1,8 @@
 #pragma once
 
-#include <kernel/framebuffer.hpp>
-#include <kernel/Framebuffer.hpp>
-
-namespace framebuffer {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace framebuffer {
 			void init();
 		}
 	}

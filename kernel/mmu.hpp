@@ -2,7 +2,11 @@
 
 #include <common/types.hpp>
 
-#ifdef HAS_MMU
+#if defined(ARCH_ARM64)
+	#define KERNEL_MMU
+#endif
+
+#ifdef KERNEL_MMU
 	namespace mmu {
 		struct MemoryMapping;
 
@@ -26,9 +30,9 @@
 		void set_userspace_mapping(MemoryMapping &memoryMapping);
 	}
 
+	#include "mmu.inl"
+
 	#if defined(ARCH_ARM64)
 		#include <kernel/arch/arm64/mmu.hpp>
 	#endif
 #endif
-
-#include "mmu.inl"

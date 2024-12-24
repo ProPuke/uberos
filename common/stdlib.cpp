@@ -13,27 +13,51 @@ extern "C" void* memcpy_aligned(void *__restrict dest, const void *__restrict sr
 	return memcpy_forwards_aligned(dest, src, bytes);
 }
 
-extern "C" void* memcpy_forwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
-	auto d = (char*)dest;
-	auto s = (const char*)src;
+#ifdef HAS_128BIT
+	extern "C" void* memcpy_forwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
+		auto d = (char*)dest;
+		auto s = (const char*)src;
 
-	if(bytes>=16&&(uintptr_t)s&15==(uintptr_t)d&15){
-		while((uintptr_t)s&15){
-			*d++ = *s++;
-			bytes--;
+		if(bytes>=16&&(uintptr_t)s&15==(uintptr_t)d&15){
+			while((uintptr_t)s&15){
+				*d++ = *s++;
+				bytes--;
+			}
+			while(bytes>=16){
+				*(U128*)d = *(U128*)s;
+				s += 16;
+				d += 16;
+				bytes -= 16;
+			}
 		}
-		while(bytes>=16){
-			*(U128*)d = *(U128*)s;
-			s+=16;
-			d+=16;
-			bytes -= 16;
-		}
+
+		while(bytes--) *d++ = *s++;
+
+		return dest;
 	}
+#else
+	extern "C" void* memcpy_forwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
+		auto d = (char*)dest;
+		auto s = (const char*)src;
 
-	while(bytes--) *d++ = *s++;
+		if(bytes>=8&&(uintptr_t)s&7==(uintptr_t)d&7){
+			while((uintptr_t)s&7){
+				*d++ = *s++;
+				bytes--;
+			}
+			while(bytes>=8){
+				*(U64*)d = *(U64*)s;
+				s += 8;
+				d += 8;
+				bytes -= 8;
+			}
+		}
 
-	return dest;
-}
+		while(bytes--) *d++ = *s++;
+
+		return dest;
+	}
+#endif
 
 extern "C" void* memcpy_backwards_aligned(void *__restrict dest, const void *__restrict src, size_t bytes) {
 	auto d = (char*)dest+bytes;

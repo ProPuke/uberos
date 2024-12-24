@@ -6,6 +6,7 @@
 #include <kernel/arch/raspi/memory.hpp>
 #include <kernel/CriticalSection.hpp>
 #include <kernel/debugSymbols.hpp>
+#include <kernel/exceptions.hpp>
 #include <kernel/log.hpp>
 
 extern "C" void install_exception_handlers();
@@ -29,9 +30,11 @@ Registers exception_error_registers;
 
 namespace exceptions {
 	void after_failure();
-	
-	namespace arch {
-		namespace arm64 {
+}
+
+namespace arch {
+	namespace arm64 {
+		namespace exceptions {
 			// extern "C" void exception_callback(size_t type, size_t esr, size_t elr, size_t spsr, size_t far) {
 			// 	log::print("Got exception type ", type, "\n");
 			// }
@@ -254,7 +257,7 @@ namespace exceptions {
 					U32 depth=0;
 					for(;depth<64;depth++){
 						const auto stackBottom = sp;
-						const auto stackTop = sp+memory::stackSize; //TODO: set to top of source thread stack
+						const auto stackTop = sp+stackSize; //TODO: set to top of source thread stack
 
 						if(fp<stackBottom||fp>=stackTop){
 							log::print_error("Error:     - Connection lost");
@@ -284,7 +287,7 @@ namespace exceptions {
 					}
 				}
 
-				after_failure();
+				::exceptions::after_failure();
 			}
 
 			extern "C" void interrupt_sync_el1t() {
@@ -385,16 +388,19 @@ namespace exceptions {
 			}
 			
 			void init() {
-				log::Section section("exceptions::arch::arm64::init...");
+				log::Section section("arch::arm64::exceptions::init...");
 
 				install_exception_handlers();
 
-				exceptions::_activate();
+				::exceptions::_activate();
 			}
 		}
 	}
+}
 
+
+namespace exceptions {
 	void init() {
-		arch::arm64::init();
+		arch::arm64::exceptions::init();
 	}
 }

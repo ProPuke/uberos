@@ -1,16 +1,21 @@
 #include "Thread.hpp"
 
-#include "arch/arm/scheduler.hpp"
-#include "Spinlock.hpp"
-#include "timer.hpp"
-#include "memory.hpp"
+// #if defined(ARCH_ARM32)
+// 	#include <kernel/arch/arm/scheduler.hpp>
+// #endif
 
-namespace scheduler {
-	using namespace scheduler::arch::arm;
-}
+#include <kernel/scheduler.hpp>
+#include <kernel/Spinlock.hpp>
+#include <kernel/Log.hpp>
+#include <kernel/timer.hpp>
+#include <kernel/memory.hpp>
+
+static Log log("thread");
 
 namespace thread {
 	std::atomic<Thread*> currentThread = nullptr;
+
+	Spinlock threadLock("threadLock");
 
 	LList<Thread> activeThreads;
 	LList<Thread> sleepingThreads;
@@ -21,8 +26,8 @@ namespace thread {
 		{
 			scheduler::Guard guard;
 
-			log::print_info("_cleanup_thread");
-			// Spinlock_Guard lock{scheduler::threadLock, __FUNCTION__};
+			log.print_info("_cleanup_thread");
+			Spinlock_Guard lock{threadLock, __FUNCTION__};
 
 			auto &thread = *currentThread.load();
 
@@ -39,7 +44,7 @@ namespace thread {
 			}else if(freedThreads.contains(thread)){
 				freedThreads.pop(thread);
 			}else{
-				log::print_error("Error: Terminating thread not found in any lists");
+				log.print_error("Error: Terminating thread not found in any lists");
 			}
 
 			memory::Transaction().free_page(*thread.stackPage);
@@ -47,20 +52,31 @@ namespace thread {
 		
 		scheduler::yield();
 	}
+
+	U32 get_total_count() {
+		Spinlock_Guard lock(threadLock, "get_total_count");
+		return activeThreads.size + sleepingThreads.size + pausedThreads.size;
+	}
+
+	U32 get_active_count() {
+		Spinlock_Guard lock(threadLock, "get_active_count");
+		return activeThreads.size;
+	}
 }
 
 /**/ Thread::Thread(Process &process):
 	process(process)
 {}
 
-void Thread::sleep(U64 usecs) {
+void Thread::sleep(U32 usecs) {
 	if(state!=State::active) return;
 
 	{
-		Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
+		Spinlock_Guard lock(thread::threadLock, __FUNCTION__);
 
 		state = State::sleeping;
-		sleep_wake_time = timer::now() + usecs;
+		sleep_start_time = timer::now();
+		sleep_wake_time = sleep_start_time + usecs;
 
 		thread::activeThreads.pop(*this);
 
@@ -82,7 +98,7 @@ void Thread::pause() {
 
 	//TODO:save state on next schedule and move it into a paused state *then* ?
 
-	Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
+	Spinlock_Guard lock(thread::threadLock, __FUNCTION__);
 
 	thread::activeThreads.pop(*this);
 	state = State::paused;
@@ -92,7 +108,7 @@ void Thread::pause() {
 void Thread::resume() {
 	if(state!=State::paused) return;
 
-	Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
+	Spinlock_Guard lock(thread::threadLock, __FUNCTION__);
 
 	thread::pausedThreads.pop(*this);
 	state = State::active;
@@ -106,7 +122,7 @@ void Thread::terminate() {
 
 	//FIXME:thread might still be activeThreads regardless of state (some switch lists late)
 
-	Spinlock_Guard lock(scheduler::threadLock, __FUNCTION__);
+	Spinlock_Guard lock(thread::threadLock, __FUNCTION__);
 
 	switch(state){
 		case State::active:

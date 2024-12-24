@@ -1,18 +1,22 @@
 #include "icxxabi.hpp"
 
-#include "log.hpp"
+#include <kernel/Log.hpp>
+
+static Log log("cxa");
 
 extern "C" {
 
 void __cxa_pure_virtual() {
-	log::print_error("Error: Pure virtual method called");
-	//TODO:terminate?
+	log.print_error("Error: Pure virtual method called");
+	//TODO:drop to an emergency debug console?
+	//TODO:halt on release?
+	debug::halt();
 }
 
 atexitFuncEntry_t __atexitFuncs[ATEXIT_FUNC_MAX];
 uarch_t __atexitFuncCount = 0;
 
-void *__dso_handle = 0;
+// void *__dso_handle = 0;
 
 int __aeabi_atexit(void *object, void (*destructor)(void *), void *dso){
   return __cxa_atexit(destructor, object, dso);

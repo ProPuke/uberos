@@ -1,24 +1,16 @@
 #pragma once
 
-#include <common/types.hpp>
-#include <common/stdlib.hpp>
-
 #include <kernel/CriticalSection.hpp>
 #include <kernel/mmio.hpp>
 
-namespace mmio {
-	// #if defined(ARCH_ARM32)
-	// 	using namespace arch::arm32;
-	// #elif defined(ARCH_ARM64)
-	// 	using namespace arch::arm64;
-	// #else
-	// 	#error "Unsupported architecture"
-	// #endif
-}
+#include <common/stdlib.hpp>
+#include <common/types.hpp>
 
-namespace mmio {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace mmio {
+			using namespace ::mmio;
+
 			enum struct Address: U32 {
 				#if defined(ARCH_RASPI1)
 					gpu_peripheral_base = 0x20000000,
@@ -108,7 +100,9 @@ namespace mmio {
 			};
 
 			void write_address(Address reg, U32 data);
-			U32 read_address(Address reg);
+			auto read_address(Address reg) -> U32;
+			void write_offset_address(U32 offset, Address reg, U32 data);
+			auto read_offset_address(U32 offset, Address reg) -> U32;
 		}
 	}
 }

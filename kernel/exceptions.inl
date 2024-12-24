@@ -6,20 +6,19 @@
 #include <atomic>
 
 namespace exceptions {
-
 	#ifdef ARCH_ARM64
-		#ifdef HAS_MMU
-			#define HAS_EXCEPTION_ATOMICS
+		#ifdef HAS_MMU2
+			#define HAS_INTERRUPT_ATOMICS
 		#endif
 	#else
-		#define HAS_EXCEPTION_ATOMICS
+		#define HAS_INTERRUPT_ATOMICS
 	#endif
 
 	// extern std::atomic<U32> _lock_depth;
 	extern volatile int _lock_depth;
 
 	inline void lock(bool apply) {
-		#ifdef HAS_EXCEPTION_ATOMICS
+		#ifdef HAS_INTERRUPT_ATOMICS
 			if(__atomic_add_fetch(&_lock_depth, 1, __ATOMIC_SEQ_CST)==0&&apply){
 			// if(_lock_depth.fetch_add(1)==0&&apply){
 				_deactivate();
@@ -32,7 +31,7 @@ namespace exceptions {
 	}
 
 	inline void unlock(bool apply) {
-		#ifdef HAS_EXCEPTION_ATOMICS
+		#ifdef HAS_INTERRUPT_ATOMICS
 			// if(_lock_depth.fetch_sub(1)==1&&apply){
 			if(__atomic_sub_fetch(&_lock_depth, 1, __ATOMIC_SEQ_CST)==1&&apply){
 				_activate();

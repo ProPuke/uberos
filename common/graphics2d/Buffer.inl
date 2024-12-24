@@ -103,22 +103,41 @@ namespace graphics2d {
 			|((colour&0xff000000)>>24)<<24
 		;
 
-		if(length>=16/4&&(uintptr_t)address&3==0){
-			while((uintptr_t)address&15){
-				*data++ = value;
-				length--;
+		#ifdef HAS_128BIT
+			if(length>=16/4&&(uintptr_t)address&3==0){
+				while((uintptr_t)address&15){
+					*data++ = value;
+					length--;
+				}
+
+				auto phatValue = (U128)value|(U128)value<<32|(U128)value<<64|(U128)value<<96;
+				auto phatData = (U128*)data;
+
+				while(length>=16/4){
+					*phatData++ = phatValue;
+					length-=16/4;
+				}
+
+				data = (U32*)phatData;
 			}
+		#else
+			if(length>=8/4&&(uintptr_t)address&3==0){
+				while((uintptr_t)address&15){
+					*data++ = value;
+					length--;
+				}
 
-			auto phatValue = (U128)value|(U128)value<<32|(U128)value<<64|(U128)value<<96;
-			auto phatData = (U128*)data;
+				auto phatValue = (U64)value|(U64)value<<32;
+				auto phatData = (U64*)data;
 
-			while(length>=16/4){
-				*phatData++ = phatValue;
-				length-=16/4;
+				while(length>=8/4){
+					*phatData++ = phatValue;
+					length-=8/4;
+				}
+
+				data = (U32*)phatData;
 			}
-
-			data = (U32*)phatData;
-		}
+		#endif
 
 		while(length--) *data++ = value;
 	}
@@ -132,22 +151,41 @@ namespace graphics2d {
 			|((colour&0xff000000)>>24)<<24
 		;
 
-		if(length>=16/4&&(uintptr_t)address&3==0){
-			while((uintptr_t)address&15){
-				*data++ = value;
-				length--;
+		#ifdef HAS_128BIT
+			if(length>=16/4&&(uintptr_t)address&3==0){
+				while((uintptr_t)address&15){
+					*data++ = value;
+					length--;
+				}
+
+				auto phatValue = (U128)value|(U128)value<<32|(U128)value<<64|(U128)value<<96;
+				auto phatData = (U128*)data;
+
+				while(length>=16/4){
+					*phatData++ = phatValue;
+					length-=16/4;
+				}
+
+				data = (U32*)phatData;
 			}
+		#else
+			if(length>=8/4&&(uintptr_t)address&3==0){
+				while((uintptr_t)address&15){
+					*data++ = value;
+					length--;
+				}
 
-			auto phatValue = (U128)value|(U128)value<<32|(U128)value<<64|(U128)value<<96;
-			auto phatData = (U128*)data;
+				auto phatValue = (U64)value|(U64)value<<32;
+				auto phatData = (U64*)data;
 
-			while(length>=16/4){
-				*phatData++ = phatValue;
-				length-=16/4;
+				while(length>=8/4){
+					*phatData++ = phatValue;
+					length-=8/4;
+				}
+
+				data = (U32*)phatData;
 			}
-
-			data = (U32*)phatData;
-		}
+		#endif
 
 		while(length--) *data++ = value;
 	}
@@ -287,8 +325,8 @@ namespace graphics2d {
 		for(;y<height&&y<height-borderWidth;y++){
 			const auto left1 = maths::min(width-1, maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0));
 			const auto left2 = maths::min(width, left1+borderWidth);
-			const auto right2 = (U32)maths::max(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
-			const auto right1 = (U32)maths::max(0, (I32)right2-(I32)borderWidth);
+			const auto right2 = (U32)maths::max<I32>(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
+			const auto right1 = (U32)maths::max<I32>(0, (I32)right2-(I32)borderWidth);
 
 			{
 				U32 left  = maths::min(left1, lastLeft2);
@@ -384,7 +422,7 @@ namespace graphics2d {
 		//bilinear filter the msdf (looks best at half size and up, although blurs some letters slightly)
 		}else{
 			const I32 sdfRange = 1;
-			const I32 scale = maths::max(1u, ((width+source_width-1)/source_width + (height+source_height-1)/source_height)/2);
+			const I32 scale = maths::max<U32>(1u, ((width+source_width-1)/source_width + (height+source_height-1)/source_height)/2);
 			// const I32 scale = 2;
 			const I32 sdfPixels = sdfRange * scale;
 
@@ -424,8 +462,8 @@ namespace graphics2d {
 	inline void Buffer::draw_buffer_area(I32 destX, I32 destY, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image) {
 		if(destX>=(I32)this->width||destY>=(I32)this->height||destX+width<=0||destY+height<=0) return;
 
-		for(U32 y=maths::max(0, -destX); y<maths::min(maths::min(height, image.height-sourceX), height-destX); y++){
-			for(U32 x=maths::max(0, -destY); x<maths::min(maths::min(width, image.width-sourceY), width-destY); x++){
+		for(U32 y=maths::max((I32)0, -destX); y<maths::min(maths::min(height, image.height-sourceX), height-destX); y++){
+			for(U32 x=maths::max((I32)0, -destY); x<maths::min(maths::min(width, image.width-sourceY), width-destY); x++){
 				set(destX+x, destY+y, image.get(sourceX+x, sourceY+y));
 			}
 		}

@@ -2,7 +2,7 @@ MAKEFLAGS := --jobs=$(shell nproc)
 
 SRCS    := $(shell find . -name "*.cpp" -print -or -name "*.c" ! -iname ".*" -print)
 HEADERS := $(shell find . -name "*.hpp" -print -or -name "*.inl" -print)
-COMMON_SRCS    := $(shell find ../../common -name "*.cpp" -or -name "*.c" ! -iname ".*")
+COMMON_SRCS    := $(shell find ../../common -name "*.cpp" ! -name "stdlib.cpp" -or -name "*.c" ! -iname ".*")
 COMMON_HEADERS := $(shell find ../../common -name "*.hpp" -or -name "*.inl")
 OBJS        := $(SRCS:%=%.o)
 COMMON_OBJS := $(COMMON_SRCS:%=%.o)

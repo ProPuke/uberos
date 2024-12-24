@@ -2,7 +2,8 @@
 
 #include "mailbox.hpp"
 
-#include "mmio.hpp"
+#include <kernel/arch/raspi/mmio.hpp>
+
 #include <common/types.hpp>
 
 namespace mmio {

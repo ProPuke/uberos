@@ -2,9 +2,9 @@
 
 #include <kernel/memory.hpp>
 
-namespace memory {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace memory {
 			void init();
 		}
 	}

@@ -2,9 +2,9 @@
 
 #include <common/types.hpp>
 
-namespace hwquery {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace hwquery {
 			enum struct MachineModel: U32 {
 				unknown,
 				modelA,

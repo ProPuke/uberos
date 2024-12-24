@@ -1,30 +1,25 @@
 #include "irq.hpp"
 
-#include "mmio.hpp"
-#include "timer.hpp"
-
+#include <kernel/arch/raspi/mmio.hpp>
+#include <kernel/arch/raspi/timer.hpp>
 #include <kernel/CriticalSection.hpp>
-#include <kernel/device.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/log.hpp>
 
-namespace mmio {
-	using namespace arch::raspi;
-}
-
-namespace timer {
-	using namespace arch::raspi;
-}
-
 namespace irq {
-	namespace arch {
-		namespace raspi {
+	void on_irq(U32);
+}
+
+namespace arch {
+	namespace raspi {
+		namespace irq {
 			#ifdef HAS_GIC400
 				driver::interrupt::Arm_gicV2 interruptController {(U32)mmio::Address::gic400};
 			#endif
 
 			driver::interrupt::Arm_raspi_legacy cpuInterruptController {(U32)mmio::Address::interrupts_legacy};
 
-			extern "C" void handle_interrupt() {
+			extern "C" void _on_irq() {
 				asm volatile("" ::: "memory");
 
 				// U64 sp;
@@ -77,59 +72,36 @@ namespace irq {
 				CriticalSection guard;
 				// log::print_debug("irq");
 
-				interruptController.handle_interrupt([](U32 irq) {
-					// log::print_debug("irq ", irq);
 
-					switch((Irq)irq){
-						case Irq::system_timer_0:
-							timer::on_interrupt(timer::Timer::gpu0);
-						break;
-						case Irq::system_timer_1:
-							timer::on_interrupt(timer::Timer::cpu_scheduler);
-						break;
-						case Irq::system_timer_2:
-							timer::on_interrupt(timer::Timer::gpu1);
-						break;
-						case Irq::system_timer_3:
-							timer::on_interrupt(timer::Timer::cpu_slow_scheduler);
-						break;
-						// case 0x60:
-						// 	timer::on_interrupt(timer::Timer::gpu0);
-						// break;
-						// case 0x61:
-						// 	timer::on_interrupt(timer::Timer::cpu_scheduler);
-						// break;
-						// case 0x62:
-						// 	timer::on_interrupt(timer::Timer::gpu1);
-						// break;
-						// case 0x63:
-						// 	timer::on_interrupt(timer::Timer::cpu_slow_scheduler);
-						// break;
-						case Irq::usb_controller:
-						break;
-						case Irq::hdmi_0:
-						case Irq::hdmi_1:
-						break;
-						case Irq::arm_timer:
-						break;
-					}
-				});
+				//FIXME: don't cakk both? only let one delegate irqs?
+
+				#ifdef HAS_GIC400
+					interruptController.handle_interrupt(nullptr); //TODO: pass cpu state and handle cpu state return
+				#endif
+
+				cpuInterruptController.handle_interrupt(nullptr); //TODO: pass cpu state and handle cpu state return
 			}
 
 			void init() {
-				log::Section section("irq::arch::raspi::init...");
+				log::Section section("arch::raspi::irq::init...");
 
-				device::install_device(interruptController, true);
-				device::install_device(cpuInterruptController, true);
+				#ifdef HAS_GIC400
+					drivers::install_driver(interruptController, true);
+				#endif
+				drivers::install_driver(cpuInterruptController, true);
 			}
 
 			void enable(Irq irq) {
-				interruptController.enable_irq(0, (U32)irq);
+				#ifdef HAS_GIC400
+					interruptController.enable_irq(0, (U32)irq);
+				#endif
 				cpuInterruptController.enable_irq(0, (U32)irq);
 			}
 
 			void disable(Irq irq) {
-				interruptController.disable_irq(0, (U32)irq);
+				#ifdef HAS_GIC400
+					interruptController.disable_irq(0, (U32)irq);
+				#endif
 				cpuInterruptController.disable_irq(0, (U32)irq);
 			}
 		}

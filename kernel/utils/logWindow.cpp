@@ -7,14 +7,14 @@
 #include <kernel/console.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/graphics2d.hpp>
-#include <kernel/log.hpp>
+#include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 
 namespace utils {
 	namespace logWindow {
 		namespace {
 			graphics2d::View *view = nullptr;
-			log::Handler *logHandler = nullptr;
+			logging::Handler *logHandler = nullptr;
 
 			auto fontSize = 16;
 			auto lineHeight = fontSize*5/4;
@@ -67,25 +67,26 @@ namespace utils {
 			auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
 
 			view = graphics2d::create_view(nullptr, graphics2d::ViewLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), min(800u, framebuffer.buffer.height-margin*2));
+			// view = graphics2d::create_view(nullptr, graphics2d::ViewLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
 
 			view->buffer.draw_rect(0, 0, view->buffer.width, view->buffer.height, bgColour);
 
 			graphics2d::update_view(*view);
 
-			logHandler = new log::Handler(
-				[](U32 indent, log::PrintType type) {
+			logHandler = new logging::Handler(
+				[](U32 indent, logging::PrintType type) {
 					while(indent--) print_text("  ");
 					switch(type){
-						case log::PrintType::info:
+						case logging::PrintType::info:
 							textColour = 0xffffff;
 						break;
-						case log::PrintType::debug:
+						case logging::PrintType::debug:
 							textColour = 0xffff00;
 						break;
-						case log::PrintType::warning:
+						case logging::PrintType::warning:
 							textColour = 0xff8000;
 						break;
-						case log::PrintType::error:
+						case logging::PrintType::error:
 							textColour = 0xff0000;
 						break;
 					}
@@ -104,7 +105,7 @@ namespace utils {
 				}
 			);
 
-			log::install_handler(*logHandler);
+			logging::install_handler(*logHandler);
 		}
 
 		void show() {

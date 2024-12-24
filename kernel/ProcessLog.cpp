@@ -1,40 +1,40 @@
 #include "ProcessLog.hpp"
 
-#include "Process.hpp"
-#include <kernel/log.hpp>
+#include <kernel/logging.hpp>
+#include <kernel/Process.hpp>
 
 void ProcessLog::putc(char c) {
-	log::print_inline(c);
+	logging::print_inline(c);
 }
 
 void ProcessLog::puts(const char *s) {
-	log::print_inline(s);
+	logging::print_inline(s);
 }
 
 void ProcessLog::print_start(ProcessLogType type) {
 	switch(type){
 		case ProcessLogType::info:
-			log::print_info_start();
+			logging::print_info_start();
 			puts(process.name);
 			puts(":    ");
 		break;
 		case ProcessLogType::debug:
-			log::print_debug_start();
+			logging::print_debug_start();
 			puts(process.name);
 			puts(":DBG ");
 		break;
 		case ProcessLogType::verbose:
-			log::print_info_start();
+			logging::print_info_start();
 			puts(process.name);
 			puts(":... ");
 		break;
 		case ProcessLogType::warning:
-			log::print_warning_start();
+			logging::print_warning_start();
 			puts(process.name);
 			puts(":--- ");
 		break;
 		case ProcessLogType::error:
-			log::print_error_start();
+			logging::print_error_start();
 			puts(process.name);
 			puts(":!!! ");
 		break;
@@ -46,5 +46,5 @@ void ProcessLog::print_start(ProcessLogType type) {
 }
 
 void ProcessLog::print_end() {
-	log::print_end();
+	logging::print_end();
 }

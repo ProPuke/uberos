@@ -1,18 +1,13 @@
 #include "hwquery.hpp"
 
-#include "mailbox.hpp"
-
+#include <kernel/arch/raspi/mailbox.hpp>
 #include <kernel/info.hpp>
 #include <kernel/log.hpp>
 #include <kernel/memory.hpp>
 
-namespace mailbox {
-	using namespace arch::raspi::mailbox;
-}
-
-namespace hwquery {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace hwquery {
 			namespace {
 				struct {
 					U32 revisionRaw;
@@ -74,7 +69,7 @@ namespace hwquery {
 			U64 videoMemory = 0;
 
 			void init() {
-				log::Section section("hwquery::arch::raspi::init...");
+				log::Section section("arch::raspi::hwquery::init...");
 
 				mailbox::PropertyMessage tags[4];
 				tags[0].tag = mailbox::PropertyTag::get_board_revision;

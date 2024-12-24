@@ -1,16 +1,17 @@
 #include "exceptions.hpp"
 
-#include <common/types.hpp>
-
+#include <kernel/exceptions.hpp>
 #include <kernel/log.hpp>
+
+#include <common/types.hpp>
 
 #include <atomic>
 
 extern "C" void install_exception_handlers();
 
-namespace exceptions {
-	namespace arch {
-		namespace arm32 {
+namespace arch {
+	namespace arm32 {
+		namespace exceptions {
 			extern "C" void __attribute__ ((interrupt ("ABORT"))) interrupt_reset() {
 				log::print_error("RESET HANDLER");
 				while(true);
@@ -37,7 +38,7 @@ namespace exceptions {
 			}
 
 			void init() {
-				log::Section section("exceptions::arch::arm32::init...");
+				log::Section section("arch::arm32::exceptions::init...");
 
 				install_exception_handlers();
 
@@ -45,7 +46,9 @@ namespace exceptions {
 			}
 		}
 	}
+}
 
+namespace exceptions {
 	void init() {
 		arch::arm32::init();
 	}

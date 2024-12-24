@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Framebuffer.hpp"
+#include <kernel/Framebuffer.hpp>
+
 #include <common/graphics2d/BufferFormat.hpp>
 #include <common/types.hpp>
 

@@ -1,0 +1,54 @@
+set cxx = g++
+set ld = gcc
+set cflags = -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -I ../
+set cxxflags = -fpic -nostartfiles -ffreestanding -nostdlib -Werror -Wall -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -fno-exceptions -I ../
+set lflags = -nostdlib -nostartfiles
+
+flag debug
+  set cflags = {cflags} -g -D DEBUG
+  set cxxflags = {cxxflags} -g -D DEBUG
+
+flag not debug
+  set cflags = {cflags} -O2
+  set cxxflags = {cxxflags} -O2
+  set lflags = {lflags} -O2
+
+set raspi_model = 4
+set raspi_uart = 0
+
+flag raspi1
+  set raspi_model = 1
+
+flag raspi2
+  set raspi_model = 2
+
+flag raspi3
+  set raspi_model = 3
+
+flag raspi4
+  set raspi_model = 4
+
+flag uart0
+  set raspi_uart = 0
+
+flag uart1
+  set raspi_uart = 1
+
+each source in {**/*.cpp}, {**/*.c}
+  task build
+    provides {source}.o
+    depends {**/*.hpp}, {**/*.h}
+    shell {cxx} {source} -o {source}.o {cxxflags}
+
+task build
+  shell {ld} -o program {**/*.cpp as *.o}, {**/*.c as *.o} {lflags}
+
+each object in {**/*.o}
+  task clean
+    shell rm {object}
+
+task run
+  depends task build
+  shell echo "Running..."
+  shell ./program -test
+  shell echo "Run complete"

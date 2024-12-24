@@ -1,16 +1,15 @@
 #include "memory.hpp"
 
-#include "atags.hpp"
-#include "hwquery.hpp"
-#include "memory.hpp"
+#include <kernel/arch/raspi/atags.hpp>
+#include <kernel/arch/raspi/hwquery.hpp>
+#include <kernel/arch/raspi/memory.hpp>
+#include <kernel/kernel.h>
+#include <kernel/log.hpp>
 
 #include <common/LList.hpp>
 #include <common/MemoryPool.hpp>
 #include <common/stdlib.hpp>
 #include <common/types.hpp>
-
-#include <kernel/kernel.h>
-#include <kernel/log.hpp>
 
 #include <new>
 
@@ -32,23 +31,18 @@ namespace memory {
 }
 
 
-namespace atags {
-	using namespace arch::raspi::atags;
-}
+namespace arch {
+	namespace raspi {			
+		namespace memory {
+			using ::memory::freePages;
+			using ::memory::pageData;
+			using ::memory::pageDataSize;
+			using ::memory::pageSize;
+			using ::memory::totalMemory;
+			using ::memory::Page;
 
-namespace systemInfo {
-	using namespace arch::raspi;
-}
-
-namespace hwquery {
-	using namespace arch::raspi;
-}
-
-namespace memory {
-	namespace arch {
-		namespace raspi {			
 			void init() {
-				log::Section section("memory::arch::raspi::init...");
+				log::Section section("arch::raspi::memory::init...");
 
 				if(!totalMemory){
 					#if defined(ARCH_RASPI1)
@@ -79,7 +73,7 @@ namespace memory {
 				#pragma GCC diagnostic push
 				#pragma GCC diagnostic ignored "-Warray-bounds"
 					// heap = (MemoryPool<32>*)((U8*)&__end)+stackSize;
-					auto kernelEnd = ((U8*)&__end)+KERNEL_STACK_SIZE;//+heapSize;
+					auto kernelEnd = ::memory::heap + ::memory::heap_size;
 				#pragma GCC diagnostic pop
 
 				// { //initialise heap

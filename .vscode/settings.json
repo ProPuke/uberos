@@ -1,9 +1,11 @@
 {
 	"files.exclude": {
-		"**/*.o": true,
-		"tools": true
+		"**/*.o": true
 	},
 	"files.associations": {
+		"*.ndjson": "jsonl",
+		"*.dbclient-js": "javascript",
+		"*.inc": "php",
 		"*.sc": "glsl",
 		"*.shader": "glsl",
 		"*.qc": "quakec",
@@ -111,7 +113,28 @@
 		"stack": "cpp",
 		"thread": "cpp",
 		"version": "cpp",
-		"*.rh": "cpp"
+		"*.rh": "cpp",
+		"builtin1.C": "cpp",
+		"hash_set": "cpp",
+		"buffer": "cpp",
+		"format": "cpp",
+		"stacktrace": "cpp",
+		"internet": "cpp",
+		"private-1.C": "cpp",
+		"pr91280.C": "cpp",
+		"firstprivate-1.C": "cpp",
+		"attrs-2.C": "cpp",
+		"attrs-1.C": "cpp",
+		"target-teams-1.C": "cpp",
+		"target-lambda-3.C": "cpp",
+		"array11.C": "cpp",
+		"pr103868.C": "cpp",
+		"const4.C": "cpp",
+		"spbp.C": "cpp",
+		"lambda-generic-87523.C": "cpp",
+		"pr56029.C": "cpp",
+		"param-type-mismatch.C": "cpp",
+		"pr54902.C": "cpp"
 	},
 	"C_Cpp.default.cppStandard": "c++17",
 	"C_Cpp.default.defines": [
@@ -131,6 +154,18 @@
 	"docwriter.progress.trackClasses": false,
 	"docwriter.progress.trackTypes": false,
 	"deno.enablePaths": [
-		"./common/graphics2d/font"
-	]
+		"./common/graphics2d/font",
+		"./utils"
+	],
+	"deno.enable": true,
+	"deno.codeLens.implementations": false,
+	"deno.internalDebug": false,
+	"deno.unstable": true,
+	"files.watcherExclude": {
+		"build/**": true,
+		"tools/source/**": true
+	},
+	"search.exclude": {
+		"tools/source/**": true
+	}
 }

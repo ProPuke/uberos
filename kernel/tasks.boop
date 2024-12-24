@@ -1,0 +1,679 @@
+set outputdir = ../build
+
+set raspi_model = 4
+set raspi_uart  = 0
+
+set asmflags = -fno-pie
+set cflags   = -nostartfiles -ffreestanding -nostdlib -Werror -Wall
+set cxxflags = -include kernel/common.hpp -include kernel/debug.hpp -nostartfiles -ffreestanding -nostdlib -Werror -Wall -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -Wno-unused-function -fno-exceptions
+set lflags   = -nostdlib
+set directives = -fpic -D KERNEL
+
+# set kernel_srcs    = {**/*.S exclude arch/**/*/*} {**/*.cpp exclude arch/**/*/*} {**/*.c exclude arch/**/*/*}
+set kernel_asm     = {*.S} {drivers/*.S} {drivers/common/**/*.S} {fonts/**/*.S} {graphics2d/**/*.S} {memory/**/*.S} {mmu/**/*.S}
+set kernel_c       =
+# set kernel_c       = {*.c} {drivers/*.c} {drivers/common/**/*.c} {fonts/**/*.c} {graphics2d/**/*.c} {memory/**/*.c} {mmu/**/*.c}
+set kernel_cpp     = {*.cpp} {drivers/*.cpp} {drivers/common/**/*.cpp} {fonts/**/*.cpp} {graphics2d/**/*.cpp} {memory/**/*.cpp} {mmu/**/*.cpp} {utils/**/*.cpp}
+# set kernel_headers = {**/*.hpp exclude arch/**/*/*} {**/*.h exclude arch/**/*/*} {**/*.inl exclude arch/**/*/*}
+set kernel_headers = {*.hpp} {*.h} {*.inl}
+set kernel_headers = {kernel_headers} {drivers/*.hpp} {drivers/*.h} {drivers/*.inl} {drivers/common/**/*.hpp} {drivers/common/**/*.h} {drivers/common/**/*.inl}
+set kernel_headers = {kernel_headers} {fonts/**/*.hpp} {fonts/**/*.h} {fonts/**/*.inl}
+set kernel_headers = {kernel_headers} {graphics2d/**/*.hpp} {graphics2d/**/*.h} {graphics2d/**/*.inl}
+set kernel_headers = {kernel_headers} {memory/**/*.hpp} {memory/**/*.h} {memory/**/*.inl}
+set kernel_headers = {kernel_headers} {mmu/**/*.hpp} {mmu/**/*.h} {mmu/**/*.inl}
+set common_asm     = {../common/**/*.S}
+set common_c       = {../common/**/*.c}
+set common_cpp     = {../common/**/*.cpp}
+set common_headers = {../common/**/*.hpp} {../common/**/*.h} {../common/**/*.inl}
+set extra_objs     =
+set images         = {../common/ui2d/**/*.png}
+set msdf_atlas_gen = ../tools/msdf-atlas-gen/bin/msdf-atlas-gen
+
+flag uart0
+	set raspi_uart = 0
+
+flag uart1
+	set raspi_uart = 1
+
+flag debug
+	set directives = {directives} -g -D DEBUG
+
+flag not debug
+	set directives = {directives} -O2
+	set lflags = {lflags} -O2
+
+flag raspi1
+	set raspi_model = 1
+	set outputdir = {outputdir}/raspi1
+	set arch_flags = -mcpu=arm1176jzf-s
+	set ld_arch_flags = {arch_flags}
+	set directives = {directives} -D ARCH_ARM -D ARCH_ARM32 -D ARCH_RASPI -D ARCH_RASPI1
+	set qemu = qemu-system-arm
+	set qemu_model = raspi1ap
+	# set qemu_dtb = ../tools/raspi/firmware/bcm2708-rpi-b.dtb
+	set kernel_filename = kernel.img
+
+	set kernel_asm     = {kernel_asm}     {arch/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm/**/*.hpp} {arch/arm/**/*.h} {arch/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/arm32/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm32/**/*.hpp} {arch/arm32/**/*.h} {arch/arm32/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi/**/*.hpp} {arch/raspi/**/*.h} {arch/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi-armv7/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi-armv7/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv7/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi-armv7/**/*.hpp} {arch/raspi-armv7/**/*.h} {arch/raspi-armv7/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm32/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm32/**/*.hpp} {drivers/arm32/**/*.h} {drivers/arm32/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/arm32/**/*.S}
+	set support_c       = {support_c}       {../support/arch/arm32/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/arm32/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/arm32/**/*.hpp} {../support/arch/arm32/**/*.h} {../support/arch/arm32/**/*.inl}
+
+	set linker_script = arch/raspi/linker.ld
+
+	set asmflags = {asmflags}
+	set cflags   = {cflags}
+	set cxxflags = {cxxflags}
+	set lflags   = {lflags}
+
+	set toolchain_prefix = ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-
+
+	task test
+		requires task build
+
+		mkdir {outputdir}/boot
+		each file in {../assets/raspi/boot/*.*}
+			run cp -r {file} {outputdir}/boot/{file.file}
+
+		run {qemu} -no-reboot -M {qemu_model} -serial stdio -kernel {outputdir}/{kernel_filename} -usb -device usb-kbd -device usb-mouse
+
+	task build-boot
+		provides {outputdir}/boot
+		requires {../tools/raspi/firmware/**/*.*}
+		requires {../assets/raspi/boot/**/*.*}
+
+		mkdir {outputdir}
+		run cp -r ../tools/raspi/firmware/. {outputdir}/boot
+		run cp -r ../assets/raspi/boot/. {outputdir}/boot
+
+		rm {outputdir}/boot/*.linux
+		rm {outputdir}/boot/kernel*.img
+		rm {outputdir}/boot/README.*
+
+flag raspi2
+	set raspi_model = 2
+	set outputdir = {outputdir}/raspi2
+	# set arch_flags = -mcpu=cortex-a7
+	# set arch_flags = -mcpu=armv7e-m
+	set arch_flags = -mcpu=generic-armv7-a
+	set ld_arch_flags = {arch_flags}
+	set directives = {directives} -D ARCH_ARM -D ARCH_ARM32 -D ARCH_RASPI -D ARCH_RASPI1
+	set qemu = qemu-system-arm
+	set qemu_model = raspi2b
+	# set qemu_dtb = ../tools/raspi/firmware/bcm2709-rpi-2-b.dtb
+	set kernel_filename = kernel7.img
+
+	set kernel_asm     = {kernel_asm}     {arch/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm/**/*.hpp} {arch/arm/**/*.h} {arch/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/arm32/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm32/**/*.hpp} {arch/arm32/**/*.h} {arch/arm32/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi/**/*.hpp} {arch/raspi/**/*.h} {arch/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi-armv7/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi-armv7/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv7/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi-armv7/**/*.hpp} {arch/raspi-armv7/**/*.h} {arch/raspi-armv7/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm32/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm32/**/*.hpp} {drivers/arm32/**/*.h} {drivers/arm32/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi-armv7/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi-armv7/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi-armv7/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi-armv7/**/*.hpp} {drivers/raspi-armv7/**/*.h} {drivers/raspi-armv7/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/arm32/**/*.S}
+	set support_c       = {support_c}       {../support/arch/arm32/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/arm32/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/arm32/**/*.hpp} {../support/arch/arm32/**/*.h} {../support/arch/arm32/**/*.inl}
+
+	set linker_script = arch/raspi/linker.ld
+
+	set asmflags = {asmflags}
+	set cflags   = {cflags}
+	set cxxflags = {cxxflags}
+	set lflags   = {lflags}
+
+	set toolchain_prefix = ../tools/gcc-arm-none-eabi/bin/arm-none-eabi-
+
+	task test
+		requires task build
+
+		mkdir {outputdir}/boot
+		each file in {../assets/raspi/boot/*.*}
+			run cp -r {file} {outputdir}/boot/{file.file}
+
+		run {qemu} -no-reboot -M {qemu_model} -serial stdio -kernel {outputdir}/{kernel_filename} -usb -device usb-kbd -device usb-mouse
+
+	task build-boot
+		provides {outputdir}/boot
+		requires {../tools/raspi/firmware/**/*.*}
+		requires {../assets/raspi/boot/**/*.*}
+
+		mkdir {outputdir}
+		run cp -r ../tools/raspi/firmware/. {outputdir}/boot
+		run cp -r ../assets/raspi/boot/. {outputdir}/boot
+
+		rm {outputdir}/boot/*.linux
+		rm {outputdir}/boot/kernel*.img
+		rm {outputdir}/boot/README.*
+
+flag raspi3
+	set raspi_model = 3
+	set outputdir = {outputdir}/raspi3
+	# set arch_flags = -mcpu=cortex-a53
+	# set arch_flags = --target=aarch64-elf -mcpu=cortex-a53+nosimd
+	set arch_flags = -march=armv8-a
+	set ld_arch_flags = {arch_flags}
+	set directives = {directives} -D ARCH_ARM -D ARCH_ARM64 -D ARCH_RASPI -D ARCH_RASPI3
+	set qemu = qemu-system-aarch64
+	set qemu_model = raspi3b
+	# set qemu_dtb = ../tools/raspi/firmware/bcm2709-rpi-2-b.dtb
+	set kernel_filename = kernel8.img
+
+	set kernel_asm     = {kernel_asm}     {arch/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm/**/*.hpp} {arch/arm/**/*.h} {arch/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/arm64/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm64/**/*.hpp} {arch/arm64/**/*.h} {arch/arm64/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi/**/*.hpp} {arch/raspi/**/*.h} {arch/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi-armv8/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi-armv8/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv8/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi-armv8/**/*.hpp} {arch/raspi-armv8/**/*.h} {arch/raspi-armv8/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm64/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm64/**/*.hpp} {drivers/arm64/**/*.h} {drivers/arm64/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi-armv8/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi-armv8/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi-armv8/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi-armv8/**/*.hpp} {drivers/raspi-armv8/**/*.h} {drivers/raspi-armv8/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/arm64/**/*.S}
+	set support_c       = {support_c}       {../support/arch/arm64/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/arm64/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/arm64/**/*.hpp} {../support/arch/arm64/**/*.h} {../support/arch/arm64/**/*.inl}
+
+	set linker_script = arch/raspi/linker.ld
+
+	set directives = {directives} -mstrict-align
+	set asmflags = {asmflags}
+	set cflags   = {cflags}
+	set cxxflags = {cxxflags}
+	set lflags   = {lflags} -mstrict-align
+
+	set toolchain_prefix = ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-
+
+	task test
+		requires task build
+
+		mkdir {outputdir}/boot
+		each file in {../assets/raspi/boot/*.*}
+			run cp -r {file} {outputdir}/boot/{file.file}
+
+		run {qemu} -no-reboot -M {qemu_model} -serial stdio -kernel {outputdir}/{kernel_filename} -usb -device usb-kbd -device usb-mouse
+
+	task build-boot
+		provides {outputdir}/boot
+		requires {../tools/raspi/firmware/**/*.*}
+		requires {../assets/raspi/boot/**/*.*}
+
+		mkdir {outputdir}
+		run cp -r ../tools/raspi/firmware/. {outputdir}/boot
+		run cp -r ../assets/raspi/boot/. {outputdir}/boot
+
+		rm {outputdir}/boot/*.linux
+		rm {outputdir}/boot/kernel*.img
+		rm {outputdir}/boot/README.*
+
+flag raspi4
+	set raspi_model = 4
+	set outputdir = {outputdir}/raspi4
+	# set arch_flags = -mcpu=cortex-a72
+	# set arch_flags = --target=aarch64-elf -mcpu=cortex-a72+nosimd
+	set arch_flags = -march=armv8-a
+	set ld_arch_flags = -maarch64elf
+	set directives = {directives} -D ARCH_ARM -D ARCH_ARM64 -D ARCH_RASPI -D ARCH_RASPI4
+	# set qemu = qemu-system-aarch64
+	set qemu = ~/libs/qemu-patch-raspberry4/build/qemu-system-aarch64
+	set qemu_model = raspi4b2g
+	# set qemu_dtb = ../tools/raspi/firmware/bcm2709-rpi-2-b.dtb
+	set kernel_filename = kernel8.img
+
+	set kernel_asm     = {kernel_asm}     {arch/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm/**/*.hpp} {arch/arm/**/*.h} {arch/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/arm64/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/arm64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/arm64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/arm64/**/*.hpp} {arch/arm64/**/*.h} {arch/arm64/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi/**/*.hpp} {arch/raspi/**/*.h} {arch/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/raspi-armv8/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/raspi-armv8/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv8/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/raspi-armv8/**/*.hpp} {arch/raspi-armv8/**/*.h} {arch/raspi-armv8/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/arm64/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/arm64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/arm64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/arm64/**/*.hpp} {drivers/arm64/**/*.h} {drivers/arm64/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/raspi-armv8/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/raspi-armv8/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/raspi-armv8/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/raspi-armv8/**/*.hpp} {drivers/raspi-armv8/**/*.h} {drivers/raspi-armv8/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/arm64/**/*.S}
+	set support_c       = {support_c}       {../support/arch/arm64/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/arm64/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/arm64/**/*.hpp} {../support/arch/arm64/**/*.h} {../support/arch/arm64/**/*.inl}
+
+	set linker_script = arch/raspi/linker.ld
+
+	set directives = {directives} -mstrict-align
+	set asmflags = {asmflags}
+	set cflags   = {cflags}
+	set cxxflags = {cxxflags}
+	set lflags   = {lflags} -mstrict-align
+
+	set toolchain_prefix = ../tools/gcc-arm-aarch64-none-elf/bin/aarch64-none-elf-
+
+	task test
+		requires task build
+
+		mkdir {outputdir}/boot
+		each file in {../assets/raspi/boot/*.*}
+			run cp -r {file} {outputdir}/boot/{file.file}
+
+		run {qemu} -no-reboot -M {qemu_model} -serial stdio -kernel {outputdir}/{kernel_filename} -usb -device usb-kbd -device usb-mouse
+
+	task build-boot
+		provides {outputdir}/boot
+		requires {../tools/raspi/firmware/**/*.*}
+		requires {../assets/raspi/boot/**/*.*}
+
+		mkdir {outputdir}
+		run cp -r ../tools/raspi/firmware/. {outputdir}/boot
+		run cp -r ../assets/raspi/boot/. {outputdir}/boot
+
+		rm {outputdir}/boot/*.linux
+		rm {outputdir}/boot/kernel*.img
+		rm {outputdir}/boot/README.*
+
+flag x86-ibm-bios
+	set outputdir = {outputdir}/x86-ibm-bios
+	set arch_flags = -m32 -march=x86-64
+	# set arch_flags = -march=i386
+	# set ld_arch_flags = -melf_i386
+	set directives = {directives} -D ARCH_X86_IBM_BIOS -D ARCH_X86
+	# set qemu = qemu-system-x86_64
+	set target = i686-elf
+	set qemu = qemu-system-i386
+	# set target = i386-elf
+	set kernel_filename = boot.img
+
+	set kernel_asm     = {kernel_asm}     {arch/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86/**/*.hpp} {arch/x86/**/*.h} {arch/x86/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-ibm/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-ibm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-ibm/**/*.hpp} {arch/x86-ibm/**/*.h} {arch/x86-ibm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-ibm-bios/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-ibm-bios/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm-bios/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-ibm-bios/**/*.hpp} {arch/x86-ibm-bios/**/*.h} {arch/x86-ibm-bios/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/x86/**/*.hpp} {drivers/x86/**/*.h} {drivers/x86/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
+	set support_c       = {support_c}       {../support/arch/x86/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/x86/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/x86/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
+
+	set linker_script = arch/x86/linker.ld
+
+	set asmflags = {asmflags} -Xassembler -msyntax=intel -Xassembler -mnaked-reg
+	set cflags   = {cflags} -masm=intel
+	set cxxflags = {cxxflags} -masm=intel
+	set lflags   = {lflags} -L ../tools/{target}/{target}/lib
+
+	# set toolchain_prefix = ../tools/gcc-x86_64-unknown-elf/bin/x86_64-unknown-elf-
+	# set toolchain_prefix = ../tools/x86_64-elf-7.5.0-Linux-x86_64/bin/x86_64-elf-
+	set toolchain_prefix = ../tools/{target}/bin/{target}-
+	# set lflags = {lflags} -L ../tools/{target}/lib/gcc/{target}/13.2.0
+
+	set crti_obj = ../support/arch/x86/crti.S.o
+	set crtn_obj = ../support/arch/x86/crtn.S.o
+	set crtbegin_obj = {eval ../tools/i686-elf/bin/i686-elf-gcc -print-file-name=crtbegin.o}
+	set crtend_obj   = {eval ../tools/i686-elf/bin/i686-elf-gcc -print-file-name=crtend.o}
+
+	task test
+		requires task build
+
+		# run {qemu} -d int,cpu_reset -no-reboot -kernel {outputdir}/{kernel_filename}
+		run {qemu} -d int,cpu_reset -kernel {outputdir}/{kernel_filename}
+		# run {qemu} -kernel {outputdir}/boot/{kernel_filename}
+
+	task test-iso
+		requires task build-iso
+
+		run {qemu} -cdrom {outputdir}/cdrom.iso
+
+	task debug
+		requires task build
+
+		run {qemu} -s -S -kernel {outputdir}/{kernel_filename}
+		# run {qemu} -s -S -kernel {outputdir}/boot/{kernel_filename}
+
+flag x86-64-ibm-bios
+	set outputdir = {outputdir}/x86-ibm-bios
+	set arch_flags = -march=x86-64 -mno-red-zone
+	set directives = {directives} -D ARCH_X86_IBM_BIOS -D ARCH_X86_64 -D ARCH_X86
+	# set qemu = qemu-system-x86_64
+	set target = x86_64-pc-elf
+	set qemu = qemu-system-x86_64
+	set kernel_filename = boot.img
+
+	set kernel_asm     = {kernel_asm}     {arch/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86/**/*.hpp} {arch/x86/**/*.h} {arch/x86/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-64/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-64/**/*.hpp} {arch/x86-64/**/*.h} {arch/x86-64/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-ibm/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-ibm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-ibm/**/*.hpp} {arch/x86-ibm/**/*.h} {arch/x86-ibm/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-ibm-bios/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-ibm-bios/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm-bios/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-ibm-bios/**/*.hpp} {arch/x86-ibm-bios/**/*.h} {arch/x86-ibm-bios/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/x86/**/*.hpp} {drivers/x86/**/*.h} {drivers/x86/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/x86-64/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/x86-64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/x86-64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/x86-64/**/*.hpp} {drivers/x86-64/**/*.h} {drivers/x86-64/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
+	set support_c       = {support_c}       {../support/arch/x86/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/x86/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/x86/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
+
+	set linker_script = arch/x86/linker.ld
+
+	set asmflags = {asmflags} -Xassembler -msyntax=intel -Xassembler -mnaked-reg
+	set cflags   = {cflags} -masm=intel
+	set cxxflags = {cxxflags} -masm=intel
+	set lflags   = {lflags} -L ../tools/{target}/{target}/lib
+
+	set toolchain_prefix = ../tools/{target}/bin/{target}-
+
+	set crti_obj = ../support/arch/x86/crti.S.o
+	set crtn_obj = ../support/arch/x86/crtn.S.o
+	set crtbegin_obj = {eval ../tools/x86_64-pc-elf/bin/x86_64-pc-elf-gcc -print-file-name=crtbegin.o}
+	set crtend_obj   = {eval ../tools/x86_64-pc-elf/bin/x86_64-pc-elf-gcc -print-file-name=crtend.o}
+
+	task test
+		requires task build
+
+		# run {qemu} -d int,cpu_reset -no-reboot -kernel {outputdir}/{kernel_filename}
+		run {qemu} -d int,cpu_reset -kernel {outputdir}/{kernel_filename}
+		# run {qemu} -kernel {outputdir}/boot/{kernel_filename}
+
+	task test-iso
+		requires task build-iso
+
+		run {qemu} -cdrom {outputdir}/cdrom.iso
+
+	task debug
+		requires task build
+
+		run {qemu} -s -S -kernel {outputdir}/{kernel_filename}
+		# run {qemu} -s -S -kernel {outputdir}/boot/{kernel_filename}
+
+flag hosted-linux
+	set outputdir = {outputdir}/hosted-linux
+	set arch_flags =
+	set directives = {directives} -D ARCH_HOSTED_LINUX -D ARCH_HOSTED
+	set qemu =
+	set kernel_filename = boot
+
+	set kernel_asm     = {kernel_asm}     {arch/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86/**/*.hpp} {arch/x86/**/*.h} {arch/x86/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-64/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-64/**/*.hpp} {arch/x86-64/**/*.h} {arch/x86-64/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {arch/x86-ibm-bios/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-ibm-bios/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm-bios/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-ibm-bios/**/*.hpp} {arch/x86-ibm-bios/**/*.h} {arch/x86-ibm-bios/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/x86/**/*.hpp} {drivers/x86/**/*.h} {drivers/x86/**/*.inl}
+
+	set kernel_asm     = {kernel_asm}     {drivers/x86-64/**/*.S}
+	set kernel_c       = {kernel_c}       {drivers/x86-64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {drivers/x86-64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {drivers/x86-64/**/*.hpp} {drivers/x86-64/**/*.h} {drivers/x86-64/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
+	set support_c       = {support_c}       {../support/arch/x86/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/x86/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/x86/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
+
+	set asmflags = {asmflags} -Xassembler -msyntax=intel -Xassembler -mnaked-reg
+	set cflags   = {cflags} -masm=intel
+	set cxxflags = {cxxflags} -masm=intel
+	set lflags   = {lflags}
+
+	set toolchain_prefix =
+
+set directives = {directives} -D ARCH_RASPI_UART{raspi_uart}
+
+set as   = {toolchain_prefix}gcc -I ../ {asmflags} {directives} {arch_flags}
+set cc   = {toolchain_prefix}gcc -I ../ {cflags} {directives} {arch_flags}
+set cxx  = {toolchain_prefix}g++ -I ../ {cxxflags} {directives} {arch_flags}
+set ld   = {toolchain_prefix}ld {lflags} {ld_arch_flags}
+set nm   = {toolchain_prefix}nm
+set gdb  = {toolchain_prefix}gdb
+set cpy  = {toolchain_prefix}objcopy
+set dump = {toolchain_prefix}objdump
+
+task build-images
+	each image in {images}
+		requires {image}
+		provides {image}.o
+
+		run ../tools/pack-image.sh {image} {image}.cpp
+		run {cxx} -c {image}.cpp -o {image}.o
+		rm {image}.cpp
+
+task build-fonts
+	run {msdf_atlas_gen} -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
+	run {msdf_atlas_gen} -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
+	cd ../common/graphics2d/font
+	run ./build.sh
+
+each file in {kernel_asm} {common_asm} {support_asm}
+	task build-source
+		provides {file}.o
+		requires {kernel_headers} {common_headers} {support_headers}
+		run {as} -c {file} -o {file}.o
+
+each file in {kernel_c} {common_c} {support_c}
+	task build-source
+		provides {file}.o
+		requires {kernel_headers} {common_headers} {support_headers}
+		run {cc} -c {file} -o {file}.o
+
+each file in {kernel_cpp} {common_cpp} {support_cpp}
+	task build-source
+		provides {file}.o
+		requires {kernel_headers} {common_headers} {support_headers}
+		run {cxx} -c {file} -o {file}.o
+
+task build
+	provides {outputdir}/{kernel_filename}
+	provides {outputdir}/boot/{kernel_filename}
+	requires task build-images
+	requires task build-fonts
+	requires task build-source
+	requires task build-boot
+
+	set objs = {kernel_c as *.c.o} {kernel_asm as *.S.o} {kernel_cpp as *.cpp.o} {common_c as *.c.o} {common_asm as *.S.o} {common_cpp as *.cpp.o} {images as *.png.o}
+	set obj_begin = {crti_obj} {crtbegin_obj}
+	set obj_end = {crtend_obj} {crtn_obj}
+
+	mkdir {outputdir}/boot
+
+	run {cc} -c debugSymbols/placeholder.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+
+	# build debug from linked kernel, and relink with those included
+	run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
+	run {cc} -c debugSymbols/data.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+
+	# now they're included, we need to calculate them AGAIN, so we take into account how having them affects other addresses. However, there will be some extra symbols this time that come from that injectd file, soo..
+	run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
+	run {cc} -c debugSymbols/data.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+
+	# ..we recalculate and link the third final time, now that we know their final definite position, including 
+	run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
+	run {cc} -c debugSymbols/data.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+
+	run {dump} --disassemble --demangle -M intel --source {outputdir}/{kernel_filename} > {outputdir}/{kernel_filename}.lst
+	run {cpy} -O binary {outputdir}/{kernel_filename} {outputdir}/boot/{kernel_filename}
+
+task build-iso
+	requires task build
+
+	mkdir {outputdir}/iso/boot/grub
+	run cp {outputdir}/{kernel_filename} {outputdir}/iso/boot/os.bin
+	run cp -r ../assets/x86/* {outputdir}/iso/boot/
+	run grub-mkrescue -o {outputdir}/cdrom.iso {outputdir}/iso
+
+task clean
+	rm {outputdir}
+	each file in {**/*.o} {**/*.cpp.output} {../common/**/*.o} {../common/**/*.cpp.output} {../support/**/*.o}
+		rm {file}

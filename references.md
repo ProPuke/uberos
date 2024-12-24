@@ -19,8 +19,11 @@
 
 	https://github.com/rust-embedded/rust-raspberrypi-OS-tutorials
 
+	https://github.com/rsta2/circle
+
 # kernel references:
 	https://github.com/xinu-os/xinu/tree/master/system/arch/arm
+	https://github.com/ekuiter/UnnamedOS
 
 # enable floating point:
 	https://developer.arm.com/documentation/ddi0463/d/Programmers-Model/About-the-programmers-model/Enabling-VFP-support

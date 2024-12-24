@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../memory.hpp"
-#include "../log.hpp"
+#include <kernel/logging.hpp>
+#include <kernel/memory.hpp>
+
 #include <common/LList.hpp>
 #include <common/MemoryPool.hpp>
 
@@ -12,13 +13,17 @@ namespace memory {
 	struct PagedPool: MemoryPool<alignment> {
 		typedef MemoryPool<alignment> Super;
 
+		/**/ PagedPool(void *heap, size_t heapSize):
+			Super(heap, heapSize)
+		{}
+
 		/**/ PagedPool():
 			Super(nullptr, 0)
 		{}
 
 		void* malloc(size_t size) {
 			#ifdef MEMORY_CHECKS
-				log::Section section("PagedPool::malloc ", size);
+				logging::Section section("PagedPool::malloc ", size);
 			#endif
 
 			const auto blockHeaderSize = offsetof(MemoryPoolBlock, MemoryPoolBlock::_data);
@@ -29,22 +34,22 @@ namespace memory {
 				if(blockHeaderSize+requiredSize>=memory::pageSize){
 					const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 					#ifdef MEMORY_CHECKS
-						log::print_debug("try to add ", pageCount, " pages\n");
+						trace("try to add ", pageCount, " pages\n");
 					#endif
 					if(!add_pages(pageCount)) {
 						#ifdef MEMORY_CHECKS
-							log::print_debug("could not allocate ", pageCount, " pages \n");
+							trace("could not allocate ", pageCount, " pages \n");
 						#endif
 						return nullptr;
 					}
 
 				}else{
 					#ifdef MEMORY_CHECKS
-						log::print_debug("try to add page\n");
+						trace("try to add page\n");
 					#endif
 					if(!add_page()) {
 						#ifdef MEMORY_CHECKS
-							log::print_debug("could not allocate page \n");
+							trace("could not allocate page \n");
 						#endif
 						return nullptr;
 					}
@@ -52,7 +57,7 @@ namespace memory {
 			}
 
 			#ifdef MEMORY_CHECKS
-				log::print_debug("try to malloc 2 ", requiredSize, "\n");
+				trace("try to malloc 2 ", requiredSize, "\n");
 			#endif
 
 			void *result;
@@ -62,7 +67,7 @@ namespace memory {
 
 				if(!result){
 					#ifdef MEMORY_CHECKS
-						log::print_debug("could not allocate ", requiredSize, "\n");
+						trace("could not allocate ", requiredSize, "\n");
 					#endif
 					if(blockHeaderSize+requiredSize>=memory::pageSize){
 						#ifdef MEMORY_CHECKS
@@ -70,22 +75,22 @@ namespace memory {
 						#endif
 						const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 						#ifdef MEMORY_CHECKS
-							log::print_debug("trying to allocate ", pageCount, " pages\n");
+							trace("trying to allocate ", pageCount, " pages\n");
 						#endif
 						if(!add_pages(pageCount)) {
 							#ifdef MEMORY_CHECKS
-								log::print_debug("could not allocate ", pageCount, " pages \n");
+								trace("could not allocate ", pageCount, " pages \n");
 							#endif
 							return nullptr;
 						}
 						#ifdef MEMORY_CHECKS
-							log::print_debug("managed to allocate ", this->available-sizeBefore, "\n");
+							trace("managed to allocate ", this->available-sizeBefore, "\n");
 						#endif
 
 					}else{
 						if(!add_page()) {
 							#ifdef MEMORY_CHECKS
-								log::print_debug("could not allocate page \n");
+								trace("could not allocate page \n");
 							#endif
 							return nullptr;
 						}
@@ -94,7 +99,7 @@ namespace memory {
 			}while(!result);
 
 			#ifdef MEMORY_CHECKS
-				log::print_debug("returned memory ", result, "\n");
+				trace("returned memory ", result, "\n");
 			#endif
 			
 			return result;

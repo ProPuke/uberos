@@ -6,10 +6,12 @@ namespace info {
 			"aarch32"
 		#elif defined(ARCH_ARM64)
 			"aarch64"
-		#elif defined(ARCH_X64)
-			"x64"
+		#elif defined(ARCH_X86_64)
+			"x86-64"
 		#elif defined(ARCH_X86)
 			"x86"
+		#elif defined(ARCH_HOSTED_LINUX)
+			"virtual"
 		#else
 			#error "Unknown"
 		#endif
@@ -17,8 +19,12 @@ namespace info {
 	const char *device_type = 
 		#if defined(ARCH_RASPI)
 			"Raspberry Pi"
-		#elif defined(ARCH_X64) or defined(ARCH_X86)
+		#elif defined(ARCH_X86_IBM_BIOS)
 			"IBM-Compatible PC"
+		#elif defined(ARCH_X86)
+			"Unknown x86 Device"
+		#elif defined(ARCH_HOSTED_LINUX)
+			"Linux virtual host"
 		#else
 			#error "Unknown"
 		#endif
@@ -32,6 +38,12 @@ namespace info {
 			"3"
 		#elif defined(ARCH_RASPI4)
 			"4"
+		#elif defined(ARCH_X86_64)
+			"x86-64"
+		#elif defined(ARCH_X86)
+			"x86"
+		#elif defined(ARCH_HOSTED_LINUX)
+			"virtual"
 		#else
 			#error "Unknown"
 		#endif

@@ -10,13 +10,13 @@ namespace console {
 	extern PutsBinding _binding_puts;
 	extern GetsBinding _binding_gets;
 
-	inline auto putc(unsigned char c) -> void {
+	inline auto putc(char c) -> void {
 		return _binding_putc(_binding, c);
 	}
-	inline auto peekc() -> unsigned char {
+	inline auto peekc() -> char {
 		return _binding_peekc(_binding);
 	}
-	inline auto getc() -> unsigned char {
+	inline auto getc() -> char {
 		return _binding_getc(_binding);
 	}
 	inline auto puts(const char *str) -> void {

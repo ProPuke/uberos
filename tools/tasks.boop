@@ -1,0 +1,65 @@
+set gcc-version = 13.2.0
+set binutils-version = 2.41
+set threads = {eval nproc}
+
+task download-binutils
+	provides source/binutils-{binutils-version}
+
+	mkdir source
+	cd source
+		run wget -nv https://ftp.gnu.org/gnu/binutils/binutils-{binutils-version}.tar.xz
+		run tar xf binutils-{binutils-version}.tar.xz
+		run rm binutils-{binutils-version}.tar.xz
+
+task download-gcc
+	provides source/gcc-{gcc-version}
+
+	mkdir source
+	cd source
+		run wget -nv https://ftp.gnu.org/gnu/gcc/gcc-{gcc-version}/gcc-{gcc-version}.tar.gz
+		run tar xf gcc-{gcc-version}.tar.gz
+		run rm gcc-{gcc-version}.tar.gz
+
+		# force disable red-zone
+		run echo "MULTILIB_OPTIONS += mno-red-zone\nMULTILIB_DIRNAMES += no-red-zone" > gcc-13.2.0/gcc/config/i386/t-x86_64-elf
+		run sed -i 's/x86_64-[*]-elf[*])$/\0\n\ttmake_file="${{tmake_file}} i386\/t-x86_64-elf"/g' gcc-{gcc-version}/gcc/config.gcc
+
+
+task download
+	requires task download-binutils
+	requires task download-gcc
+
+task build-x86-ibm
+	# set target = i386-elf
+	set target = x86_64-pc-elf
+
+	requires task download
+	provides {target}
+
+	rm source/binutils-{binutils-version}/build
+	mkdir source/binutils-{binutils-version}/build
+	cd source/binutils-{binutils-version}/build
+		run ../configure --target={target} --prefix="{eval pwd}/{target}" --disable-nls --disable-werror
+		run make -j{threads}
+		run make install
+	cd -
+
+	envvar PATH = {target}/bin:{eval echo $PATH}
+
+	rm source/gcc-{gcc-version}/build
+	mkdir source/gcc-{gcc-version}/build
+	cd source/gcc-{gcc-version}/build
+		run ../configure --target={target} --prefix="{eval pwd}/{target}" --disable-nls --enable-languages=c,c++ --without-headers --disable-hosted-libstdcxx
+		run make all-gcc -j{threads}
+		run make all-target-libgcc -j{threads}
+		run make all-target-libstdc++-v3 -j{threads}
+		run make install-gcc
+		run make install-target-libgcc
+		run make install-target-libstdc++-v3
+	cd -
+
+	run cp {target}/lib/gcc/{target}/{gcc-version}/*.a {target}/{target}/lib/
+	# run cp ./gcc/{target}/4.9.1/no-red-zone/libgcc.a
+
+task build
+	requires task build-x86-ibm

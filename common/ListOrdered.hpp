@@ -5,12 +5,11 @@
 
 template <typename Type>
 struct ListOrdered {
-	U32 length;
+	U32 length = 0;
 	U32 allocated;
-	Type *data;
+	Type **data;
 
 	/**/ ListOrdered(U32 reserveSize=32):
-		length(0),
 		allocated(reserveSize),
 		data(new Type*[reserveSize])
 	{}
@@ -82,4 +81,11 @@ struct ListOrdered {
 
 		memmove(&data[index+1], memmove(&data[index]), length++-index);
 	}
+
+	void clear(){
+		length = 0;
+	}
+
+	auto operator[](U32 index) -> Type& { return data[index]; }
+	auto operator[](U32 index) const -> const Type& { return data[index]; }
 };

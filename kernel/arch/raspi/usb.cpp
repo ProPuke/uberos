@@ -1,20 +1,20 @@
 #include "usb.hpp"
 
-#include "mmio.hpp"
+#include <kernel/arch/raspi/mmio.hpp>
+#include <kernel/log.hpp>
+#include <kernel/mmio.hpp>
 
 #include <common/format.hpp>
 
-#include <kernel/log.hpp>
-
 namespace mmio {
-	using namespace arch::raspi;
+	using namespace arch::raspi::mmio;
 }
 
-namespace usb {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace usb {
 			void init(bool plugAndPlay) {
-				log::Section section("usb::arch::raspi::init...");
+				log::Section section("arch::raspi::usb::init...");
 
 				auto userId = mmio::read_address(mmio::Address::usb_core_user_id);
 				auto vendorId = mmio::read_address(mmio::Address::usb_core_vendor_id);

@@ -1,12 +1,11 @@
 #include "Driver.hpp"
 
-const char * Driver::state_name[(U64)Driver::State::max+1] = {
-	"disabled",
-	"enabled",
-	"restarting",
-	"failed"
-};
+DriverType Driver::driverType{"driver", nullptr};
 
-/**/ Driver::~Driver() {
+/**/ Driver::Driver(const char *name, const char *description):
+	name(name),
+	type(&driverType),
+	description(description)
+{}
 
-}
+/**/ Driver::~Driver() {}

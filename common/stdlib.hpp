@@ -23,6 +23,8 @@ template <typename T> constexpr inline auto align(/* */ T *pointer, U8 alignment
 template <typename T> constexpr inline auto align(const T *pointer, U8 alignment) -> const T* { return (const T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }
 template <typename T> constexpr inline auto align(T x, U8 alignment) -> T { return x+(x%alignment?(alignment-x%alignment):0); }
 
+constexpr inline auto bits(U8  data, U8 start, U8 end) -> U8  { return (data&((((U8 )1<<(end-start+1)) - 1) << start)) >> start; }
+constexpr inline auto bits(U16 data, U8 start, U8 end) -> U16 { return (data&((((U16)1<<(end-start+1)) - 1) << start)) >> start; }
 constexpr inline auto bits(U32 data, U8 start, U8 end) -> U32 { return (data&((((U32)1<<(end-start+1)) - 1) << start)) >> start; }
 constexpr inline auto bits(U64 data, U8 start, U8 end) -> U64 { return (data&((((U64)1<<(end-start+1)) - 1) << start)) >> start; }
 
@@ -65,6 +67,7 @@ template<> inline auto to_string(U64 x) -> const char* { return utoa(x); }
 template<> inline auto to_string(I64 x) -> const char* { return itoa(x); }
 template<> inline auto to_string(F32 x) -> const char* { return ftoa(x); }
 template<> inline auto to_string(F64 x) -> const char* { return ftoa(x); }
+template<> inline auto to_string(size_t x) -> const char* { return sizeof(x)==sizeof(U32)?to_string((U32)x):to_string((U64)x); }
 
 auto to_string_hex(U8 i) -> const char*;
 auto to_string_hex(U16 i) -> const char*;
@@ -74,6 +77,7 @@ auto to_string_hex_trim(U8 i) -> const char*;
 auto to_string_hex_trim(U16 i) -> const char*;
 auto to_string_hex_trim(U32 i) -> const char*;
 auto to_string_hex_trim(U64 i) -> const char*;
+inline auto to_string_hex_trim(size_t x) -> const char* { return sizeof(x)==sizeof(U32)?to_string_hex_trim((U32)x):to_string_hex_trim((U64)x); }
 
 #include "maths.hpp"
 

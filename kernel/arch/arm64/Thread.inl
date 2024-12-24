@@ -2,7 +2,19 @@
 
 #include <kernel/Thread.hpp>
 
+#include <kernel/mmu.hpp>
+
 inline void __attribute__((flatten)) Thread::swap_state(Thread &from, Thread &to) {
+	asm volatile("" ::: "memory");
+
+	#ifdef HAS_MMU2
+		if(to.process.memoryMapping.pageCount>0){
+			mmu::set_userspace_mapping(to.process.memoryMapping);
+		}else{
+			mmu::set_userspace_mapping(mmu::kernelMapping);
+		}
+	#endif
+
 	//x29 is fp
 	//x30 is lr
 

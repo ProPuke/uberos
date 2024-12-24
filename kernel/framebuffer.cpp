@@ -1,18 +1,23 @@
 #include "framebuffer.hpp"
 
-#include <kernel/device.hpp>
-#include <kernel/driver/Graphics.hpp>
-#include <kernel/log.hpp>
+#include <kernel/drivers.hpp>
+#include <kernel/drivers/Graphics.hpp>
+#include <kernel/Log.hpp>
+
+static Log log("framebuffer");
 
 namespace framebuffer {
 	void init() {
-		log::Section section("framebuffer::init...");
+		auto section = log.section("init...");
 
 		{
-			log::Section section("Devices:");
+			auto section = log.section("Devices:");
 
-			for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
-				log::print_info(graphics.name);
+			for(auto &graphics:drivers::iterate<driver::Graphics>()){
+				log.print_info(graphics.name, ':');
+				for(auto i=0u,framebuffers=graphics.get_framebuffer_count();i<framebuffers;i++){
+					log.print_info("  ", graphics.get_framebuffer_name(i));
+				}
 			}
 		}
 
@@ -31,7 +36,7 @@ namespace framebuffer {
 	U32 get_framebuffer_count() {
 		U32 count = 0;
 
-		for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
+		for(auto &graphics:drivers::iterate<driver::Graphics>()){
 			count += graphics.get_framebuffer_count();
 		}
 
@@ -39,7 +44,7 @@ namespace framebuffer {
 	}
 
 	Framebuffer* get_framebuffer(U32 index) {
-		for(auto &graphics:device::iterate_type<driver::Graphics>("graphics")){
+		for(auto &graphics:drivers::iterate<driver::Graphics>()){
 			const auto count = graphics.get_framebuffer_count();
 			if(index<count){
 				return graphics.get_framebuffer(index);

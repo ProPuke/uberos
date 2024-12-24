@@ -1,9 +1,9 @@
 #include "Process.hpp"
 
-#include "Thread.hpp"
-#include "ThreadCpuState.hpp"
-#include "memory.hpp"
-#include "scheduler.hpp"
+#include <kernel/memory.hpp>
+#include <kernel/scheduler.hpp>
+#include <kernel/Thread.hpp>
+#include <kernel/ThreadCpuState.hpp>
 
 namespace process {
 	LList<Process> processes;

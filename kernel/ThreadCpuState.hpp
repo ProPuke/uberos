@@ -5,6 +5,6 @@
 #elif defined(ARCH_ARM64)
 	#include <kernel/arch/arm64/ThreadCpuState.hpp>
 	
-#else
-	#error "Unsupported architecture"
+#elif defined(ARCH_X86)
+	#include <kernel/arch/x86/ThreadCpuState.hpp>
 #endif

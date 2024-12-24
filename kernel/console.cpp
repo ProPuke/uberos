@@ -4,9 +4,9 @@
 
 namespace console {
 	namespace {
-		void null_putc(void*, unsigned char c) {}
-		auto null_getc(void*) -> unsigned char { return 0; }
-		auto null_peekc(void*) -> unsigned char { return 0; }
+		void null_putc(void*, char c) {}
+		auto null_getc(void*) -> char { return 0; }
+		auto null_peekc(void*) -> char { return 0; }
 
 		void automatic_puts(void *binding, const char *str) {
 			while(*str) _binding_putc(binding, *str++);

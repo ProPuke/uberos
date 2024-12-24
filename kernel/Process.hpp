@@ -1,12 +1,12 @@
 #pragma once
 
+#include <kernel/ProcessLog.hpp>
+#include <kernel/mmu.hpp>
+
 #include <common/ipc.hpp>
 #include <common/LList.hpp>
 #include <common/ListUnordered.hpp>
 #include <common/ipc.hpp>
-
-#include <kernel/ProcessLog.hpp>
-#include <kernel/mmu.hpp>
 
 struct Process;
 
@@ -30,7 +30,7 @@ struct Process: LListItem<Process> {
 	Entrypoint entrypoint;
 	ProcessLog log;
 
-	#ifdef HAS_MMU
+	#ifdef KERNEL_MMU
 		mmu::MemoryMapping memoryMapping;
 	#endif
 

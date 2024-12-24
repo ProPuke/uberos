@@ -1,14 +1,16 @@
 #pragma once
 
-#include "Process.hpp"
-#include <common/types.hpp>
-#include <common/LList.hpp>
+#include <kernel/Process.hpp>
+
 #include <common/Callback.hpp>
+#include <common/LList.hpp>
+#include <common/types.hpp>
+
 #include <atomic>
 
-namespace scheduler {
-	namespace arch {
-		namespace arm {
+namespace arch {
+	namespace arm {
+		namespace scheduler {
 			void init();
 		}
 	}
@@ -22,6 +24,9 @@ struct Thread;
 
 namespace thread {
 	extern std::atomic<Thread*> currentThread;
+
+	U32 get_total_count();
+	U32 get_active_count();
 }
 
 struct ThreadCpuState;
@@ -29,7 +34,7 @@ struct ThreadCpuState;
 struct Thread: LListItem<Thread> {
 	// note that this really stores the frozen moment in time in the kernel 
 
-	friend void scheduler::arch::arm::init();
+	friend void arch::arm::scheduler::init();
 	friend Thread* Process::create_thread(Process::Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket);
 	friend Thread* Process::create_kernel_thread(I32(*entrypoint)());
 	friend Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize);
@@ -63,9 +68,12 @@ struct Thread: LListItem<Thread> {
 		"terminated"
 	};
 
-	U64 sleep_wake_time = 0;
+	U32 scheduler_timeslice_percentage = 100;
 
-	void sleep(U64 usecs);
+	U32 sleep_start_time = 0;
+	U32 sleep_wake_time = 0;
+
+	void sleep(U32 usecs);
 
 	void pause();
 	void resume();
@@ -82,4 +90,6 @@ template<> inline auto to_string(Thread::State state) -> const char* {
 	#include <kernel/arch/arm32/Thread.inl>
 #elif defined(ARCH_ARM64)
 	#include <kernel/arch/arm64/Thread.inl>
+#elif defined(ARCH_X86)
+	#include <kernel/arch/x86/Thread.inl>
 #endif

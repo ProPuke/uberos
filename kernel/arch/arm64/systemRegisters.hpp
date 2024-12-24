@@ -1,8 +1,9 @@
 #pragma once
 
+#include <kernel/assert.hpp>
+
 #include <common/format.hpp>
 #include <common/types.hpp>
-#include <kernel/assert.hpp>
 
 // no idea what this shit means. docs are hard -_-
 
@@ -233,3 +234,31 @@ struct Ttbr {
 	}
 };
 static_assert(sizeof(Ttbr)==8);
+
+struct Id_aa64mmfr0_el1 {
+	union {
+		struct __attribute__((packed)) {
+			U64 paRange:4; // physical address range
+			U64 asidBits:4;
+			U64 bigEnd:4;
+			U64 snsMem:4;
+			U64 bigEndEL0:4;
+			U64 tGran16:4;
+			U64 tGran64:4;
+			U64 tGran4:4;
+			U64 tGran16_2:4;
+			U64 tGran64_2:4;
+			U64 tGran4_2:4;
+			U64 exS:4;
+			U64 _reserved1:8;
+			U64 fgt:4;
+			U64 ecv:4;
+		};
+		U64 data;
+	};
+
+	void load() {
+		asm volatile("mrs %[value], ID_AA64MMFR0_EL1" : [value] "=r"(data));
+	}
+};
+static_assert(sizeof(Id_aa64mmfr0_el1)==8);

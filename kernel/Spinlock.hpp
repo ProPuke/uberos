@@ -1,12 +1,16 @@
 #pragma once
 
 #if defined(ARCH_ARM32)
-	#include "arch/arm32/Spinlock.hpp"
+	#include <kernel/arch/arm32/Spinlock.hpp>
 	using arch::arm32::Spinlock;
 	
 #elif defined(ARCH_ARM64)
-	#include "arch/arm64/Spinlock.hpp"
+	#include <kernel/arch/arm64/Spinlock.hpp>
 	using arch::arm64::Spinlock;
+
+#elif defined(ARCH_X86)
+	#include <kernel/arch/x86/Spinlock.hpp>
+	using arch::x86::Spinlock;
 #endif
 
 struct Spinlock_Guard {

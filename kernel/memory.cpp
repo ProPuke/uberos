@@ -1,19 +1,22 @@
 #include "memory.hpp"
 
+#include <common/debugUtils.hpp>
 #include <common/format.hpp>
 #include <common/MemoryPool.hpp>
 #include <common/stdlib.hpp>
 
-#include <common/debugUtils.hpp>
+#include <kernel/kernel.h>
+#include <kernel/Log.hpp>
 #include <kernel/memory/Page.hpp>
 #include <kernel/memory/PagedPool.hpp>
 #include <kernel/Spinlock.hpp>
-#include <kernel/log.hpp>
+
+static Log log("mem");
 
 #ifndef HAS_UNALIGNED_ACCESS
 	extern "C" auto memset(void *dest, int value, size_t size) -> void* {
 		#ifdef MEMORY_CHECKS
-			log::print_debug("memset ", format::Hex64{dest}, size, "\n");
+			trace("memset ", to_string(dest), size, "\n");
 		#endif
 		auto d = (char*)dest;
 		while(--size) *d++ = value;
@@ -21,8 +24,21 @@
 	}
 #endif
 
+extern U8 __start, __end;
+
 namespace memory {
 	U64 totalMemory = 0;
+
+	size_t lowMemorySize = 1024*4;
+	void *lowMemory = &__start-lowMemorySize;
+
+	size_t stackSize = KERNEL_STACK_SIZE;
+	void *stack = &__end;
+
+	// we'll allocate 1MB of working heap, just after the stack
+	size_t heapSize = 1*1024*1024;
+	void *heap = ((char*)stack)+heapSize;
+
 	Page *pageData = nullptr;
 	size_t pageDataSize = 0;
 
@@ -30,8 +46,16 @@ namespace memory {
 	
 	LList<::memory::Page> freePages;
 
-	memory::PagedPool<sizeof(size_t)> kernelHeap;
+	memory::PagedPool<sizeof(size_t)> kernelHeap(heap, heapSize);
 	// MemoryPool<32> *heap;
+
+	auto get_used_heap() -> size_t {
+		return kernelHeap.used;
+	}
+
+	auto get_available_heap() -> size_t {
+		return kernelHeap.available;
+	}
 
 	void Page::clear() {
 		bzero(physicalAddress, pageSize);
@@ -60,7 +84,7 @@ namespace memory {
 		for(auto page=freePages.head; page; page=page->next){
 			U32 needed = count-1;
 			for(auto checkPage=page; needed&&checkPage->hasNextPage&&!(checkPage+1)->isAllocated; checkPage++,needed--);
-			// log::print("searched\n");
+			// trace("searched\n");
 
 			if(needed==0){
 				U32 needed = count;
@@ -77,7 +101,7 @@ namespace memory {
 			}
 		}
 
-		// log::print("didn't get pages\n");
+		// trace("didn't get pages\n");
 		return nullptr;
 	}
 
@@ -90,10 +114,10 @@ namespace memory {
 	}
 
 	void* _kmalloc(size_t size) {
-		// log::Section section("kmalloc");
+		// auto section = log.section("kmalloc");
 
 		#ifdef MEMORY_CHECKS
-			log::Section section("kmalloc ", size);
+			auto section = log.section("kmalloc ", size);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks in kmalloc 0");
 		#endif
 
@@ -103,11 +127,11 @@ namespace memory {
 		// void *address = heap->malloc(size);
 
 		if(!address){
-			log::print_warning("Warning: Out of memory allocating ", size, "B for kernel");
+			log.print_warning("Warning: Out of memory allocating ", size, "B for kernel");
 		}
 
 		#ifdef MEMORY_CHECKS
-			log::print_debug("kmalloc ", size, " @ ", address);
+			trace("kmalloc ", size, " @ ", address);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
@@ -117,10 +141,10 @@ namespace memory {
 	}
 
 	void _kfree(void *address) {
-		// log::Section section("kfree");
+		// auto section = log.section("kfree");
 
 		#ifdef MEMORY_CHECKS
-			log::print_debug("kfree ", address);
+			trace("kfree ", address);
 		#endif
 
 		if(!address) return;
@@ -132,7 +156,7 @@ namespace memory {
 	void _check_dangerous_address(void *from, void *to) {
 		for(auto block=kernelHeap.availableBlocks.head; block; block=block->next) {
 			if(to>block&&from<&block->_data+block->size){
-				log::print_error("Error: DANGEROUS ADDRESS ", from, " -> ", (U8*)to-1, " overlaps block ", block, " -> ", &block->_data+block->size-1);
+				log.print_error("Error: DANGEROUS ADDRESS ", from, " -> ", (U8*)to-1, " overlaps block ", block, " -> ", &block->_data+block->size-1);
 			}
 		}
 	}

@@ -35,7 +35,14 @@ template<> inline auto to_string(format::Hex16 x) -> const char* { return (x.ful
 template<> inline auto to_string(format::Hex32 x) -> const char* { return (x.full?to_string_hex(x.value):to_string_hex_trim(x.value))+(x.head?0:2); }
 template<> inline auto to_string(format::Hex64 x) -> const char* { return (x.full?to_string_hex(x.value):to_string_hex_trim(x.value))+(x.head?0:2); }
 
-template<typename Type>
-inline auto to_string(const Type *x) -> const char* { return to_string(format::Hex64{x}); }
-template<typename Type>
-inline auto to_string(Type *x) -> const char* { return to_string(format::Hex64{x}); }
+#ifdef _64BIT
+	template<typename Type>
+	inline auto to_string(const Type *x) -> const char* { return to_string(format::Hex64{x}); }
+	template<typename Type>
+	inline auto to_string(Type *x) -> const char* { return to_string(format::Hex64{x}); }
+#else
+	template<typename Type>
+	inline auto to_string(const Type *x) -> const char* { return to_string(format::Hex32{x}); }
+	template<typename Type>
+	inline auto to_string(Type *x) -> const char* { return to_string(format::Hex32{x}); }
+#endif

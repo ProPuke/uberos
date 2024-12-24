@@ -2,26 +2,22 @@
 
 #if defined(ARCH_RASPI4)
 	#define HAS_GIC400
-	#include <kernel/driver/interrupt/Arm_gicV2.hpp>
+	#include <kernel/drivers/arm/interrupt/Arm_gicV2.hpp>
 #endif
-#include <kernel/driver/interrupt/Arm_raspi_legacy.hpp>
+#include <kernel/drivers/raspi/interrupt/Arm_raspi_legacy.hpp>
 
 #include <kernel/mmio.hpp>
 
 #include <kernel/arch/raspi/mmio.hpp>
 
-namespace mmio {
-	using namespace arch::raspi;
-}
-
-namespace irq {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace irq {
 			enum struct Irq {
-				system_timer_0 = 0,
-				system_timer_1 = 1,
-				system_timer_2 = 2,
-				system_timer_3 = 3,
+				system_timer_gpu_0 = 0,
+				system_timer_cpu_0 = 1,
+				system_timer_gpu_1 = 2,
+				system_timer_cpu_1 = 3,
 				usb_controller = 9,
 				hdmi_0 = 40,
 				hdmi_1 = 41,

@@ -69,6 +69,36 @@
 				"debug",
 				"RASPI_MODEL=4"
 			]
-		}
+		},
+		{
+			"label": "Remote debug x86-ibm-bios (x86-64)",
+			"type": "shell",
+			"command": "boop",
+			"group": "test",
+			"options": {
+				"cwd": "kernel",
+			},
+			"isBackground": true,
+			"args": [
+				"debug",
+				"x86-ibm-bios",
+				"debug"
+			]
+		},
+		{
+			"label": "Remote debug x86-ibm-bios",
+			"type": "shell",
+			"command": "boop",
+			"group": "test",
+			"options": {
+				"cwd": "kernel",
+			},
+			"isBackground": true,
+			"args": [
+				"debug",
+				"x86-ibm-bios",
+				"debug"
+			]
+		},
 	]
 }

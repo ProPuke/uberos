@@ -1,8 +1,8 @@
 #pragma once
 
-namespace usb {
-	namespace arch {
-		namespace raspi {
+namespace arch {
+	namespace raspi {
+		namespace usb {
 			void init(bool plugAndPlay = false);
 		}
 	}

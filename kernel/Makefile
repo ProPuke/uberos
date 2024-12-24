@@ -5,6 +5,8 @@ KERNEL_SRCS    := $(shell find . -type d -name 'arch' -prune -or -name "*.S" -pr
 KERNEL_HEADERS := $(shell find . -type d -name 'arch' -prune -or -name "*.hpp" -print -or -name "*.inl" -print)
 COMMON_SRCS    := $(shell find ../common -name "*.S" -or -name "*.cpp" -or -name "*.c" ! -iname ".*")
 COMMON_HEADERS := $(shell find ../common -name "*.hpp" -or -name "*.inl")
+# IMAGES         := $(shell find ../common . -name "*.png" ! -iname ".*")
+# IMAGE_SRCS     := $(IMAGES:%=%.cpp)
 
 BUILD ?= debug
 
@@ -20,9 +22,9 @@ ifeq ($(BUILD),debug)
 	CXXFLAGS := $(CXXFLAGS) -g -D DEBUG
 
 else ifeq ($(BUILD),release)
-	CFLAGS   := $(CFLAGS) -O2
-	CXXFLAGS := $(CXXFLAGS) -O2
-	LFLAGS   := $(LFLAGS) -O2
+	CFLAGS   := $(CFLAGS) -O3
+	CXXFLAGS := $(CXXFLAGS) -O3
+	LFLAGS   := $(LFLAGS) -O3
 endif
 
 ifeq ($(RASPI_MODEL),1)
@@ -169,6 +171,7 @@ endif
 
 KERNEL_OBJS := $(KERNEL_SRCS:%=%.o)
 COMMON_OBJS := $(COMMON_SRCS:%=%.o)
+# IMAGE_OBJS  := $(IMAGE_SRCS:%=%.o)
 MSDF_ATLAS_GEN := ../tools/msdf-atlas-gen/bin/msdf-atlas-gen
 
 .PHONY: all
@@ -225,6 +228,10 @@ fonts:
 	@$(CXX) -c $< -o $@
 # @$(CXX) -Wa,-adhln -c $< -o $@ > $<.output
 
+%.png.cpp: %.png Makefile $(KERNEL_HEADERS) $(COMMON_HEADERS)
+	@echo "PACK " $<
+	@../tools/pack-image.sh $< $@
+
 $(OUTPUTDIR)/boot:
 	@echo "MKDIR" $@
 	@mkdir -p $@
@@ -236,25 +243,25 @@ $(OUTPUTDIR)/boot:
 	@rm $(OUTPUTDIR)/boot/kernel*.img
 	@rm $(OUTPUTDIR)/boot/README.*
 
-$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) linker.ld Makefile | $(OUTPUTDIR) $(OUTPUTDIR)/boot
+$(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) linker.ld Makefile | $(OUTPUTDIR) $(OUTPUTDIR)/boot
 	@echo "LD   " $@
 	@$(CC) -c .kernelSymbolsPlaceholder.c -o .kernelSymbols.o
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) .kernelSymbols.o -lgcc
 
 	@# build debug from linked kernel, and relink with those included
 	@$(NM) --numeric-sort --demangle --print-size $@ | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={" } { if(NF==3){print "{\"" $$3 "\", (void*)0x" $$1 ", 0x" ($$2?$$2:0) "},"}} END{print "{0,0} };"}' > .kernelSymbols.c
 	@$(CC) -c .kernelSymbols.c -o .kernelSymbols.o
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) .kernelSymbols.o -lgcc
 
 	@# now they're included, we need to calculate them AGAIN, so we take into account how having them affects other addresses. However, there will be some extra symbols this time that come from that injectd file, soo..
 	@$(NM) --numeric-sort --demangle --print-size $@ | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={" } { if(NF==3){print "{\"" $$3 "\", (void*)0x" $$1 ", 0x" ($$2?$$2:0) "},"}} END{print "{0,0} };"}' > .kernelSymbols.c
 	@$(CC) -c .kernelSymbols.c -o .kernelSymbols.o
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) .kernelSymbols.o -lgcc
 
 	@# ..we recalculate and link the third final time, now that we know their final definite position, including 
 	@$(NM) --numeric-sort --demangle --print-size $@ | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={" } { if(NF==3){print "{\"" $$3 "\", (void*)0x" $$1 ", 0x" ($$2?$$2:0) "},"}} END{print "{0,0} };"}' > .kernelSymbols.c
 	@$(CC) -c .kernelSymbols.c -o .kernelSymbols.o
-	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) .kernelSymbols.o -lgcc
+	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) .kernelSymbols.o -lgcc
 
 	@echo "DUMP " $@.lst
 	@$(TOOLCHAIN_PREFIX)objdump --disassemble --demangle --source $@ > $@.lst
@@ -265,13 +272,13 @@ $(OUTPUTDIR)/boot/config.txt: ../assets/boot/config.txt | $(OUTPUTDIR)/boot
 	@echo "CP   " "../assets/boot/config.txt"
 	@cp ../assets/boot/config.txt $(OUTPUTDIR)/boot/config.txt
 
-# $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(OUTPUTDIR) linker.ld Makefile
+# $(OUTPUTDIR)/$(KERNEL_FILENAME): $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) $(OUTPUTDIR) linker.ld Makefile
 # 	@echo "LD   " $@
-# 	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) -lgcc
+# 	@$(LD) -T linker.ld -o $@ $(LFLAGS) $(KERNEL_OBJS) $(COMMON_OBJS) $(IMAGE_OBJS) -lgcc
 
 .PHONY: clean
 clean:
-	@$(RM) -rf ../build
+	@rm -rf ../build
 	@find . -type f -name '*.o' -delete
 	@find . -type f -name '*.cpp.output' -delete
 	@find ../common -type f -name '*.o' -delete
@@ -279,3 +286,5 @@ clean:
 
 .PHONY: kernel
 kernel: $(OUTPUTDIR)/$(KERNEL_FILENAME)
+
+.SUFFIXES: #no defaults plx

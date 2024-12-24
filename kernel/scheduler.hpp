@@ -3,13 +3,15 @@
 #include <common/types.hpp>
 
 namespace scheduler {
+	void push_resolution_requirement(U32);
+	void pop_resolution_requirement();
+
+	void init();
+
 	void yield();
 	
 	void lock();
 	void unlock();
-
-	U32 get_total_thread_count();
-	U32 get_active_thread_count();
 
 	struct Guard {
 		/**/ Guard() { lock(); }

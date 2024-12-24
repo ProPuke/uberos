@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../../mmu.hpp"
+#include <kernel/memory.hpp>
+#include <kernel/mmu.hpp>
 
 #include <common/types.hpp>
-
-#include <kernel/memory.hpp>
 
 namespace mmu {
 	struct TableDescriptor;
@@ -13,12 +12,12 @@ namespace mmu {
 		TableDescriptor *initialTable = nullptr;
 		U32 pageCount = 0;
 
-		/**/ MemoryMapping(bool init = true);
+		/**/ MemoryMapping(bool allocate = true);
 		/**/~MemoryMapping();
 
 		public:
 
-		void init(); //TODO:improve? (ability to manually initialise late). Can we make this safer?
+		void allocate();
 
 		void clear();
 		void* add_pages(U32 count, RegionType regionType);

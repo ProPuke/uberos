@@ -3,10 +3,10 @@
 #include <common/stdlib.hpp>
 
 #include <kernel/framebuffer.hpp>
+#include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
-#include <kernel/log.hpp>
-#include <kernel/Spinlock.hpp>
 #include <kernel/mmio.hpp>
+#include <kernel/Spinlock.hpp>
 
 namespace graphics2d {
 	LList<View> views;
@@ -32,20 +32,20 @@ namespace graphics2d {
 	View* _create_view(Thread *thread, ViewLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
 
 		#ifdef DEBUG_MEMORY
-			log::Section section("create_view ", x, ", ", y, " ", width, "x", height);
+			logging::Section section("create_view ", x, ", ", y, " ", width, "x", height);
 		#endif
 
 		auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
 		auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
 
 		#ifdef DEBUG_MEMORY
-			log::print("new U8 ", width, "x", height, "@", bpp, "\n");
+			trace("new U8 ", width, "x", height, "@", bpp, "\n");
 		#endif
 
 		auto buffer = new U8[width*height*bpp]; //TODO:allocate from pages and map to current thread
 
 		#ifdef DEBUG_MEMORY
-			log::print("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
+			trace("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
 		#endif
 
 		if(!buffer) return nullptr;
@@ -73,7 +73,7 @@ namespace graphics2d {
 		}
 
 		#ifdef DEBUG_MEMORY
-			log::print_debug("created view ", view);
+			trace("created view ", view);
 		#endif
 
 		return view;
@@ -116,9 +116,9 @@ namespace graphics2d {
 	#pragma GCC push_options
 	#pragma GCC optimize ("-O3")
 	void _update_background_area(Rect rect) {
-		mmio::PeripheralWriteGuard guard;
+		// mmio::PeripheralWriteGuard guard;
 
-		// log::print_info("update background area");
+		// trace("update background area");
 
 		for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 			auto &framebuffer = *framebuffer::get_framebuffer(i);
@@ -129,10 +129,10 @@ namespace graphics2d {
 			rect.x2 = min<I32>(rect.x2, framebuffer.buffer.width);
 			rect.y2 = min<I32>(rect.y2, framebuffer.buffer.height);
 
-			// log::print_info("paint background ", rect.y1, " to ", rect.y2);
+			// trace("paint background ", rect.y1, " to ", rect.y2);
 
 			for(auto y=rect.y1;y<rect.y2;y++){
-				// log::print("y = ", y, "\n");
+				// trace("y = ", y, "\n");
 				auto startX = rect.x1;
 				while(startX<rect.x2){
 					auto endX = rect.x2;
@@ -267,7 +267,7 @@ namespace graphics2d {
 	#pragma GCC optimize ("-O3")
 	template <unsigned scale>
 	void _update_view_area(View &view, Rect rect) {
-		mmio::PeripheralAccessGuard guard;
+		// mmio::PeripheralAccessGuard guard;
 
 		//TODO: do not occlude against transparent views, and after loop, continue forward through each transparent view, updating them over the same local rect
 		
@@ -310,9 +310,9 @@ namespace graphics2d {
 						// U8 *source = &view.buffer.address[((y/scale)*view.buffer.width+startX/scale)*bpp];
 						// U32 length = (endX-startX)*bpp;
 						// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
-						// 	log::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
+						// 	trace("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 						// }
-						// log::print(source, " -> ", source+length, "\n");
+						// trace(source, " -> ", source+length, "\n");
 						// memcpy_aligned(target, source, length);
 
 						if(scale==1){
@@ -321,7 +321,7 @@ namespace graphics2d {
 							U32 length = (endX-startX)*bpp;
 
 							// if(source<view.buffer.address||source+length>view.buffer.address+view.buffer.size){
-							// 	log::print("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
+							// 	trace("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 							// }
 							memcpy_aligned(target, source, length);
 
@@ -333,7 +333,7 @@ namespace graphics2d {
 								U8 *sourceData = &source[(x/scale)*bpp]; 
 								for(unsigned i=0;i<bpp;i++){
 									// if(sourceData<view.buffer.address||source>=view.buffer.address+view.buffer.size){
-									// 	log::print("READ OUT OF BUFFER! ", source, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
+									// 	trace("READ OUT OF BUFFER! ", source, " vs ", view.buffer.address, " -> ", view.buffer.address+view.buffer.size, "\n");
 									// }
 									*target++ = *sourceData++;
 								}

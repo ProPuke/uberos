@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Framebuffer.hpp"
-#include "Thread.hpp"
+#include <kernel/Framebuffer.hpp>
+#include <kernel/Thread.hpp>
 
 #include <common/Callback.hpp>
 #include <common/graphics2d/Buffer.hpp>

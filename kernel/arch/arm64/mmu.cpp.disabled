@@ -165,7 +165,7 @@ namespace mmu {
 			}
 
 			void init() {
-				stdio::Section section("mmu::arch::arm64::init");
+				stdio::Section section("arch::arm64::mmu::init");
 
 				stage2map1to1 = (VmsaV8_64Descriptor*)memory::allocate_page()->physicalAddress;
 				bzero(stage2map1to1, sizeof(stage2map1to1));

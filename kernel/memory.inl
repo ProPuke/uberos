@@ -2,7 +2,8 @@
 
 #include "memory.hpp"
 
-#include "memory/Page.hpp"
+#include <kernel/memory/Page.hpp>
+
 #include <common/types.hpp>
 
 namespace memory {

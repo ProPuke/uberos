@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${default}"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "compilerArgs": [
+                "-include kernel/common.hpp",
+                "-include kernel/debug.hpp"
+            ]
+        }
+    ],
+    "version": 4
+}

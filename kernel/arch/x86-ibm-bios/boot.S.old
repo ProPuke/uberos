@@ -1,0 +1,18 @@
+#include <kernel/kernel.h>
+
+.section ".text.boot"
+
+.global _start
+_start:
+	// set stack pointer
+		mov esp, __end
+		mov eax, KERNEL_STACK_SIZE
+		add esp, eax
+
+	// call entrypoint
+		call entrypoint
+		jmp halt
+
+halt:
+	hlt
+	jmp halt

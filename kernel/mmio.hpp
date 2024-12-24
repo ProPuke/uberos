@@ -3,8 +3,11 @@
 #include <common/types.hpp>
 
 namespace mmio {
-	void write32(U32 reg, U32 data);
 	auto read32(U32 reg) -> U32;
+	auto read64(U32 reg) -> U64;
+
+	void write32(U32 reg, U32 data);
+	void write64(U32 reg, U64 data);
 	
 	void delay(I32 count);
 }

@@ -5,7 +5,7 @@
 	inline void assert(bool assertion, Params ...messageParams) {}
 
 #else
-	#include "log.hpp"
+	#include <kernel/log.hpp>
 
 	#if 0
 		// C++20

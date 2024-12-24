@@ -1,52 +1,48 @@
 #pragma once
 
-#include <common/LList.hpp>
-
-#include <kernel/device.hpp>
+#include <kernel/DriverApi.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/memory.hpp>
 
-struct Driver: LListItem<Driver> {
-	enum struct State {
-		disabled,
-		enabled,
-		restarting,
-		failed,
-		max = failed
-	};
-	static const char * state_name[(U64)State::max+1];
+#include <common/Bool256.hpp>
+#include <common/LList.hpp>
 
-	U64 address;
+struct DriverType {
 	const char *name;
-	const char *type;
-	const char *descriptiveType;
-	State state = State::disabled;
+	DriverType *parentType;
+};
 
-	//NOTE:constexpr helps ensure that drivers are (hopefully) valid from the start, and not invalid and then overwritten later by __init_array_start
-	constexpr /**/ Driver(U64 address, const char *name, const char *type, const char *descriptiveType):
-		address(address),
-		name(name),
-		type(type),
-		descriptiveType(descriptiveType)
-	{}
+struct Driver: LListItem<Driver> {
+	static DriverType driverType;
 
+	const char *name;
+	DriverType *type;
+	DriverApi api;
+	const char *description;
+
+	/*   */ /**/ Driver(const char *name, const char *description);
 	virtual /**/~Driver();
 
-	auto get_driver_state() -> State { return State::enabled; };
+	auto is_type(DriverType &compare) -> bool {
+		for(auto type=this->type;type;type=type->parentType){
+			if(type==&compare) return true;
+		}
+		return false;
+	}
 
 	virtual auto can_disable_driver() -> bool { return true; }
 	virtual auto can_restart_driver() -> bool { return true; }
 
 protected:
 
-	friend auto device::start_device(Driver &device) -> bool;
-	friend auto device::stop_device(Driver &device) -> bool;
-	friend auto device::restart_device(Driver &device) -> bool;
+	friend class DriverApi;
+	friend void drivers::_on_irq(U8);
+	friend auto drivers::_on_interrupt(U8 vector, const void *cpuState) -> const void*;
 
-	virtual void _on_driver_enable() { state = State::enabled; };
-	virtual void _on_driver_disable() { state = State::disabled; };
-	virtual void _on_driver_restart() { _on_driver_disable(); _on_driver_enable(); };
+	virtual auto _on_start() -> bool = 0;
+	virtual auto _on_stop() -> bool = 0;
+
+	virtual auto _on_interrupt(U8, const void *cpuState) -> const void* { return nullptr; }
+	virtual void _on_irq(U8) {}
 };
 
-#include <common/stdlib.hpp>
-
-template<> inline auto to_string(Driver::State state) -> const char* { return Driver::state_name[(U64)state]; }

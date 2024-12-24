@@ -182,7 +182,7 @@ _do_interrupt_sync_el1h:
 	call_error interrupt_sync_el1h // Synchronous EL1h
 	eret
 _do_interrupt_el1_irq:
-	call handle_interrupt
+	call _on_irq
 	eret
 _do_interrupt_fiq_el1h:
 	call interrupt_fiq_el1h      // FIQ EL1h

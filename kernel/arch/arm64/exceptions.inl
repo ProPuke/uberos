@@ -1,8 +1,6 @@
 #pragma once
 
-#include "exceptions.hpp"
-
-#include <kernel/log.hpp>
+// #include <kernel/log.hpp>
 
 namespace exceptions {
 	inline bool _is_active() {

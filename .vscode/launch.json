@@ -71,6 +71,33 @@
 			"cwd": "${workspaceRoot}/kernel",
 			"valuesFormatting": "parseText",
 			"preLaunchTask": "Remote debug raspi 4"
+		},
+		{
+			"type": "gdb",
+			"request": "attach",
+			"name": "Debug x86-ibm-bios (x86-64)",
+			// "gdbpath": "${workspaceRoot}/tools/i386-elf/bin/i386-elf-gdb",
+			"executable": "${workspaceRoot}/build/x86-ibm-bios/boot.img",
+			"debugger_args": [
+				"-ex", "set architecture i386:x86-64"
+			],
+			"target": ":1234",
+			"remote": true,
+			"cwd": "${workspaceRoot}/kernel",
+			"valuesFormatting": "parseText",
+			"preLaunchTask": "Remote debug x86-ibm-bios (x86-64)"
+		},
+		{
+			"type": "gdb",
+			"request": "attach",
+			"name": "Debug x86-ibm-bios",
+			// "gdbpath": "${workspaceRoot}/tools/i386-elf/bin/i386-elf-gdb",
+			"executable": "${workspaceRoot}/build/x86-ibm-bios/boot.img",
+			"target": ":1234",
+			"remote": true,
+			"cwd": "${workspaceRoot}/kernel",
+			"valuesFormatting": "parseText",
+			"preLaunchTask": "Remote debug x86-ibm-bios"
 		}
 	]	
 }
