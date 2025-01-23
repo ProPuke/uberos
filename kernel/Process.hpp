@@ -34,7 +34,7 @@ struct Process: LListItem<Process> {
 		mmu::MemoryMapping memoryMapping;
 	#endif
 
-	ListUnordered<Thread> threads;
+	ListUnordered<Thread*> threads;
 
 	auto create_current_thread(memory::Page &stackPage, size_t stackSize) -> Thread*;
 

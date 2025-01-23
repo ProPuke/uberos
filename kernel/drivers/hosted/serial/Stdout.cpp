@@ -5,16 +5,12 @@
 
 namespace driver {
 	namespace serial {
-		/**/ Stdout:: Stdout(U64 address, const char *name):
-			Serial(address, name, "serial port")
-		{}
-
-		auto Stdout::_on_start() -> bool {
-			return true;
+		auto Stdout::_on_start() -> Try<> {
+			return {};
 		}
 
-		auto Stdout::_on_stop() -> bool {
-			return true;
+		auto Stdout::_on_stop() -> Try<> {
+			return {};
 		}
 
 		void Stdout::set_baud(U32 set) {

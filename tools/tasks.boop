@@ -1,5 +1,8 @@
 set gcc-version = 13.2.0
 set binutils-version = 2.41
+set newlib-version = 4.5.0.20241231
+set openlibm-version = 0.8.5
+# set newlib-version = 3.1.0
 set threads = {eval nproc}
 
 task download-binutils
@@ -24,42 +27,80 @@ task download-gcc
 		run echo "MULTILIB_OPTIONS += mno-red-zone\nMULTILIB_DIRNAMES += no-red-zone" > gcc-13.2.0/gcc/config/i386/t-x86_64-elf
 		run sed -i 's/x86_64-[*]-elf[*])$/\0\n\ttmake_file="${{tmake_file}} i386\/t-x86_64-elf"/g' gcc-{gcc-version}/gcc/config.gcc
 
+task download-newlib
+	provides source/newlib-{newlib-version}
+
+	mkdir source
+	cd source
+		run wget -nv ftp://sourceware.org/pub/newlib/newlib-{newlib-version}.tar.gz
+		run tar xf newlib-{newlib-version}.tar.gz
+		run rm newlib-{newlib-version}.tar.gz
+
+task download-openlibm
+	provides source/openlibm-{openlibm-version}
+
+	mkdir source
+	cd source
+		run wget -nv https://github.com/JuliaMath/openlibm/archive/refs/tags/v{openlibm-version}.zip
+		run unzip v{openlibm-version}.zip
 
 task download
 	requires task download-binutils
 	requires task download-gcc
+	requires task download-newlib
+	requires task download-openlibm
 
 task build-x86-ibm
 	# set target = i386-elf
-	set target = x86_64-pc-elf
+	set target = i686-elf
+	# set target = x86_64-pc-elf
 
 	requires task download
-	provides {target}
+	# provides {target}
 
-	rm source/binutils-{binutils-version}/build
-	mkdir source/binutils-{binutils-version}/build
-	cd source/binutils-{binutils-version}/build
-		run ../configure --target={target} --prefix="{eval pwd}/{target}" --disable-nls --disable-werror
-		run make -j{threads}
+	# rm source/binutils-{binutils-version}/build
+	# mkdir source/binutils-{binutils-version}/build
+	# cd source/binutils-{binutils-version}/build
+	# 	run ../configure --target={target} --prefix="{eval pwd}/{target}" --disable-nls --disable-werror
+	# 	run make -j{threads}
+	# 	run make install
+	# cd -
+
+	envvar PATH = {eval pwd}/{target}/bin:{eval echo $PATH}
+
+	# rm source/gcc-{gcc-version}/build
+	# mkdir source/gcc-{gcc-version}/build
+	# cd source/gcc-{gcc-version}/build
+	# 	run ../configure --target={target} --prefix="{eval pwd}/{target}" --disable-nls --enable-languages=c,c++ --without-headers --disable-hosted-libstdcxx
+	# 	run make all-gcc -j{threads}
+	# 	run make all-target-libgcc -j{threads}
+	# 	run make all-target-libstdc++-v3 -j{threads}
+	# 	run make install-gcc
+	# 	run make install-target-libgcc
+	# 	run make install-target-libstdc++-v3
+	# cd -
+
+	envvar CC = i686-elf-gcc
+	envvar CFLAGS = -O2 -ffreestanding -nostdlib
+
+	rm source/newlib-{newlib-version}/build
+	mkdir source/newlib-{newlib-version}/build
+	cd source/newlib-{newlib-version}/build
+		run ../configure --host={target} --target={target} --prefix="{eval pwd}/{target}"
+		# run make all -j{threads}
+		run make all-target-newlib -j{threads}
+		# run make -C newlib/libm -j{threads}
 		run make install
 	cd -
 
-	envvar PATH = {target}/bin:{eval echo $PATH}
+	# cd source/openlibm-{openlibm-version}
+	# 	run make clean
+	# 	run make ARCH=$ARCH TOOLPREFIX={target}- -j{threads}
+	# 	# run cp 
+	# cd -
 
-	rm source/gcc-{gcc-version}/build
-	mkdir source/gcc-{gcc-version}/build
-	cd source/gcc-{gcc-version}/build
-		run ../configure --target={target} --prefix="{eval pwd}/{target}" --disable-nls --enable-languages=c,c++ --without-headers --disable-hosted-libstdcxx
-		run make all-gcc -j{threads}
-		run make all-target-libgcc -j{threads}
-		run make all-target-libstdc++-v3 -j{threads}
-		run make install-gcc
-		run make install-target-libgcc
-		run make install-target-libstdc++-v3
-	cd -
-
-	run cp {target}/lib/gcc/{target}/{gcc-version}/*.a {target}/{target}/lib/
-	# run cp ./gcc/{target}/4.9.1/no-red-zone/libgcc.a
+	# run cp {target}/lib/gcc/{target}/{gcc-version}/*.a {target}/lib/
+	# # # run cp ./gcc/{target}/4.9.1/no-red-zone/libgcc.a
 
 task build
 	requires task build-x86-ibm

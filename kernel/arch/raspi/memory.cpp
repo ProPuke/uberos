@@ -4,7 +4,7 @@
 #include <kernel/arch/raspi/hwquery.hpp>
 #include <kernel/arch/raspi/memory.hpp>
 #include <kernel/kernel.h>
-#include <kernel/log.hpp>
+#include <kernel/Log.hpp>
 
 #include <common/LList.hpp>
 #include <common/MemoryPool.hpp>
@@ -12,6 +12,8 @@
 #include <common/types.hpp>
 
 #include <new>
+
+static Log log("memory");
 
 extern U8 __text_start;
 extern U8 __text_end;
@@ -42,7 +44,7 @@ namespace arch {
 			using ::memory::Page;
 
 			void init() {
-				log::Section section("arch::raspi::memory::init...");
+				auto section = log.section("arch::raspi::memory::init...");
 
 				if(!totalMemory){
 					#if defined(ARCH_RASPI1)
@@ -61,19 +63,19 @@ namespace arch {
 						#error "Unknown model"
 					#endif
 
-					log::print_warning("Warning: No memory size specified. Assuming ", totalMemory/1024/1024, "MB");
+					log.print_warning("Warning: No memory size specified. Assuming ", totalMemory/1024/1024, "MB");
 				}
 
-				log::print_info("total memory: ", totalMemory/1024/1024, "MB");
-				log::print_info("kernel stack: ", stackSize/1024, "KB");
-				// log::print("kernel heap: ", heapSize/1024, "KB\n");
+				log.print_info("total memory: ", totalMemory/1024/1024, "MB");
+				log.print_info("kernel stack: ", stackSize/1024, "KB");
+				// log.print("kernel heap: ", heapSize/1024, "KB\n");
 
-				log::print_info("page size: ", pageSize/1024, "KB");
+				log.print_info("page size: ", pageSize/1024, "KB");
 
 				#pragma GCC diagnostic push
 				#pragma GCC diagnostic ignored "-Warray-bounds"
 					// heap = (MemoryPool<32>*)((U8*)&__end)+stackSize;
-					auto kernelEnd = ::memory::heap + ::memory::heap_size;
+					auto kernelEnd = ::memory::heap + ::memory::heapSize;
 				#pragma GCC diagnostic pop
 
 				// { //initialise heap
@@ -91,51 +93,51 @@ namespace arch {
 				auto vramPageCount = (hwquery::videoMemory+pageSize-1) / pageSize;
 				auto userPageCount = pageCount-kernelPageCount-vramPageCount;
 
-				log::print_debug("kernel start @ ", &__end);
-				log::print_debug("kernel end @ ", kernelEnd);
+				log.print_debug("kernel start @ ", &__end);
+				log.print_debug("kernel end @ ", kernelEnd);
 
-				log::print_debug("text @ ", &__text_start, " - ", &__text_end);
-				log::print_debug("rodata @ ", &__rodata_start, " - ", &__rodata_end);
-				log::print_debug("data @ ", &__data_start, " - ", &__data_end);
-				log::print_debug("bss @ ", &__bss_start, " - ", &__bss_end);
+				log.print_debug("text @ ", &__text_start, " - ", &__text_end);
+				log.print_debug("rodata @ ", &__rodata_start, " - ", &__rodata_end);
+				log.print_debug("data @ ", &__data_start, " - ", &__data_end);
+				log.print_debug("bss @ ", &__bss_start, " - ", &__bss_end);
 
-				log::print_info("pages: ", pageCount);
-				log::print_info(kernelPageCount, " kernel pages");
-				log::print_info(vramPageCount, " vram pages");
-				log::print_info(userPageCount, " user pages");
-				log::print_info("");
+				log.print_info("pages: ", pageCount);
+				log.print_info(kernelPageCount, " kernel pages");
+				log.print_info(vramPageCount, " vram pages");
+				log.print_info(userPageCount, " user pages");
+				log.print_info("");
 
 				{ // initialise pages
-					log::Section section("Clearing pages...");
+					auto section = log.section("Clearing pages...");
 
 					auto i = 0u;
 
 					{ // kernel pages
-						// log::Section section("Clearing kernel...");
+						// auto section = log.section("Clearing kernel...");
 
-						// log::print_info_start();
+						// log.print_info_start();
 
 						for(;i<kernelPageCount;i++) {
-							// log::print("kernel page ", i, "\n");
+							// log.print("kernel page ", i, "\n");
 							auto page = new (&pageData[i]) Page((void*)(i*pageSize));
 							page->virtualAddress = i*pageSize;
 							page->isAllocated = true;
 							page->isKernel = true;
 							page->hasNextPage = i+1<kernelPageCount;
 
-							// log::print_inline('.');
+							// log.print_inline('.');
 						}
 
-						// log::print_end();
+						// log.print_end();
 					}
 
 					{ // user pages
-						// log::Section section("Clearing user...");
+						// auto section = log.section("Clearing user...");
 
-						// log::print_info_start();
+						// log.print_info_start();
 
 						for(;i<pageCount;i++) {
-							// log::print("user page ", i, "\n");
+							// log.print("user page ", i, "\n");
 							const auto address = (void*)(i*pageSize);
 							auto page = new (&pageData[i]) Page(address);
 							page->hasNextPage = i+1<pageCount;
@@ -149,10 +151,10 @@ namespace arch {
 							}
 							// return;
 
-							// log::print_inline('.');
+							// log.print_inline('.');
 						}
 
-						// log::print_end();
+						// log.print_end();
 					}
 				}
 			}

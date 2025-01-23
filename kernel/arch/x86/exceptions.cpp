@@ -1,11 +1,12 @@
 #include "exceptions.hpp"
 
 #include <kernel/arch/x86/CpuState.hpp>
-#include <kernel/arch/x86/idt.hpp>
+#include <kernel/assert.hpp>
 #include <kernel/CriticalSection.hpp>
 #include <kernel/debugSymbols.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/drivers/x86/interrupt/Pic8259.hpp>
+#include <kernel/drivers/x86/system/Idt.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/logging.hpp>
@@ -16,14 +17,12 @@
 
 #include <atomic>
 
-static Log log("arch::x86::interrupts");
+static Log log("arch::x86::exceptions");
 
 namespace arch {
 	namespace x86 {
 		namespace exceptions {
 			extern "C" void* _vectors[];
-
-			driver::interrupt::Pic8259 pic8259{0};
 
 			PodArray<interrupt::Subscriber*> *interruptSubscribers[256] = {};
 			PodArray<interrupt::Subscriber*> allInterruptSubscribers;
@@ -222,14 +221,19 @@ namespace arch {
 			void init() {
 				auto section = log.section("init...");
 
-				drivers::install_driver(pic8259, true);
-				pic8259.disable_all_irqs();
+				auto pic8259 = drivers::find_and_activate<driver::interrupt::Pic8259>();
+				assert(pic8259);
 
-				for(auto i=0u;i<9;i++){
-					idt::set_entry(i, _vectors[i], 0x8e);
+				// pic8259->disable_all_irqs();
+
+				auto idt = drivers::find_and_activate<driver::system::Idt>();
+				assert(idt);
+
+				for(auto i=0u;i<48;i++){
+					idt->set_entry(i, _vectors[i], 0x8e);
 				}
 
-				idt::apply_entries();
+				idt->apply_entries();
 
 				::exceptions::_activate();
 			}

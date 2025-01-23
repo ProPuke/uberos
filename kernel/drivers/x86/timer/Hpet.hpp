@@ -2,15 +2,17 @@
 
 #include <kernel/drivers/Timer.hpp>
 
-namespace driver {
-	namespace timer {
-		struct Hpet final: driver::Timer {
-			typedef driver::Timer Super;
+#include <common/Try.hpp>
 
-			/**/ Hpet(const char *name = "HPET", const char *description = "High Precision Event Timer");
+namespace driver::timer {
+	struct Hpet final: driver::Timer {
+		DRIVER_INSTANCE(Hpet, "hpet", "High Precision Event Timer", driver::Timer)
 
-			auto _on_start() -> bool override;
-			auto _on_stop() -> bool override;
-		};
-	}
+		auto _on_start() -> Try<> override;
+		auto _on_stop() -> Try<> override;
+
+		auto now() -> U32 override;
+		auto now64() -> U64 override;
+		void wait(U32 usecs) override;
+	};
 }

@@ -1,17 +1,22 @@
 #include "serial.hpp"
 
+#include <kernel/assert.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/drivers/hosted/serial/Stdout.hpp>
+#include <kernel/Log.hpp>
+
+static Log log("arch::hosted::serial");
 
 namespace arch {
 	namespace hosted {
 		namespace serial {
-			driver::serial::Stdout device;
-
 			void init() {
-				log::Section section("arch::hosted::serial::init...");
+				auto section = log.section("init...");
 
-				drivers::install_driver(device, true);
-				device.bind_to_console();
+				auto device = drivers::find_and_activate<driver::serial::Stdout>();
+				assert(device);
+
+				device->bind_to_console();
 			}
 		}
 	}

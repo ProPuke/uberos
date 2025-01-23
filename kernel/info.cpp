@@ -9,7 +9,7 @@ namespace info {
 		#elif defined(ARCH_X86_64)
 			"x86-64"
 		#elif defined(ARCH_X86)
-			"x86"
+			"x86-32"
 		#elif defined(ARCH_HOSTED_LINUX)
 			"virtual"
 		#else
@@ -38,16 +38,16 @@ namespace info {
 			"3"
 		#elif defined(ARCH_RASPI4)
 			"4"
-		#elif defined(ARCH_X86_64)
-			"x86-64"
 		#elif defined(ARCH_X86)
-			"x86"
+			"generic desktop"
 		#elif defined(ARCH_HOSTED_LINUX)
 			"virtual"
 		#else
-			#error "Unknown"
+			#error "unknown"
 		#endif
 	;
+
+	//TODO: look up in SMBIOS on x86
 	const char *device_revision = 
 		"Unknown"
 	;

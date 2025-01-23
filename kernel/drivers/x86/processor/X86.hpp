@@ -1,15 +1,13 @@
 #include <kernel/drivers/Processor.hpp>
 
-namespace driver {
-	namespace processor {
-		struct X86: Processor {
-			typedef Processor Super;
+#include <common/Try.hpp>
 
-			/**/ X86();
+namespace driver::processor {
+	struct X86 final: driver::Processor {
+		DRIVER_INSTANCE(X86, "x86", "x86 Processor", driver::Processor)
 
-			char vendorStringData[13] = "UNKNOWN";
+		char vendorStringData[13] = "UNKNOWN";
 
-			auto _on_start() -> bool override;
-		};
-	}
+		auto _on_start() -> Try<> override;
+	};
 }

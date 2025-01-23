@@ -40,7 +40,7 @@ namespace driver {
 			};
 		}
 
-		auto Raspi_uart::_on_start() -> bool {
+		auto Raspi_uart::_on_start() -> Try<> {
 			// Disable UART0
 			mmio::write32(address+(U32)Address::cr, 0x00000000);
 
@@ -55,7 +55,7 @@ namespace driver {
 			if(!mailbox::send_messages(tags)){
 				//TODO:error in some way?
 				state = State::failed;
-				return;
+				return {"Error sending to mailbox"};
 			}
 
 			// Setup the GPIO pin 14 && 15
@@ -92,13 +92,13 @@ namespace driver {
 
 			_active_baud = _specified_baud;
 
-			return true;
+			return {};
 		}
 		
-		auto Raspi_uart::_on_stop() -> bool {
+		auto Raspi_uart::_on_stop() -> Try<> {
 			mmio::write32(address+(U32)Address::cr, 0x00000000);
 
-			return true;
+			return {};
 		}
 
 		void Raspi_uart::set_baud(U32 set) {

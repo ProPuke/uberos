@@ -1,6 +1,15 @@
 #include "stdout.hpp"
 
-#include <kernel/drivers/x86/textmode/VgaTextmode.hpp>
+#if defined(ARCH_X86_IBM_BIOS)
+	#include <kernel/drivers/x86/textmode/VgaTextmode.hpp>
+#elif defined(ARCH_UEFI)
+	#include <kernel/drivers/uefi/textmode/UefiTextmode.hpp>
+#else
+	#error Unsupported platform
+#endif
+
+#include <kernel/assert.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/Log.hpp>
 
 static Log log("arch::x86-ibm::stdout");
@@ -8,18 +17,18 @@ static Log log("arch::x86-ibm::stdout");
 namespace arch {
 	namespace x86_ibm {
 		namespace stdout {
-			driver::textmode::VgaTextmode device;
-
 			void init() {
 				// auto section = log.section("init...");
 
-				drivers::install_driver(device, true);
-				device.bind_to_console();
+				#if defined(ARCH_X86_IBM_BIOS)
+					auto device = drivers::find_and_activate<driver::textmode::VgaTextmode>();
+				#elif defined(ARCH_UEFI)
+					auto device = drivers::find_and_activate<driver::textmode::UefiTextmode>();
+				#endif
+				assert(device);
 
-				{
-					// auto bg = device.get_nearest_colour(0x000000);
-					device.clear(device.consoleContext.foreground, device.consoleContext.background);
-				}
+				device->bind_to_console();
+				device->clear();
 			}
 		}
 	}

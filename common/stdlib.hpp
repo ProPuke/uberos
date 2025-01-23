@@ -11,6 +11,7 @@ extern "C" auto memcpy_backwards_aligned(void *__restrict dest, const void *__re
 extern "C" auto memmove(void *dest, const void *src, size_t bytes) -> void*;
 extern "C" auto memcmp(const void *a, const void *b, size_t bytes) -> int;
 extern "C" auto memset(void *dest, int value, size_t bytes) -> void*;
+extern "C" auto memmem(const void *mem, size_t len, const void *submem, size_t sublen) -> void*;
 
 extern "C" auto bzero(void *dest, size_t bytes) -> void;
 
@@ -18,6 +19,7 @@ extern "C" auto strlen(const C8 *str) -> size_t;
 extern "C" auto strcpy(char *__restrict destination, const char *__restrict source) -> char*;
 extern "C" auto strcat(char *destination, const char *source) -> char*;
 extern "C" auto strcmp(const char* str1, const char* str2) -> int;
+extern "C" auto strchr(const char* str, char) -> const char*;
 
 template <typename T> constexpr inline auto align(/* */ T *pointer, U8 alignment) -> /* */ T* { return (/* */ T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }
 template <typename T> constexpr inline auto align(const T *pointer, U8 alignment) -> const T* { return (const T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }
@@ -57,6 +59,7 @@ inline auto to_string(Type x) -> const char* { return x.to_string(); }
 
 template<> inline auto to_string(const char* x) -> const char* { return x; }
 
+template<> inline auto to_string(bool x) -> const char* { return x?"true":"false"; }
 template<> inline auto to_string(U8 x) -> const char* { return utoa((U16)x); }
 template<> inline auto to_string(I8 x) -> const char* { return itoa((I16)x); }
 template<> inline auto to_string(U16 x) -> const char* { return utoa(x); }

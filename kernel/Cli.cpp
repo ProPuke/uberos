@@ -123,30 +123,39 @@ namespace cli {
 				log.print_info(indent, format_verb, "activate", format_none, " - Activate this device");
 			}
 
-			if(driver.api.is_enabled()){
-				log.print_info(indent, "This device is already enabled");
+			if(driver.api.is_automatic()){
+				log.print_info(indent, "This device starts automatically");
+			}else if(!driver.api.is_disabled()){
+				log.print_info(indent, "This device starts only when requested");
 			}else{
-				log.print_info(indent, format_verb, "enable", format_none, " - Enable this device");
+				log.print_info(indent, "This device is disabled and will not be automatically started");
 			}
 
-			if(driver.can_disable_driver()){
-				log.print_info(indent, format_verb, "disable", format_none, " - Disable this device");
+			if(driver.api.is_active()){
+				log.print_info(indent, "This device is active");
 			}else{
-				log.print_info(indent, "This device cannot be disabled");
+				log.print_info(indent, format_verb, "start", format_none, " - Start this device");
 			}
-			if(driver.can_restart_driver()){
+
+			if(driver.api.is_active()&&driver.can_stop_driver()){
+				log.print_info(indent, format_verb, "stop", format_none, " - Stop this device");
+			}else{
+				log.print_info(indent, "This device cannot be stopped");
+			}
+
+			if(driver.api.is_active()&&driver.can_restart_driver()){
 				log.print_info(indent, format_verb, "restart", format_none, " - Restart this device");
 			}else{
 				log.print_info(indent, "This device cannot be restarted");
 			}
 
-			if(driver.is_type(driver::Processor::driverType)){
+			if(driver.is_type<driver::Processor>()){
 				log.print_info(indent, format_verb, "set . ", format_none, format_param, "<CLOCK>", format_none, format_verb, " <SPEED>", format_none, " - Set clock speed");
 
-			}else if(driver.is_type(driver::Graphics::driverType)){
+			}else if(driver.is_type<driver::Graphics>()){
 				log.print_info(indent, format_verb, "mode . ", format_none, format_param, "<FRAMEBUFFER>", format_none, format_verb, " <WIDTH> <HEIGHT> <FORMAT> [exact|nearest]", format_none, " - Set framebuffer display mode");
 
-			}else if(driver.is_type(driver::Serial::driverType)){
+			}else if(driver.is_type<driver::Serial>()){
 				if(!driver.api.is_active()){
 					log.print_info(indent, "This device is not currently active and cannot be sent to");
 				}else{
@@ -167,28 +176,22 @@ namespace cli {
 		}
 
 		auto execute(Cli &cli, const char *verb, const char *parameters) -> bool override {
-			if(!strcmp(verb, "activate")){
-				if(!drivers::activate_driver(driver)){
-					log.print_warning("This device driver cannot be activated");
+			if(!strcmp(verb, "start")){
+				if(!drivers::start_driver(driver)){
+					log.print_warning("This device driver cannot be started");
 					return true;
 				}
 
-				log.print_info("Device actived");
+				log.print_info("Device started");
 				return true;
 
-			}else if(!strcmp(verb, "enable")){
-				drivers::enable_driver(driver);
-
-				log.print_info("Device enabled");
-				return true;
-
-			}else if(!strcmp(verb, "disable")){
+			}else if(!strcmp(verb, "stop")){
 				if(!drivers::stop_driver(driver)){
-					log.print_warning("This device driver cannot be disabled");
+					log.print_warning("This device driver cannot be stopped");
 					return true;
 				}
 
-				log.print_info("Device disabled");
+				log.print_info("Device stopped");
 				return true;
 
 			}else if(!strcmp(verb, "restart")){
@@ -201,7 +204,7 @@ namespace cli {
 				return true;
 
 			}else{
-				if(driver.is_type(driver::Processor::driverType)){
+				if(driver.is_type<driver::Processor>()){
 					// auto &processor = *(driver::Processor*)&driver;
 					
 					if(!strcmp(verb, "set")){
@@ -211,7 +214,7 @@ namespace cli {
 						return true;
 					}
 
-				}else if(driver.is_type(driver::Graphics::driverType)){
+				}else if(driver.is_type<driver::Graphics>()){
 					// auto &graphics = *(driver::Graphics*)&driver;
 					
 					if(!strcmp(verb, "mode")){
@@ -224,7 +227,7 @@ namespace cli {
 						return true;
 					}
 
-				}else if(driver.is_type(driver::Serial::driverType)){
+				}else if(driver.is_type<driver::Serial>()){
 					auto &serial = *(driver::Serial*)&driver;
 
 					if(!strcmp(verb, "send")){

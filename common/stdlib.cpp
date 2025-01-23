@@ -139,6 +139,14 @@ extern "C" char* strcat(char *destination, const char *source) {
 	}
 #endif
 
+extern "C" auto strchr(const char* str, char c) -> const char* {
+	for(;*str;str++){
+		if(*str == c) return str;
+	}
+
+	return nullptr;
+}
+
 constexpr unsigned digits_binary(unsigned bits, bool isSigned){
 	return bits*8-(isSigned?1:0);
 }

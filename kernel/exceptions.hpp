@@ -16,10 +16,10 @@ namespace exceptions {
 	}
 
 	namespace irq {
-		typedef void (*Subscriber)(U8 irq);
+		typedef void (*Subscriber)(U8 irq, void*);
 
-		void subscribe(U8, Subscriber callback);
-		void unsubscribe(U8, Subscriber callback);
+		void subscribe(U8, Subscriber callback, void *data);
+		void unsubscribe(U8, Subscriber callback, void *data);
 	}
 
 	void init();

@@ -1,19 +1,17 @@
 #include <kernel/drivers/Interrupt.hpp>
 
-namespace driver {
-	namespace interrupt {
-		struct Arm_raspi_legacy: driver::Interrupt {
-			typedef driver::Interrupt Super;
+#include <common/Try.hpp>
 
-			/**/ Arm_raspi_legacy(U32 address);
+namespace driver::interrupt {
+	struct Arm_raspi_legacy final: driver::Interrupt {
+		DRIVER_INSTANCE(Arm_raspi_legacy, "raspiIrq", "Raspi Legacy Interrupt Controller", driver::Interrupt)
 
-			auto _on_start() -> bool override;
-			auto _on_stop() -> bool override;
-			
-			void enable_irq(U32 cpu, U32 irq) override;
-			void disable_irq(U32 cpu, U32 irq) override;
+		auto _on_start() -> Try<> override;
+		auto _on_stop() -> Try<> override;
 
-			auto handle_interrupt(const void *cpuState) -> const void* override;
-		};
-	}
+		void enable_irq(U32 cpu, U32 irq) override;
+		void disable_irq(U32 cpu, U32 irq) override;
+
+		auto handle_interrupt(const void *cpuState) -> const void* override;
+	};
 }

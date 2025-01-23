@@ -37,18 +37,22 @@ namespace driver {
 			};
 		}
 
-		/**/ Hpet::Hpet(const char *name, const char *description):
-			Timer(name, description)
-		{
-			// volatile auto &hpet = *(DescriptionTable*)address;
+		auto Hpet::_on_start() -> Try<> {
+			return {};
 		}
 
-		auto Hpet::_on_start() -> bool {
-			return true;
+		auto Hpet::_on_stop() -> Try<> {
+			return {};
 		}
 
-		auto Hpet::_on_stop() -> bool {
-			return true;
+		auto Hpet::now() -> U32 {
+			return 0;
+		}
+		auto Hpet::now64() -> U64 {
+			return 0;
+		}
+		void Hpet::wait(U32 usecs) {
+			//TODO
 		}
 	}
 }

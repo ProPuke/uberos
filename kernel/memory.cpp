@@ -35,9 +35,8 @@ namespace memory {
 	size_t stackSize = KERNEL_STACK_SIZE;
 	void *stack = &__end;
 
-	// we'll allocate 1MB of working heap, just after the stack
-	size_t heapSize = 1*1024*1024;
-	void *heap = ((char*)stack)+heapSize;
+	void *heap = ((char*)stack)+stackSize; // start the heap after the stack
+	size_t heapSize = 1*1024*1024; // default to 1MB (hopefully overridden at boot)
 
 	Page *pageData = nullptr;
 	size_t pageDataSize = 0;

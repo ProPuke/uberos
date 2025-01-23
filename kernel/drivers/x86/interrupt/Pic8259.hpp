@@ -2,27 +2,21 @@
 
 #include <kernel/drivers/Interrupt.hpp>
 
-namespace driver {
-	namespace interrupt {
-		struct Pic8259 final: driver::Interrupt {
-			typedef driver::Interrupt Super;
+#include <common/Try.hpp>
 
-			U8 irqOffset[2];
+namespace driver::interrupt {
+	struct Pic8259 final: driver::Interrupt {
+		DRIVER_INSTANCE(Pic8259, "pic8259", "8259 PIC", driver::Interrupt)
 
-			/**/ Pic8259(const char *name = "8259 PIC");
+		auto _on_start() -> Try<> override;
+		auto _on_stop() -> Try<> override;
 
-			auto _on_start() -> bool override;
-			auto _on_stop() -> bool override;
+		void enable_irq(U32 cpu, U32 irq) override;
+		void disable_irq(U32 cpu, U32 irq) override;
+		void disable_all_irqs();
 
-			void enable_irq(U32 cpu, U32 irq) override;
-			void disable_irq(U32 cpu, U32 irq) override;
-			void disable_all_irqs();
+		void set_offset(U8 offset1, U8 offset2);
 
-			void set_offset(U8 offset1, U8 offset2);
-
-			auto _on_interrupt(void *_cpuState) -> const void*;
-
-		protected:
-		};
-	}
+		auto _on_interrupt(U8, const void *_cpuState) -> const void* override;
+	};
 }

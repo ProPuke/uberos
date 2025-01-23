@@ -50,7 +50,7 @@ Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize
 	thread->state = Thread::State::active;
 	thread::activeThreads.push_back(*thread);
 
-	threads.push(*thread);
+	threads.push(thread);
 
 	return thread;
 }
@@ -70,7 +70,7 @@ Thread* Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPack
 	thread->state = Thread::State::active;
 	thread::activeThreads.push_back(*thread);
 
-	threads.push(*thread);
+	threads.push(thread);
 
 	return thread;
 }
@@ -90,7 +90,7 @@ Thread* Process::create_kernel_thread(I32(*entrypoint)()) {
 	thread->state = Thread::State::active;
 	thread::activeThreads.push_back(*thread);
 
-	threads.push(*thread);
+	threads.push(thread);
 
 	return thread;
 }

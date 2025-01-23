@@ -1,5 +1,6 @@
 #include "bios.hpp"
 
+#include <kernel/arch/x86-ibm/memory.hpp>
 #include <kernel/Log.hpp>
 
 #include <common/types.hpp>
@@ -35,14 +36,12 @@ namespace arch {
 				} equipmentFlags;
 			};
 
-			const auto &data = *(DataArea*)0x400;
+			const auto &data = *(DataArea*)x86_ibm::memory::biosDataArea;
 			void *ebda = nullptr;
 
 			#pragma GCC diagnostic push
 			#pragma GCC diagnostic ignored "-Warray-bounds"
 			void init() {
-				auto section = log.section("init...");
-
 				ebda = (void*)((size_t)data.ebdaShiftedAddress<<4);
 
 				if((size_t)ebda+0x400 > 0xA0000) {
@@ -82,7 +81,7 @@ namespace arch {
 			}
 
 			void set_mode(U32 mode) {
-				asm(
+				asm volatile(
 					"mov ah, 0x00\n"
 					"mov al, %0\n"
 					"int 0x10\n"

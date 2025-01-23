@@ -5,9 +5,11 @@
 #include <common/maths/Fixed.hpp>
 
 namespace graphics2d {
-	auto Buffer::draw_text(Font &font, const char *text, I32 startX, I32 startY, U32 size, U32 colour, U32 lineheight, I32 cursorX) -> DrawTextResult {
+	auto Buffer::draw_text(Font &font, const char *text, I32 startX, I32 startY, U32 width, U32 size, U32 colour, U32 lineheight, I32 cursorX) -> DrawTextResult {
 		auto x = FixedI32::whole(cursorX);
 		auto y = FixedI32::whole(startY);
+
+		auto right = FixedI32::whole(startX + (I32)width);
 
 		auto maxX = cursorX;
 
@@ -60,6 +62,11 @@ namespace graphics2d {
 					}
 
 					x += character->advance.cast<I32>()*(I32)font.size*scale;
+					if(x>=right){
+						//TODO: proper wordwrapping
+						x = FixedI32::whole(startX);
+						y += lineheight;
+					}
 				}
 			}
 

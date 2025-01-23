@@ -1,0 +1,18 @@
+#pragma once
+
+#define _STRINGIFY(X) #X
+#define STRINGIFY(X) _STRINGIFY(X)
+
+#define _CONCAT(X, Y) X##Y
+#define CONCAT(X, Y) _CONCAT(X, Y)
+
+template <typename Type>
+struct Defer {
+	Type callback;
+
+	/**/ Defer(Type callback): callback(callback) { };
+	/**/ Defer(const Defer&) = delete;
+	/**/~Defer() { callback(); }
+};
+
+#define defer Defer CONCAT(_defer, __COUNTER__) = [&]()

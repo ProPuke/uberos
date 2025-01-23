@@ -85,10 +85,10 @@ typedef maths::Fixed<U16, 256> FixedU16;
 typedef maths::Fixed<U32, 256> FixedU32;
 typedef maths::Fixed<U64, 256> FixedU64;
 
-typedef maths::Fixed<FastI16, 256> FastFixedI16;
-typedef maths::Fixed<FastI32, 256> FastFixedI32;
-typedef maths::Fixed<FastI64, 256> FastFixedI64;
+typedef maths::Fixed<I16Fast, 256> FastFixedI16;
+typedef maths::Fixed<I32Fast, 256> FastFixedI32;
+typedef maths::Fixed<I64Fast, 256> FastFixedI64;
 
-typedef maths::Fixed<FastU16, 256> FastFixedU16;
-typedef maths::Fixed<FastU32, 256> FastFixedU32;
-typedef maths::Fixed<FastU64, 256> FastFixedU64;
+typedef maths::Fixed<U16Fast, 256> FastFixedU16;
+typedef maths::Fixed<U32Fast, 256> FastFixedU32;
+typedef maths::Fixed<U64Fast, 256> FastFixedU64;

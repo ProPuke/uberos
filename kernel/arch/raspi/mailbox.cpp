@@ -1,9 +1,11 @@
 #include "mailbox.hpp"
 
-#include <kernel/log.hpp>
+#include <kernel/Log.hpp>
 #include <kernel/mmio.hpp>
 
 #include <alloca.h>
+
+static Log log("mailbox");
 
 namespace arch {
 	namespace raspi {
@@ -143,18 +145,18 @@ namespace arch {
 				{
 					mmio::PeripheralReadGuard _guard;
 					if(read(Channel::property, 0xffffffff) == 0xffffffff){
-						log::print_warning("Error: Mailbox did not respond");
+						log.print_warning("Error: Mailbox did not respond");
 						return false;
 					}
 				}
 
 				if(message->req_res_code==BufferReqResCode::request){
-					log::print_warning("Error: Mailbox did not respond with anything useful");
+					log.print_warning("Error: Mailbox did not respond with anything useful");
 					return false;
 				}
 
 				if(message->req_res_code==BufferReqResCode::response_error){
-					log::print_warning("Error: Mailbox returned an error"); //TODO:print code?
+					log.print_warning("Error: Mailbox returned an error"); //TODO:print code?
 					return false;
 				}
 

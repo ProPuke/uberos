@@ -1,15 +1,15 @@
 #include <kernel/drivers/raspi/processor/Raspi.hpp>
 
-namespace driver {
-	namespace processor {
-		struct Raspi_bcm2835: Raspi {
-			/**/ Raspi_bcm2835():
-				Raspi("BCM2835", "aarch32")
-			{
-				processor_cores = 1;
-			}
+#include <common/Try.hpp>
 
-			auto _on_start() -> bool override { return true; }
-		};
-	}
+namespace driver::processor {
+	struct Raspi_bcm2835 final: Raspi {
+		DRIVER_INSTANCE(Raspi_bcm2835, "bcm2835", "BCM2835 AArch32 Processor", Raspi)
+
+		auto _on_start() -> Try<> override {
+			processor_arch = "AArch32";
+			processor_cores = 1;
+			return {};
+		}
+	};
 }

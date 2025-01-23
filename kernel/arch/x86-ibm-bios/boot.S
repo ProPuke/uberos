@@ -8,8 +8,7 @@
 	_start:
 		// set stack pointer
 			lea esp, __end
-			mov eax, KERNEL_STACK_SIZE
-			add esp, eax
+			add esp, KERNEL_STACK_SIZE
 
 		// call entrypoint
 			#ifndef _64BIT

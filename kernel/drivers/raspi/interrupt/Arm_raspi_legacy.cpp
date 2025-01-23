@@ -24,13 +24,7 @@ namespace driver {
 			static_assert(sizeof(Registers)==0x200+40);
 		}
 
-		/**/ Arm_raspi_legacy::Arm_raspi_legacy(U32 address):
-			Interrupt(address, "Raspi Legacy IRQ System", "interrupt controller")
-		{
-			max_irq = 72;
-		}
-
-		auto Arm_raspi_legacy::_on_start() -> bool {
+		auto Arm_raspi_legacy::_on_start() -> Try<> {
 			mmio::PeripheralWriteGuard guard;
 
 			auto &registers = *(volatile Registers*)address;
@@ -39,10 +33,10 @@ namespace driver {
 			registers.irq_gpu_disable1 = 0xffffffff;
 			registers.irq_gpu_disable2 = 0xffffffff;
 
-			return true;
+			return {};
 		}
 
-		auto Arm_raspi_legacy::_on_stop() -> bool {
+		auto Arm_raspi_legacy::_on_stop() -> Try<> {
 			mmio::PeripheralWriteGuard guard;
 
 			auto &registers = *(volatile Registers*)address;
@@ -51,7 +45,7 @@ namespace driver {
 			registers.irq_gpu_disable1 = 0xffffffff;
 			registers.irq_gpu_disable2 = 0xffffffff;
 			
-			return true;
+			return {};
 		}
 
 		void Arm_raspi_legacy::enable_irq(U32 cpu, U32 irq) {

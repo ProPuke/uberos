@@ -12,6 +12,7 @@ struct Pointer {
 	Data data{};
 
 	auto get() -> Type* { return (Type*)(size_t)data; }
+	auto get() const -> const Type* { return (const Type*)(size_t)data; }
 	void set(Type *value) { data = (Data)(size_t)value; }
 
 	auto operator->() { return get(); }

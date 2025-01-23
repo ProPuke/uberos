@@ -6,10 +6,13 @@
                 "${default}"
             ],
             "cStandard": "c17",
-            "cppStandard": "c++17",
+            "cppStandard": "c++20",
             "compilerArgs": [
+                "-include common/common.hpp",
+                "-include common/debug.hpp",
                 "-include kernel/common.hpp",
-                "-include kernel/debug.hpp"
+                "-include kernel/debug.hpp",
+                "-D ARCH_X86"
             ]
         }
     ],

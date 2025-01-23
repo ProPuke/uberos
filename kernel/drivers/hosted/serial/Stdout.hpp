@@ -2,26 +2,23 @@
 
 #include <kernel/drivers/Serial.hpp>
 
-namespace driver {
-	namespace serial {
-		struct Stdout final: driver::Serial {
-			typedef driver::Serial Super;
+#include <common/Try.hpp>
 
-			constexpr /**/ Stdout(U64 address, const char *name = "stdout"):
-				Serial(address, name, "serial port")
-			{}
+namespace driver::serial {
+	//TODO: replace with Console driver that uses Serial?
+	struct Stdout final: driver::Serial {
+		DRIVER_INSTANCE(Stdout, "stdout", "Serial Stdout Interface", driver::Serial)
 
-			auto _on_start() -> bool override;
-			auto _on_stop() -> bool override;
+		auto _on_start() -> Try<> override;
+		auto _on_stop() -> Try<> override;
 
-			void set_baud(U32 set) override;
+		void set_baud(U32 set) override;
 
-			auto get_active_baud() -> U32 override;
+		auto get_active_baud() -> U32 override;
 
-			void putc(char c) override;
-			void puts(const char *str) override;
-			auto peekc() -> char override;
-			auto getc() -> char override;
-		};
-	}
+		void putc(char c) override;
+		void puts(const char *str) override;
+		auto peekc() -> char override;
+		auto getc() -> char override;
+	};
 }

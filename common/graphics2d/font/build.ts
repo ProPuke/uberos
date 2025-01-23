@@ -31,7 +31,7 @@ for await(const dirEntry of Deno.readDir('.')){
 			;
 			for(const glyph of msdfJson.glyphs){
 				cppSource +=
-				`				{${glyph.unicode}, FixedI16::fraction(${Math.round(glyph.advance*256)}), FixedI16::fraction(${glyph.planeBounds?Math.round(glyph.planeBounds.left*256):0}), FixedI16::fraction(${glyph.planeBounds?Math.round(glyph.planeBounds.top*256):0}), ${glyph.atlasBounds?Math.round(glyph.atlasBounds.left-0.5):0}, ${glyph.atlasBounds?Math.round(msdfJson.atlas.height-glyph.atlasBounds.top-0.5):0}, ${glyph.atlasBounds?Math.round(glyph.atlasBounds.right-glyph.atlasBounds.left):0}, ${glyph.atlasBounds?Math.round(glyph.atlasBounds.top-glyph.atlasBounds.bottom):0}},\n`
+				`				{${glyph.unicode}, FixedI16::fraction(${Math.round(glyph.advance*256)}), FixedI16::fraction(${glyph.planeBounds?Math.round(glyph.planeBounds.left*256):0}), FixedI16::fraction(${glyph.planeBounds?Math.round(glyph.planeBounds.top*256):0}), ${glyph.atlasBounds?Math.round(glyph.atlasBounds.left-0.5):0}, ${glyph.atlasBounds?Math.round(msdfJson.atlas.height-glyph.atlasBounds.top-0.5):0}, ${glyph.atlasBounds?Math.ceil(glyph.atlasBounds.right-glyph.atlasBounds.left):0}, ${glyph.atlasBounds?Math.ceil(glyph.atlasBounds.top-glyph.atlasBounds.bottom):0}},\n`
 				;
 			}
 			cppSource +=
@@ -39,7 +39,7 @@ for await(const dirEntry of Deno.readDir('.')){
 				`		}\n`+
 				`\n`+
 				`		Font ${name[0].toLowerCase()+name.substr(1)} = {\n`+
-				`			{msdfData, ${msdfJson.atlas.width*msdfJson.atlas.height*3}, ${msdfJson.atlas.width*3}, ${msdfJson.atlas.width}, ${msdfJson.atlas.height}, graphics2d::BufferFormat::rgb8, graphics2d::BufferFormatOrder::rgb},\n`+
+				`			{msdfData, ${msdfJson.atlas.width*3}, ${msdfJson.atlas.width}, ${msdfJson.atlas.height}, graphics2d::BufferFormat::rgb8, graphics2d::BufferFormatOrder::rgb},\n`+
 				`			${msdfJson.atlas.size},\n`+
 				`			${msdfJson.metrics.lineHeight},\n`+
 				`			${msdfJson.metrics.ascender},\n`+

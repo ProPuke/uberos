@@ -3,7 +3,6 @@
 #include <kernel/arch/raspi/irq.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/CriticalSection.hpp>
-#include <kernel/log.hpp>
 
 #include <common/types.hpp>
 
@@ -45,20 +44,12 @@ namespace driver {
 			// volatile auto &core_timer_control_registers = *(CoreTimerControlRegisters*)mmio::Address::core_timer_control;
 		}
 
-		/**/ Raspi_bcm::Raspi_bcm(U64 address, U32 irqAddress, const char *name):
-			driver::Timer(address, name, "system timer"),
-			irqAddress(irqAddress)
-		{
-			// log::print_info("timer control: ", mmio::read_address(mmio::Address::core_timer_control));
-			// log::print_info("timer prescaler: ", mmio::read_address(mmio::Address::core_timer_prescaler));
-		}
-
 		void Raspi_bcm::set_timer(Timer timer, U32 usecs) {
-			// log::print_debug("set timer ", (unsigned)timer);
+			// log.print_debug("set timer ", (unsigned)timer);
 
 			CriticalSection guard;
 
-			volatile auto &timer_registers = *(Timer_registers*)address;
+			volatile auto &timer_registers = *(Timer_registers*)_address;
 
 			usecs += 50;
 			// usecs += 5000000;
@@ -81,7 +72,7 @@ namespace driver {
 				}
 			}
 
-			// log::print_debug("set timer ", (U32)timer, ", ", usecs);
+			// log.print_debug("set timer ", (U32)timer, ", ", usecs);
 
 			irq::enable((irq::Irq)(irqAddress+(U32)timer));
 		}
@@ -89,7 +80,7 @@ namespace driver {
 		U32 Raspi_bcm::now() {
 			mmio::PeripheralAccessGuard guard;
 
-			volatile auto &timer_registers = *(Timer_registers*)address;
+			volatile auto &timer_registers = *(Timer_registers*)_address;
 
 			return timer_registers.counter_low;
 		}
@@ -97,7 +88,7 @@ namespace driver {
 		U64 Raspi_bcm::now64() {
 			mmio::PeripheralAccessGuard guard;
 
-			volatile auto &timer_registers = *(Timer_registers*)address;
+			volatile auto &timer_registers = *(Timer_registers*)_address;
 
 			// as both high & low timer bits cannot be read at the same time, we'll read high bits first, then low, then update low if high has changed
 
@@ -112,7 +103,7 @@ namespace driver {
 		}
 
 		__attribute__ ((optimize(0))) void Raspi_bcm::wait(U32 usecs) {
-			volatile auto &timer_registers = *(Timer_registers*)address;
+			volatile auto &timer_registers = *(Timer_registers*)_address;
 
 			volatile uint32_t curr = timer_registers.counter_low;
 			volatile uint32_t x;
@@ -134,7 +125,7 @@ namespace driver {
 		void Raspi_bcm::_on_irq(U32 irq) {
 			auto timer = (Timer)irq;
 
-			volatile auto &timer_registers = *(Timer_registers*)address;
+			volatile auto &timer_registers = *(Timer_registers*)_address;
 
 			switch(Timer((U32)timer-irqAddress)){
 				case Timer::gpu_0:

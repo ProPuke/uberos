@@ -39,16 +39,16 @@ namespace driver {
 			_specified_baud = set;
 		}
 
-		auto Raspi_mini_uart::_on_start() -> bool {
+		auto Raspi_mini_uart::_on_start() -> Try<> {
 			{
 				// initialize UART1
-				mmio::write32(address+(U32)Address::enable, mmio::read32(address+(U32)Address::enable)|1); // enable UART1, AUX mini uart
-				mmio::write32(address+(U32)Address::mu_cntl, 0);
-				mmio::write32(address+(U32)Address::mu_lcr, 3); // 8 bits
-				mmio::write32(address+(U32)Address::mu_mcr, 0);
-				mmio::write32(address+(U32)Address::mu_ier, 0);
-				mmio::write32(address+(U32)Address::mu_iir, 0xc6); // disable interrupts
-				mmio::write32(address+(U32)Address::mu_baud, baud_to_uart_reg(_specified_baud));
+				mmio::write32(_address+(U32)Address::enable, mmio::read32(_address+(U32)Address::enable)|1); // enable UART1, AUX mini uart
+				mmio::write32(_address+(U32)Address::mu_cntl, 0);
+				mmio::write32(_address+(U32)Address::mu_lcr, 3); // 8 bits
+				mmio::write32(_address+(U32)Address::mu_mcr, 0);
+				mmio::write32(_address+(U32)Address::mu_ier, 0);
+				mmio::write32(_address+(U32)Address::mu_iir, 0xc6); // disable interrupts
+				mmio::write32(_address+(U32)Address::mu_baud, baud_to_uart_reg(_specified_baud));
 
 
 				// map UART1 to GPIO pins
@@ -61,18 +61,18 @@ namespace driver {
 				mmio::write_address(mmio::Address::gppudclk0, (1<<14)|(1<<15));
 				mmio::delay(150);
 				mmio::write_address(mmio::Address::gppudclk0, 0); // flush GPIO setup
-				mmio::write32(address+(U32)Address::mu_cntl, 3); // enable Tx, Rx
+				mmio::write32(_address+(U32)Address::mu_cntl, 3); // enable Tx, Rx
 			}
 
 			_active_baud = _specified_baud;
 
-			return true;
+			return {};
 		}
 		
-		auto Raspi_mini_uart::_on_stop() -> bool {
-			mmio::write32(address+(U32)Address::enable, mmio::read32(address+(U32)Address::enable)&~1);
+		auto Raspi_mini_uart::_on_stop() -> Try<> {
+			mmio::write32(_address+(U32)Address::enable, mmio::read32(_address+(U32)Address::enable)&~1);
 
-			return true;
+			return {};
 		}
 
 		void Raspi_mini_uart::putc(char c) {
@@ -95,21 +95,21 @@ namespace driver {
 		void Raspi_mini_uart::_putc(char c) {
 			if(c=='\n') _putc('\r');
 
-			while(!(mmio::read32(address+(U32)Address::mu_lsr) & 1<<5));
-			mmio::write32(address+(U32)Address::mu_io, c);
+			while(!(mmio::read32(_address+(U32)Address::mu_lsr) & 1<<5));
+			mmio::write32(_address+(U32)Address::mu_io, c);
 		}
 
 		auto Raspi_mini_uart::_peekc() -> char {
-			if(mmio::read32(address+(U32)Address::mu_lsr) & 1<<0){
-				return mmio::read32(address+(U32)Address::mu_io);
+			if(mmio::read32(_address+(U32)Address::mu_lsr) & 1<<0){
+				return mmio::read32(_address+(U32)Address::mu_io);
 			}else{
 				return 0;
 			}
 		}
 
 		auto Raspi_mini_uart::_getc() -> char {
-			while(!(mmio::read32(address+(U32)Address::mu_lsr) & 1<<0));
-			return mmio::read32(address+(U32)Address::mu_io);
+			while(!(mmio::read32(_address+(U32)Address::mu_lsr) & 1<<0));
+			return mmio::read32(_address+(U32)Address::mu_io);
 		}
 
 		void Raspi_mini_uart::_puts(const char* str) {

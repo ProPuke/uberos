@@ -9,8 +9,10 @@ namespace arch {
 		namespace ioPort {
 			auto read8(IoPort) -> U8;
 			auto read16(IoPort) -> U16;
+			auto read32(IoPort) -> U32;
 			void write8(IoPort, U8);
 			void write16(IoPort, U16);
+			void write32(IoPort, U32);
 			void wait();
 		}
 	}

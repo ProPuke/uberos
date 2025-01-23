@@ -1,22 +1,20 @@
 #pragma once
 
-#include <kernel/Driver.hpp>
+#include <kernel/drivers/Hardware.hpp>
+
+#include <common/Try.hpp>
 
 namespace driver {
-	struct Processor: Driver {
-		typedef Driver Super;
+	struct Processor: Hardware {
+		DRIVER_TYPE(Processor, "processor", "Processor Driver", Hardware);
 
-		static DriverType driverType;
-
-		const char *processor_arch;
+		const char *processor_arch = "";
 		U32 processor_cores = 1;
 
-		/**/ Processor(const char *name, const char *processor_arch, const char *description);
-
-		auto can_disable_driver() -> bool override { return false; }
+		auto can_stop_driver() -> bool override { return false; }
 		auto can_restart_driver() -> bool override { return false; }
 
-		auto _on_stop() -> bool override { return false; };
+		auto _on_stop() -> Try<> override { return {"CPU drivers cannot be stopped"}; };
 
 		//temps in K
 		virtual auto get_temperature_count() -> U32 { return 0; }

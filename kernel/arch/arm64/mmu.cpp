@@ -5,7 +5,9 @@
 
 #include <kernel/arch/arm64/systemRegisters.hpp>
 #include <kernel/memory.hpp>
-#include <kernel/log.hpp>
+#include <kernel/Log.hpp>
+
+static Log log("mmu");
 
 namespace mmu {
 	namespace {
@@ -135,7 +137,7 @@ namespace mmu {
 		// 		assert(((U64)table&bitmask)==(U64)table, "table ", table, " does not align with bitmask ", format::Hex64{bitmask});
 		// 		data = data&~bitmask | (U64)table&bitmask;
 
-		// 		log::print_debug("table ", this, " ", format::Hex64{data});
+		// 		log.print_debug("table ", this, " ", format::Hex64{data});
 		// 	}
 
 		// 	void set_block(U8 level, void *address) {
@@ -147,7 +149,7 @@ namespace mmu {
 		// 		assert(((U64)address&bitmask)==(U64)address, "block ", address, " does not align with bitmask ", format::Hex64{bitmask});
 		// 		data = data&~bitmask | (U64)address&bitmask;
 
-		// 		// log::print_debug("block ", this, " ", format::Hex64{data});
+		// 		// log.print_debug("block ", this, " ", format::Hex64{data});
 		// 	}
 
 		// 	constexpr auto get_table_address() const {
@@ -219,7 +221,7 @@ namespace mmu {
 	void init() {
 	// 	return;
 
-	// 	log::Section section("arch::arm64::mmu::init...");
+	// 	auto section = log.section("arch::arm64::mmu::init...");
 
 	// 	// Id_aa64mmfr0_el1 featureRegister;
 	// 	// featureRegister.load();
@@ -248,10 +250,10 @@ namespace mmu {
 	// 	// 	break;
 	// 	// }
 
-	// 	log::print_info("granularity: ", granularity_to_string(granularity));
-		log::print_info("address size: ", (int)addressSize, "bit (", (const char*)"nullptr", ")");
-		// log::print_info("address size: ", (int)addressSize, "bit (", addressSize_to_string(addressSize), ")");
-	// 	log::print_info("table sizes: ", levelSize[0], " / ", levelSize[1], " / ", levelSize[2], " / ", levelSize[3]);
+	// 	log.print_info("granularity: ", granularity_to_string(granularity));
+		log.print_info("address size: ", (int)addressSize, "bit (", (const char*)"nullptr", ")");
+		// log.print_info("address size: ", (int)addressSize, "bit (", addressSize_to_string(addressSize), ")");
+	// 	log.print_info("table sizes: ", levelSize[0], " / ", levelSize[1], " / ", levelSize[2], " / ", levelSize[3]);
 
 	// 	kernelMapping.allocate();
 
@@ -268,31 +270,31 @@ namespace mmu {
 	// 		U64 level3 = ((U64)address&get_level_bitmask(3))>>bit_rightmost_position(get_level_bitmask(3));
 	// 		U64 offset = bits((U64)address,0,bit_rightmost_position(get_level_bitmask(3))-1);
 
-	// 		log::print_debug("address = ", address);
+	// 		log.print_debug("address = ", address);
 
-	// 		log::print_debug("level0 = ", level0);
-	// 		log::print_debug("level1 = ", level1);
-	// 		log::print_debug("level2 = ", level2);
-	// 		log::print_debug("level3 = ", level3);
-	// 		log::print_debug("offset = ", offset);
+	// 		log.print_debug("level0 = ", level0);
+	// 		log.print_debug("level1 = ", level1);
+	// 		log.print_debug("level2 = ", level2);
+	// 		log.print_debug("level3 = ", level3);
+	// 		log.print_debug("offset = ", offset);
 
 	// 		const auto &entry2 = kernelMapping.initialTable[level2];
-	// 		log::print_debug("table2 = ", format::Hex64{entry2.data});
+	// 		log.print_debug("table2 = ", format::Hex64{entry2.data});
 
 	// 		if(entry2.isTable){
 	// 			const auto &entry3 = entry2.get_table_address()[level3];
-	// 			log::print_debug("table3 = ", format::Hex64{entry3.data});
+	// 			log.print_debug("table3 = ", format::Hex64{entry3.data});
 
 	// 			auto page = entry3.get_block_address(3);
-	// 			log::print_debug("page   = ", (U64)page);
-	// 			log::print_debug("destination = ", (void*)((U64)page+offset));
-	// 			log::print_debug("address     = ", address);
+	// 			log.print_debug("page   = ", (U64)page);
+	// 			log.print_debug("destination = ", (void*)((U64)page+offset));
+	// 			log.print_debug("address     = ", address);
 
 	// 		}else{
 	// 			auto page = entry2.get_block_address(2);
-	// 			log::print_debug("page   = ", (U64)page);
-	// 			log::print_debug("destination = ", (void*)((U64)page+((U64)address&get_level_bitmask(3))|offset));
-	// 			log::print_debug("address     = ", address);
+	// 			log.print_debug("page   = ", (U64)page);
+	// 			log.print_debug("destination = ", (void*)((U64)page+((U64)address&get_level_bitmask(3))|offset));
+	// 			log.print_debug("address     = ", address);
 	// 		}
 
 	// 		// while(true);
@@ -305,7 +307,7 @@ namespace mmu {
 	}
 		
 	// void enable() {
-	// 	log::Section section("arch::arm64::mmu::enable...");
+	// 	auto section = log.section("arch::arm64::mmu::enable...");
 
 	// 	U8 tg0GranuleSize; // NOTE: these two don't match in format cos arm is weird
 	// 	U8 tg1GranuleSize;
@@ -350,7 +352,7 @@ namespace mmu {
 	// 	}
 
 	// 	{
-	// 		log::Section section("tcr_el1");
+	// 		auto section = log.section("tcr_el1");
 
 	// 		Tcr tcr_el1;
 	// 		tcr_el1.load_el1();
@@ -379,7 +381,7 @@ namespace mmu {
 	// 	}
 
 	// 	{
-	// 		log::Section section("mair_el1");
+	// 		auto section = log.section("mair_el1");
 
 	// 		Mair mair_el1;
 	// 		mair_el1.load_el1();
@@ -393,7 +395,7 @@ namespace mmu {
 	// 	}
 
 	// 	{
-	// 		log::Section section("sctlr_el1");
+	// 		auto section = log.section("sctlr_el1");
 
 	// 		Sctlr sctlr_el1;
 	// 		sctlr_el1.load_el1();
@@ -415,10 +417,10 @@ namespace mmu {
 	// }
 
 	// void disable() {
-	// 	log::Section section("arch::arm64::mmu::disable...");
+	// 	auto section = log.section("arch::arm64::mmu::disable...");
 
 	// 	{
-	// 		log::Section section("sctlr_el1");
+	// 		auto section = log.section("sctlr_el1");
 
 	// 		Sctlr sctlr_el1;
 	// 		sctlr_el1.load_el1();
@@ -532,7 +534,7 @@ namespace mmu {
 	// 	// if this becomes a problem
 
 	// 	inline void* _insert(Stage1TableDescriptor *table, unsigned level, void *&address, unsigned &pages, RegionType regionType, memory::Transaction &transaction){
-	// 		log::Section section("insert ", pages, ' ', regionType_to_string(regionType), " pages into level ", level, "...");
+	// 		auto section = log.section("insert ", pages, ' ', regionType_to_string(regionType), " pages into level ", level, "...");
 
 	// 		void *baseVirtualAddress = nullptr;
 	// 		bool firstAddress = true;
@@ -543,16 +545,16 @@ namespace mmu {
 	// 			if(!entry.isValid){
 	// 				//empty slot
 	// 				const U64 entrySize = level+1>3?1:(U64)levelSize[level+1]*(level+2>3?1:(U64)levelSize[level+2]*(level+3>3?1:(U64)levelSize[level+3]));
-	// 				// log::print_debug("entry ", i, " (size of ", entrySize, ") is free for ", pages);
+	// 				// log.print_debug("entry ", i, " (size of ", entrySize, ") is free for ", pages);
 	// 				if(pages>=entrySize){
 	// 				// if(level>startLevel&&pages>=entrySize){
 	// 					//allocate a whole block
 	// 					if(firstAddress){
 	// 						firstAddress = false;
 	// 						baseVirtualAddress = (void*)(i*bit_rightmost(get_level_bitmask(level)));
-	// 						// log::print_debug("got base address of ", baseVirtualAddress);
+	// 						// log.print_debug("got base address of ", baseVirtualAddress);
 	// 					}
-	// 					// log::print_debug("insert ", pages, " pages into ", entrySize, " slot");
+	// 					// log.print_debug("insert ", pages, " pages into ", entrySize, " slot");
 	// 					entry.set_block(level, address);
 	// 					entry.accessPermission = Stage1TableDescriptor::AccessPermission::kernelReadWrite;
 	// 					switch(regionType){
@@ -587,17 +589,17 @@ namespace mmu {
 	// 							entry.block_executeNever = false;
 	// 						break;
 	// 					}
-	// 					// log::print_debug("block ", &entry, " ", format::Hex64{entry.data});
-	// 					// log::print_debug("allocating block of ", entrySize, "...");
+	// 					// log.print_debug("block ", &entry, " ", format::Hex64{entry.data});
+	// 					// log.print_debug("allocating block of ", entrySize, "...");
 	// 					pages -= entrySize;
 	// 					address = (void*)((U64)address+entrySize*memory::pageSize);
-	// 					// log::print_debug("address is now ", address);
+	// 					// log.print_debug("address is now ", address);
 	// 					if(!pages) return baseVirtualAddress;
 	// 					continue;
 
 	// 				}else{
-	// 					// log::print_debug("too big (", entrySize, ')');
-	// 					// log::print_debug("allocating a subtable...");
+	// 					// log.print_debug("too big (", entrySize, ')');
+	// 					// log.print_debug("allocating a subtable...");
 
 	// 					//allocate a subtable
 	// 					const auto requiredSize = levelSize[level+1]*sizeof(TableDescriptor);
@@ -609,33 +611,33 @@ namespace mmu {
 	// 				}
 
 	// 			}else if(!entry.isTable||level>=3){
-	// 				// log::print_debug("skipping existing block...");
+	// 				// log.print_debug("skipping existing block...");
 
 	// 				//existing block
 	// 				continue;
 
 	// 			}else{
 	// 				//existing table
-	// 				// log::print_debug("existing table...");
+	// 				// log.print_debug("existing table...");
 
-	// 				// if(i+1<levelSize[level]&&table[i+1].isValid) log::print_debug("skipping existing table, as there's a next one...");
+	// 				// if(i+1<levelSize[level]&&table[i+1].isValid) log.print_debug("skipping existing table, as there's a next one...");
 	// 				if(i+1<levelSize[level]&&table[i+1].isValid) continue; //jump forward if there is a next valid item ahead
 
 	// 				auto subtable = entry.get_table_address();
-	// 				// if(subtable[levelSize[level+1]-1].isValid) log::print_debug("skipping existing table, as its child slots are all full...");
+	// 				// if(subtable[levelSize[level+1]-1].isValid) log.print_debug("skipping existing table, as its child slots are all full...");
 	// 				if(subtable[levelSize[level+1]-1].isValid) continue; //jump forward if subtable is filled
 
-	// 				// log::print_debug("inserting into existing table...");
+	// 				// log.print_debug("inserting into existing table...");
 	// 			}
 
 	// 			auto virtualAddress = _insert(entry.get_table_address(), level+1, address, pages, regionType, transaction);
 	// 			if(firstAddress){
 	// 				firstAddress = false;
 	// 				baseVirtualAddress = (void*)(i*bit_rightmost(get_level_bitmask(level))|(U64)virtualAddress);
-	// 				// log::print_debug("got base address of ", baseVirtualAddress);
+	// 				// log.print_debug("got base address of ", baseVirtualAddress);
 	// 			}
 
-	// 			// if(!pages) log::print_debug("all pages added");
+	// 			// if(!pages) log.print_debug("all pages added");
 	// 			if(!pages) return baseVirtualAddress;
 	// 		}
 
@@ -707,11 +709,11 @@ namespace mmu {
 	// }
 
 	// void* MemoryMapping::add_mapping(void *addressStart, void *addressEnd, RegionType regionType) {
-	// 	log::print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
+	// 	log.print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
 
 	// 	const auto pageCount = ((U64)addressEnd-(U64)addressStart+memory::pageSize-1)/memory::pageSize;
 	// 	auto virtualAddress = add_mapping(addressStart, pageCount, regionType);
-	// 	// log::print_debug("  = ", virtualAddress);
+	// 	// log.print_debug("  = ", virtualAddress);
 
 	// 	return virtualAddress;
 	// }

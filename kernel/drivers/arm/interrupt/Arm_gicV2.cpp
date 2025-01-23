@@ -1,7 +1,6 @@
 #include "Arm_gicV2.hpp"
 
 #include <kernel/exceptions.hpp>
-#include <kernel/log.hpp>
 #include <kernel/mmio.hpp>
 #include <kernel/mmio.hpp>
 
@@ -167,11 +166,11 @@ namespace driver {
 			};
 		}
 
-		auto Arm_gicV2::_on_start() -> bool {
+		auto Arm_gicV2::_on_start() -> Try<> {
 			mmio::PeripheralAccessGuard guard;
 
-			auto& gicd = *(volatile Gicd*)(address + gicd_base);
-			auto& gicc = *(volatile Gicc*)(address + gicc_base);
+			auto& gicd = *(volatile Gicd*)(_address + gicd_base);
+			auto& gicc = *(volatile Gicc*)(_address + gicc_base);
 
 			gicd.ctlr.enableGroup0 = 0;
 			gicd.ctlr.enableGroup1 = 0;
@@ -202,8 +201,8 @@ namespace driver {
 			// 	mmio::write32(gicd_address+(U32)Gicd_address::icfg+i/16*4, 0b11<<(i%16));
 			// }
 
-			log::print_info("interruptCount = ", interruptCount);
-			log::print_info("securityExtensionsImplemented = ", gicd.typer.securityExtensionsImplemented?"yes":"no");
+			log.print_info("interruptCount = ", interruptCount);
+			log.print_info("securityExtensionsImplemented = ", gicd.typer.securityExtensionsImplemented?"yes":"no");
 
 			// for(U32 i=0;i<interruptCount;i++){
 			// 	mmio::write32(gicd_address+(U32)Gicd_address::irq_config+4*(i/16), (0b11 << (i%16)) & mmio::read32(gicd_address+(U32)Gicd_address::irq_config+4*(i/16)) | (0b1 << (i%16)));
@@ -213,24 +212,24 @@ namespace driver {
 			// 	mmio::write32(gicd_address+(U32)Gicd_address::irq_target+4*(i), 1<<0);
 			// }
 
-			// log::print_info("=== 1 ===");
+			// log.print_info("=== 1 ===");
 
 			// for(U32 i=0;i<interruptCount/8;i++){
-			// 	log::print_info("group ",i);
+			// 	log.print_info("group ",i);
 			// 	gicd.interruptGroup[i] = 0x00;
 			// 	// gicd.interruptGroup[i] = 0xff;
-			// 	log::print_info("enable ",i);
+			// 	log.print_info("enable ",i);
 			// 	gicd.interruptSetEnable[i] = 0xff;
 			// }
 
-			// log::print_info("=== 2 ===");
+			// log.print_info("=== 2 ===");
 
 			// for(U32 i=32;i<interruptCount;i++){
 			// 	gicd.interruptTarget[i] = 1<<(0);
 			// 	// gicd.interruptPriority[i] = 0xa0;
 			// }
 
-			// log::print_info("=== 3 ===");
+			// log.print_info("=== 3 ===");
 
 			gicd.ctlr.enableGroup0 = 1;
 			gicd.ctlr.enableGroup1 = 1;
@@ -240,14 +239,14 @@ namespace driver {
 			gicc.ctlr.enableGroup0 = 1;
 			gicc.ctlr.enableGroup1 = 1;
 
-			return true;
+			return {};
 		}
 
-		auto Arm_gicV2::_on_stop() -> bool {
+		auto Arm_gicV2::_on_stop() -> Try<> {
 			mmio::PeripheralAccessGuard guard;
 			
-			auto& gicd = *(volatile Gicd*)(address + gicd_base);
-			auto& gicc = *(volatile Gicc*)(address + gicc_base);
+			auto& gicd = *(volatile Gicd*)(_address + gicd_base);
+			auto& gicc = *(volatile Gicc*)(_address + gicc_base);
 
 			gicd.ctlr.enableGroup0 = 0;
 			gicd.ctlr.enableGroup1 = 0;
@@ -255,7 +254,7 @@ namespace driver {
 			gicc.ctlr.enableGroup0 = 0;
 			gicc.ctlr.enableGroup1 = 0;
 
-			return true;
+			return {};
 		}
 
 		void Arm_gicV2::enable_irq(U32 cpu, U32 irq) {
@@ -263,8 +262,8 @@ namespace driver {
 			
 			irq += vcPeripheralIrqOffset;
 
-			auto& gicd = *(volatile Gicd*)(address + gicd_base);
-			// auto& gicc = *(volatile Gicc*)(address + gicc_base);
+			auto& gicd = *(volatile Gicd*)(_address + gicd_base);
+			// auto& gicc = *(volatile Gicc*)(_address + gicc_base);
 
 			const auto group = 0;
 
@@ -291,8 +290,8 @@ namespace driver {
 
 			irq += vcPeripheralIrqOffset;
 
-			auto& gicd = *(volatile Gicd*)(address + gicd_base);
-			// auto& gicc = *(volatile Gicc*)(address + gicc_base);
+			auto& gicd = *(volatile Gicd*)(_address + gicd_base);
+			// auto& gicc = *(volatile Gicc*)(_address + gicc_base);
 
 			gicd.interruptClearEnable[irq/8] = 1<<(irq%8);
 
@@ -312,7 +311,7 @@ namespace driver {
 		// 	// // 	return 0;
 		// 	// // }
 
-		// 	// const U32 gicd_address = address + gicd_base;
+		// 	// const U32 gicd_address = _address + gicd_base;
 
 		// 	// auto &gicd = *(volatile Gicd*)gicd_address;
 
@@ -334,7 +333,7 @@ namespace driver {
 		auto Arm_gicV2::handle_interrupt(const void *cpuState) -> const void* {
 			mmio::PeripheralAccessGuard guard;
 
-			auto& gicc = *(volatile Gicc*)(address + gicc_base);
+			auto& gicc = *(volatile Gicc*)(_address + gicc_base);
 
 			Gicc::Iar interrupt;
 			interrupt.data = gicc.iar.data; //received?

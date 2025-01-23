@@ -7,11 +7,11 @@ template <typename Type>
 struct ListOrdered {
 	U32 length = 0;
 	U32 allocated;
-	Type **data;
+	Type *data;
 
 	/**/ ListOrdered(U32 reserveSize=32):
 		allocated(reserveSize),
-		data(new Type*[reserveSize])
+		data(reserveSize?new Type[reserveSize]:nullptr)
 	{}
 
 	/**/~ListOrdered(){
@@ -19,61 +19,73 @@ struct ListOrdered {
 	}
 
 	void resize(U32 newSize){
-		newSize = max(max(length, (U32)1), newSize);
+		newSize = maths::max(maths::max(length, (U32)1), newSize);
 		if(newSize==allocated) return;
 
-		auto newData = new Type**[allocated=newSize];
+		auto newData = new Type[allocated=newSize];
 		memcpy(newData, data, length);
 
 		delete data;
 		data = newData;
 	}
 
-	void push_back(Type &item){
+	void push_back(const Type &item){
 		if(length+1>=allocated){
 			resize(allocated+allocated/2);
 		}
-		data[length++] = &item;
+		data[length++] = item;
 	}
 
-	void push_front(Type &item){
+	void push_front(const Type &item){
 		if(length+1>=allocated){
 			//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
 			resize(allocated+allocated/2);
 		}
 		memmove(&data[1], &data[0], length++);
-		data[0] = &item;
+		data[0] = item;
 	}
 
-	Type* pop_back(){
-		if(length<1) return nullptr;
+	Type pop_back(){
+		debug::assert(length>0);
 
 		return data[--length];
 	}
 
-	Type* pop_front(){
-		if(length<1) return nullptr;
+	Type pop_front(){
+		debug::assert(length>0);
 
-		Type *value = data[0];
+		Type value = data[0];
 		memmove(&data[1], &data[0], --length);
 
 		return value;
 	}
 
-	Type* pop(U32 index){
-		if(index>=length) return nullptr;
+	Type pop(U32 index){
+		debug::assert(index<length);
 
 		if(index==0) return pop_front();
 		if(index==length-1) return pop_back();
 
-		Type *value = data[index];
+		Type value = data[index];
 
 		memmove(&data[index], &data[index+1], --length-index);
 
 		return value;
 	}
 
-	void insert(U32 index, Type *value){
+	void remove(U32 index){
+		debug::assert(index<length);
+
+		--length;
+
+		if(index<length){
+			memmove(&data[index], &data[index+1], length-index);
+		}
+	}
+
+	void insert(U32 index, Type value){
+		debug::assert(index<=length);
+
 		if(length+1>=allocated){
 			//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
 			resize(allocated+allocated/2);
@@ -85,6 +97,9 @@ struct ListOrdered {
 	void clear(){
 		length = 0;
 	}
+
+	auto begin() -> Type* { return &data[0]; }
+	auto end() -> Type* { return &data[length]; }
 
 	auto operator[](U32 index) -> Type& { return data[index]; }
 	auto operator[](U32 index) const -> const Type& { return data[index]; }

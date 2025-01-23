@@ -1,20 +1,13 @@
 #pragma once
 
-#include <kernel/console.hpp>
-#include <kernel/Driver.hpp>
-
-#include <functional>
+#include <kernel/drivers/Hardware.hpp>
 
 namespace driver {
-	struct Timer: Driver {
-		typedef Driver Super;
+	struct Timer: Hardware {
+		DRIVER_TYPE(Timer, "timer", "Hardware Timer Driver", Hardware)
 
-		static DriverType driverType;
-
-		/**/ Timer(const char *name, const char *description);
-
-		virtual U32 now() = 0;
-		virtual U64 now64() = 0;
+		virtual auto now() -> U32 = 0;
+		virtual auto now64() -> U64 = 0;
 		virtual void wait(U32 usecs) = 0;
 	};
 }

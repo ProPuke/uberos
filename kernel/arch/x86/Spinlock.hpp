@@ -16,7 +16,7 @@ namespace arch {
 			void lock(const char *context = "") {
 				CriticalSection::lock();
 
-				asm(
+				asm volatile(
 					"acquire%=:\n"
 					"  lock bts dword ptr [%0], 0\n"
 					"  jnc done%=\n"
@@ -32,7 +32,7 @@ namespace arch {
 			}
 
 			void unlock(bool debug = true, bool apply = true) {
-				asm(
+				asm volatile(
 					"mov dword ptr [%0], 0"
 					:
 					: "r" (&_lock)

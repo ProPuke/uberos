@@ -1,5 +1,3 @@
-#include "cpu.hpp"
-
 #include <kernel/drivers.hpp>
 
 #if defined(ARCH_RASPI1)
@@ -30,10 +28,6 @@ namespace arch {
 			#elif defined(ARCH_RASPI4)
 				driver::processor::Raspi_bcm2711 device;
 			#endif
-
-			void init() {
-				drivers::install_driver(device, true);
-			}
 		}
 	}
 }

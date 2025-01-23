@@ -4,15 +4,21 @@
 #include <kernel/drivers.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/PodArray.hpp>
+#include <kernel/drivers/Interrupt.hpp>
 
 #include <common/types.hpp>
 #include <atomic>
 
 namespace exceptions {
 	// std::atomic<U32> _lock_depth = 0;
-	volatile int _lock_depth = 0;
+	volatile U32 _lock_depth = 0;
 
-	PodArray<irq::Subscriber*> *irqSubscribers[256] = {};
+	struct IrqSubscription {
+		irq::Subscriber subscriber;
+		void *data;
+	};
+
+	PodArray<IrqSubscription> *irqSubscribers[256] = {};
 
 	Cli cli;
 
@@ -27,21 +33,36 @@ namespace exceptions {
 	}
 
 	namespace irq {
-		void subscribe(U8 irq, irq::Subscriber callback) {
+		void subscribe(U8 irq, irq::Subscriber callback, void *data) {
 			auto &subscribers = irqSubscribers[irq];
 			if(!subscribers){
-				subscribers = new PodArray<irq::Subscriber*>(1);
+				subscribers = new PodArray<IrqSubscription>(1);
+				for(auto &driver:drivers::iterate<driver::Interrupt>()){
+					if(irq>=driver.min_irq&&irq<=driver.max_irq){
+						driver.enable_irq(0, irq); //TODO: multi-cpu?
+					}
+				}
 			}
-			subscribers->push_back(&callback);
+			subscribers->push_back(IrqSubscription{callback, data});
 		}
 
-		void unsubscribe(U8 irq, irq::Subscriber callback) {
+		void unsubscribe(U8 irq, irq::Subscriber callback, void *data) {
 			auto &subscribers = irqSubscribers[irq];
 			if(subscribers){
 				for(auto i=0u;i<subscribers->length;i++){
-					if((*subscribers)[i]==&callback){
+					auto &subscription = (*subscribers)[i];
+					if(subscription.subscriber==callback&&subscription.data==data){
 						subscribers->remove(i);
 						break;
+					}
+				}
+				if(subscribers->length<1){
+					delete subscribers;
+					irqSubscribers[irq] = nullptr;
+					for(auto &driver:drivers::iterate<driver::Interrupt>()){
+						if(irq>=driver.min_irq&&irq<=driver.max_irq){
+							driver.disable_irq(0, irq); //TODO: multi-cpu?
+						}
 					}
 				}
 			}
@@ -49,10 +70,10 @@ namespace exceptions {
 	}
 
 	void _on_irq(U8 irq) {
-		auto &subscribers = irqSubscribers[irq];
+		auto subscribers = irqSubscribers[irq];
 		if(subscribers){
-			for(auto subscriber:*subscribers){
-				(*subscriber)(irq);
+			for(auto subscription:*subscribers){
+				(*subscription.subscriber)(irq, subscription.data);
 			}
 		}
 

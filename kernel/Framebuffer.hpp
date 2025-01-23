@@ -9,7 +9,6 @@ namespace driver {
 }
 
 struct Framebuffer {
-	driver::Graphics *driver;
 	U32 index;
 	graphics2d::Buffer buffer; //address might be invalid if direct access not available
 

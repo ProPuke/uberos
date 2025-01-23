@@ -2,9 +2,11 @@
 
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/CriticalSection.hpp>
-#include <kernel/log.hpp>
+#include <kernel/Log.hpp>
 
 #include <common/types.hpp>
+
+static Log log("arch::raspi::timer");
 
 namespace mmio {
 	using namespace arch::raspi::mmio;

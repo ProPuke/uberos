@@ -1,11 +1,55 @@
 #include "Driver.hpp"
 
-DriverType Driver::driverType{"driver", nullptr};
+#include <kernel/drivers.hpp>
 
-/**/ Driver::Driver(const char *name, const char *description):
-	name(name),
-	type(&driverType),
-	description(description)
+/**/ Driver::Driver(DriverApi::Startup startup):
+	api(startup)
+{
+	DRIVER_DECLARE_INIT();
+
+	(void)drivers::install_driver(*this);
+}
+
+/**/ DriverReference<Driver>:: DriverReference():
+	driver(nullptr),
+	onTerminated(nullptr),
+	onTerminatedData(nullptr)
 {}
 
-/**/ Driver::~Driver() {}
+/**/ DriverReference<Driver>:: DriverReference(Driver *driver, Callback onTerminated, void *onTerminatedData):
+	driver(driver),
+	onTerminated(onTerminated),
+	onTerminatedData(onTerminatedData)
+{
+	if(driver){
+		driver->references.push_back(*this);
+	}
+}
+
+/**/ DriverReference<Driver>::~DriverReference() {
+	if(driver){
+		driver->references.pop(*this);
+	}
+}
+
+auto DriverReference<Driver>::operator=(Driver *set) -> DriverReference& {
+	if(set==driver) return *this;
+
+	if(driver){
+		driver->references.pop(*this);
+	}
+
+	driver = set;
+	if(driver){
+		driver->references.push_back(*this);
+	}
+
+	return *this;
+}
+
+void DriverReference<Driver>::terminate() {
+	if(!driver) return;
+
+	driver = nullptr;
+	onTerminated(onTerminatedData);
+}

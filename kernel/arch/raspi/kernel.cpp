@@ -1,6 +1,4 @@
 #include <kernel/arch/raspi/atags.hpp>
-#include <kernel/arch/raspi/cpu.hpp>
-#include <kernel/arch/raspi/framebuffer.hpp>
 #include <kernel/arch/raspi/hwquery.hpp>
 #include <kernel/arch/raspi/irq.hpp>
 #include <kernel/arch/raspi/memory.hpp>
@@ -9,7 +7,7 @@
 #include <kernel/arch/raspi/usb.hpp>
 #include <kernel/drivers/raspi/serial/Raspi_uart.hpp>
 #include <kernel/kernel.hpp>
-#include <kernel/log.hpp>
+#include <kernel/logging.hpp>
 #include <kernel/mmu.hpp>
 #include <kernel/Spinlock.hpp>
 
@@ -48,7 +46,6 @@ namespace kernel {
 			arch::raspi::atags::init(atags);
 		#endif
 
-		arch::raspi::cpu::init();
 		arch::raspi::hwquery::init();
 		arch::raspi::irq::init();
 		arch::raspi::memory::init();
@@ -57,15 +54,14 @@ namespace kernel {
 			mmu::init();
 		#endif
 
-		arch::raspi::framebuffer::init();
 		arch::raspi::usb::init();
 		arch::raspi::timer::init();
 
 		#ifdef HAS_GIC400
-			log::print_info("interruptController @ ", (void*)&arch::raspi::irq::interruptController);
+			logging::print_info("interruptController @ ", (void*)&arch::raspi::irq::interruptController);
 		#endif
-		log::print_info("cpuInterruptController @ ", (void*)&arch::raspi::irq::cpuInterruptController);
-		log::print_info("uart0 @ ", (void*)&arch::raspi::serial::uart0);
+		logging::print_info("cpuInterruptController @ ", (void*)&arch::raspi::irq::cpuInterruptController);
+		logging::print_info("uart0 @ ", (void*)&arch::raspi::serial::uart0);
 
 		U64 CurrentEL;
 		U64 spsel;
@@ -83,12 +79,12 @@ namespace kernel {
 		// asm volatile("msr SPSel, #0\n mov %0, sp" : "=r" (sp_el0));
 		// asm volatile("msr SPSel, #1\n mov %0, sp" : "=r" (sp_el1));
 
-		log::print_info("CurrentEL = ", bits(CurrentEL,2,3));
-		log::print_info("spsel = ", spsel);
-		log::print_info("sp = ", format::Hex64{sp});
-		// log::print_info("sp_el0 = ", format::Hex64{sp_el0});
-		// log::print_info("sp_el1 = ", format::Hex64{sp_el1});
-		// log::print_info("sp_el2 = ", format::Hex64{sp_el2});
+		logging::print_info("CurrentEL = ", bits(CurrentEL,2,3));
+		logging::print_info("spsel = ", spsel);
+		logging::print_info("sp = ", format::Hex64{sp});
+		// logging::print_info("sp_el0 = ", format::Hex64{sp_el0});
+		// logging::print_info("sp_el1 = ", format::Hex64{sp_el1});
+		// logging::print_info("sp_el2 = ", format::Hex64{sp_el2});
 	}
 
 	void _postInit(){

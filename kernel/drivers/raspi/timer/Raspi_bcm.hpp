@@ -7,13 +7,16 @@
 namespace driver {
 	namespace timer {
 		struct Raspi_bcm final: driver::Timer {
-			typedef driver::Timer Super;
+			DRIVER_TYPE_CUSTOM_CTOR(Raspi_bcm, "bcm", "Raspberry Pi BCM", driver::Timer)
 
 			/**/ Raspi_bcm(
 				U64 address = (U64)arch::raspi::mmio::Address::system_timer_base,
 				U32 irqAddress = (U32)arch::raspi::irq::Irq::system_timer_gpu_0,
-				const char *name = "Raspi BCM Timer"
-			);
+			):
+				Super(DriverApi::Startup::automatic),
+				_address(address),
+				irqAddress(irqAddress)
+			{ DRIVER_DECLARE_INIT(); }
 
 			enum struct Timer {
 				gpu_0,
@@ -21,6 +24,8 @@ namespace driver {
 				gpu_1,
 				cpu_1
 			};
+
+			U32 _address;
 
 			void set_timer(Timer, U32 usecs);
 

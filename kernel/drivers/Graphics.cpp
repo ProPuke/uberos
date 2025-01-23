@@ -5,15 +5,7 @@
 static Log log("gfx");
 
 namespace driver {
-	DriverType Graphics::driverType{"graphics", &Super::driverType};
-
-	/**/ Graphics::Graphics(const char *name, const char *description):
-		Driver(name, description)
-	{
-		type = &driverType;
-	}
-
-	auto Graphics::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> bool {
+	auto Graphics::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> Try<> {
 		// if acceptSuggestion, prioritise the following alternative options:
 		// 1) Same resolution, with closest > format
 		// 2) Same resolution, with closest < format
@@ -70,7 +62,7 @@ namespace driver {
 
 			return set_mode(framebufferId, *bestCandidate);
 		}else{
-			return false;
+			return {"Could not find matching suitable mode"};
 		}
 	}
 }

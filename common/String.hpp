@@ -1,20 +1,23 @@
 #pragma once
 
-#include "types.hpp"
 #include "maths.hpp"
+#include "stdlib.hpp"
+#include "types.hpp"
 
 template <typename Type>
 struct String {
-	static const unsigned localBufferSize = max(8, 16/sizeof(Type));
+	static const size_t localBufferSize = max<size_t>(8, 16/sizeof(Type));
 
 	U32 length = 0;
-	U32 allocated = localBufferSize;
-	enum {
-		Type *data;
+	Type *data = localData;
+	union {
+		U32 allocated;
 		Type localData[localBufferSize];
 	};
 
-	/**/ String() {}
+	/**/ String() {
+		data[0] = '\0';
+	}
 
 	template<typename ...Params>
 	/**/ String(Params ...params){
@@ -24,7 +27,7 @@ struct String {
 	}
 
 	/**/~String(){
-		if(allocated!=localBufferSize){
+		if(data!=localData){
 			delete data;
 		}
 	}
@@ -50,6 +53,11 @@ struct String {
 	}
 
 	void append(Type c){
+		if(data==localData){
+			if(length+1>localBufferSize-1){
+				resize(localBufferSize+localBufferSize/2);
+			}
+		}
 		if(length+1>=allocated){
 			resize(allocated+allocated/2);
 		}
@@ -82,4 +90,16 @@ struct String {
 
 		memmove(&data[index+1], memmove(&data[index]), length++-index);
 	}
+
+	auto operator[](size_t i) const -> Type { return data[i]; }
+	auto operator[](size_t i) -> Type& { return data[i]; }
+
+	operator==(const String &b) const {
+		if(length!=b.length) return false;
+		return memcmp(a.data, b.data, a.length*sizeof(Type))==0;
+	}
 };
+
+typedef String<C8> String8;
+typedef String<C16> String16;
+typedef String<C32> String32;

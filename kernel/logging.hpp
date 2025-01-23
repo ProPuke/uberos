@@ -61,8 +61,13 @@ namespace logging {
 		Print_end print_end;
 	};
 
+	void init();
+
 	void install_handler(Handler&);
 	void uninstall_handler(Handler&);
+
+	auto get_history_part_1() -> const char*;
+	auto get_history_part_2() -> const char*;
 
 	struct Section {
 		template<typename ...Params>

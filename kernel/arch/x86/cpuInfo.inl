@@ -35,7 +35,7 @@ namespace arch {
 
 			inline void enable_sse() {
 				#ifdef _64BIT
-					asm(
+					asm volatile(
 						"mov rax, cr4\n"
 						"or ax, 0x600\n" // enable OSFXSR and OSXMMEXCPT
 						"mov cr4, rax\n"
@@ -44,7 +44,7 @@ namespace arch {
 						:
 					);
 				#else
-					asm(
+					asm volatile(
 						"mov eax, cr4\n"
 						"or ax, 0x600\n" // enable OSFXSR and OSXMMEXCPT
 						"mov cr4, eax\n"

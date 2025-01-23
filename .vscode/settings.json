@@ -3,12 +3,13 @@
 		"**/*.o": true
 	},
 	"files.associations": {
+		"*.sqlbook": "sql",
 		"*.ndjson": "jsonl",
 		"*.dbclient-js": "javascript",
-		"*.inc": "php",
 		"*.sc": "glsl",
 		"*.shader": "glsl",
 		"*.qc": "quakec",
+		"*.inc": "php",
 		"any": "cpp",
 		"array": "cpp",
 		"hash_map": "cpp",
@@ -134,7 +135,32 @@
 		"lambda-generic-87523.C": "cpp",
 		"pr56029.C": "cpp",
 		"param-type-mismatch.C": "cpp",
-		"pr54902.C": "cpp"
+		"pr54902.C": "cpp",
+		"executor": "cpp",
+		"unwind1.C": "cpp",
+		"omp-1_c.C": "cpp",
+		"Wsuggest-final.C": "cpp",
+		"pr83054.C": "cpp",
+		"label4.C": "cpp",
+		"Waddress-5.C": "cpp",
+		"Winvalid-memory-model.C": "cpp",
+		"pr89335_0.C": "cpp",
+		"eb79.C": "cpp",
+		"devirt-41.C": "cpp",
+		"vfunc-5.C": "cpp",
+		"pmf1.C": "cpp",
+		"operators12.C": "cpp",
+		"uninit-pr93100.C": "cpp",
+		"Wdangling-pointer.C": "cpp",
+		"syncstream": "cpp",
+		"p3070.C": "cpp",
+		"pr64688.C": "cpp",
+		"pr64688-2.C": "cpp",
+		"barrier": "cpp",
+		"latch": "cpp",
+		"semaphore": "cpp",
+		"spaceship-synth1a.C": "cpp",
+		"pr71959.C": "cpp"
 	},
 	"C_Cpp.default.cppStandard": "c++17",
 	"C_Cpp.default.defines": [
@@ -155,7 +181,7 @@
 	"docwriter.progress.trackTypes": false,
 	"deno.enablePaths": [
 		"./common/graphics2d/font",
-		"./utils"
+		"./tools"
 	],
 	"deno.enable": true,
 	"deno.codeLens.implementations": false,

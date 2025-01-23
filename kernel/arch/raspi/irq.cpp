@@ -4,7 +4,9 @@
 #include <kernel/arch/raspi/timer.hpp>
 #include <kernel/CriticalSection.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/log.hpp>
+#include <kernel/Log.hpp>
+
+static Log log("arch::raspi::irq");
 
 namespace irq {
 	void on_irq(U32);
@@ -83,7 +85,7 @@ namespace arch {
 			}
 
 			void init() {
-				log::Section section("arch::raspi::irq::init...");
+				auto section = log.section("init...");
 
 				#ifdef HAS_GIC400
 					drivers::install_driver(interruptController, true);

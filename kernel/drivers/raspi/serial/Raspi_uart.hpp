@@ -2,17 +2,20 @@
 
 #include <kernel/drivers/Serial.hpp>
 
+#include <common/Try.hpp>
+
 namespace driver {
 	namespace serial {
 		struct Raspi_uart final: driver::Serial {
-			typedef driver::Serial Super;
+			DRIVER_TYPE_CUSTOM_CTOR(Raspi_uart, "uart", "Raspberry Pi UART Serial", driver::Serial)
 
-			/**/ Raspi_uart(U64 address, const char *name = "Raspi UART"):
-				Serial(address, name, "serial port")
-			{}
+			/**/ Raspi_uart(U32 address):
+				Super(DriverApi::Startup::automatic),
+				_address(address)
+			{ DRIVER_DECLARE_INIT(); }
 
-			auto _on_start() -> bool override;
-			auto _on_stop() -> bool override;
+			auto _on_start() -> Try<> override;
+			auto _on_stop() -> Try<> override;
 
 			void set_uart(U32 uart);
 			void set_baud(U32 set) override;
@@ -26,8 +29,9 @@ namespace driver {
 
 		private:
 
+			U32 _address;
+
 			U32 _specified_baud = 9600;
-			
 			U32 _active_baud = 9600;
 
 			void _putc(char c);

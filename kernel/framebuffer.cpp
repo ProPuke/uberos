@@ -14,7 +14,13 @@ namespace framebuffer {
 			auto section = log.section("Devices:");
 
 			for(auto &graphics:drivers::iterate<driver::Graphics>()){
-				log.print_info(graphics.name, ':');
+				if(graphics.api.is_enabled()&&!graphics.api.is_active()){
+					(void)drivers::start_driver(graphics);
+				}
+
+				if(!graphics.api.is_active()) continue;
+
+				log.print_info(graphics.type->name, ':');
 				for(auto i=0u,framebuffers=graphics.get_framebuffer_count();i<framebuffers;i++){
 					log.print_info("  ", graphics.get_framebuffer_name(i));
 				}
@@ -25,7 +31,7 @@ namespace framebuffer {
 		// 	auto &framebuffer = framebuffers[0];
 		// 	auto buffer = graphics2d::get_screen_buffer(0, {0, 0, (I32)framebuffer.width, (I32)framebuffer.height});
 		// 	while(true){
-		// 		graphics2d::update_background();
+		// 		graphics2d::redraw_background();
 		// 		for(U32 x=0;x<framebuffer.width/4;x++){
 		// 			buffer.scroll(-4, -2);
 		// 		}
@@ -37,6 +43,8 @@ namespace framebuffer {
 		U32 count = 0;
 
 		for(auto &graphics:drivers::iterate<driver::Graphics>()){
+			if(!graphics.api.is_active()) continue;
+
 			count += graphics.get_framebuffer_count();
 		}
 
@@ -45,6 +53,8 @@ namespace framebuffer {
 
 	Framebuffer* get_framebuffer(U32 index) {
 		for(auto &graphics:drivers::iterate<driver::Graphics>()){
+			if(!graphics.api.is_active()) continue;
+
 			const auto count = graphics.get_framebuffer_count();
 			if(index<count){
 				return graphics.get_framebuffer(index);

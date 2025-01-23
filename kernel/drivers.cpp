@@ -5,6 +5,7 @@
 #include <kernel/drivers/Interrupt.hpp>
 #include <kernel/drivers/Processor.hpp>
 #include <kernel/drivers/Serial.hpp>
+#include <kernel/exceptions.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/PodArray.hpp>
 
@@ -16,6 +17,8 @@ static Log log("drivers");
 using namespace maths;
 
 namespace drivers {
+	EventEmitter<Event> events;
+
 	LList<Driver> drivers;
 
 	PodArray<Driver*> *interruptSubscribers[256] = {};
@@ -42,80 +45,116 @@ namespace drivers {
 		}
 	}
 
-	void install_driver(Driver &driver, bool activate) {
+	void install_driver(Driver &driver) {
 		drivers.push_back(driver);
-		if(activate){
-			activate_driver(driver);
-		}
+
+		// auto priority = driver.get_priority();
+
+		// Driver *next = nullptr;
+
+		// for(auto existing=drivers.head;existing;existing=existing->next){
+		// 	if(existing->get_priority()<priority){
+		// 		next = existing;
+		// 		break;
+		// 	}
+		// }
+
+		// if(next){
+		// 	drivers.insert_before(*next, driver);
+		// }else{
+		// 	drivers.push_back(driver);
+		// }
 	}
 
-	void enable_driver(Driver &driver) {
-		if(driver.api.is_enabled()) return;
+	auto start_driver(Driver &driver) -> Try<> {
+		if(driver.api.is_active()) return {};
 
-		auto section = log.section("enable ", driver.name);
-
-		driver.api.enable_driver();
-
-		if(!driver.api.is_enabled()){
-			log.print_error("Failed to enable driver");
-		}
-	}
-
-	auto activate_driver(Driver &driver) -> bool {
-		if(driver.api.is_active()) return true;
-
-		auto section = log.section("START ", driver.name);
+		auto section = log.section("START ", driver.type->name, "...");
 
 		Driver *disabledDevice = nullptr;
 
-		driver.api.start_driver();
+		if(auto result = driver.api.start_driver(); !result) {
+			log.print_error("Error: ", result.errorMessage);
+			if(!driver.api.is_active()){
+				return result;
+			}
+		};
 
 		if(!driver.api.is_active()){
-			log.print_error("Failed to activate driver");
+			log.print_error("Failed to start driver");
 			//if we failed to start the driver, and stopped a previous in order to try, then restore it
 			if(disabledDevice){
-				activate_driver(*disabledDevice);
+				TRY(start_driver(*disabledDevice));
 			}
-			return false;
+			return {"Unable to start driver"};
 		}
 
-		return true;
+		events.trigger({
+			.type = Event::Type::driver_started,
+			.driver_started = {&driver}
+		});
+
+		return {};
 	}
 
-	auto stop_driver(Driver &driver) -> bool {
-		if(!driver.api.is_active()) return true;
-		if(!driver.can_disable_driver()) return false;
+	auto stop_driver(Driver &driver) -> Try<> {
+		if(!driver.api.is_active()) return {};
+		if(!driver.can_stop_driver()) return {"This driver cannot be stopped"};
 
-		auto section = log.section("STOP ", driver.name);
+		auto section = log.section("STOP ", driver.type->name);
 
-		driver.api.stop_driver();
+		if(auto result = driver.api.stop_driver(); !result) {
+			log.print_error("Error: ", result.errorMessage);
+			return result;
+		}
 
 		if(!driver.api.is_disabled()){
 			//TODO: driver might have enter a failed state while stopping. Should report this in some other way, since the driver IS now technically stopped?
 			log.print_error("Failed to stop driver");
-			return false;
+			return {"Unable to stop driver"};
 		}
 
-		return true;
+		events.trigger({
+			.type = Event::Type::driver_stopped,
+			.driver_started = {&driver}
+		});
+
+		return {};
 	}
 
-	auto restart_driver(Driver &driver) -> bool {
+	auto restart_driver(Driver &driver) -> Try<> {
 		if(!driver.api.is_active()){
-			return activate_driver(driver);
+			return start_driver(driver);
 		}
 
-		if(!driver.can_restart_driver()) return false;
+		if(!driver.can_restart_driver()) return {"This driver cannot be restarted"};
 
-		auto section = log.section("RESTART ", driver.name);
+		auto section = log.section("RESTART ", driver.type->name);
 
-		driver.api.restart_driver();
+		if(auto result = driver.api.restart_driver(); !result) {
+			log.print_error("Error: ", result.errorMessage);
 
-		if(driver.api.is_active()){
+			events.trigger({
+				.type = Event::Type::driver_stopped,
+				.driver_stopped = {&driver, result.errorMessage}
+			});
+
+			if(!driver.api.is_active()){
+				return result;
+			}
+		}
+
+		if(!driver.api.is_active()){
 			log.print_error("Failed to restart driver");
-			return false;
+			return {"Unable to restart driver"};
 		}
 
-		return true;
+		events.trigger({
+			.type = Event::Type::driver_started,
+			.driver_started = {&driver}
+		});
+
+		return {};
 	}
 
 	auto find_first(DriverType &type) -> Driver* {
@@ -165,33 +204,61 @@ namespace drivers {
 		}
 	}
 
+	namespace {
+		void on_driver_irq(U8 irq, void *data){
+			auto &driver = *(Driver*)data;
+			driver._on_irq(irq);
+		};
+	}
+
+	void _subscribe_driver_to_irq(Driver &driver, U8 irq) {
+		exceptions::irq::subscribe(irq, on_driver_irq, &driver);
+	}
+
+	void _unsubscribe_driver_from_irq(Driver &driver, U8 irq) {
+		exceptions::irq::unsubscribe(irq, on_driver_irq, &driver);
+	}
+
 	void print_driver_summary(const char *indent, Driver &driver) {
 		log.print_info_start();
 		log.print_inline(indent);
 
 		if(driver.api.is_active()){
 			log.print_inline("[+] ");
-		}else if(driver.api.is_active()){
-			log.print_inline("[.] ");
 		}else if(driver.api.is_failed()){
 			log.print_inline("[!] ");
 		}else if(driver.api.is_disabled()){
 			log.print_inline("[x] ");
+		}else if(driver.api.is_enabled()){
+			log.print_inline("[.] ");
 		}else{
 			log.print_inline("[?] ");
 		}
 
-		log.print_inline(driver.name);
-		if(driver.description){
-			log.print_inline(" - ", driver.description);
+		log.print_inline(driver.type->name, " (", driver.type->description, ')');
+		for(auto parent = driver.type->parentType; parent&&parent->parentType; parent = parent->parentType) {
+			logging::print_inline(" / ", parent->description);
 		}
+
 		// if(driver.address){
 		// 	log.print_inline(" @ ", to_string(driver.address));
 		// }
 		log.print_end();
 		// log.print_info("   State: ", driver.state);
 		for(auto &subscription:driver.api.subscribedMemory){
-			log.print_info(indent, "   Memory: ", to_string(subscription.start), " - ", to_string(subscription.end));
+			#ifdef _64BIT
+				log.print_info(indent, "   Memory: ", format::Hex64{subscription.start}, " - ", format::Hex64{subscription.end});
+			#else
+				log.print_info(indent, "   Memory: ", format::Hex32{subscription.start}, " - ", format::Hex32{subscription.end});
+			#endif
+		}
+		if(driver.api.subscribedIoPorts.length>0){
+			log.print_info_start();
+			log.print_inline(indent, "   I/O Ports:");
+			for(auto port:driver.api.subscribedIoPorts) {
+				log.print_inline(' ', port);
+			}
+			log.print_end();
 		}
 		if(driver.api.subscribedIrqs.has_any()){
 			log.print_info_start();
@@ -201,6 +268,7 @@ namespace drivers {
 					log.print_inline(' ', i);
 				}
 			}
+			log.print_end();
 		}
 		if(driver.api.subscribedInterrupts.has_any()){
 			log.print_info_start();
@@ -210,8 +278,17 @@ namespace drivers {
 					log.print_inline(' ', i);
 				}
 			}
+			log.print_end();
 		}
-		if(driver.is_type(driver::Processor::driverType)){
+		if(driver.api.subscribedPciDevices.length > 0){
+			log.print_info_start();
+			log.print_inline(indent, "   PCI Devices:");
+			for(auto pciDevice:driver.api.subscribedPciDevices) {
+				log.print_inline(' ', pciDevice->bus, '/', pciDevice->device, '/', pciDevice->function);
+			}
+			log.print_end();
+		}
+		if(driver.is_type<driver::Processor>()){
 			auto &processor = *(driver::Processor*)&driver;
 			log.print_info(indent, "   Architecture: ", processor.processor_arch);
 			log.print_info(indent, "   Cores: ", processor.processor_cores);
@@ -252,13 +329,13 @@ namespace drivers {
 			// 	log.print_info(indent, "   ", processor.get_temperature_name(i), " = ", processor.get_temperature_value(i), " K");
 			// }
 		}
-		if(driver.is_type(driver::Serial::driverType)){
+		if(driver.is_type<driver::Serial>()){
 			auto &serial = *(driver::Serial*)&driver;
 			if(serial.api.is_disabled()){
 				log.print_info(indent, "   Baud: ", serial.get_active_baud());
 			}
 		}
-		if(driver.is_type(driver::Graphics::driverType)){
+		if(driver.is_type<driver::Graphics>()){
 			auto &graphics = *(driver::Graphics*)&driver;
 			const auto framebufferCount = graphics.get_framebuffer_count();
 			log.print_info(indent, "   Framebuffers: ", framebufferCount);
@@ -272,14 +349,14 @@ namespace drivers {
 				}
 			}
 		}
-		if(driver.is_type(driver::Interrupt::driverType)){
+		if(driver.is_type<driver::Interrupt>()){
 			auto &irq = *(driver::Interrupt*)&driver;
-			log.print_info(indent, "   Interrupts: ", irq.min_irq, " - ", irq.max_irq);
+			log.print_info(indent, "   Provided IRQs: ", irq.min_irq, " - ", irq.max_irq);
 		}
 	}
 
 	bool print_driver_details(const char *indent, Driver &driver, const char *beforeName, const char *afterName) {
-		if(driver.is_type(driver::Processor::driverType)){
+		if(driver.is_type<driver::Processor>()){
 			auto &processor = *(driver::Processor*)&driver;
 
 			auto clocks = processor.get_clock_count();
@@ -380,7 +457,7 @@ namespace drivers {
 
 			return clocks>0||temps>0;
 
-		}else if(driver.is_type(driver::Graphics::driverType)){
+		}else if(driver.is_type<driver::Graphics>()){
 			auto &graphics = *(driver::Graphics*)&driver;
 
 			U32 framebuffers = graphics.get_framebuffer_count();
@@ -412,13 +489,13 @@ namespace drivers {
 		}
 
 
-		// if(driver.is_type(driver::Serial::driverType)){
+		// if(driver.is_type<driver::Serial>()){
 		// 	auto &serial = *(driver::Serial*)&driver;
 		// }
-		// if(driver.is_type(driver::Graphics::driverType)){
+		// if(driver.is_type<driver::Graphics>()){
 		// 	auto &graphics = *(driver::Graphics*)&driver;
 		// }
-		// if(driver.is_type(driver::Interrupt::driverType)){
+		// if(driver.is_type<driver::Interrupt>()){
 		// 	auto &interrupt = *(driver::Interrupt*)&driver;
 		// }
 
@@ -439,17 +516,17 @@ namespace drivers {
 	auto find_and_activate(DriverType &type, Driver *onBehalf) -> Driver* {
 		// try to find an active first
 		for(auto &driver:Iterate<Driver>(type)){
-			if(!driver.api.is_active()) return &driver;
+			if(driver.api.is_active()) return &driver;
 		}
 
 		// failing that, try to activate a candidate
 		for(auto &driver:Iterate<Driver>(type)){
 			if(driver.api.is_enabled()){
 				if(onBehalf){
-					auto section = log.section("REQUEST ", onBehalf->name, " -> ", driver.name);
+					auto section = log.section("REQUEST ", onBehalf->type->name, " -> ", driver.type->name);
 				}
 
-				if(activate_driver(driver)) return &driver;
+				if(start_driver(driver)) return &driver;
 			}
 		}
 

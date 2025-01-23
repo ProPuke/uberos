@@ -1,7 +1,6 @@
 #include "DriverApi.hpp"
 
-#include "Driver.hpp"
-
+#include <kernel/Driver.hpp>
 #include <kernel/PodArray.hpp>
 
 #include <cstddef>
@@ -10,13 +9,6 @@ namespace drivers {
 	extern PodArray<Driver*> *interruptSubscribers[256];
 	extern PodArray<Driver*> *irqSubscribers[256];
 }
-
-const char * DriverApi::state_name[(U64)DriverApi::State::max+1] = {
-	"disabled",
-	"enabled",
-	"restarting",
-	"failed"
-};
 
 auto DriverApi::driver() -> Driver& {
 	return *(Driver*)((char*)(this)-offsetof(Driver, api));
@@ -64,30 +56,15 @@ void DriverApi::unsubscribe_all_interrupts() {
 void DriverApi::subscribe_irq(U8 irq) {
 	if(subscribedIrqs.get(irq)) return;
 
-	auto &driver = this->driver();
+	drivers::_subscribe_driver_to_irq(this->driver(), irq);
 
-	auto &subscribers = drivers::irqSubscribers[irq];
-	if(!subscribers){
-		subscribers = new PodArray<Driver*>(1);
-	}
-	subscribers->push_back(&driver);
 	subscribedIrqs.set(irq, true);
 }
 
 void DriverApi::unsubscribe_irq(U8 irq) {
 	if(!subscribedIrqs.get(irq)) return;
 
-	auto &driver = this->driver();
-
-	auto &subscribers = drivers::irqSubscribers[irq];
-	if(subscribers){
-		for(auto i=0u;i<subscribers->length;i++){
-			if((*subscribers)[i]==&driver){
-				subscribers->remove(i);
-				break;
-			}
-		}
-	}
+	drivers::_unsubscribe_driver_from_irq(this->driver(), irq);
 
 	subscribedIrqs.set(irq, false);
 }
@@ -193,38 +170,123 @@ auto DriverApi::is_subscribed_to_memory(void *start, size_t _size) -> bool {
 	return false;
 }
 
-void DriverApi::enable_driver() {
-	if(state==State::enabled||state==State::active) return;
+auto DriverApi::subscribe_pci(PciDevice &pciDevice) -> bool {
+	if(is_subscribed_to_pci(pciDevice)) return true;
 
-	state = State::enabled;
+	for(auto &driver:drivers::iterate<Driver>()){
+		if(driver.api.is_subscribed_to_pci(pciDevice)) return false;
+	}
+
+	subscribedPciDevices.push_back(&pciDevice);
+	return true;
 }
 
-void DriverApi::start_driver() {
-	if(state==State::active) return;
+void DriverApi::unsubscribe_pci(PciDevice &pciDevice) {
+	for(auto i=0u;i<subscribedPciDevices.length;i++){
+		if(subscribedPciDevices[i]==&pciDevice){
+			subscribedPciDevices.remove(i);
+			break;
+		}
+	}
+}
 
-	if(!driver()._on_start()){
+void DriverApi::unsubscribe_all_pci() {
+	subscribedPciDevices.clear();
+}
+
+auto DriverApi::is_subscribed_to_pci(PciDevice &pciDevice) -> bool {
+	for(auto device:subscribedPciDevices){
+		if(device==&pciDevice) return true;
+	}
+
+	return false;
+}
+
+#ifdef ARCH_X86
+	auto DriverApi::subscribe_ioPort(arch::x86::IoPort ioPort) -> bool {
+		if(is_subscribed_to_ioPort(ioPort)) return true;
+
+		for(auto &other:drivers::iterate<Driver>()){
+			if(other.api.is_subscribed_to_ioPort(ioPort)) return false;
+		}
+
+		//TODO: insert ordered
+		subscribedIoPorts.push_back(ioPort);
+
+		return true;
+	}
+
+	void DriverApi::unsubscribe_ioPort(arch::x86::IoPort ioPort) {
+		for(auto i=0u;i<subscribedIoPorts.length;i++){
+			if(subscribedIoPorts[i]==ioPort){
+				subscribedIoPorts.remove(i);
+				break;
+			}
+		}
+	}
+
+	void DriverApi::unsubscribe_all_ioPort() {
+		subscribedIoPorts.clear();
+	}
+
+	auto DriverApi::is_subscribed_to_ioPort(arch::x86::IoPort ioPort) -> bool {
+		for(auto subbed:subscribedIoPorts){
+			if(subbed==ioPort) return true;
+		}
+
+		return false;
+	}
+#endif
+
+auto DriverApi::start_driver() -> Try<> {
+	if(state==State::active) return {};
+
+	if(auto result = driver()._on_start(); !result){
 		state = State::failed;
-		return;
+		return result;
 	}
 
 	state = State::active;
+	return {};
 }
 
-void DriverApi::stop_driver() {
-	if(state!=State::active) return;
+auto DriverApi::stop_driver() -> Try<> {
+	if(state!=State::active) return {};
 
-	if(!driver()._on_stop()) return;
-	state = State::disabled;
+	TRY(driver()._on_stop());
+	state = State::inactive;
 
 	unsubscribe_all_memory();
 	unsubscribe_all_interrupts();
 	unsubscribe_all_irqs();
+	unsubscribe_all_pci();
+
+	for(auto reference = driver().references.head; reference; reference=reference->next) {
+		reference->terminate();
+	}
+
+	driver().references.clear();
+
+	return {};
 }
 
-void DriverApi::restart_driver() {
-	stop_driver();
+auto DriverApi::restart_driver() -> Try<> {
+	TRY(stop_driver());
 
-	if(state==State::active) return;
+	if(state==State::active) return {};
 
-	start_driver();
+	TRY(start_driver());
+
+	return {};
+}
+
+void DriverApi::fail_driver(const char *reason) {
+	//TODO: log this reason, and store it in the driver api for later query
+
+	state = State::failed;
+
+	unsubscribe_all_memory();
+	unsubscribe_all_interrupts();
+	unsubscribe_all_irqs();
+	unsubscribe_all_pci();
 }

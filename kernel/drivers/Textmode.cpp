@@ -75,7 +75,7 @@ namespace {
 		"   лл                    олллллллллллллллллллллллллллллн                   лл   ",
 		"    лл                    олллллллллллллллллллллллллллн                   лл    ",
 		"     лл                     олллллллллллллллллллллллн                    олн    ",
-		"      лл                        пппппппппппппппппп                      олн      ",
+		"      лл                        пппппппппппппппппп                      олн     ",
 		"       лл                                                              лл       ",
 		"        олл                                                          ллн        ",
 		"          олл                                                      ллн          ",
@@ -84,7 +84,7 @@ namespace {
 		"                олл                                          ллн                ",
 		"                  олллн                                  олллн                  ",
 		"                      лллл                            лллл                      ",
-		"                          ллллллл              олллллл                          ",
+		"                          ллллллл              ллллллл                          ",
 		"                                лллллллллллллллл                                "
 	};
 }
@@ -96,61 +96,30 @@ namespace driver {
 		void _set_char(Textmode &textmode, U32 row, U32 col, U32 foreground, U32 background, U8 c) {
 			auto oldChar = textmode.get_char(row, col);
 
-			if(oldChar==(U8)'л'){
-				if(c==' '){
+			if(background==textmode.consoleOut.defaultBackgroundColour){
+				if(oldChar==(U8)'л'){
+					if(c==' '){
+						if(background==textmode.get_char_background(row, col)&&foreground!=textmode.get_char_foreground(row, col)){
+							return;
+						}
+
+					}else{
+						auto oldForeground = textmode.get_char_foreground(row, col);
+						if(foreground!=oldForeground){
+							textmode.set_char(row, col, foreground, oldForeground, c);
+							return;
+						}
+					}
+
+				}else if(c==' '&&(oldChar=='о'||oldChar=='н'||oldChar=='м'||oldChar=='п')){
 					if(background==textmode.get_char_background(row, col)&&foreground!=textmode.get_char_foreground(row, col)){
 						return;
 					}
-
-				}else{
-					auto oldForeground = textmode.get_char_foreground(row, col);
-					if(foreground!=oldForeground){
-						textmode.set_char(row, col, foreground, oldForeground, c);
-						return;
-					}
-				}
-
-			}else if(c==' '&&(oldChar=='о'||oldChar=='н'||oldChar=='м'||oldChar=='п')){
-				if(background==textmode.get_char_background(row, col)&&foreground!=textmode.get_char_foreground(row, col)){
-					return;
 				}
 			}
 
 			textmode.set_char(row, col, foreground, background, c);
 		}
-	}
-
-	DriverType Textmode::driverType{"textmode", &Super::driverType};
-
-	/**/ Textmode::Textmode(const char *name, const char *description):
-		Driver(name, description)
-	{
-		type = &driverType;
-	}
-
-	auto Textmode::get_nearest_colour(U32 colour) -> U32 {
-		U32 nearestColour = 0;
-		U32 nearestDistance = ~0;
-
-		const int r = (colour >> 16) & 0xff;
-		const int g = (colour >>  8) & 0xff;
-		const int b = (colour >>  0) & 0xff;
-
-		const I32 colour_count = get_colour_count();
-		for(auto i=0;i<colour_count;i++){
-			const auto compare = get_colour(i);
-			const int compareR = (compare >> 16) & 0xff;
-			const int compareG = (compare >>  8) & 0xff;
-			const int compareB = (compare >>  0) & 0xff;
-
-			const U32 distance = abs(r-compareR)+abs(g-compareG)+abs(b-compareB);
-			if(distance<nearestDistance){
-				nearestColour = i;
-				nearestDistance = distance;
-			}
-		}
-
-		return nearestColour;
 	}
 
 	void Textmode::write_text(Cursor &cursor, U32 foreground, U32 background, WrapMode wrapMode, const char *text, bool autoScroll) {
@@ -298,6 +267,10 @@ namespace driver {
 		}
 	}
 
+	void Textmode::clear() {
+		clear(consoleOut.foregroundColour, consoleOut.backgroundColour, ' ');
+	}
+
 	void Textmode::clear(U32 foreground, U32 background, char bgChar) {
 		fill(0, 0, get_rows(), get_cols(), foreground, background, bgChar);
 
@@ -351,190 +324,9 @@ namespace driver {
 		}
 	}
 
-	void print_ansi(Textmode &textmode, const char *str) {
-		auto &context = textmode.consoleContext;
+	auto Textmode::_on_start() -> Try<> {
+		consoleOutCursor = Cursor{0,0,0,get_cols()};
 
-		for(auto c=str;*c;c++){
-			if(*c=='\x1b'||context.currentEscapeLength>0) {
-				context.currentEscape[context.currentEscapeLength++] = *c;
-
-				// if invalid, dump sequence to screen and reset
-				if(
-					context.currentEscapeLength==2&&context.currentEscape[1]!='['|| // not a sequence?
-					context.currentEscapeLength+1==sizeof(context.currentEscape)/sizeof(context.currentEscape[0]) // out of space?
-				){
-					context.currentEscape[context.currentEscapeLength] = '\0';
-					textmode.write_text(context.cursor, context.foreground, context.background, Textmode::WrapMode::endOfLine, context.currentEscape, true);
-					context.currentEscapeLength = 0;
-					continue;
-				}
-
-				if(*c>='a'&&*c<='z'||*c>='A'&&*c<='Z'){
-					switch(*c){
-						case 'm': { // graphic rendition
-							auto read = &context.currentEscape[2];
-
-							#define IS_END(x) (read[x]==';'||read[x]=='m')
-							#define IS_1_DIGIT IS_END(1)
-							#define IS_2_DIGIT (read[1]&&!IS_END(1)&&IS_END(2))
-							#define IS_3_DIGIT (read[1]&&!IS_END(1)&&read[2]&&!IS_END(2)&&IS_END(3))
-
-							while(true){
-								switch(*read){
-									case '0':
-										if(IS_1_DIGIT){
-											context.foreground = context.defaultForeground;
-											context.background = context.defaultBackground;
-											context.ansiBold = false;
-											//TODO: reevaluate colours as non-bold/bright
-										}
-									break;
-									case '1':
-										if(IS_1_DIGIT){
-											context.ansiBold = true;
-											//TODO: reevaluate colours as bold/bright
-
-										}else if(IS_3_DIGIT){
-											read+=2;
-											switch(*read){
-												case '0' ... '7':
-													context.foreground = textmode.brightAnsiColours[*read-'0'];
-												break;
-											}
-										}
-									break;
-									case '2':
-										if(IS_2_DIGIT){
-											read++;
-											switch(*read){
-												case '2':
-													context.ansiBold = false;
-												break;
-											}
-										}
-									break;
-									case '3':
-										if(IS_2_DIGIT){
-											read++;
-											switch(*read){
-												case '0' ... '7':
-													context.foreground = (context.ansiBold&&false?textmode.brightAnsiColours:textmode.ansiColours)[*read-'0'];
-												break;
-												case '8':
-													//TODO: RGB colour
-												break;
-												case '9':
-													context.foreground = context.defaultForeground;
-												break;
-											}
-										}
-									break;
-									case '4':
-										if(IS_2_DIGIT){
-											read++;
-											switch(*read){
-												case '0' ... '7':
-													context.background = (context.ansiBold&&false?textmode.brightAnsiColours:textmode.ansiColours)[*read-'0'];
-												break;
-												case '8':
-													//TODO: RGB colour
-												break;
-												case '9':
-													context.background = context.defaultBackground;
-												break;
-											}
-										}
-									break;
-									case '9':
-										if(IS_2_DIGIT){
-											read++;
-											switch(*read){
-												case '0' ... '7':
-													context.foreground = textmode.brightAnsiColours[*read-'0'];
-												break;
-											}
-										}
-									break;
-									default:
-									break;
-								}
-
-								read++;
-
-								if(*read!=';') break;
-							};
-
-						} break;
-						default:
-							//NOT SUPPORTED. SKIP IT
-						break;
-					}
-
-					context.currentEscapeLength = 0;
-					continue;
-				}
-
-			}else{
-				char string[2] = {*c, '\0'};
-				textmode.write_text(context.cursor, context.foreground, context.background, Textmode::WrapMode::endOfLine, string, true);
-			}
-		}
-		// textmode.write_text(cursor, foreground, background, Textmode::WrapMode::endOfLine, str, true);
-	}
-
-	void Textmode::bind_to_console() {
-		if(!api.is_active()) return;
-
-		consoleContext.currentEscapeLength = 0;
-
-		console::bind(this,
-			[](void *_textmode, char c) {
-				auto &textmode = *(driver::Textmode*)_textmode;
-				char string[2] = {c, '\0'};
-				// debug::halt();
-				// textmode.write_text(textmode.consoleContext.cursor, textmode.consoleContext.foreground, textmode.consoleContext.background, Textmode::WrapMode::endOfLine, string, true);
-				print_ansi(textmode, string);
-			},
-			nullptr,
-			nullptr,
-			[](void *_textmode, const char *str) {
-				auto &textmode = *(driver::Textmode*)_textmode;
-				// debug::halt();
-				// textmode.write_text(textmode.consoleContext.cursor, textmode.consoleContext.foreground, textmode.consoleContext.background, Textmode::WrapMode::endOfLine, str, true);
-				print_ansi(textmode, str);
-			},
-			nullptr
-		);
-	}
-
-	auto Textmode::_on_start() -> bool {
-		consoleContext.cursor = Cursor{0,0,0,get_cols()};
-		consoleContext.defaultForeground = get_nearest_colour(0xa0a0a0);
-		// consoleContext.defaultBackground = get_nearest_colour(0x000000);
-		consoleContext.defaultForeground = get_nearest_colour(0x0000ff);
-		consoleContext.defaultBackground = get_nearest_colour(0x000080);
-		consoleContext.defaultForeground = get_nearest_colour(0xa0a0a0);
-		consoleContext.foreground = consoleContext.defaultForeground;
-		consoleContext.background = consoleContext.defaultBackground;
-
-		ansiColours[0] = get_nearest_colour(0x000000);
-		ansiColours[1] = get_nearest_colour(0x990000);
-		ansiColours[2] = get_nearest_colour(0x00a600);
-		ansiColours[3] = get_nearest_colour(0x999900);
-		ansiColours[4] = get_nearest_colour(0x0000b2);
-		ansiColours[5] = get_nearest_colour(0xb200b2);
-		ansiColours[6] = get_nearest_colour(0x00a6b2);
-		ansiColours[7] = get_nearest_colour(0xa0a0a0);
-
-		brightAnsiColours[0] = get_nearest_colour(0x666666);
-		brightAnsiColours[1] = get_nearest_colour(0xff0000);
-		brightAnsiColours[2] = get_nearest_colour(0x00ff00);
-		brightAnsiColours[3] = get_nearest_colour(0xffff00);
-		brightAnsiColours[4] = get_nearest_colour(0x0000ff);
-		brightAnsiColours[5] = get_nearest_colour(0xff00ff);
-		brightAnsiColours[6] = get_nearest_colour(0x00ffff);
-		brightAnsiColours[7] = get_nearest_colour(0xffffff);
-
-		return true;
+		return Super::_on_start();
 	}
 }

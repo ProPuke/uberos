@@ -34,15 +34,18 @@ typedef signed int I32;
 	typedef __int128 I128;
 #endif
 
-typedef uint_fast8_t  FastU8;
-typedef uint_fast16_t FastU16;
-typedef uint_fast32_t FastU32;
-typedef uint_fast64_t FastU64;
+typedef uintmax_t UMax;
+typedef intmax_t IMax;
 
-typedef int_fast8_t  FastI8;
-typedef int_fast16_t FastI16;
-typedef int_fast32_t FastI32;
-typedef int_fast64_t FastI64;
+typedef uint_fast8_t  U8Fast;
+typedef uint_fast16_t U16Fast;
+typedef uint_fast32_t U32Fast;
+typedef uint_fast64_t U64Fast;
+
+typedef int_fast8_t  I8Fast;
+typedef int_fast16_t I16Fast;
+typedef int_fast32_t I32Fast;
+typedef int_fast64_t I64Fast;
 
 typedef float  F32;
 typedef double F64;

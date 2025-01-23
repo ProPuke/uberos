@@ -7,11 +7,11 @@ template <typename Type>
 struct ListUnordered {
 	U32 length = 0;
 	U32 allocated;
-	Type **data;
+	Type *data;
 
 	/**/ ListUnordered(U32 reserveSize=32):
 		allocated(reserveSize),
-		data(new Type*[reserveSize])
+		data(reserveSize>0?new Type[reserveSize]:nullptr)
 	{}
 
 	/**/~ListUnordered(){
@@ -22,39 +22,52 @@ struct ListUnordered {
 		newSize = maths::max(maths::max(length, (U32)1), newSize);
 		if(newSize==allocated) return;
 
-		Type **newData = new Type*[allocated=newSize];
+		auto newData = new Type[allocated=newSize];
 		memcpy(newData, data, length);
 
 		delete data;
 		data = newData;
 	}
 
-	void push(Type &item){
+	auto push(const Type &item) -> Type& {
 		if(length+1>=allocated){
 			resize(allocated+allocated/2);
 		}
-		data[length++] = &item;
+		return data[length++] = item;
 	}
 
-	Type* pop(){
-		if(length<1) return nullptr;
+	auto pop() -> Type {
+		debug::assert(length>0);
 
 		return data[length-- -1];
 	}
 
-	Type* pop(U32 index){
-		if(index>=length) return nullptr;
+	auto pop(U32 index) -> Type {
+		debug::assert(index<length);
 
-		if(length>1){
-			data[index] = data[length-- -1];
-		}else{
-			length--;
+		length--;
+
+		if(length>0){
+			data[index] = data[length];
+		}
+	}
+
+	void remove(U32 index){
+		debug::assert(index<length);
+
+		--length;
+
+		if(index<length){
+			data[index] = data[length];
 		}
 	}
 
 	void clear(){
 		length = 0;
 	}
+
+	auto begin() -> Type* { return &data[0]; }
+	auto end() -> Type* { return &data[length]; }
 
 	auto operator[](U32 index) -> Type& { return data[index]; }
 	auto operator[](U32 index) const -> const Type& { return data[index]; }

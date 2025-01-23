@@ -4,8 +4,8 @@ set raspi_model = 4
 set raspi_uart  = 0
 
 set asmflags = -fno-pie
-set cflags   = -nostartfiles -ffreestanding -nostdlib -Werror -Wall
-set cxxflags = -include kernel/common.hpp -include kernel/debug.hpp -nostartfiles -ffreestanding -nostdlib -Werror -Wall -fno-rtti -std=c++17 -Wno-invalid-offsetof -Wno-parentheses -Wno-unused-function -fno-exceptions
+set cflags   = -nostartfiles -ffreestanding -nostdlib -Werror -Wall -Wswitch-enum
+set cxxflags = -include common/common.hpp -include common/debug.hpp -include kernel/common.hpp -include kernel/debug.hpp -nostartfiles -ffreestanding -nostdlib -Werror -Wall -Wswitch-enum -fno-rtti -std=c++20 -Wno-invalid-offsetof -Wno-parentheses -Wno-unused-function -fno-exceptions
 set lflags   = -nostdlib
 set directives = -fpic -D KERNEL
 
@@ -36,7 +36,7 @@ flag uart1
 	set raspi_uart = 1
 
 flag debug
-	set directives = {directives} -g -D DEBUG
+	set directives = {directives} -Og -g -D DEBUG
 
 flag not debug
 	set directives = {directives} -O2
@@ -109,7 +109,7 @@ flag raspi1
 		each file in {../assets/raspi/boot/*.*}
 			run cp -r {file} {outputdir}/boot/{file.file}
 
-		run {qemu} -no-reboot -M {qemu_model} -serial stdio -kernel {outputdir}/{kernel_filename} -usb -device usb-kbd -device usb-mouse
+		run {qemu} -no-reboot -M {qemu_model} -serial stdio -kernel {outputdir}/{kernel_filename}
 
 	task build-boot
 		provides {outputdir}/boot
@@ -396,13 +396,17 @@ flag raspi4
 
 flag x86-ibm-bios
 	set outputdir = {outputdir}/x86-ibm-bios
-	set arch_flags = -m32 -march=x86-64
+	# set arch_flags = -m32 -march=x86-64
+	set arch_flags = -m32 -march=i586
 	# set arch_flags = -march=i386
 	# set ld_arch_flags = -melf_i386
 	set directives = {directives} -D ARCH_X86_IBM_BIOS -D ARCH_X86
 	# set qemu = qemu-system-x86_64
 	set target = i686-elf
-	set qemu = qemu-system-i386
+	#  -usb -device usb-kbd -device usb-mouse -device i8042
+	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -device usb-kbd,bus=ehci.0 -device usb-mouse,bus=ehci.0
+	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d guest_errors,trace,int
+	set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d int,cpu_reset -D qemu.log
 	# set target = i386-elf
 	set kernel_filename = boot.img
 
@@ -431,12 +435,12 @@ flag x86-ibm-bios
 	set support_cpp     = {support_cpp}     {../support/arch/x86/**/*.cpp}
 	set support_headers = {support_headers} {../support/arch/x86/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
 
-	set linker_script = arch/x86/linker.ld
+	set linker_script = arch/x86-ibm-bios/linker.ld
 
 	set asmflags = {asmflags} -Xassembler -msyntax=intel -Xassembler -mnaked-reg
 	set cflags   = {cflags} -masm=intel
 	set cxxflags = {cxxflags} -masm=intel
-	set lflags   = {lflags} -L ../tools/{target}/{target}/lib
+	set lflags   = {lflags} -L ../tools/{target}/lib -L ../tools/{target}/{target}/lib
 
 	# set toolchain_prefix = ../tools/gcc-x86_64-unknown-elf/bin/x86_64-unknown-elf-
 	# set toolchain_prefix = ../tools/x86_64-elf-7.5.0-Linux-x86_64/bin/x86_64-elf-
@@ -510,7 +514,7 @@ flag x86-64-ibm-bios
 	set support_cpp     = {support_cpp}     {../support/arch/x86/**/*.cpp}
 	set support_headers = {support_headers} {../support/arch/x86/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
 
-	set linker_script = arch/x86/linker.ld
+	set linker_script = arch/x86-ibm-bios/linker.ld
 
 	set asmflags = {asmflags} -Xassembler -msyntax=intel -Xassembler -mnaked-reg
 	set cflags   = {cflags} -masm=intel
@@ -597,21 +601,6 @@ set gdb  = {toolchain_prefix}gdb
 set cpy  = {toolchain_prefix}objcopy
 set dump = {toolchain_prefix}objdump
 
-task build-images
-	each image in {images}
-		requires {image}
-		provides {image}.o
-
-		run ../tools/pack-image.sh {image} {image}.cpp
-		run {cxx} -c {image}.cpp -o {image}.o
-		rm {image}.cpp
-
-task build-fonts
-	run {msdf_atlas_gen} -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
-	run {msdf_atlas_gen} -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
-	cd ../common/graphics2d/font
-	run ./build.sh
-
 each file in {kernel_asm} {common_asm} {support_asm}
 	task build-source
 		provides {file}.o
@@ -664,6 +653,22 @@ task build
 
 	run {dump} --disassemble --demangle -M intel --source {outputdir}/{kernel_filename} > {outputdir}/{kernel_filename}.lst
 	run {cpy} -O binary {outputdir}/{kernel_filename} {outputdir}/boot/{kernel_filename}
+
+task build-images
+	each image in {images}
+		requires {image}
+		requires {common_headers} {support_headers}
+		# provides {image}.o
+
+		run ../tools/pack-image.sh {image.dir} {image.file} {image}.cpp
+		run {cxx} -c {image}.cpp -o {image}.o
+		rm {image}.cpp
+
+task build-fonts
+	run {msdf_atlas_gen} -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
+	run {msdf_atlas_gen} -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
+	cd ../common/graphics2d/font
+	run ./build.sh
 
 task build-iso
 	requires task build

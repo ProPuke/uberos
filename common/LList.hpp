@@ -96,6 +96,18 @@ struct LList {
 		return &item;
 	}
 
+	void clear(){
+		if(!head) return;
+
+		Type *item=head;
+		for(item=item->next; item; item=item->next){
+			item->prev->next = nullptr;
+			item->prev = nullptr;
+		}
+
+		size = 0;
+	}
+
 	void insert_before(Type &after, Type &item){
 		item.next = &after;
 		item.prev = after.prev;

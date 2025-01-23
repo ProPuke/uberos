@@ -32,7 +32,7 @@ namespace graphics2d {
 	inline void Buffer::set_grey8(U32 x, U32 y, U32 colour, U32 length) {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
-		auto data = (U16*)&address[y*width+x];
+		auto data = (U16*)&address[y*stride+x];
 		U8 value = (0
 			+ (int)((colour&0x0000ff)>> 0)
 			+ (int)((colour&0x00ff00)>> 8)
@@ -45,7 +45,7 @@ namespace graphics2d {
 	inline void Buffer::set_rgb565(U32 x, U32 y, U32 colour, U32 length) {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
-		auto data = (U16*)&address[(y*width+x)*2];
+		auto data = (U16*)&address[y*stride+x*2];
 		U16 value = 0
 			|(((colour&0x0000ff)>> 0)>>3)<< 0
 			|(((colour&0x00ff00)>> 8)>>2)<< 5
@@ -59,7 +59,7 @@ namespace graphics2d {
 	inline void Buffer::set_bgr565(U32 x, U32 y, U32 colour, U32 length) {
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
-		auto data = (U16*)&address[(y*width+x)*2];
+		auto data = (U16*)&address[y*stride+x*2];
 		U16 value = 0
 			|(((colour&0x0000ff)>> 0)>>3)<<11
 			|(((colour&0x00ff00)>> 8)>>2)<< 5
@@ -71,7 +71,7 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_rgb8(U32 x, U32 y, U32 colour, U32 length) {
-		auto data = (U8*)&address[(y*width+x)*3];
+		auto data = (U8*)&address[y*stride+x*3];
 
 		//TODO:optimise
 		while(length--){
@@ -83,7 +83,7 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_bgr8(U32 x, U32 y, U32 colour, U32 length) {
-		auto data = (U8*)&address[(y*width+x)*3];
+		auto data = (U8*)&address[y*stride+x*3];
 
 		//TODO:optimise
 		while(length--){
@@ -95,12 +95,12 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_rgba8(U32 x, U32 y, U32 colour, U32 length) {
-		auto data = (U32*)&address[(y*width+x)*4];
+		auto data = (U32*)&address[y*stride+x*4];
 		U32 value = 0
-			|((colour&0x00ff0000)>>16)<< 0
+			|((colour&0x00ff0000)>>16)<<16
 			|((colour&0x0000ff00)>> 8)<< 8
-			|((colour&0x000000ff)>> 0)<<16
-			|((colour&0xff000000)>>24)<<24
+			|((colour&0x000000ff)>> 0)<< 0
+			|255-((colour&0xff000000)>>24)<<24
 		;
 
 		#ifdef HAS_128BIT
@@ -143,12 +143,12 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_bgra8(U32 x, U32 y, U32 colour, U32 length) {
-		auto data = (U32*)&address[(y*width+x)*4];
+		auto data = (U32*)&address[y*stride+x*4];
 		U32 value = 0
 			|((colour&0x000000ff)>> 0)<< 0
 			|((colour&0x0000ff00)>> 8)<< 8
 			|((colour&0x00ff0000)>>16)<<16
-			|((colour&0xff000000)>>24)<<24
+			|255-((colour&0xff000000)>>24)<<24
 		;
 
 		#ifdef HAS_128BIT
@@ -216,12 +216,12 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_grey8(U32 x, U32 y) {
-		U8 value = address[y*width+x];
+		U8 value = address[y*stride+x];
 		return value<<16|value<<8|value;
 	}
 
 	inline U32 Buffer::get_rgb565(U32 x, U32 y) {
-		U16 data = *(U16*)&address[(y*width+x)*2];
+		U16 data = *(U16*)&address[y*stride+x*2];
 		return 0
 			|(((data>>11)&0x1f)<<3<<16)
 			|(((data>> 5)&0x3f)<<2<< 8)
@@ -230,7 +230,7 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_bgr565(U32 x, U32 y) {
-		U16 data = *(U16*)&address[(y*width+x)*2];
+		U16 data = *(U16*)&address[y*stride+x*2];
 		return 0
 			|(((data>> 0)&0x1f)<<3<<16)
 			|(((data>> 5)&0x3f)<<2<< 8)
@@ -239,7 +239,7 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_rgb8(U32 x, U32 y) {
-		auto offset = (y*width+x)*3;
+		auto offset = y*stride+x*3;
 		return 0
 			|(address[offset+0]<<16)
 			|(address[offset+1]<< 8)
@@ -248,7 +248,7 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_bgr8(U32 x, U32 y) {
-		auto offset = (y*width+x)*3;
+		auto offset = y*stride+x*3;
 		return 0
 			|(address[offset+2]<<16)
 			|(address[offset+1]<< 8)
@@ -257,22 +257,22 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_rgba8(U32 x, U32 y) {
-		auto offset = (y*width+x)*4;
+		auto offset = y*stride+x*4;
 		return 0
 			|address[offset+0]<<16
 			|address[offset+1]<< 8
 			|address[offset+2]<< 0
-			|address[offset+3]<<24
+			|(255-address[offset+3])<<24
 		;
 	}
 
 	inline U32 Buffer::get_bgra8(U32 x, U32 y) {
-		auto offset = (y*width+x)*4;
+		auto offset = y*stride+x*4;
 		return 0
 			|address[offset+2]<<16
 			|address[offset+1]<< 8
 			|address[offset+0]<< 0
-			|address[offset+3]<<24
+			|(255-address[offset+3])<<24
 		;
 	}
 
@@ -282,10 +282,17 @@ namespace graphics2d {
 		U32 bottomLeftRadius = 0; if(bottomLeftCorners) while(bottomLeftRadius[bottomLeftCorners]!=~0u) bottomLeftRadius++;
 		U32 bottomRightRadius = 0; if(bottomRightCorners) while(bottomRightRadius[bottomRightCorners]!=~0u) bottomRightRadius++;
 
+		// clip height at bottom
+		const U32 clippedHeight = max(0, min<I32>(startY+height, (I32)this->height)-(I32)startY);
+
 		U32 y = 0;
-		for(;y<height;y++){
-			const auto left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
-			const auto right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+		for(;y<clippedHeight;y++){
+			I32 left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			I32 right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			// clip right at right
+			right = min<I32>(startX+right, (I32)this->width)-(I32)startX;
+
 			if(left<right){
 				set(startX+left, startY+y, colour, right-left);
 			}
@@ -301,19 +308,25 @@ namespace graphics2d {
 		U32 bottomLeftRadius = 0; if(bottomLeftCorners) while(bottomLeftRadius[bottomLeftCorners]!=~0u) bottomLeftRadius++;
 		U32 bottomRightRadius = 0; if(bottomRightCorners) while(bottomRightRadius[bottomRightCorners]!=~0u) bottomRightRadius++;
 
+		// clip height at bottom
+		const U32 clippedHeight = max(0, min<I32>(startY+height, (I32)this->height)-(I32)startY);
+
 		U32 y = 0;
 
-		U32 lastLeft1 = startX;
-		U32 lastLeft2 = startX+width;
-		U32 lastRight1 = lastLeft1;
-		U32 lastRight2 = lastLeft2;
+		I32 lastLeft1 = startX;
+		I32 lastLeft2 = startX+width;
+		I32 lastRight1 = lastLeft1;
+		I32 lastRight2 = lastLeft2;
 
-		for(;y<height/2&&y<borderWidth;y++){
-			const auto left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
-			const auto right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+		for(;y<height/2&&y<borderWidth&&y<clippedHeight;y++){
+			I32 left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			I32 right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
 
-			if(left<right){
-				set(startX+left, startY+y, colour, right-left);
+			// clip right at right
+			I32 clippedRight = min<I32>(startX+right, (I32)this->width)-(I32)startX;
+
+			if(left<clippedRight){
+				set(startX+left, startY+y, colour, clippedRight-left);
 			}
 
 			lastLeft1 = left;
@@ -322,23 +335,26 @@ namespace graphics2d {
 			lastRight2 = right;
 		}
 
-		for(;y<height&&y<height-borderWidth;y++){
-			const auto left1 = maths::min(width-1, maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0));
-			const auto left2 = maths::min(width, left1+borderWidth);
-			const auto right2 = (U32)maths::max<I32>(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
-			const auto right1 = (U32)maths::max<I32>(0, (I32)right2-(I32)borderWidth);
+		for(;y<height&&y<height-borderWidth&&y<clippedHeight;y++){
+			I32 left1 = maths::min(width-1, maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0));
+			I32 left2 = maths::min(width, left1+borderWidth);
+			I32 right2 = maths::max<I32>(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
+			I32 right1 = maths::max<I32>(0, (I32)right2-(I32)borderWidth);
+
+			// clip right at right
+			I32 maxRight = (I32)this->width-(I32)startX;
 
 			{
-				U32 left  = maths::min(left1, lastLeft2);
-				U32 right = maths::max(left2, lastLeft1);
+				I32 left  = maths::min(left1, lastLeft2);
+				I32 right = maths::min(maths::max(left2, lastLeft1), maxRight);
 				if(left<right){
 					set(startX+left, startY+y, colour, right-left);
 				}
 			}
 			
 			{
-				U32 left  = maths::min(right1, lastRight2);
-				U32 right = maths::max(right2, lastRight1);
+				I32 left  = maths::min(right1, lastRight2);
+				I32 right = maths::min(maths::max(right2, lastRight1), maxRight);
 				if(left<right){
 					set(startX+left, startY+y, colour, right-left);
 				}
@@ -351,9 +367,12 @@ namespace graphics2d {
 		}
 
 		bool topRow = true;
-		for(;y<height;y++){
-			const auto left1 = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
-			const auto right2 = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+		for(;y<clippedHeight;y++){
+			I32 left1 = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			I32 right2 = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			// clip right at right
+			right2 = min<I32>(startX+right2, (I32)this->width)-(I32)startX;
 
 			if(topRow){
 				if(lastLeft2<left1){
@@ -378,6 +397,31 @@ namespace graphics2d {
 				if(left1<right2){
 					set(startX+left1, startY+y, colour, right2-left1);
 				}
+			}
+		}
+	}
+
+	inline void Buffer::draw_line(U32 x1, U32 y1, U32 x2, U32 y2, U32 colour) {
+		const I32 xVec = x2-x1;
+		const I32 yVec = y2-y1;
+		const I32 xLength = maths::abs(xVec);
+		const I32 yLength = maths::abs(yVec);
+
+		if(xLength>=yLength){
+			const auto dir = maths::sign(x2-x1);
+			for(auto step=0;step<xLength;step++){
+				const auto phase = step/(float)xLength;
+				const auto x = x1+step*dir;
+				const auto y = y1 + phase*yVec;
+				set(x, y, colour);
+			}
+		}else{
+			const auto dir = maths::sign(y2-y1);
+			for(auto step=0;step<yLength;step++){
+				const auto phase = step/(float)yLength;
+				const auto y = y1+step*dir;
+				const auto x = x1 + phase*xVec;
+				set(x, y, colour);
 			}
 		}
 	}
@@ -459,6 +503,7 @@ namespace graphics2d {
 		}
 	}
 
+	// TODO: optimise this to use memcpy strips?
 	inline void Buffer::draw_buffer_area(I32 destX, I32 destY, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image) {
 		if(destX>=(I32)this->width||destY>=(I32)this->height||destX+width<=0||destY+height<=0) return;
 
@@ -569,9 +614,21 @@ namespace graphics2d {
 	inline void Buffer::create_round_corner(U32 radius, U32 corner[]) {
 		for(auto i=0u;i<radius;i++){
 			auto y = radius-i;
-			corner[i] = radius-U32(maths::sqrt(radius*radius-((y*y))));
+			corner[i] = radius-U32(radius*maths::sqrt(radius*radius-((y*y))));
 		}
 		corner[radius] = -1;
+	}
+
+	inline auto Buffer::cropped(U32 left, U32 top, U32 right, U32 bottom) -> Buffer {
+		const auto bpp = bufferFormat::size[(U8)format];
+
+		return Buffer(
+			address+top*stride+left*bpp,
+			stride,
+			width-left-right,
+			height-top-bottom,
+			format, order
+		);
 	}
 
 	inline void Buffer::create_diagonal_corner(U32 radius, U32 corner[]) {

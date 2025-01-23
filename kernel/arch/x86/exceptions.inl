@@ -3,7 +3,7 @@
 namespace exceptions {
 	inline bool _is_active() {
 		unsigned int eflags;
-		asm(
+		asm volatile(
 			"pushf\n"
 			"pop eax\n"
 			"mov %0, eax\n"
@@ -15,10 +15,10 @@ namespace exceptions {
 	}
 
 	inline void _activate() {
-		asm("sti");
+		asm volatile("sti");
 	}
 
 	inline void _deactivate() {
-		asm("cli");
+		asm volatile("cli");
 	}
 }
