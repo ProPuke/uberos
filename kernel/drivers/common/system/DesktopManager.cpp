@@ -28,8 +28,8 @@ namespace driver::system {
 			const char *title;
 			Cursor *draggingCursor = nullptr;
 
-			/**/ Window(DisplayManager::Display *graphicsDisplay, const char *title):
-				graphicsDisplay(graphicsDisplay),
+			/**/ Window(U32 x, U32 y, U32 width, U32 height, const char *title):
+				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width+leftShadow+rightShadow, height+bottomShadow)),
 				title(title)
 			{
 				if(graphicsDisplay){
@@ -58,11 +58,19 @@ namespace driver::system {
 			U8 leftShadowIntensity = 50; // scaling down of left shadow (by inner extension)
 			U8 rightShadowIntensity = 50; // scaling down of right shadow (by inner extension)
 
-			auto get_width() -> I32 {
+			auto get_x() -> I32 override {
+				return graphicsDisplay->x+leftShadow;
+			}
+
+			auto get_y() -> I32 override {
+				return graphicsDisplay->y;
+			}
+
+			auto get_width() -> I32 override {
 				return graphicsDisplay->get_width()-leftShadow-rightShadow;
 			}
 
-			auto get_height() -> I32 {
+			auto get_height() -> I32 override {
 				return graphicsDisplay->get_height()-bottomShadow;
 			}
 
@@ -240,8 +248,8 @@ namespace driver::system {
 				}
 
 				dragWindow.window = &window;
-				dragWindow.dragOffsetX = window.graphicsDisplay->x-x;
-				dragWindow.dragOffsetY = window.graphicsDisplay->y-y;
+				dragWindow.dragOffsetX = window.get_x()-x;
+				dragWindow.dragOffsetY = window.get_y()-y;
 
 				window.draggingCursor = this;
 				window.redraw_border();
@@ -390,12 +398,7 @@ namespace driver::system {
 			auto yOffset = addressOffset / display.buffer.stride;
 			auto xOffset = (addressOffset - (yOffset * display.buffer.stride)) / graphics2d::bufferFormat::size[(U32)display.buffer.format];
 
-			rect.x1 += xOffset;
-			rect.x2 += xOffset;
-			rect.y1 += yOffset;
-			rect.y2 += yOffset;
-
-			return rect;
+			return rect.offset(xOffset, yOffset);
 		}
 	}
 
@@ -436,13 +439,13 @@ namespace driver::system {
 	void Window::hide() {
 		graphicsDisplay->hide();
 	}
-	
+
 	void Window::move_to(I32 x, I32 y) {
 		const auto margin = 10;
 		x = maths::clamp(x, -(I32)graphicsDisplay->buffer.width+margin, (I32)displayManager->get_width()-margin);
 		y = maths::clamp(y, -10, (I32)displayManager->get_height()-margin);
 
-		graphicsDisplay->move_to(x, y);
+		graphicsDisplay->move_to(x-leftShadow, y);
 	}
 	
 	void Window::redraw() {
@@ -465,8 +468,7 @@ namespace driver::system {
 			}
 		}
 
-		auto display = displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width, height);
-		auto &window = *new system::Window(display, title);
+		auto &window = *new system::Window(x, y, width, height, title);
 
 		window.draw_frame();
 
