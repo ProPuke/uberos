@@ -59,6 +59,8 @@ namespace graphics2d {
 		auto get_rgba8(U32 x, U32 y) -> U32;
 		auto get_bgra8(U32 x, U32 y) -> U32;
 
+		void draw_rect(Rect rect, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
+		void draw_rect_outline(Rect rect, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect_outline(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, borderWidth, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
 		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_rect_outline(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_line(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
