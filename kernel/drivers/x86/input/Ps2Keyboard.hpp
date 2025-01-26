@@ -28,6 +28,8 @@ namespace driver::input {
 		auto _on_stop() -> Try<> override;
 		void _on_irq(U8) override;
 
+		auto is_pressed(keyboard::Scancode) -> bool override;
+
 		void send_ps2_command(Ps2Command);
 		void send_ps2_data(U8);
 	};
