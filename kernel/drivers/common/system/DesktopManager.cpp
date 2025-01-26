@@ -20,12 +20,15 @@ namespace driver::system {
 
 		}, nullptr};
 
+		void update_window_order();
+
 		struct Cursor;
 
 		struct Window: LListItem<Window>, DesktopManager::Window {
 			DisplayManager::Display *graphicsDisplay;
 
 			const char *title;
+			const char *status = "";
 			Cursor *draggingCursor = nullptr;
 
 			/**/ Window(U32 x, U32 y, U32 width, U32 height, const char *title):
@@ -58,6 +61,8 @@ namespace driver::system {
 			U8 leftShadowIntensity = 50; // scaling down of left shadow (by inner extension)
 			U8 rightShadowIntensity = 50; // scaling down of right shadow (by inner extension)
 
+			bool _draw_focused = false; // is the window currently draw as the focused/top window? (to avoid excess updates)
+
 			auto get_x() -> I32 override {
 				return graphicsDisplay->x+leftShadow;
 			}
@@ -79,7 +84,10 @@ namespace driver::system {
 			}
 
 			void set_title(const char*) override;
+			void set_status(const char*) override;
 
+			void raise() override;
+			auto is_top() -> bool override;
 			void show() override;
 			void hide() override;
 			void move_to(I32 x, I32 y) override;
@@ -89,30 +97,35 @@ namespace driver::system {
 
 			void _draw_border() {
 				auto rect = get_border_rect();
-				const auto borderColour = draggingCursor?0xd0b0b0:0xcbcbcb;
+				const auto borderColour = draggingCursor?0xd0b0b0:_draw_focused?0xcbcbcb:0xdedede;
 
 				graphicsDisplay->buffer.draw_rect_outline(rect.x1, rect.y1, get_width(), get_height(), borderColour, 1, corner, corner, corner, corner);
 			}
 
 			void _draw_titlebar() {
 				auto rect = get_border_rect();
-				const auto borderColour = draggingCursor?0xd0b0b0:0xcbcbcb;
+				const auto borderColour = draggingCursor?0xd0b0b0:_draw_focused?0xcbcbcb:0xdedede;
 				const auto bgColour = draggingCursor?0xfff9f9:0xf9f9f9;
+				const auto textColour = _draw_focused?0x333333:0xaaaaaa;
 
 				graphicsDisplay->buffer.draw_rect_outline(rect.x1, rect.y1, get_width(), titlebarHeight, borderColour, 1, corner, corner, nullptr, nullptr);
 				graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, bgColour, cornerInner, cornerInner, nullptr, nullptr);
 
 				auto lineHeight = 14*5/4;
 				const auto width = graphicsDisplay->buffer.measure_text(*graphics2d::font::default_sans, title, 0, 0, 14).x;
-				graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, title, rect.x1+get_width()/2-width/2, rect.y1+1+lineHeight, get_width(), 14, 0x333333);
+				graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, title, rect.x1+get_width()/2-width/2, rect.y1+1+lineHeight, get_width(), 14, textColour);
 			}
 
 			void _draw_statusbar() {
 				auto rect = get_border_rect();
 				const auto borderColour = 0xcbcbcb;
+				const auto textColour = _draw_focused?0x333333:0xaaaaaa;
 
 				graphicsDisplay->buffer.draw_rect_outline(rect.x1+0, rect.y1+get_height()-1-21-1, get_width(), 23, borderColour, 1, nullptr, nullptr, corner, corner);
 				graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+get_height()-1-21, get_width()-2, 21, 0xeeeeee, nullptr, nullptr, cornerInner, cornerInner);
+
+				// auto lineHeight = 14*5/4;
+				graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, status, rect.x1+4, rect.y2-6, get_width(), 14, textColour);
 			}
 
 			void redraw_border() {
@@ -134,6 +147,14 @@ namespace driver::system {
 				auto rect = get_border_rect();
 
 				graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), titlebarHeight}.offset(rect.x1, rect.y1));
+			}
+
+			void redraw_statusbar() {
+				_draw_statusbar();
+				auto rect = get_border_rect();
+				rect.y1 = rect.y2-1-21-1;
+
+				graphicsDisplay->update_area(rect);
 			}
 
 			static const auto titlebarHeight = 28;
@@ -252,8 +273,15 @@ namespace driver::system {
 				dragWindow.dragOffsetY = window.get_y()-y;
 
 				window.draggingCursor = this;
-				window.redraw_border();
-				window.redraw_titlebar();
+				if(window.is_top()){
+					window.redraw_border();
+					window.redraw_titlebar();
+
+				}else{
+					window._draw_border();
+					window._draw_titlebar();
+					window.raise(); // this will trigger a redraw, so we won't use the redraw_* variants
+				}
 			}
 
 			void release_window() {
@@ -292,8 +320,14 @@ namespace driver::system {
 			auto cursor = _find_cursor(*(Mouse*)_mouse);
 			if(!cursor) return;
 
+			auto display = displayManager->get_display_at(cursor->x, cursor->y, false, false, cursor->display);
+			auto window = display?(Window*)DesktopManager::instance.get_window_from_display(*display):nullptr;
+
 			switch(event.type){
 				case Mouse::Event::Type::pressed:
+					if(window) {
+						window->raise();
+					}
 					if(event.pressed.button==0){
 						{
 							auto &cursorImage = ui2d::image::cursors::_default_left;
@@ -301,10 +335,8 @@ namespace driver::system {
 							cursor->display->update();
 						}
 						if(!cursor->dragWindow.window){
-							if(auto display = displayManager->get_display_at(cursor->x, cursor->y, cursor->display, false)){
-								if(auto window = (Window*)DesktopManager::instance.get_window_from_display(*display)){
-									cursor->grab_window(*window);
-								}
+							if(window&&cursor->y<window->get_y()+window->titlebarHeight){
+								cursor->grab_window(*window);
 							}
 						}
 
@@ -400,6 +432,18 @@ namespace driver::system {
 
 			return rect.offset(xOffset, yOffset);
 		}
+
+		void update_window_order() {
+			for(auto window=windows.head; window; window=window->next){
+				auto is_top = window->graphicsDisplay->is_top();
+				if(is_top!=window->_draw_focused){
+					logging::print_info("window ", window->title, " ", is_top?"TOP":"below");
+					window->_draw_focused = is_top;
+					window->redraw_titlebar();
+					window->redraw_border();
+				}
+			}
+		}
 	}
 
 	auto DesktopManager::_on_start() -> Try<> {
@@ -427,11 +471,24 @@ namespace driver::system {
 	}
 
 	void Window::set_title(const char *set) {
-		if(title==set) return;
-
 		title = set;
+		redraw_titlebar();
 	}
 
+	void Window::set_status(const char *set) {
+		status = set;
+		redraw_statusbar();
+	}
+
+	void Window::raise() {
+		graphicsDisplay->raise();
+		update_window_order();
+	}
+	
+	auto Window::is_top() -> bool {
+		return graphicsDisplay->is_top();
+	}
+	
 	void Window::show() {
 		graphicsDisplay->show();
 	}
@@ -443,7 +500,7 @@ namespace driver::system {
 	void Window::move_to(I32 x, I32 y) {
 		const auto margin = 10;
 		x = maths::clamp(x, -(I32)graphicsDisplay->buffer.width+margin, (I32)displayManager->get_width()-margin);
-		y = maths::clamp(y, -10, (I32)displayManager->get_height()-margin);
+		y = maths::clamp(y, 0, (I32)displayManager->get_height()-margin);
 
 		graphicsDisplay->move_to(x-leftShadow, y);
 	}
@@ -473,6 +530,8 @@ namespace driver::system {
 		window.draw_frame();
 
 		windows.push_back(window);
+		update_window_order();
+
 		return window;
 	}
 

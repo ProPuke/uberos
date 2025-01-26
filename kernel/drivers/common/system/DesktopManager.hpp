@@ -18,11 +18,14 @@ namespace driver::system {
 			graphics2d::Buffer clientArea;
 
 			virtual void set_title(const char*) = 0;
+			virtual void set_status(const char*) = 0;
 
 			virtual auto get_x() -> I32 = 0;
 			virtual auto get_y() -> I32 = 0;
 			virtual auto get_width() -> I32 = 0;
 			virtual auto get_height() -> I32 = 0;
+			virtual void raise() = 0;
+			virtual auto is_top() -> bool = 0;
 			virtual void show() = 0;
 			virtual void hide() = 0;
 			virtual void move_to(I32 x, I32 y) = 0;

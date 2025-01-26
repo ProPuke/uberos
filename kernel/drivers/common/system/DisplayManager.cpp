@@ -27,6 +27,7 @@ namespace driver::system {
 		void _place_above(DisplayManager::Display&, DisplayManager::Display &other);
 		void _place_below(DisplayManager::Display&, DisplayManager::Display &other);
 		void _raise_display(DisplayManager::Display&);
+		auto _is_display_top(DisplayManager::Display&) -> bool;
 		void _show_display(DisplayManager::Display&);
 		void _hide_display(DisplayManager::Display&);
 		auto _find_display_section_in_row(I32 &x, I32 y, I32 x2, bool &isTransparent, DisplayManager::Display *current = nullptr) -> DisplayManager::Display*;
@@ -546,9 +547,7 @@ namespace driver::system {
 		}
 
 		void _raise_display(DisplayManager::Display &display) {
-			if(!displays.contains(display)) return; //if not in the list it's already been recycled ¯\_(ツ)_/¯
-
-			if(!display.next||display.next->layer>display.layer) return; //already topmost
+			if(_is_display_top(display)) return; //already topmost
 
 			displays.pop(display);
 
@@ -565,7 +564,14 @@ namespace driver::system {
 				inserted:;
 			}
 
+			const auto rect = (graphics2d::Rect){display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
+
 			_update_display_solid(display); //technically we only need to draw the parts that were previously obscured, oh well..
+			_update_area_transparency(rect);
+		}
+
+		auto _is_display_top(DisplayManager::Display &display) -> bool {
+			return !display.next || display.next->layer>display.layer;
 		}
 
 		void _show_display(DisplayManager::Display &display) {
@@ -768,7 +774,7 @@ namespace driver::system {
 		return _create_view(thread, layer, x, y, width, height, scale);
 	}
 
-	auto DisplayManager::get_display_at(I32 x, I32 y, Display *below, bool includeDecorations) -> Display* {
+	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeTransparent, bool includeDecorations, Display *below) -> Display* {
 		for(auto display=below?below->prev:displays.tail; display; display=display->prev){
 			if(
 				x>=display->x&&
@@ -777,6 +783,7 @@ namespace driver::system {
 				y<display->y+(I32)display->get_height()
 			){
 				if(!includeDecorations&&display->isDecoration) continue;
+				if(!includeTransparent&&!display->solidArea.contains(x-display->x, y-display->y)) continue;
 
 				return display;
 			}
@@ -832,6 +839,12 @@ namespace driver::system {
 		Spinlock_Guard guard(spinlock);
 
 		return _raise_display(*this);
+	}
+
+	auto DisplayManager::Display::is_top() -> bool {
+		Spinlock_Guard guard(spinlock);
+
+		return _is_display_top(*this);
 	}
 
 	void DisplayManager::Display::show() {

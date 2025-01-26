@@ -68,6 +68,7 @@ namespace driver::system {
 			void place_above(DisplayManager::Display &other);
 			void place_below(DisplayManager::Display &other);
 			void raise();
+			auto is_top() -> bool; // if true, top of its layer and not raisable
 			void show();
 			void hide();
 			void update();
@@ -114,7 +115,7 @@ namespace driver::system {
 		void update_background_area(graphics2d::Rect rect);
 		void update_area(graphics2d::Rect rect, Display *below = nullptr);
 
-		auto get_display_at(I32 x, I32 y, Display *below = nullptr, bool includeDecorations = true) -> Display*;
+		auto get_display_at(I32 x, I32 y, bool includeTransparent, bool includeDecorations, Display *below = nullptr) -> Display*;
 		auto get_screen_buffer(U32 framebuffer, graphics2d::Rect rect) -> graphics2d::Buffer;
 
 		auto get_width() -> U32;
