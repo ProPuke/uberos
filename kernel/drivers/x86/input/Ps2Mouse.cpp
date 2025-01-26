@@ -96,6 +96,12 @@ namespace driver::input {
 		} packet;
 
 		U32 packetBytes = 0;
+
+		void trigger_event(Mouse::Event event) {
+			event.instance = &Ps2Mouse::instance;
+			Ps2Mouse::instance.events.trigger(event);
+			Ps2Mouse::allEvents.trigger(event);
+		}
 	}
 
 	auto Ps2Mouse::_on_start() -> Try<> {
@@ -259,12 +265,12 @@ namespace driver::input {
 				buttonState[0] = packet.leftButton;
 				// log.print_info("button 0 = ", buttonState[0]);
 				if(buttonState[0]){
-					events.trigger({
+					trigger_event({
 						type: Event::Type::pressed,
 						pressed: {0}
 					});
 				}else{
-					events.trigger({
+					trigger_event({
 						type: Event::Type::released,
 						released: {0}
 					});
@@ -274,12 +280,12 @@ namespace driver::input {
 				buttonState[1] = packet.rightButton;
 				// log.print_info("button 1 = ", buttonState[1]);
 				if(buttonState[1]){
-					events.trigger({
+					trigger_event({
 						type: Event::Type::pressed,
 						pressed: {1}
 					});
 				}else{
-					events.trigger({
+					trigger_event({
 						type: Event::Type::released,
 						released: {1}
 					});
@@ -289,12 +295,12 @@ namespace driver::input {
 				buttonState[2] = packet.middleButton;
 				// log.print_info("button 2 = ", buttonState[2]);
 				if(buttonState[2]){
-					events.trigger({
+					trigger_event({
 						type: Event::Type::pressed,
 						pressed: {2}
 					});
 				}else{
-					events.trigger({
+					trigger_event({
 						type: Event::Type::released,
 						released: {2}
 					});
@@ -306,12 +312,12 @@ namespace driver::input {
 					buttonState[3] = packet.wheelMouse._5Buttons.button4;
 					// log.print_info("button 3 = ", buttonState[3]);
 					if(buttonState[3]){
-						events.trigger({
+						trigger_event({
 							type: Event::Type::pressed,
 							pressed: {3}
 						});
 					}else{
-						events.trigger({
+						trigger_event({
 							type: Event::Type::released,
 							released: {3}
 						});
@@ -321,12 +327,12 @@ namespace driver::input {
 					buttonState[4] = packet.wheelMouse._5Buttons.button5;
 					// log.print_info("button 4 = ", buttonState[4]);
 					if(buttonState[4]){
-						events.trigger({
+						trigger_event({
 							type: Event::Type::pressed,
 							pressed: {4}
 						});
 					}else{
-						events.trigger({
+						trigger_event({
 							type: Event::Type::released,
 							released: {4}
 						});
@@ -341,7 +347,7 @@ namespace driver::input {
 
 			if(xMotion||yMotion){
 				// log.print_info("motion = ", xMotion, ' ', yMotion);
-				events.trigger({
+				trigger_event({
 					type: Event::Type::moved,
 					moved: {
 						x: xMotion,
@@ -361,7 +367,7 @@ namespace driver::input {
 				if(buttonCount>3){
 					if(packet.wheelMouse._5Buttons.wheelChange){
 						// log.print_info("wheel = ", packet.wheelMouse._5Buttons.wheelChange);
-						events.trigger({
+						trigger_event({
 							type: Event::Type::scrolled,
 							scrolled: packet.wheelMouse._5Buttons.wheelChange
 						});
@@ -369,7 +375,7 @@ namespace driver::input {
 				}else{
 					if(packet.wheelMouse._3Buttons.wheelChange){
 						// log.print_info("wheel = ", packet.wheelMouse._3Buttons.wheelChange);
-						events.trigger({
+						trigger_event({
 							type: Event::Type::scrolled,
 							scrolled: packet.wheelMouse._5Buttons.wheelChange
 						});

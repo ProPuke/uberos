@@ -10,7 +10,7 @@ class EventEmitter {
 		void *data;
 	};
 
-	ListOrdered<Subscription> subscribers;
+	ListOrdered<Subscription> subscribers{0};
 
 public:
 

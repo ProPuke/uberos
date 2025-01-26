@@ -9,6 +9,8 @@ namespace driver {
 		DRIVER_TYPE(Mouse, "mouse", "Mouse Driver", Hardware)
 
 		struct Event {
+			Mouse *instance;
+
 			enum struct Type {
 				moved,
 				pressed,
@@ -36,6 +38,7 @@ namespace driver {
 			};
 		};
 
+		static inline EventEmitter<Event> allEvents;
 		EventEmitter<Event> events;
 
 		static const U32 maxButtons = 5;
