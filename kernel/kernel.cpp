@@ -5,7 +5,6 @@
 #include <kernel/Cli.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/drivers/common/system/DisplayManager.hpp>
-#include <kernel/drivers/common/system/DesktopManager.hpp>
 #include <kernel/drivers/Processor.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/framebuffer.hpp>
@@ -18,6 +17,7 @@
 #include <kernel/scheduler.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
+#include <kernel/test.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/timer.hpp>
 #include <kernel/utils/logWindow.hpp>
@@ -154,28 +154,7 @@ namespace kernel {
 		// 	"out 0x20, al\n"
 		// );
 
-		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
-			auto window = &desktopManager->create_window("Font Test", 320, 320);
-			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
-
-			auto y = 32;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 38, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 38, 0xaaaaaa);
-
-			y += 45;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 72, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 72, 0xaaaaaa);
-
-			y += 70;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 100, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 100, 0xaaaaaa);
-
-			y += 98;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 150, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 150, 0xaaaaaa);
-
-			window->redraw();
-		}
+		test::start_tasks();
 
 		while(true){
 			// arch::x86::ioPort::write8(0x20, 0x0b);
