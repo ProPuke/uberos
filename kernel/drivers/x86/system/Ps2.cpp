@@ -79,8 +79,6 @@ namespace driver::system {
 		write_command(Command::write_config);
 		write_data(config&~((U8)Config::first_irq_mask|(U8)Config::second_irq_mask|(U8)Config::translation));
 
-		log.print_info("config set ", format::Hex8{(U8)(config&~((U8)Config::first_irq_mask|(U8)Config::second_irq_mask|(U8)Config::translation))});
-
 		write_command(Command::test_controller);
 		if(read_data()!=0x55) return {"Self-test failed"};
 
