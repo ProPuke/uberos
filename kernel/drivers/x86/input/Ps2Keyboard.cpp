@@ -60,10 +60,32 @@ namespace driver::input {
 
 		void trigger_event(Keyboard::Event event) {
 			event.instance = &Ps2Keyboard::instance;
+
+			if(event.type==Ps2Keyboard::Event::Type::pressed){
+				const auto shift = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::leftShift)||Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::rightShift);
+				const auto control = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::leftControl)||Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::rightControl);
+				const auto alt = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::alt);
+				const auto super = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::leftSuper)||Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::rightSuper);
+
+				if(control&&event.pressed.scancode!=(Scancode)ScancodeUk::leftControl&&event.pressed.scancode!=(Scancode)ScancodeUk::rightControl){
+					event.pressed.modifiers |= (U8)Keyboard::Modifier::control;
+				}
+				if(alt&&event.pressed.scancode!=(Scancode)ScancodeUk::alt){
+					event.pressed.modifiers |= (U8)Keyboard::Modifier::alt;
+				}
+				if(super&&event.pressed.scancode!=(Scancode)ScancodeUk::leftSuper&&event.pressed.scancode!=(Scancode)ScancodeUk::rightSuper){
+					event.pressed.modifiers |= (U8)Keyboard::Modifier::super;
+				}
+				// shift is only marked as a modifier if other modifiers are also pressed (otherwise it's just a shift+type)
+				if(shift&&event.pressed.modifiers&&event.pressed.scancode!=(Scancode)ScancodeUk::leftShift&&event.pressed.scancode!=(Scancode)ScancodeUk::rightShift){
+					event.pressed.modifiers |= (U8)Keyboard::Modifier::shift;
+				}
+			}
+
 			Ps2Keyboard::instance.events.trigger(event);
 			Ps2Keyboard::allEvents.trigger(event);
 
-			if(event.type==Ps2Keyboard::Event::Type::pressed){
+			if(event.type==Ps2Keyboard::Event::Type::pressed&&!event.pressed.modifiers){
 				const auto shift = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::leftShift)||Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::rightShift);
 				const auto altGr = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::altGr);
 

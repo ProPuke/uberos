@@ -16,6 +16,13 @@ namespace driver {
 			DRIVER_DECLARE_INIT();
 		}
 
+		enum struct Modifier:U8 {
+			shift = 1<<0,
+			control = 1<<1,
+			alt = 1<<2,
+			super = 1<<3,
+		};
+
 		struct Event {
 			Keyboard *instance;
 
@@ -30,6 +37,7 @@ namespace driver {
 				struct {
 					keyboard::Scancode scancode;
 					bool repeat;
+					U8 modifiers;
 				} pressed;
 
 				struct {
