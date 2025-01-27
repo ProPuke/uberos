@@ -42,7 +42,7 @@ namespace driver::textmode {
 	auto VgaTextmode::_on_start() -> Try<> {
 		if(auto superError = Super::_on_start(); !superError) return superError;
 
-		api.subscribe_memory((void*)_address, rows*cols*sizeof(Entry));
+		TRY(api.subscribe_memory((void*)_address, rows*cols*sizeof(Entry)));
 
 		return {};
 	}

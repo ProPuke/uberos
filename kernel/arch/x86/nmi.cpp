@@ -6,7 +6,10 @@ namespace arch {
 	namespace x86 {
 		namespace nmi {
 			// void _on_start() {
-			// 	// if(!api.subscribe_ioPort(pic1Command)||!api.subscribe_ioPort(pic1Data)||!api.subscribe_ioPort(pic2Command)||!api.subscribe_ioPort(pic2Data)) return {"I/O ports not available"};
+			// 	// TRY(api.subscribe_ioPort(pic1Command));
+			// 	// TRY(api.subscribe_ioPort(pic1Data));
+			// 	// TRY(api.subscribe_ioPort(pic2Command));
+			// 	// TRY(api.subscribe_ioPort(pic2Data));
 			// }
 
 			void enable() {

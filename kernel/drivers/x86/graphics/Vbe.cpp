@@ -422,7 +422,7 @@ namespace driver::graphics {
 	}
 
 	auto Vbe::_on_start() -> Try<> {
-		if(!api.subscribe_memory((void*)0x4f00, 0x123)) return {"Memory range not available"};
+		TRY(api.subscribe_memory((void*)0x4f00, 0x123));
 
 		modes.clear();
 

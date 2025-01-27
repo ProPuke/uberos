@@ -77,14 +77,14 @@ void DriverApi::unsubscribe_all_irqs() {
 	}
 }
 
-auto DriverApi::subscribe_memory(void *start, size_t _size) -> bool {
+auto DriverApi::subscribe_memory(void *start, size_t _size) -> Try<> {
 	auto &driver = this->driver();
 
 	// deny if this memory is already in use by an active driver
 	for(auto &otherDriver:drivers::iterate<Driver>()){
 		if(&otherDriver==&driver||!otherDriver.api.is_active()) continue;
 
-		if(otherDriver.api.is_subscribed_to_memory(start, _size)) return false;
+		if(otherDriver.api.is_subscribed_to_memory(start, _size)) return {"Memory not available - Already in use"};
 	}
 
 	// grow existing subscriptions if it overlaps or comes before an entry
@@ -94,7 +94,7 @@ auto DriverApi::subscribe_memory(void *start, size_t _size) -> bool {
 
 		if(subscribed.start>end){ // this region is after, so insert a new record before
 			subscribedMemory.insert(i, MemoryRange{start, end});
-			return true;
+			return {};
 		}
 
 		if(subscribed.end<start) continue; // this is before, continue
@@ -113,13 +113,13 @@ auto DriverApi::subscribe_memory(void *start, size_t _size) -> bool {
 			}
 		}
 
-		return true;
+		return {};
 	}
 
 	// insert at the very end if it wasn't merged in prior
 	subscribedMemory.push_back(MemoryRange{start, end});
 
-	return true;
+	return {};
 }
 
 void DriverApi::unsubscribe_memory(void *start, size_t _size) {
@@ -170,15 +170,15 @@ auto DriverApi::is_subscribed_to_memory(void *start, size_t _size) -> bool {
 	return false;
 }
 
-auto DriverApi::subscribe_pci(PciDevice &pciDevice) -> bool {
-	if(is_subscribed_to_pci(pciDevice)) return true;
+auto DriverApi::subscribe_pci(PciDevice &pciDevice) -> Try<> {
+	if(is_subscribed_to_pci(pciDevice)) return {};
 
 	for(auto &driver:drivers::iterate<Driver>()){
-		if(driver.api.is_subscribed_to_pci(pciDevice)) return false;
+		if(driver.api.is_subscribed_to_pci(pciDevice)) return {"PCI device not available - already in use"};
 	}
 
 	subscribedPciDevices.push_back(&pciDevice);
-	return true;
+	return {};
 }
 
 void DriverApi::unsubscribe_pci(PciDevice &pciDevice) {
@@ -203,17 +203,17 @@ auto DriverApi::is_subscribed_to_pci(PciDevice &pciDevice) -> bool {
 }
 
 #ifdef ARCH_X86
-	auto DriverApi::subscribe_ioPort(arch::x86::IoPort ioPort) -> bool {
-		if(is_subscribed_to_ioPort(ioPort)) return true;
+	auto DriverApi::subscribe_ioPort(arch::x86::IoPort ioPort) -> Try<> {
+		if(is_subscribed_to_ioPort(ioPort)) return {};
 
 		for(auto &other:drivers::iterate<Driver>()){
-			if(other.api.is_subscribed_to_ioPort(ioPort)) return false;
+			if(other.api.is_subscribed_to_ioPort(ioPort)) return {"I/O port not available - already in use"};
 		}
 
 		//TODO: insert ordered
 		subscribedIoPorts.push_back(ioPort);
 
-		return true;
+		return {};
 	}
 
 	void DriverApi::unsubscribe_ioPort(arch::x86::IoPort ioPort) {

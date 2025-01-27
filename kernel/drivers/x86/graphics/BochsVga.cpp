@@ -128,7 +128,7 @@ namespace driver::graphics {
 			framebuffer.buffer.order = order;
 
 			BochsVga::instance.api.unsubscribe_all_memory();
-			if(!BochsVga::instance.api.subscribe_memory(framebuffer.buffer.address, framebuffer.buffer.height*framebuffer.buffer.stride)) return {"Memory range not available"};
+			TRY(BochsVga::instance.api.subscribe_memory(framebuffer.buffer.address, framebuffer.buffer.height*framebuffer.buffer.stride));
 
 			return {};
 		}
@@ -141,9 +141,10 @@ namespace driver::graphics {
 		auto pciDevice = pci->find_device_by_id(0x11111234)?:pci->find_device_by_id(0xbeef80ee);
 		if(!pciDevice) return {"device not present"};
 
-		if(!api.subscribe_ioPort(ioIndex)||!api.subscribe_ioPort(ioData)) return {"I/O ports not available"};
+		TRY(api.subscribe_ioPort(ioIndex));
+		TRY(api.subscribe_ioPort(ioData));
 
-		if(!api.subscribe_pci(*pciDevice)) return {"pci device not available"};
+		TRY(api.subscribe_pci(*pciDevice));
 
 		auto id = get16(Register::id);
 
@@ -162,15 +163,15 @@ namespace driver::graphics {
 
 		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " ", maxBpp, " bpp");
 
-		// if(!api.subscribe_memory((void*)0x4f00, 0x123)) return {"Memory range not available"};
-		if(!api.subscribe_memory((void*)0xe0000000, vram)) return {"Memory range not available"};
+		// TRY(api.subscribe_memory((void*)0x4f00, 0x123));
+		TRY(api.subscribe_memory((void*)0xe0000000, vram));
 
 		framebuffer.index = 0;
 		framebuffer.buffer.address = (U8*)pciDevice->baseAddress[0];
 
 		// note that bochs ISN'T set as enabled at this point, so set mode is guarentted to apply a modechange, as the current enable mode will not match target
-		return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
-		// return set_mode(0, 1920, 1080, graphics2d::BufferFormat::rgba8, true);
+		// return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
+		return set_mode(0, 1920, 1080, graphics2d::BufferFormat::rgba8, true);
 	}
 
 	auto BochsVga::_on_stop() -> Try<> {

@@ -83,18 +83,18 @@ class DriverApi {
 		void unsubscribe_irq(U8);
 		void unsubscribe_all_irqs();
 
-		auto subscribe_memory(void*, size_t) -> bool;
+		auto subscribe_memory(void*, size_t) -> Try<>;
 		void unsubscribe_memory(void*, size_t);
 		void unsubscribe_all_memory();
 		auto is_subscribed_to_memory(void*, size_t) -> bool;
 
-		auto subscribe_pci(PciDevice&) -> bool;
+		auto subscribe_pci(PciDevice&) -> Try<>;
 		void unsubscribe_pci(PciDevice&);
 		void unsubscribe_all_pci();
 		auto is_subscribed_to_pci(PciDevice&) -> bool;
 
 		#ifdef ARCH_X86
-			auto subscribe_ioPort(arch::x86::IoPort) -> bool;
+			auto subscribe_ioPort(arch::x86::IoPort) -> Try<>;
 			void unsubscribe_ioPort(arch::x86::IoPort);
 			void unsubscribe_all_ioPort();
 			auto is_subscribed_to_ioPort(arch::x86::IoPort) -> bool;

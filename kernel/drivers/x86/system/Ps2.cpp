@@ -59,7 +59,9 @@ namespace driver::system {
 
 		if(acpi&&acpi->has_ps2()==Maybe::no) return {"PS/2 ports not available"};
 
-		if(!api.subscribe_ioPort(ioData)||!api.subscribe_ioPort(ioStatus)||!api.subscribe_ioPort(ioCommand)) return {"I/O ports not available"};
+		TRY(api.subscribe_ioPort(ioData));
+		TRY(api.subscribe_ioPort(ioStatus));
+		TRY(api.subscribe_ioPort(ioCommand));
 
 		hasPort[(U32)Port::port1] = false;
 		hasPort[(U32)Port::port2] = false;

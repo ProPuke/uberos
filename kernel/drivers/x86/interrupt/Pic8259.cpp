@@ -37,12 +37,10 @@ namespace driver::interrupt {
 		irqOffset[0] = 0;
 		irqOffset[1] = 0;
 
-		if(
-			!api.subscribe_ioPort(ioPic1Command)||
-			!api.subscribe_ioPort(ioPic1Data)||
-			!api.subscribe_ioPort(ioPic2Command)||
-			!api.subscribe_ioPort(ioPic2Data)
-		) return {"I/O ports not available"};
+		TRY(api.subscribe_ioPort(ioPic1Command));
+		TRY(api.subscribe_ioPort(ioPic1Data));
+		TRY(api.subscribe_ioPort(ioPic2Command));
+		TRY(api.subscribe_ioPort(ioPic2Data));
 
 		min_irq = 0;
 		max_irq = 15;
