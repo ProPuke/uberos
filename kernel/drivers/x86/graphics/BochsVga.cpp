@@ -170,8 +170,8 @@ namespace driver::graphics {
 		framebuffer.buffer.address = (U8*)pciDevice->baseAddress[0];
 
 		// note that bochs ISN'T set as enabled at this point, so set mode is guarentted to apply a modechange, as the current enable mode will not match target
-		// return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
-		return set_mode(0, 1920, 1080, graphics2d::BufferFormat::rgba8, true);
+		return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
+		// return set_mode(0, 1920, 1080, graphics2d::BufferFormat::rgba8, true);
 	}
 
 	auto BochsVga::_on_stop() -> Try<> {
