@@ -3,6 +3,7 @@
 #include <kernel/drivers/Mouse.hpp>
 #include <kernel/drivers.hpp>
 
+#include <common/graphics2d.hpp>
 #include <common/graphics2d/font.hpp>
 #include <common/maths.hpp>
 
@@ -22,6 +23,10 @@ namespace driver::system {
 
 		void update_window_order();
 
+		const auto enableTransparency = true;
+
+		const U8 corner5x5Graphic[5*5] = "\000\000!\231\342\000G\353\202'!\353=\000\000\231\203\000\000\000\342(\000\000";
+
 		struct Cursor;
 
 		struct Window: LListItem<Window>, DesktopManager::Window {
@@ -37,11 +42,14 @@ namespace driver::system {
 			{
 				if(graphicsDisplay){
 					clientArea = graphicsDisplay->buffer;
+					if(enableTransparency){
+						clientArea.draw_rect((graphics2d::Rect){0,0,(I32)clientArea.width,(I32)clientArea.height}, 0xff000000);
+					}
 				}
 
-				// graphics2d::Buffer::create_round_corner(cornerRadius, corner);
-				graphics2d::Buffer::create_diagonal_corner(cornerRadius, corner);
-				graphics2d::Buffer::create_diagonal_corner(cornerRadius-1, cornerInner);
+				// graphics2d::create_round_corner(cornerRadius, corner);
+				graphics2d::create_diagonal_corner(cornerRadius, corner);
+				graphics2d::create_diagonal_corner(cornerRadius-1, cornerInner);
 
 				memcpy(graphicsDisplay->topLeftCorner, corner, sizeof(corner)-sizeof(corner[0]));
 				memcpy(graphicsDisplay->topRightCorner, corner, sizeof(corner)-sizeof(corner[0]));
@@ -49,13 +57,13 @@ namespace driver::system {
 				memcpy(graphicsDisplay->bottomRightCorner, corner, sizeof(corner)-sizeof(corner[0]));
 			}
 
-			static const auto cornerRadius = 2;
+			static const auto cornerRadius = enableTransparency?5:2;
 			U32 corner[cornerRadius+1];
 			U32 cornerInner[cornerRadius-1+1];
 
-			U32 leftShadow = 8;
-			U32 rightShadow = 8;
-			U32 bottomShadow = 12;
+			U32 leftShadow = enableTransparency?8:0;
+			U32 rightShadow = enableTransparency?8:0;
+			U32 bottomShadow = enableTransparency?12:0;
 
 			U8 shadowIntensity = 72; // max intensity
 			U8 leftShadowIntensity = 50; // scaling down of left shadow (by inner extension)
@@ -101,35 +109,91 @@ namespace driver::system {
 
 			void _draw_border() {
 				auto rect = get_border_rect();
-				const auto borderColour = draggingCursor?0xd0b0b0:_draw_focused?0xcbcbcb:0xdedede;
+				const auto borderColour = draggingCursor?0xd0b0b0:_draw_focused?0xb3b3b3:0xdedede;
+				const auto titlebarBgColour = draggingCursor?0xfff9f9:0xf9f9f9;
+				const auto titlebarTextColour = _draw_focused?0x333333:0xaaaaaa;
+				const auto statusbarTextColour = _draw_focused?0x666666:0xaaaaaa;
 
-				graphicsDisplay->buffer.draw_rect_outline(rect.x1, rect.y1, get_width(), get_height(), borderColour, 1, corner, corner, corner, corner);
-			}
+				U32 innerAaCorner[2+1];
+				graphics2d::create_diagonal_corner(2, innerAaCorner);
 
-			void _draw_titlebar() {
-				auto rect = get_border_rect();
-				const auto borderColour = draggingCursor?0xd0b0b0:_draw_focused?0xcbcbcb:0xdedede;
-				const auto bgColour = draggingCursor?0xfff9f9:0xf9f9f9;
-				const auto textColour = _draw_focused?0x333333:0xaaaaaa;
+				if(enableTransparency){
+					{ // draw border minus corners
+						graphicsDisplay->buffer.draw_line(rect.x1+cornerRadius, rect.y1, rect.x2-1-cornerRadius, rect.y1, borderColour);
+						graphicsDisplay->buffer.draw_line(rect.x1+cornerRadius, rect.y2-1, rect.x2-1-cornerRadius, rect.y2-1, borderColour);
+						graphicsDisplay->buffer.draw_line(rect.x1, rect.y1+cornerRadius, rect.x1, rect.y2-cornerRadius, borderColour);
+						graphicsDisplay->buffer.draw_line(rect.x2-1, rect.y1+cornerRadius, rect.x2-1, rect.y2-cornerRadius, borderColour);
+					}
 
-				graphicsDisplay->buffer.draw_rect_outline(rect.x1, rect.y1, get_width(), titlebarHeight, borderColour, 1, corner, corner, nullptr, nullptr);
-				graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, bgColour, cornerInner, cornerInner, nullptr, nullptr);
+				}else{
+					graphicsDisplay->buffer.draw_rect_outline(rect.x1, rect.y1, get_width(), get_height(), borderColour, 1, corner, corner, corner, corner);
+					graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, corner, corner, nullptr, nullptr);
+				}
 
-				auto lineHeight = 14*5/4;
-				const auto width = graphicsDisplay->buffer.measure_text(*graphics2d::font::default_sans, title, 0, 0, 14).x;
-				graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, title, rect.x1+get_width()/2-width/2, rect.y1+1+lineHeight, get_width(), 14, textColour);
-			}
+				{ // draw titlebar divide
+					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+titlebarHeight-1, rect.x2-1, rect.y1+titlebarHeight-1, borderColour);
+				}
 
-			void _draw_statusbar() {
-				auto rect = get_border_rect();
-				const auto borderColour = 0xcbcbcb;
-				const auto textColour = _draw_focused?0x333333:0xaaaaaa;
+				{ // draw statusbar divide
+					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+get_height()-1-21-1, rect.x1+get_width()-1, rect.y1+get_height()-1-21-1, 0xcccccc);
+				}
 
-				graphicsDisplay->buffer.draw_rect_outline(rect.x1+0, rect.y1+get_height()-1-21-1, get_width(), 23, borderColour, 1, nullptr, nullptr, corner, corner);
-				graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+get_height()-1-21, get_width()-2, 21, 0xeeeeee, nullptr, nullptr, cornerInner, cornerInner);
+				if(enableTransparency){
+					{ // undraw any previous corners with transparency, otherwise we get line doubling on the aa pixels
+						graphicsDisplay->buffer.draw_rect(rect.x1, rect.y1, cornerRadius, cornerRadius, 0xff000000);
+						graphicsDisplay->buffer.draw_rect(rect.x2-cornerRadius, rect.y1, cornerRadius, cornerRadius, 0xff000000);
+						graphicsDisplay->buffer.draw_rect(rect.x1, rect.y2-cornerRadius, cornerRadius, cornerRadius, 0xff000000);
+						graphicsDisplay->buffer.draw_rect(rect.x2-cornerRadius, rect.y2-cornerRadius, cornerRadius, cornerRadius, 0xff000000);
 
-				// auto lineHeight = 14*5/4;
-				graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, status, rect.x1+4, rect.y2-6, get_width(), 14, textColour);
+						// put shadows under bottom two corners
+						for(auto y=0;y<cornerRadius;y++){
+							auto width = 1+cornerRadius-1-y;
+							for(auto x=0;x<width;x++){
+								graphicsDisplay->buffer.set(rect.x1+x, rect.y2-1-y, 0x000000|(255-(get_shadow_intensity_at(rect.x1+x, rect.y2-1-y)*shadowIntensity/255)<<24));
+								graphicsDisplay->buffer.set(rect.x2-1-x, rect.y2-1-y, 0x000000|(255-(get_shadow_intensity_at(rect.x2-1-x, rect.y2-1-y)*shadowIntensity/255)<<24));
+							}
+						}
+					}
+
+					{ // draw titlebar block
+						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, innerAaCorner, innerAaCorner, nullptr, nullptr);
+					}
+
+					{ // draw statusbar block
+						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, 0xeeeeee, nullptr, nullptr, innerAaCorner, innerAaCorner);
+					}
+
+					{ // draw aa corners
+						for(auto y=0;y<5;y++){
+							for(auto x=0;x<5;x++){
+								graphicsDisplay->buffer.set_blended(rect.x1+x, rect.y1+y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
+								graphicsDisplay->buffer.set_blended(rect.x2-1-x, rect.y1+y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
+								graphicsDisplay->buffer.set_blended(rect.x1+x, rect.y2-1-y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
+								graphicsDisplay->buffer.set_blended(rect.x2-1-x, rect.y2-1-y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
+							}
+						}
+					}
+
+				}else{
+					{ // draw titlebar block
+						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, cornerInner, cornerInner, nullptr, nullptr);
+					}
+
+					{ // draw statusbar block
+						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, 0xeeeeee, nullptr, nullptr, cornerInner, cornerInner);
+					}
+				}
+
+				{ // draw titlebar text
+					auto lineHeight = 14*5/4;
+					const auto width = graphicsDisplay->buffer.measure_text(*graphics2d::font::default_sans, title, 0, 0, 14).x;
+					graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, title, rect.x1+get_width()/2-width/2, rect.y1+1+lineHeight, get_width(), 14, titlebarTextColour);
+				}
+
+				{ // draw statusbar text
+					// auto lineHeight = 14*5/4;
+					graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, status, rect.x1+4, rect.y2-7, get_width(), 14, statusbarTextColour);
+				}
 			}
 
 			void redraw_border() {
@@ -137,31 +201,19 @@ namespace driver::system {
 
 				_draw_border();
 				//top
-				graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), cornerRadius}.offset(rect.x1, rect.y1));
+				// graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), cornerRadius}.offset(rect.x1, rect.y1));
+				graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), titlebarHeight}.offset(rect.x1, rect.y1));
 				//left
 				graphicsDisplay->update_area(graphics2d::Rect{0, cornerRadius, 1, (I32)get_height()-cornerRadius}.offset(rect.x1, rect.y1));
 				//right
 				graphicsDisplay->update_area(graphics2d::Rect{(I32)get_width()-1, cornerRadius, (I32)get_width(), (I32)get_height()-cornerRadius}.offset(rect.x1, rect.y1));
 				//bottom
-				graphicsDisplay->update_area(graphics2d::Rect{0, (I32)get_height()-1, (I32)get_width(), (I32)get_height()}.offset(rect.x1, rect.y1));
-			}
-
-			void redraw_titlebar() {
-				_draw_titlebar();
-				auto rect = get_border_rect();
-
-				graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), titlebarHeight}.offset(rect.x1, rect.y1));
-			}
-
-			void redraw_statusbar() {
-				_draw_statusbar();
-				auto rect = get_border_rect();
-				rect.y1 = rect.y2-1-21-1;
-
-				graphicsDisplay->update_area(rect);
+				// graphicsDisplay->update_area(graphics2d::Rect{0, (I32)get_height()-1, (I32)get_width(), (I32)get_height()}.offset(rect.x1, rect.y1));
+				graphicsDisplay->update_area(graphics2d::Rect{0, (I32)get_height()-statusbarHeight, (I32)get_width(), (I32)get_height()}.offset(rect.x1, rect.y1));
 			}
 
 			static const auto titlebarHeight = 28;
+			static const auto statusbarHeight = 23;
 
 			void draw_frame() {
 				// auto rect = get_border_rect();
@@ -172,12 +224,10 @@ namespace driver::system {
 				auto &display = *graphicsDisplay;
 
 				_draw_border();
-				_draw_titlebar();
-				_draw_statusbar();
 				_draw_shadow();
 
 				clientArea = display.buffer.cropped(leftShadow+1, titlebarHeight, rightShadow+1, bottomShadow+23);
-				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xeeeeee);
+				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xe8e8e8);
 				display.update();
 			}
 
@@ -209,13 +259,15 @@ namespace driver::system {
 			}
 
 			void _draw_shadow() {
+				if(!enableTransparency) return;
+
 				for(auto i=0u;i<sizeof(graphicsDisplay->topLeftCorner)/sizeof(graphicsDisplay->topLeftCorner[0]);i++){
 					graphicsDisplay->topLeftCorner[i] = 0;
 					graphicsDisplay->topRightCorner[i] = 0;
 					graphicsDisplay->bottomLeftCorner[i] = 0;
 					graphicsDisplay->bottomRightCorner[i] = 0;
 				}
-				graphicsDisplay->solidArea = {(I32)leftShadow+cornerRadius, cornerRadius, (I32)leftShadow+get_width()-cornerRadius, get_height()-(I32)bottomShadow-cornerRadius};
+				graphicsDisplay->solidArea = {(I32)leftShadow+cornerRadius, 0, (I32)leftShadow+get_width()-cornerRadius, get_height()-(I32)bottomShadow};
 
 				auto &buffer = graphicsDisplay->buffer;
 				for(auto y=0; y<(I32)buffer.height; y++){
@@ -279,11 +331,9 @@ namespace driver::system {
 				window.draggingCursor = this;
 				if(window.is_top()){
 					window.redraw_border();
-					window.redraw_titlebar();
 
 				}else{
 					window._draw_border();
-					window._draw_titlebar();
 					window.raise(); // this will trigger a redraw, so we won't use the redraw_* variants
 				}
 			}
@@ -293,7 +343,6 @@ namespace driver::system {
 
 				dragWindow.window->draggingCursor = nullptr;
 				dragWindow.window->redraw_border();
-				dragWindow.window->redraw_titlebar();
 				dragWindow.window = nullptr;
 			}
 		};
@@ -443,7 +492,6 @@ namespace driver::system {
 				if(is_top!=window->_draw_focused){
 					logging::print_info("window ", window->title, " ", is_top?"TOP":"below");
 					window->_draw_focused = is_top;
-					window->redraw_titlebar();
 					window->redraw_border();
 				}
 			}
@@ -476,12 +524,12 @@ namespace driver::system {
 
 	void Window::set_title(const char *set) {
 		title = set;
-		redraw_titlebar();
+		redraw_border();
 	}
 
 	void Window::set_status(const char *set) {
 		status = set;
-		redraw_statusbar();
+		redraw_border();
 	}
 
 	void Window::raise() {
