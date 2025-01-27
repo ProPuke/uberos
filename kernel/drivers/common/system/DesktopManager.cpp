@@ -1,5 +1,6 @@
 #include "DesktopManager.hpp"
 
+#include <kernel/drivers/Keyboard.hpp>
 #include <kernel/drivers/Mouse.hpp>
 #include <kernel/drivers.hpp>
 
@@ -21,7 +22,7 @@ namespace driver::system {
 
 		}, nullptr};
 
-		void update_window_order();
+		void update_focused_window();
 
 		const auto enableTransparency = true;
 
@@ -307,6 +308,8 @@ namespace driver::system {
 			}
 		};
 
+		extern Window *focusedWindow;
+
 		struct Cursor {
 			Mouse *mouse = nullptr;
 			DisplayManager::Display *display;
@@ -335,6 +338,8 @@ namespace driver::system {
 				}else{
 					window._draw_border();
 					window.raise(); // this will trigger a redraw, so we won't use the redraw_* variants
+					focusedWindow = &window;
+					update_focused_window();
 				}
 			}
 
@@ -348,6 +353,7 @@ namespace driver::system {
 		};
 
 		LList<Window> windows;
+		Window *focusedWindow = nullptr;
 		ListUnordered<Cursor> cursors(0); // do not preallocate any (dynamic allocations on boot fail before memory is setup)
 
 		void _add_mouse(Mouse &mouse);
@@ -380,6 +386,8 @@ namespace driver::system {
 				case Mouse::Event::Type::pressed:
 					if(window) {
 						window->raise();
+						focusedWindow = window;
+						update_focused_window();
 					}
 					if(event.pressed.button==0){
 						{
@@ -486,12 +494,78 @@ namespace driver::system {
 			return rect.offset(xOffset, yOffset);
 		}
 
-		void update_window_order() {
+		void update_focused_window() {
 			for(auto window=windows.head; window; window=window->next){
-				auto is_top = window->graphicsDisplay->is_top();
-				if(is_top!=window->_draw_focused){
-					window->_draw_focused = is_top;
+				auto isFocused = focusedWindow==window;
+				if(isFocused!=window->_draw_focused){
+					window->_draw_focused = isFocused;
 					window->redraw_border();
+				}
+			}
+		}
+	}
+
+	namespace {
+		void on_keyboard_event(const driver::Keyboard::Event &event, void*) {
+			if(focusedWindow){
+				switch(event.type){
+					case driver::Keyboard::Event::Type::pressed:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::keyPressed,
+							keyPressed: { event.instance, event.pressed.scancode, event.pressed.repeat, event.pressed.modifiers }
+						});
+					break;
+					case driver::Keyboard::Event::Type::released:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::keyReleased,
+							keyPressed: { event.instance, event.released.scancode }
+						});
+					break;
+					case driver::Keyboard::Event::Type::actionPressed:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::actionPressed,
+							actionPressed: { event.instance, event.actionPressed.action }
+						});
+					break;
+					case driver::Keyboard::Event::Type::characterTyped:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::characterTyped,
+							characterTyped: { event.instance, event.characterTyped.character }
+						});
+					break;
+				}
+			}
+		}
+		void on_mouse_event(const driver::Mouse::Event &event, void*) {
+			auto cursor = _find_cursor(*event.instance);
+			if(!cursor) return;
+
+			if(focusedWindow){
+				switch(event.type){
+					case driver::Mouse::Event::Type::moved:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::mouseMoved,
+							mouseMoved: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.moved.x, event.moved.y }
+						});
+					break;
+					case driver::Mouse::Event::Type::pressed:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::mousePressed,
+							mousePressed: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.pressed.button }
+						});
+					break;
+					case driver::Mouse::Event::Type::released:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::mouseReleased,
+							mouseReleased: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.released.button }
+						});
+					break;
+					case driver::Mouse::Event::Type::scrolled:
+						focusedWindow->events.trigger({
+							type: Window::Event::Type::mouseScrolled,
+							mouseScrolled: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.scrolled.distance }
+						});
+					break;
 				}
 			}
 		}
@@ -511,6 +585,9 @@ namespace driver::system {
 
 		drivers::events.subscribe(_on_drivers_event, nullptr);
 
+		driver::Keyboard::allEvents.subscribe(on_keyboard_event, nullptr);
+		driver::Mouse::allEvents.subscribe(on_mouse_event, nullptr);
+
 		return {};
 	}
 
@@ -518,22 +595,24 @@ namespace driver::system {
 		// remove all cursors and mouse listeners
 		while(cursors.length>0) _remove_mouse(*cursors[0].mouse);
 
+		driver::Mouse::allEvents.unsubscribe(on_mouse_event, nullptr);
+		driver::Keyboard::allEvents.unsubscribe(on_keyboard_event, nullptr);
+
 		return {};
 	}
 
 	void Window::set_title(const char *set) {
 		title = set;
-		redraw_border();
+		redraw_border(); //TODO: only update the text itself, not the full frame?
 	}
 
 	void Window::set_status(const char *set) {
 		status = set;
-		redraw_border();
+		redraw_border(); //TODO: only update the text itself, not the full frame?
 	}
 
 	void Window::raise() {
 		graphicsDisplay->raise();
-		update_window_order();
 	}
 	
 	auto Window::is_top() -> bool {
@@ -581,7 +660,8 @@ namespace driver::system {
 		window.draw_frame();
 
 		windows.push_back(window);
-		update_window_order();
+		focusedWindow = &window;
+		update_focused_window();
 
 		return window;
 	}
