@@ -100,24 +100,24 @@ namespace driver::graphics {
 			framebuffer.buffer.height = height;
 			
 			graphics2d::BufferFormat format = graphics2d::BufferFormat::rgba8;
-			graphics2d::BufferFormatOrder order = graphics2d::BufferFormatOrder::rgb;
+			graphics2d::BufferFormatOrder order = graphics2d::BufferFormatOrder::argb;
 
 			switch(bpp){
 				case 8u:
 					format = graphics2d::BufferFormat::grey8;
-					order = graphics2d::BufferFormatOrder::rgb;
+					order = graphics2d::BufferFormatOrder::argb;
 				break;
 				case 16u:
 					format = graphics2d::BufferFormat::rgb565;
-					order = graphics2d::BufferFormatOrder::rgb;
+					order = graphics2d::BufferFormatOrder::argb;
 				break;
 				case 24u:
 					format = graphics2d::BufferFormat::rgb8;
-					order = graphics2d::BufferFormatOrder::bgr;
+					order = graphics2d::BufferFormatOrder::bgra;
 				break;
 				case 32u:
 					format = graphics2d::BufferFormat::rgba8;
-					order = graphics2d::BufferFormatOrder::bgr;
+					order = graphics2d::BufferFormatOrder::bgra;
 				break;
 			}
 

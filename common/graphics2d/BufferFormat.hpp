@@ -12,9 +12,9 @@ namespace graphics2d {
 	};
 
 	enum struct BufferFormatOrder {
-		rgb,
-		bgr,
-		max = bgr
+		argb,
+		bgra,
+		max = bgra
 	};
 
 	namespace bufferFormat {

@@ -168,10 +168,10 @@ namespace driver {
 
 			switch(pixelOrder){
 				case mailbox::PropertyMessage::Data::PixelOrder::rgb:
-					framebuffer.buffer.order = graphics2d::BufferFormatOrder::rgb;
+					framebuffer.buffer.order = graphics2d::BufferFormatOrder::argb;
 				break;
 				case mailbox::PropertyMessage::Data::PixelOrder::bgr:
-					framebuffer.buffer.order = graphics2d::BufferFormatOrder::bgr;
+					framebuffer.buffer.order = graphics2d::BufferFormatOrder::bgra;
 				break;
 			}
 

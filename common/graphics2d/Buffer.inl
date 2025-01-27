@@ -18,14 +18,55 @@ namespace graphics2d {
 		static_assert((int)BufferFormatOrder::max<2);
 		
 		switch((int)format<<1|(int)order){ //the switch is faster ¯\_(ツ)_/¯
-			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::rgb:
-			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgr: return set_grey8(x, y, colour, length);
-			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::rgb: return set_rgb565(x, y, colour, length);
-			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgr: return set_bgr565(x, y, colour, length);
-			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::rgb: return set_rgb8(x, y, colour, length);
-			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgr: return set_bgr8(x, y, colour, length);
-			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::rgb: return set_rgba8(x, y, colour, length);
-			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgr: return set_bgra8(x, y, colour, length);
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::argb:
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgra: return set_grey8(x, y, colour, length);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::argb: return set_rgb565(x, y, colour, length);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgra: return set_bgr565(x, y, colour, length);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::argb: return set_rgb8(x, y, colour, length);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgra: return set_bgr8(x, y, colour, length);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::argb: return set_rgba8(x, y, colour, length);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgra: return set_bgra8(x, y, colour, length);
+		}
+	}
+
+	inline void Buffer::set_blended(I32 x, I32 y, U32 colour) {
+		if(x<0||y<0||(U32)x>=width||(U32)y>=height) return;
+
+		return set_blended((U32)x, (U32)y, colour);
+	}
+
+	inline void Buffer::set_blended(U32 x, U32 y, U32 colour) {
+		switch(format){
+			case BufferFormat::grey8:
+			case BufferFormat::rgb565:
+			case BufferFormat::rgb8:
+				if(colour>>24<128){
+					set(x, y, colour);
+				}
+			break;
+			case BufferFormat::rgba8: {
+				const U8 trans = colour>>24;
+				auto &data = *(U32*)&address[y*stride+x*4];
+
+				switch(order){
+					case BufferFormatOrder::argb:
+						data =
+							(trans - ((255-((data&0x000000ff)>>24)))*trans/255)<<0|
+							(((colour&0x00ff0000)>>16) + ((data&0x0000ff00)>> 8)*trans/255)<< 8|
+							(((colour&0x0000ff00)>> 8) + ((data&0x00ff0000)>>16)*trans/255)<<16|
+							(((colour&0x000000ff)>> 0) + ((data&0xff000000)>>24)*trans/255)<<24
+						;
+					break;
+					case BufferFormatOrder::bgra:
+						data =
+							(((colour&0x000000ff)>> 0) + ((data&0x000000ff)>> 0)*trans/255)<< 0|
+							(((colour&0x0000ff00)>> 8) + ((data&0x0000ff00)>> 8)*trans/255)<< 8|
+							(((colour&0x00ff0000)>>16) + ((data&0x00ff0000)>>16)*trans/255)<<16|
+							(trans - ((255-((data&0xff000000)>>24)))*trans/255)<<24
+						;
+					break;
+				}
+			} break;
 		}
 	}
 
@@ -100,7 +141,7 @@ namespace graphics2d {
 			|((colour&0x00ff0000)>>16)<<16
 			|((colour&0x0000ff00)>> 8)<< 8
 			|((colour&0x000000ff)>> 0)<< 0
-			|255-((colour&0xff000000)>>24)<<24
+			|((colour&0xff000000)>>24)<<24
 		;
 
 		#ifdef HAS_128BIT
@@ -148,7 +189,7 @@ namespace graphics2d {
 			|((colour&0x000000ff)>> 0)<< 0
 			|((colour&0x0000ff00)>> 8)<< 8
 			|((colour&0x00ff0000)>>16)<<16
-			|255-((colour&0xff000000)>>24)<<24
+			|((colour&0xff000000)>>24)<<24
 		;
 
 		#ifdef HAS_128BIT
@@ -202,14 +243,14 @@ namespace graphics2d {
 		static_assert((int)BufferFormatOrder::max<2);
 		
 		switch((int)format<<1|(int)order){ //the switch is faster ¯\_(ツ)_/¯
-			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::rgb:
-			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgr: return get_grey8(x, y);
-			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::rgb: return get_rgb565(x, y);
-			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgr: return get_bgr565(x, y);
-			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::rgb: return get_rgb8(x, y);
-			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgr: return get_bgr8(x, y);
-			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::rgb: return get_rgba8(x, y);
-			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgr: return get_bgra8(x, y);
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::argb:
+			case (int)BufferFormat::grey8 <<1|(int)BufferFormatOrder::bgra: return get_grey8(x, y);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::argb: return get_rgb565(x, y);
+			case (int)BufferFormat::rgb565<<1|(int)BufferFormatOrder::bgra: return get_bgr565(x, y);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::argb: return get_rgb8(x, y);
+			case (int)BufferFormat::rgb8  <<1|(int)BufferFormatOrder::bgra: return get_bgr8(x, y);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::argb: return get_rgba8(x, y);
+			case (int)BufferFormat::rgba8 <<1|(int)BufferFormatOrder::bgra: return get_bgra8(x, y);
 		}
 
 		return 0x000000;
@@ -409,7 +450,7 @@ namespace graphics2d {
 
 		if(xLength>=yLength){
 			const auto dir = maths::sign(x2-x1);
-			for(auto step=0;step<xLength;step++){
+			for(auto step=0;step<=xLength;step++){
 				const auto phase = step/(float)xLength;
 				const auto x = x1+step*dir;
 				const auto y = y1 + phase*yVec;
@@ -417,7 +458,7 @@ namespace graphics2d {
 			}
 		}else{
 			const auto dir = maths::sign(y2-y1);
-			for(auto step=0;step<yLength;step++){
+			for(auto step=0;step<=yLength;step++){
 				const auto phase = step/(float)yLength;
 				const auto y = y1+step*dir;
 				const auto x = x1 + phase*xVec;
@@ -611,14 +652,6 @@ namespace graphics2d {
 		;
 	}
 
-	inline void Buffer::create_round_corner(U32 radius, U32 corner[]) {
-		for(auto i=0u;i<radius;i++){
-			auto y = radius-i;
-			corner[i] = radius-U32(radius*maths::sqrt(radius*radius-((y*y))));
-		}
-		corner[radius] = -1;
-	}
-
 	inline auto Buffer::cropped(U32 left, U32 top, U32 right, U32 bottom) -> Buffer {
 		const auto bpp = bufferFormat::size[(U8)format];
 
@@ -629,12 +662,5 @@ namespace graphics2d {
 			height-top-bottom,
 			format, order
 		);
-	}
-
-	inline void Buffer::create_diagonal_corner(U32 radius, U32 corner[]) {
-		for(auto i=0u;i<radius;i++){
-			corner[i] = radius-i;
-		}
-		corner[radius] = -1;
 	}
 }

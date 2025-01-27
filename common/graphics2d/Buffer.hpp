@@ -17,7 +17,7 @@ namespace graphics2d {
 	struct Buffer {
 		/**/ Buffer():
 			format(BufferFormat::rgba8),
-			order(BufferFormatOrder::rgb),
+			order(BufferFormatOrder::argb),
 			address(nullptr),
 			stride(0),
 			width(0),
@@ -41,6 +41,8 @@ namespace graphics2d {
 
 		void set(I32 x, I32 y, U32 colour, U32 length = 1);
 		void set(U32 x, U32 y, U32 colour, U32 length = 1);
+		void set_blended(I32 x, I32 y, U32 colour);
+		void set_blended(U32 x, U32 y, U32 colour);
 		void set_grey8(U32 x, U32 y, U32 colour, U32 length = 1);
 		void set_rgb565(U32 x, U32 y, U32 colour, U32 length = 1);
 		void set_bgr565(U32 x, U32 y, U32 colour, U32 length = 1);
@@ -77,9 +79,6 @@ namespace graphics2d {
 		void scroll(I32 x, I32 y);
 
 		auto cropped(U32 left, U32 top, U32 right, U32 bottom) -> Buffer;
-
-		static void create_round_corner(U32 radius, U32 corner[]);
-		static void create_diagonal_corner(U32 radius, U32 corner[]);
 	};
 
 	auto blend_rgb(U32 from, U32 to, float phase) -> U32;

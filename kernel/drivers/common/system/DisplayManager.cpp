@@ -104,10 +104,10 @@ namespace driver::system {
 		void _update_blending_at_bgr(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
 		void _update_blending_at(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
 			switch(framebuffer.buffer.order){
-				case graphics2d::BufferFormatOrder::rgb:
+				case graphics2d::BufferFormatOrder::argb:
 					_update_blending_at_rgb(framebuffer, buffer, x, y, topDisplay);
 				break;
-				case graphics2d::BufferFormatOrder::bgr:
+				case graphics2d::BufferFormatOrder::bgra:
 				default:
 					_update_blending_at_bgr(framebuffer, buffer, x, y, topDisplay);
 				break;
@@ -118,7 +118,7 @@ namespace driver::system {
 		union __attribute__((packed)) PackedPixel;
 
 		template <>
-		union __attribute__((packed)) PackedPixel<graphics2d::BufferFormatOrder::bgr> {
+		union __attribute__((packed)) PackedPixel<graphics2d::BufferFormatOrder::bgra> {
 			struct __attribute__((packed)) {
 				U8 b;
 				U8 g;
@@ -129,7 +129,7 @@ namespace driver::system {
 		};
 
 		template <>
-		union __attribute__((packed)) PackedPixel<graphics2d::BufferFormatOrder::rgb> {
+		union __attribute__((packed)) PackedPixel<graphics2d::BufferFormatOrder::argb> {
 			struct __attribute__((packed)) {
 				U8 a;
 				U8 r;
@@ -141,7 +141,7 @@ namespace driver::system {
 
 		//TODO: implement alpha testing instead on non rgba modes (palette index 0 or 0xff00ff perhaps?)
 		void _update_blending_at_rgb(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
-			PackedPixel<graphics2d::BufferFormatOrder::rgb> result{0,0,0,0};
+			PackedPixel<graphics2d::BufferFormatOrder::argb> result{0,0,0,0};
 			U8 visibility = 255;
 
 			for(auto display=topDisplay; display; display=display->prev){
@@ -157,7 +157,7 @@ namespace driver::system {
 
 				const auto displayX = x-display->x;
 
-				auto &read = *(PackedPixel<graphics2d::BufferFormatOrder::rgb>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
+				auto &read = *(PackedPixel<graphics2d::BufferFormatOrder::argb>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
 
 				result.r = min(result.r + read.r*(U32)visibility/255, 255u);
 				result.g = min(result.g + read.g*(U32)visibility/255, 255u);
@@ -169,9 +169,9 @@ namespace driver::system {
 				if(!displayTransparent) goto done;
 
 				// all visibility used up
-				if(visibility<=read.a) goto done;
+				if(visibility<=255-read.a) goto done;
 
-				visibility -= read.a;
+				visibility -= 255-read.a;
 			}
 
 			// if(visibility==255) return; //nothing was found
@@ -191,7 +191,7 @@ namespace driver::system {
 		}
 
 		void _update_blending_at_bgr(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
-			PackedPixel<graphics2d::BufferFormatOrder::bgr> result{0,0,0,0};
+			PackedPixel<graphics2d::BufferFormatOrder::bgra> result{0,0,0,0};
 			U8 visibility = 255;
 
 			for(auto display=topDisplay; display; display=display->prev){
@@ -207,7 +207,7 @@ namespace driver::system {
 
 				const auto displayX = x-display->x;
 
-				auto &read = *(PackedPixel<graphics2d::BufferFormatOrder::bgr>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
+				auto &read = *(PackedPixel<graphics2d::BufferFormatOrder::bgra>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
 
 				result.r = min(result.r + read.r*(U32)visibility/255, 255u);
 				result.g = min(result.g + read.g*(U32)visibility/255, 255u);
@@ -219,9 +219,9 @@ namespace driver::system {
 				if(!displayTransparent) goto done;
 
 				// all visibility used up
-				if(visibility<=read.a) goto done;
+				if(visibility<=255-read.a) goto done;
 
-				visibility -= read.a;
+				visibility -= 255-read.a;
 			}
 
 			// if(visibility==255) return; //nothing was found

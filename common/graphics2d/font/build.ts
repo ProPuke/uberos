@@ -39,7 +39,7 @@ for await(const dirEntry of Deno.readDir('.')){
 				`		}\n`+
 				`\n`+
 				`		Font ${name[0].toLowerCase()+name.substr(1)} = {\n`+
-				`			{msdfData, ${msdfJson.atlas.width*3}, ${msdfJson.atlas.width}, ${msdfJson.atlas.height}, graphics2d::BufferFormat::rgb8, graphics2d::BufferFormatOrder::rgb},\n`+
+				`			{msdfData, ${msdfJson.atlas.width*3}, ${msdfJson.atlas.width}, ${msdfJson.atlas.height}, graphics2d::BufferFormat::rgb8, graphics2d::BufferFormatOrder::argb},\n`+
 				`			${msdfJson.atlas.size},\n`+
 				`			${msdfJson.metrics.lineHeight},\n`+
 				`			${msdfJson.metrics.ascender},\n`+
