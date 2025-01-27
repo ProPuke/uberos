@@ -490,7 +490,6 @@ namespace driver::system {
 			for(auto window=windows.head; window; window=window->next){
 				auto is_top = window->graphicsDisplay->is_top();
 				if(is_top!=window->_draw_focused){
-					logging::print_info("window ", window->title, " ", is_top?"TOP":"below");
 					window->_draw_focused = is_top;
 					window->redraw_border();
 				}
