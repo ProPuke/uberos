@@ -115,7 +115,7 @@ namespace driver::system {
 
 		auto get_entry_count() -> unsigned;
 		auto get_entry(unsigned) -> Sdt*;
-		auto find_entry_with_signature(char signature[4]) -> Sdt*;
+		auto find_entry_with_signature(const char signature[4]) -> Sdt*;
 
 		auto has_lpc_isa_devices() -> Maybe;
 		auto has_ps2() -> Maybe;

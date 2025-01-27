@@ -241,7 +241,7 @@ namespace driver::system {
 		}
 	}
 
-	auto Acpi::find_entry_with_signature(char signature[4]) -> Sdt* {
+	auto Acpi::find_entry_with_signature(const char signature[4]) -> Sdt* {
 		for(auto i=0u, count=get_entry_count();i<count;i++){
 			auto entry = get_entry(i);
 			if(entry&&*(U64*)entry->signature==*(U64*)entry){
