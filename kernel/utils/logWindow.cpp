@@ -24,8 +24,6 @@ namespace utils {
 			auto cursorColumn = 0;
 			auto columns = 1;
 			auto columnWidth = 1000;
-			// auto bgColour = 0x202080;
-			auto bgColour = 0xeeeeee;
 			// auto textColourInfo = 0xffffff;
 			auto textColourHistory = 0x888888;
 			auto textColourInfo = 0x222222;
@@ -76,11 +74,11 @@ namespace utils {
 						// auto scroll = lineHeight*8;
 						auto scroll = lineHeight*4;
 						buffer.scroll(0, -scroll);
-						// buffer.draw_rect(0, buffer.height-scroll, buffer.width, scroll, bgColour);
+						// buffer.draw_rect(0, buffer.height-scroll, buffer.width, scroll, window->get_background_colour());
 						cursorY -= scroll;
 
 						//redraw as it was clipped off last time
-						buffer.draw_rect(0, buffer.height-scroll, buffer.width, scroll, bgColour); //clear the bottom section..
+						buffer.draw_rect(0, buffer.height-scroll, buffer.width, scroll, window->get_background_colour()); //clear the bottom section..
 						textResult = buffer.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX); //...then redraw the text
 						window->redraw();
 						dirtyArea = {0,0,0,0};
@@ -89,14 +87,14 @@ namespace utils {
 						// if multi-column, change to the next column (cyclically) and clear the space for new content
 
 						// erase the ENTIRE previous print, as we are now movig it into the next column
-						buffer.draw_rect(textResult.updatedArea.x1, textResult.updatedArea.y1, textResult.updatedArea.x2-textResult.updatedArea.x1, textResult.updatedArea.y2-textResult.updatedArea.y1, bgColour);
+						buffer.draw_rect(textResult.updatedArea.x1, textResult.updatedArea.y1, textResult.updatedArea.x2-textResult.updatedArea.x1, textResult.updatedArea.y2-textResult.updatedArea.y1, window->get_background_colour());
 
 						cursorColumn = (cursorColumn+1)%columns;
 
 						cursorX = leftMargin + cursorColumn * columnWidth;
 						cursorY = lineHeight;
 
-						buffer.draw_rect(cursorColumn * columnWidth, 0, columnWidth, buffer.height, bgColour);
+						buffer.draw_rect(cursorColumn * columnWidth, 0, columnWidth, buffer.height, window->get_background_colour());
 						dirtyArea = dirtyArea.include({cursorColumn * columnWidth, 0, cursorColumn * columnWidth + columnWidth, (I32)buffer.height});
 
 						textResult = buffer.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
@@ -130,7 +128,7 @@ namespace utils {
 			window = &desktopManager->create_window("Kernel Log", viewWidth, viewHeight);
 			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
 
-			window->clientArea.draw_rect(0, 0, window->clientArea.width, window->clientArea.height, bgColour);
+			window->clientArea.draw_rect(0, 0, window->clientArea.width, window->clientArea.height, window->get_background_colour());
 
 			// window->set_status("Booting...");
 

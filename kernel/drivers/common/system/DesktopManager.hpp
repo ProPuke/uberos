@@ -24,6 +24,7 @@ namespace driver::system {
 			virtual auto get_y() -> I32 = 0;
 			virtual auto get_width() -> I32 = 0;
 			virtual auto get_height() -> I32 = 0;
+			virtual auto get_background_colour() -> U32 = 0;
 			virtual void raise() = 0;
 			virtual auto is_top() -> bool = 0;
 			virtual void show() = 0;

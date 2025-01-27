@@ -79,6 +79,10 @@ namespace driver::system {
 				return graphicsDisplay->get_height()-bottomShadow;
 			}
 
+			auto get_background_colour() -> U32 override {
+				return 0xeeeeee;
+			}
+
 			auto get_border_rect() -> graphics2d::Rect {
 				return graphics2d::Rect{(I32)leftShadow, 0, (I32)leftShadow+get_width(), get_height()};
 			}
