@@ -9,12 +9,15 @@ namespace test {
 	auto get_scankey_name(keyboard::Scancode scancode) -> const char * {
 		#include <kernel/keyboard/layout/uk.hpp>
 
-		#define KEY(NAME,...) case (keyboard::Scancode)keyboard::ScancodeUk::NAME: return #NAME;
+		#define KEY(NAME,...) case (keyboard::Scancode)keyboard::ScancodeUk::NAME: return #NAME,##__VA_ARGS__;
 		#define EMPTY
 		#define EXTEND_UP
 		#define EXTEND_DOWN
 		#define EXTEND_LEFT
 		#define EXTEND_RIGHT
+
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wunused-value"
 
 		switch(scancode) {
 			KEYBOARD_LAYOUT_UK_ROW0
@@ -28,6 +31,8 @@ namespace test {
 			default:
 				return "unknown";
 		}
+
+		#pragma GCC diagnostic pop
 
 		#undef KEY
 		#undef EMPTY
@@ -187,6 +192,18 @@ namespace test {
 				switch(event.type){
 					case driver::Keyboard::Event::Type::pressed: {
 						strcpy(statusBuffer, "Pressed: ");
+						if(event.pressed.modifiers&(U8)driver::Keyboard::Modifier::control){
+							strcat(statusBuffer, "Ctrl+");
+						}
+						if(event.pressed.modifiers&(U8)driver::Keyboard::Modifier::alt){
+							strcat(statusBuffer, "Alt+");
+						}
+						if(event.pressed.modifiers&(U8)driver::Keyboard::Modifier::super){
+							strcat(statusBuffer, "Super+");
+						}
+						if(event.pressed.modifiers&(U8)driver::Keyboard::Modifier::shift){
+							strcat(statusBuffer, "Shift+");
+						}
 						strcat(statusBuffer, get_scankey_name(event.pressed.scancode));
 						window.set_status(statusBuffer);
 
