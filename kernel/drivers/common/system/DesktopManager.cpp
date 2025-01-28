@@ -38,7 +38,7 @@ namespace driver::system {
 			Cursor *draggingCursor = nullptr;
 
 			/**/ Window(U32 x, U32 y, U32 width, U32 height, const char *title):
-				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width+leftShadow+rightShadow, height+bottomShadow)),
+				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width+leftShadow+rightShadow, height+topShadow+bottomShadow)),
 				title(title)
 			{
 				if(graphicsDisplay){
@@ -64,11 +64,15 @@ namespace driver::system {
 
 			U32 leftShadow = enableTransparency?8:0;
 			U32 rightShadow = enableTransparency?8:0;
-			U32 bottomShadow = enableTransparency?12:0;
+			U32 topShadow = enableTransparency?8:0;
+			U32 bottomShadow = enableTransparency?8:0;
 
-			U8 shadowIntensity = 72; // max intensity
-			U8 leftShadowIntensity = 50; // scaling down of left shadow (by inner extension)
-			U8 rightShadowIntensity = 50; // scaling down of right shadow (by inner extension)
+			U8 shadowIntensity = 20; // max intensity
+			U8 topShadowIntensity = 128; // scaling down of top shadow (by inner extension)
+			U8 leftShadowIntensity = 192; // scaling down of left shadow (by inner extension)
+			U8 rightShadowIntensity = 192; // scaling down of right shadow (by inner extension)
+
+			static const U32 backgroundColour = 0xeeeeee;
 
 			bool _draw_focused = false; // is the window currently draw as the focused/top window? (to avoid excess updates)
 
@@ -77,7 +81,7 @@ namespace driver::system {
 			}
 
 			auto get_y() -> I32 override {
-				return graphicsDisplay->y;
+				return graphicsDisplay->y+topShadow;
 			}
 
 			auto get_width() -> I32 override {
@@ -85,15 +89,15 @@ namespace driver::system {
 			}
 
 			auto get_height() -> I32 override {
-				return graphicsDisplay->get_height()-bottomShadow;
+				return graphicsDisplay->get_height()-topShadow-bottomShadow;
 			}
 
 			auto get_background_colour() -> U32 override {
-				return 0xeeeeee;
+				return backgroundColour;
 			}
 
 			auto get_border_rect() -> graphics2d::Rect {
-				return graphics2d::Rect{(I32)leftShadow, 0, (I32)leftShadow+get_width(), get_height()};
+				return graphics2d::Rect{(I32)leftShadow, (I32)topShadow, (I32)leftShadow+get_width(), (I32)topShadow+get_height()};
 			}
 
 			void set_title(const char*) override;
@@ -110,9 +114,9 @@ namespace driver::system {
 
 			void _draw_border() {
 				auto rect = get_border_rect();
-				const auto borderColour = draggingCursor?0xd0b0b0:_draw_focused?0xb3b3b3:0xdedede;
-				const auto titlebarBgColour = draggingCursor?0xfff9f9:0xf9f9f9;
-				const auto titlebarTextColour = _draw_focused?0x333333:0xaaaaaa;
+				const auto borderColour = draggingCursor?0xd0b0b0:0xbcbcbc;
+				const auto titlebarBgColour = draggingCursor?0xfff9f9:_draw_focused?0xf9f9f9:backgroundColour;
+				const auto titlebarTextColour = _draw_focused?0x333333:0x999999;
 				const auto statusbarTextColour = _draw_focused?0x666666:0xaaaaaa;
 
 				U32 innerAaCorner[2+1];
@@ -132,11 +136,11 @@ namespace driver::system {
 				}
 
 				{ // draw titlebar divide
-					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+titlebarHeight-1, rect.x2-1, rect.y1+titlebarHeight-1, borderColour);
+					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+titlebarHeight-1, rect.x2-2, rect.y1+titlebarHeight-1, _draw_focused?borderColour:backgroundColour);
 				}
 
 				{ // draw statusbar divide
-					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+get_height()-1-21-1, rect.x1+get_width()-1, rect.y1+get_height()-1-21-1, 0xcccccc);
+					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+get_height()-1-21-1, rect.x2-2, rect.y1+get_height()-statusbarHeight, _draw_focused?0xcccccc:0xdddddd);
 				}
 
 				if(enableTransparency){
@@ -146,10 +150,12 @@ namespace driver::system {
 						graphicsDisplay->buffer.draw_rect(rect.x1, rect.y2-cornerRadius, cornerRadius, cornerRadius, 0xff000000);
 						graphicsDisplay->buffer.draw_rect(rect.x2-cornerRadius, rect.y2-cornerRadius, cornerRadius, cornerRadius, 0xff000000);
 
-						// put shadows under bottom two corners
+						// put shadows under corners
 						for(auto y=0;y<cornerRadius;y++){
 							auto width = 1+cornerRadius-1-y;
 							for(auto x=0;x<width;x++){
+								graphicsDisplay->buffer.set(rect.x1+x, rect.y1+y, 0x000000|(255-(get_shadow_intensity_at(rect.x1+x, rect.y1+y)*shadowIntensity/255)<<24));
+								graphicsDisplay->buffer.set(rect.x2-1-x, rect.y1+y, 0x000000|(255-(get_shadow_intensity_at(rect.x2-1-x, rect.y1+y)*shadowIntensity/255)<<24));
 								graphicsDisplay->buffer.set(rect.x1+x, rect.y2-1-y, 0x000000|(255-(get_shadow_intensity_at(rect.x1+x, rect.y2-1-y)*shadowIntensity/255)<<24));
 								graphicsDisplay->buffer.set(rect.x2-1-x, rect.y2-1-y, 0x000000|(255-(get_shadow_intensity_at(rect.x2-1-x, rect.y2-1-y)*shadowIntensity/255)<<24));
 							}
@@ -161,7 +167,7 @@ namespace driver::system {
 					}
 
 					{ // draw statusbar block
-						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, 0xeeeeee, nullptr, nullptr, innerAaCorner, innerAaCorner);
+						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, backgroundColour, nullptr, nullptr, innerAaCorner, innerAaCorner);
 					}
 
 					{ // draw aa corners
@@ -181,7 +187,7 @@ namespace driver::system {
 					}
 
 					{ // draw statusbar block
-						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, 0xeeeeee, nullptr, nullptr, cornerInner, cornerInner);
+						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, backgroundColour, nullptr, nullptr, cornerInner, cornerInner);
 					}
 				}
 
@@ -227,8 +233,8 @@ namespace driver::system {
 				_draw_border();
 				_draw_shadow();
 
-				clientArea = display.buffer.cropped(leftShadow+1, titlebarHeight, rightShadow+1, bottomShadow+23);
-				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xe8e8e8);
+				clientArea = display.buffer.cropped(leftShadow+1, topShadow+titlebarHeight, rightShadow+1, bottomShadow+23);
+				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, backgroundColour);
 				display.update();
 			}
 
@@ -236,6 +242,7 @@ namespace driver::system {
 				U8 intensity = 255;
 
 				//we lengthen it inward when the intensity is turned down (so it fades in nicely at the bottom)
+				auto topShadowLength = (I32)topShadow * 255/(I32)topShadowIntensity;
 				auto leftShadowLength = (I32)leftShadow * 255/(I32)leftShadowIntensity;
 				auto rightShadowLength = (I32)rightShadow * 255/(I32)rightShadowIntensity;
 
@@ -246,15 +253,24 @@ namespace driver::system {
 					intensity = intensity * (leftShadow+get_width()+rightShadow-x)/rightShadowLength;
 				}
 
-				const auto topShadow = bottomShadow*2; // top fade twice of bottom
+				{
+					if(y<(I32)topShadow){
+						intensity = intensity * (y+1)/topShadowLength;
 
-				if(y<(I32)topShadow){
-					// use for top fade, as well
-					intensity = intensity * (y+1)/topShadow;
-
-				}else if(y>=get_height()){
-					intensity = intensity * (get_height()+bottomShadow-y)/bottomShadow;
+					}else if(y>=(I32)topShadow+get_height()){
+						intensity = intensity * (topShadow+get_height()+bottomShadow-y)/bottomShadow;
+					}
 				}
+
+				// const auto topShadow = bottomShadow*2; // top fade twice of bottom
+
+				// if(y<(I32)topShadow){
+				// 	// use for top fade, as well
+				// 	intensity = intensity * (y+1)/topShadow;
+
+				// }else if(y>=get_height()){
+				// 	intensity = intensity * (get_height()+bottomShadow-y)/bottomShadow;
+				// }
 
 				return intensity;
 			}
@@ -268,17 +284,22 @@ namespace driver::system {
 					graphicsDisplay->bottomLeftCorner[i] = 0;
 					graphicsDisplay->bottomRightCorner[i] = 0;
 				}
-				graphicsDisplay->solidArea = {(I32)leftShadow+cornerRadius, 0, (I32)leftShadow+get_width()-cornerRadius, get_height()-(I32)bottomShadow};
+				graphicsDisplay->solidArea = {(I32)leftShadow+cornerRadius, (I32)topShadow, (I32)leftShadow+get_width()-cornerRadius, (I32)topShadow+get_height()-(I32)bottomShadow};
+				graphicsDisplay->interactArea = get_border_rect();
 
 				auto &buffer = graphicsDisplay->buffer;
 				for(auto y=0; y<(I32)buffer.height; y++){
-					const auto cornerIndent = y<cornerRadius?(I32)corner[y]:y<get_height()&&(I32)get_height()-1-y<cornerRadius?(I32)corner[(I32)get_height()-1-y]:0;
-
-					for(auto x=0; x<(I32)leftShadow+cornerIndent; x++){
+					for(auto x=0; x<(I32)leftShadow; x++){
 						buffer.set(x, y, 0x000000|(255-(get_shadow_intensity_at(x, y)*shadowIntensity/255)<<24));
 					}
-					for(auto x=0; x<(I32)rightShadow+cornerIndent; x++){
+					for(auto x=0; x<(I32)rightShadow; x++){
 						buffer.set((I32)leftShadow+(I32)get_width()+(I32)rightShadow-1-x, y, 0x000000|(255-(get_shadow_intensity_at(x, y)*shadowIntensity/255)<<24));
+					}
+				}
+
+				for(auto y=0; y<(I32)topShadow; y++){
+					for(auto x=0;x<get_width();x++){
+						buffer.set((I32)leftShadow+x, y, 0x000000|(255-(get_shadow_intensity_at(leftShadow+x, y)*shadowIntensity/255)<<24));
 					}
 				}
 
@@ -286,7 +307,7 @@ namespace driver::system {
 					// buffer.set((I32)leftShadow, get_height()+y, 0x000000|(255-(get_shadow_intensity_at(leftShadow, get_height()+y)*shadowIntensity/255)<<24), get_width());
 
 					for(auto x=0;x<get_width();x++){
-						buffer.set((I32)leftShadow+x, get_height()+y, 0x000000|(255-(get_shadow_intensity_at(leftShadow+x, get_height()+y)*shadowIntensity/255)<<24));
+						buffer.set((I32)leftShadow+x, (I32)topShadow+get_height()+y, 0x000000|(255-(get_shadow_intensity_at(leftShadow+x, (I32)topShadow+get_height()+y)*shadowIntensity/255)<<24));
 					}
 				}
 
@@ -302,9 +323,10 @@ namespace driver::system {
 			void redraw_shadow() {
 				auto &buffer = graphicsDisplay->buffer;
 
+				graphicsDisplay->update_area({(I32)leftShadow, 0, (I32)buffer.width-(I32)rightShadow, (I32)topShadow});
 				graphicsDisplay->update_area({0, 0, (I32)leftShadow, (I32)buffer.height});
 				graphicsDisplay->update_area({(I32)leftShadow+get_width(), 0, (I32)leftShadow+get_width()+(I32)rightShadow, (I32)buffer.height});
-				graphicsDisplay->update_area({(I32)leftShadow, get_height(), get_width(), get_height()+(I32)bottomShadow});
+				graphicsDisplay->update_area({(I32)leftShadow, (I32)topShadow+get_height(), get_width(), (I32)topShadow+get_height()+(I32)bottomShadow});
 			}
 		};
 
@@ -379,7 +401,7 @@ namespace driver::system {
 			auto cursor = _find_cursor(*(Mouse*)_mouse);
 			if(!cursor) return;
 
-			auto display = displayManager->get_display_at(cursor->x, cursor->y, false, false, cursor->display);
+			auto display = displayManager->get_display_at(cursor->x, cursor->y, false, cursor->display);
 			auto window = display?(Window*)DesktopManager::instance.get_window_from_display(*display):nullptr;
 
 			switch(event.type){
@@ -396,7 +418,7 @@ namespace driver::system {
 							cursor->display->update();
 						}
 						if(!cursor->dragWindow.window){
-							if(window&&cursor->y<window->get_y()+window->titlebarHeight){
+							if(window&&cursor->y>=window->get_y()&&cursor->y<window->get_y()+window->titlebarHeight){
 								cursor->grab_window(*window);
 							}
 						}
@@ -632,7 +654,7 @@ namespace driver::system {
 		x = maths::clamp(x, -(I32)graphicsDisplay->buffer.width+margin, (I32)displayManager->get_width()-margin);
 		y = maths::clamp(y, 0, (I32)displayManager->get_height()-margin);
 
-		graphicsDisplay->move_to(x-leftShadow, y);
+		graphicsDisplay->move_to(x-leftShadow, y-topShadow);
 	}
 	
 	void Window::redraw() {

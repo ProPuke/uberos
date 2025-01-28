@@ -43,6 +43,7 @@ namespace driver::system {
 				scale(scale),
 				buffer(address, width*graphics2d::bufferFormat::size[(U32)format], width, height, format, order),
 				solidArea(0, 0, width, height),
+				interactArea(0, 0, width, height),
 				mode(mode)
 			{}
 
@@ -55,9 +56,9 @@ namespace driver::system {
 			U8 scale;
 			graphics2d::Buffer buffer;
 			graphics2d::Rect solidArea;
+			graphics2d::Rect interactArea;
 			DisplayMode mode;
 			bool isVisible = true;
-			bool isDecoration = false;
 
 			U32 topLeftCorner[16] = {};
 			U32 topRightCorner[16] = {};
@@ -115,7 +116,7 @@ namespace driver::system {
 		void update_background_area(graphics2d::Rect rect);
 		void update_area(graphics2d::Rect rect, Display *below = nullptr);
 
-		auto get_display_at(I32 x, I32 y, bool includeTransparent, bool includeDecorations, Display *below = nullptr) -> Display*;
+		auto get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below = nullptr) -> Display*;
 		auto get_screen_buffer(U32 framebuffer, graphics2d::Rect rect) -> graphics2d::Buffer;
 
 		auto get_width() -> U32;

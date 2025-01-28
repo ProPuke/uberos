@@ -77,7 +77,7 @@ namespace test {
 		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
 			const static auto padding = 6;
 
-			auto window = &desktopManager->create_window("Keyboard Test", 888+padding*2, 303+padding*2);
+			auto window = &desktopManager->create_window("Keyboard Test", 888+padding*2, 307+padding*2);
 
 			auto buffer = window->clientArea.cropped(padding, padding, padding, padding);
 

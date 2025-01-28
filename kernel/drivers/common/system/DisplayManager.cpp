@@ -774,7 +774,7 @@ namespace driver::system {
 		return _create_view(thread, layer, x, y, width, height, scale);
 	}
 
-	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeTransparent, bool includeDecorations, Display *below) -> Display* {
+	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below) -> Display* {
 		for(auto display=below?below->prev:displays.tail; display; display=display->prev){
 			if(
 				x>=display->x&&
@@ -782,8 +782,7 @@ namespace driver::system {
 				x<display->x+(I32)display->get_width()&&
 				y<display->y+(I32)display->get_height()
 			){
-				if(!includeDecorations&&display->isDecoration) continue;
-				if(!includeTransparent&&!display->solidArea.contains(x-display->x, y-display->y)) continue;
+				if(!(includeNonInteractive?graphics2d::Rect{0, 0, (I32)display->buffer.width, (I32)display->buffer.height}:display->interactArea).contains(x-display->x, y-display->y)) continue;
 
 				return display;
 			}
