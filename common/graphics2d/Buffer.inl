@@ -499,7 +499,9 @@ namespace graphics2d {
 
 				coverage /= (samplesX*samplesY);
 
-				coverage += coverage*(255-coverage)/512; //push up "gamma" for better contrast
+				coverage = maths::clamp(((I32)coverage-128)*11/10+128, 0, 255); // sharpen slightly by 11/10 (decreases fuzzy edges). We may wanna do this further as scaling gets smaller (although not too much as it makes the lack of hinting apparent)
+
+				coverage += coverage*(255-coverage)/512; // push up "gamma" for better contrast
 
 				set(startX+x, startY+y, blend_rgb(get(startX+x, startY+y), colour, (U8)coverage));
 			}
