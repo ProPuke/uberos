@@ -582,12 +582,15 @@ namespace driver::system {
 							mouseReleased: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.released.button }
 						});
 					break;
-					case driver::Mouse::Event::Type::scrolled:
-						focusedWindow->events.trigger({
+					case driver::Mouse::Event::Type::scrolled: {
+						auto display = displayManager->get_display_at(cursor->x, cursor->y, false, cursor->display);
+						auto window = display?(Window*)DesktopManager::instance.get_window_from_display(*display):nullptr;
+
+						window->events.trigger({
 							type: Window::Event::Type::mouseScrolled,
 							mouseScrolled: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.scrolled.distance }
 						});
-					break;
+					} break;
 				}
 			}
 		}
