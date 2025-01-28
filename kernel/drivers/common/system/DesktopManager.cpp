@@ -31,6 +31,20 @@ namespace driver::system {
 		struct Cursor;
 
 		struct Window: LListItem<Window>, DesktopManager::Window {
+			static const auto cornerRadius = enableTransparency?5:2;
+			U32 corner[cornerRadius+1];
+			U32 cornerInner[cornerRadius-1+1];
+
+			U32 leftShadow = enableTransparency?8:0;
+			U32 rightShadow = enableTransparency?8:0;
+			U32 topShadow = enableTransparency?8:0;
+			U32 bottomShadow = enableTransparency?8:0;
+
+			U8 shadowIntensity = 20; // max intensity
+			U8 topShadowIntensity = 128; // scaling down of top shadow (by inner extension)
+			U8 leftShadowIntensity = 192; // scaling down of left shadow (by inner extension)
+			U8 rightShadowIntensity = 192; // scaling down of right shadow (by inner extension)
+
 			DisplayManager::Display *graphicsDisplay;
 
 			const char *title;
@@ -38,7 +52,7 @@ namespace driver::system {
 			Cursor *draggingCursor = nullptr;
 
 			/**/ Window(U32 x, U32 y, U32 width, U32 height, const char *title):
-				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width+leftShadow+rightShadow, height+topShadow+bottomShadow)),
+				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x-leftShadow, y-topShadow, width+leftShadow+rightShadow, height+topShadow+bottomShadow)),
 				title(title)
 			{
 				if(graphicsDisplay){
@@ -57,20 +71,6 @@ namespace driver::system {
 				memcpy(graphicsDisplay->bottomLeftCorner, corner, sizeof(corner)-sizeof(corner[0]));
 				memcpy(graphicsDisplay->bottomRightCorner, corner, sizeof(corner)-sizeof(corner[0]));
 			}
-
-			static const auto cornerRadius = enableTransparency?5:2;
-			U32 corner[cornerRadius+1];
-			U32 cornerInner[cornerRadius-1+1];
-
-			U32 leftShadow = enableTransparency?8:0;
-			U32 rightShadow = enableTransparency?8:0;
-			U32 topShadow = enableTransparency?8:0;
-			U32 bottomShadow = enableTransparency?8:0;
-
-			U8 shadowIntensity = 20; // max intensity
-			U8 topShadowIntensity = 128; // scaling down of top shadow (by inner extension)
-			U8 leftShadowIntensity = 192; // scaling down of left shadow (by inner extension)
-			U8 rightShadowIntensity = 192; // scaling down of right shadow (by inner extension)
 
 			static const U32 backgroundColour = 0xeeeeee;
 
