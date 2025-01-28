@@ -2,6 +2,7 @@
 #include <kernel/drivers.hpp>
 #include <kernel/drivers/common/system/DesktopManager.hpp>
 #include <kernel/drivers/Keyboard.hpp>
+#include <kernel/drivers/Mouse.hpp>
 #include <kernel/keyboard.hpp>
 #include <kernel/keyboard/layout/uk.hpp>
 
@@ -52,26 +53,45 @@ namespace test {
 
 	void start_tasks() {
 		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
-			auto window = &desktopManager->create_window("Font Test", 320, 320);
+			static auto window = &desktopManager->create_window("Font Test", 320, 320);
 			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
 
-			auto y = 32;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 38, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 38, 0xaaaaaa);
+			static auto scale = 30;
 
-			y += 45;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 72, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 72, 0xaaaaaa);
+			static auto redraw = [](){
+				auto fontSize = scale;
 
-			y += 70;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 100, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 100, 0xaaaaaa);
+				window->clientArea.draw_rect(0, 0, window->get_width(), window->get_height(), window->get_background_colour());
 
-			y += 98;
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, 150, 0x222222);
-			window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, 150, 0xaaaaaa);
+				for(auto y=scale;y<window->get_height();y++){
+					if(fontSize>24){
+						window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, fontSize, 0x222222);
+						window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, fontSize, 0xaaaaaa);
+					}else{
+						window->clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, fontSize, 0x222222);
+					}
 
-			window->redraw();
+					fontSize += scale;
+					y += fontSize * 4 / 5;
+				}
+
+				static char statusBuffer[64];
+				strcpy(statusBuffer, "Step: ");
+				strcat(statusBuffer, itoa(scale));
+				window->set_status(statusBuffer);
+
+				window->redraw();
+			};
+
+			redraw();
+
+			window->events.subscribe([](const driver::system::DesktopManager::Window::Event &event, void*){
+				if(event.type==driver::system::DesktopManager::Window::Event::Type::mouseScrolled){
+					scale = maths::clamp(scale - event.mouseScrolled.distance*(scale>20?3:scale>16?2:1), 1, 60);
+					redraw();
+				}
+
+			}, nullptr);
 		}
 
 		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
