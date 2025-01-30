@@ -74,14 +74,14 @@ namespace drivers {
 		Driver *disabledDevice = nullptr;
 
 		if(auto result = driver.api.start_driver(); !result) {
-			log.print_error("Error: ", result.errorMessage);
+			log.print_error("Error starting ", driver.type->name, ": ", result.errorMessage);
 			if(!driver.api.is_active()){
 				return result;
 			}
 		};
 
 		if(!driver.api.is_active()){
-			log.print_error("Failed to start driver");
+			log.print_error("Failed to start driver ", driver.type->name);
 			//if we failed to start the driver, and stopped a previous in order to try, then restore it
 			if(disabledDevice){
 				TRY(start_driver(*disabledDevice));
@@ -104,13 +104,13 @@ namespace drivers {
 		auto section = log.section("STOP ", driver.type->name);
 
 		if(auto result = driver.api.stop_driver(); !result) {
-			log.print_error("Error: ", result.errorMessage);
+			log.print_error("Error stopping ", driver.type->name, ": ", result.errorMessage);
 			return result;
 		}
 
 		if(!driver.api.is_disabled()){
 			//TODO: driver might have enter a failed state while stopping. Should report this in some other way, since the driver IS now technically stopped?
-			log.print_error("Failed to stop driver");
+			log.print_error("Failed to stop driver ", driver.type->name);
 			return {"Unable to stop driver"};
 		}
 
@@ -132,7 +132,7 @@ namespace drivers {
 		auto section = log.section("RESTART ", driver.type->name);
 
 		if(auto result = driver.api.restart_driver(); !result) {
-			log.print_error("Error: ", result.errorMessage);
+			log.print_error("Error restarting ", driver.type->name, ": ", result.errorMessage);
 
 			events.trigger({
 				.type = Event::Type::driver_stopped,
