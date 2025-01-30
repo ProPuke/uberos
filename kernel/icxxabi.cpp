@@ -2,6 +2,8 @@
 
 #include <kernel/Log.hpp>
 
+#include <atomic>
+
 static Log log("cxa");
 
 extern "C" {
@@ -50,6 +52,22 @@ void __cxa_finalize(void *f){
 			__atexitFuncs[i].destructor = 0;
 		}
 	}
+}
+
+__extension__ typedef int __guard __attribute__((mode(__DI__)));
+
+//TODO: support multithreading
+
+extern "C" auto __cxa_guard_acquire (volatile __guard *guard) -> int {
+	return !*(int*)(guard);
+}
+
+extern "C" void __cxa_guard_release (volatile __guard *guard) {
+	*(int*)guard = 1;
+}
+
+extern "C" void __cxa_guard_abort (volatile __guard *guard) {
+	*(int*)guard = 0;
 }
 
 }
