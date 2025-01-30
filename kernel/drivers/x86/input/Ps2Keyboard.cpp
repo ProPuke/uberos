@@ -101,7 +101,7 @@ namespace driver::input {
 			}
 		}
 
-		Bool256 keystate;
+		Bitmask256 keystate;
 	}
 
 	auto Ps2Keyboard::_on_start() -> Try<> {

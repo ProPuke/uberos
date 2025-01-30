@@ -2,6 +2,7 @@
 
 #include <kernel/Driver.hpp>
 #include <kernel/PodArray.hpp>
+#include <kernel/drivers/Interrupt.hpp>
 
 #include <cstddef>
 
@@ -61,6 +62,23 @@ auto DriverApi::subscribe_irq(U8 irq) -> Try<> {
 	subscribedIrqs.set(irq, true);
 
 	return {};
+}
+
+auto DriverApi::subscribe_available_irq(Bitmask256 bitmask) -> Try<U8> {
+	for(auto &driver:drivers::iterate<driver::Interrupt>()){
+		auto irqRequest = driver.get_available_irq(bitmask);
+		if(!irqRequest) continue;
+
+		const auto irq = irqRequest.result;
+
+		if(!drivers::_subscribe_driver_to_irq(this->driver(), irqRequest.result)) continue;
+
+		subscribedIrqs.set(irq, true);
+
+		return {irqRequest.result};
+	}
+
+	return {"No subscribable IRQs available"};
 }
 
 void DriverApi::unsubscribe_irq(U8 irq) {

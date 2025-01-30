@@ -5,7 +5,7 @@
 #include <kernel/Log.hpp>
 #include <kernel/memory.hpp>
 
-#include <common/Bool256.hpp>
+#include <common/Bitmask.hpp>
 #include <common/LList.hpp>
 #include <common/Try.hpp>
 

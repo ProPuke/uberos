@@ -1,5 +1,7 @@
 #include "Pic8259.hpp"
 
+#include <common/Bitmask.hpp>
+
 #include <kernel/arch/x86/CpuState.hpp>
 #include <kernel/arch/x86/ioPort.hpp>
 #include <kernel/exceptions.hpp>
@@ -34,6 +36,7 @@ namespace driver::interrupt {
 		};
 
 		U8 irqOffset[2] = {0,0};
+		Bitmask32 irqEnabled;
 	}
 
 	auto Pic8259::_on_start() -> Try<> {
@@ -65,7 +68,7 @@ namespace driver::interrupt {
 		return {};
 	}
 
-	void Pic8259::enable_irq(U32 cpu, U32 irq) {
+	void Pic8259::enable_irq(U32 cpu, U8 irq) {
 		if(cpu>0) return; // seperate/multiple cpus not supported
 
 		arch::x86::IoPort port;
@@ -90,6 +93,8 @@ namespace driver::interrupt {
 		U8 mask = arch::x86::ioPort::read8(port) & ~(1<<offset);
 		arch::x86::ioPort::write8(port, mask);
 
+		irqEnabled.set(irq, true);
+
 		switch(irq){
 			case 0 ... 7:
 				log.print_info("enable irq ", irq, " on interrupt ", interrupt);
@@ -101,7 +106,7 @@ namespace driver::interrupt {
 			break;
 		}
 	}
-	void Pic8259::disable_irq(U32 cpu, U32 irq) {
+	void Pic8259::disable_irq(U32 cpu, U8 irq) {
 		arch::x86::IoPort port;
 		U8 offset;
 		U8 interrupt;
@@ -125,6 +130,8 @@ namespace driver::interrupt {
 				return; //unsupported
 		}
 
+		irqEnabled.set(irq, false);
+
 		auto mask = arch::x86::ioPort::read8(port) | (1<<offset);
 		arch::x86::ioPort::write8(port, mask);
 	}
@@ -136,6 +143,21 @@ namespace driver::interrupt {
 
 		arch::x86::ioPort::write8(ioPic1Data, 0xff);
 		arch::x86::ioPort::write8(ioPic2Data, 0xff);
+	}
+
+	auto Pic8259::get_available_irq(Bitmask256 bitmask) -> Try<U8> {
+		for(auto i=0;i<16;i++){
+			if(!bitmask.get(i)) continue;
+
+			switch(i){
+				case 1: continue; // used by PS/2
+				case 12: continue; // used by PS/2
+				default:
+					if(!irqEnabled.get(i)) return i;
+			}
+		}
+
+		return {"No remaining IRQ available"};
 	}
 
 	void Pic8259::set_offset(U8 offset1, U8 offset2) {

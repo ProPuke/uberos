@@ -6,7 +6,7 @@
 	#include <kernel/arch/x86/ioPort.hpp>
 #endif
 
-#include <common/Bool256.hpp>
+#include <common/Bitmask.hpp>
 #include <common/Try.hpp>
 #include <common/types.hpp>
 
@@ -57,8 +57,8 @@ class DriverApi {
 			void *end;
 		};
 
-		Bool256 subscribedIrqs;
-		Bool256 subscribedInterrupts;
+		Bitmask256 subscribedIrqs;
+		Bitmask256 subscribedInterrupts;
 		bool    subscribedAllInterrupts = false;
 		PodArray<MemoryRange> subscribedMemory;
 		PodArray<PciDevice*> subscribedPciDevices;
@@ -80,6 +80,8 @@ class DriverApi {
 
 		// hardware irqs (before routed to possibly different interrupts)
 		auto subscribe_irq(U8) -> Try<>;
+		auto subscribe_available_irq() -> Try<U8> { return subscribe_available_irq({~(U64)0,~(U64)0,~(U64)0,~(U64)0}); }
+		auto subscribe_available_irq(Bitmask256) -> Try<U8>;
 		void unsubscribe_irq(U8);
 		void unsubscribe_all_irqs();
 

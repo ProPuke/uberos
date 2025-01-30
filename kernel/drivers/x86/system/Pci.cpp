@@ -44,7 +44,7 @@ namespace driver::system {
 		}
 
 		PodArray<PciDevice> devices;
-		Bool256 scannedBusses;
+		Bitmask256 scannedBusses;
 
 		auto classCode_to_string(U8 _class) -> const char* {
 			switch(_class){
