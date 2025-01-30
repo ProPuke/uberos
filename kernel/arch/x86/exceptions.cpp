@@ -99,9 +99,6 @@ namespace arch {
 							if((void*)stackFrame<stackTop||(void*)stackFrame>=stackBottom){
 								logging::print_error("    - Connection lost (at ", to_string_hex((unsigned)(size_t)stackFrame), ')');
 								break;
-							}else if((U32)stackFrame&0xf){
-								logging::print_error("    - Non-aligned ebp (at ", to_string_hex((unsigned)(size_t)stackFrame), ')');
-								break;
 							}
 
 							// sp = fp + 0x10;
