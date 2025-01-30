@@ -6,8 +6,8 @@
 
 namespace driver::interrupt {
 	namespace {
-		const U16 ioPic1        = (arch::x86::IoPort)0x20; // master PIC
-		const U16 ioPic2        = (arch::x86::IoPort)0xa0; // slave PIC
+		const U16 ioPic1        = 0x20; // master PIC
+		const U16 ioPic2        = 0xa0; // slave PIC
 		const U16 ioPic1Command = ioPic1;
 		const U16 ioPic1Data    = ioPic1+1;
 		const U16 ioPic2Command = ioPic2;
@@ -26,6 +26,9 @@ namespace driver::interrupt {
 			icw4_mode_buffered_slave  = 0x08, // buffered mode slave
 			icw4_mode_buffered_master = 0x0C, // buffered mode master
 			icw4_mode_sfnm            = 0x10, // special fully nested mode (vs sequential)
+
+			read_irr = 0x0a,
+			read_isr,
 
 			end_of_input = 0x20
 		};
@@ -190,11 +193,33 @@ namespace driver::interrupt {
 		// if(vector>=256) return nullptr;
 
 		if(vector>=irqOffset[0]&&vector<irqOffset[0]+8u){
-			exceptions::_on_irq(vector-irqOffset[0]);
+			const auto irq = vector-irqOffset[0];
+
+			// do not EOI spurious IRQs
+			if(irq==7){
+				arch::x86::ioPort::write8(ioPic1Command, Command::read_isr);
+				if(!arch::x86::ioPort::read8(ioPic1Command)&0b10000000){
+					log.print_warning("Spurious IRQ on ", irq);
+					return nullptr;
+				}
+			}
+
+			exceptions::_on_irq(irq);
 			arch::x86::ioPort::write8(ioPic1Command, Command::end_of_input);
 
 		}else if(vector>=irqOffset[1]&&vector<irqOffset[1]+8u){
-			exceptions::_on_irq(vector-irqOffset[1]+8);
+			const auto irq = vector-irqOffset[1]+8;
+
+			// do not EOI spurious IRQs
+			if(irq==15){
+				arch::x86::ioPort::write8(ioPic2Command, Command::read_isr);
+				if(!arch::x86::ioPort::read8(ioPic2Command)&0b10000000){
+					log.print_warning("Spurious IRQ on ", irq);
+					return nullptr;
+				}
+			}
+
+			exceptions::_on_irq(irq);
 			arch::x86::ioPort::write8(ioPic2Command, Command::end_of_input);
 			arch::x86::ioPort::write8(ioPic1Command, Command::end_of_input);
 		}
