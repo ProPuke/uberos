@@ -223,41 +223,40 @@ namespace driver {
 
 			clearAllInterrupts();
 
-			{
-				for(auto i=0u; i<clockCount; i++){
-					auto config = registers->timer[i].read_config();
+			// initialise clocks and assign them irqs
+			for(auto i=0u; i<clockCount; i++){
+				auto config = registers->timer[i].read_config();
 
-					auto irqRequest = api.subscribe_available_irq({(U64)config.supportedInterrupts, 0, 0, 0});
+				auto irqRequest = api.subscribe_available_irq({(U64)config.supportedInterrupts, 0, 0, 0});
 
-					if(!irqRequest){
-						clockCount = i;
-						log.print_warning("Not enough supported IRQs for all timers - Count dropped to ", clockCount);
-						if(clockCount<1) return {"No timers available"};
-						break;
-					}
-
-					auto irq = irqRequest.result;
-
-					config.enableFsb = false;
-					config.enableInterrupts = false;
-					config.enablePeriodic = false;
-					config.force32bit = false;
-					config.interruptRoute = irq;
-					config.type = Registers::Timer::Config::Type::edge;
-					registers->timer[i].write_config(config);
-
-					{
-						auto config = registers->timer[i].read_config();
-						if(config.interruptRoute!=irq){
-							log.print_error("Unable to set timer ", i, " to irq ", irq);
-							return {"Failed setting timer irq"};
-						}
-					}
-
-					irqToClockId[irq] = i;
-
-					irq++;
+				if(!irqRequest){
+					clockCount = i;
+					log.print_warning("Not enough supported IRQs for all timers - Count dropped to ", clockCount);
+					if(clockCount<1) return {"No timers available"};
+					break;
 				}
+
+				auto irq = irqRequest.result;
+
+				config.enableFsb = false;
+				config.enableInterrupts = false;
+				config.enablePeriodic = false;
+				config.force32bit = false;
+				config.interruptRoute = irq;
+				config.type = Registers::Timer::Config::Type::edge;
+				registers->timer[i].write_config(config);
+
+				{
+					auto config = registers->timer[i].read_config();
+					if(config.interruptRoute!=irq){
+						log.print_error("Unable to set timer ", i, " to irq ", irq);
+						return {"Failed setting timer irq"};
+					}
+				}
+
+				irqToClockId[irq] = i;
+
+				irq++;
 			}
 
 			TRY(enable());
