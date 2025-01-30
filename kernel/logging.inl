@@ -5,7 +5,11 @@
 #include <common/stdlib.hpp>
 
 #include <kernel/console.hpp>
-#include <kernel/timer.hpp>
+#include <kernel/time.hpp>
+
+namespace driver {
+	struct Timer;
+}
 
 namespace logging {
 	extern U32 indent;
@@ -75,7 +79,7 @@ namespace logging {
 		#endif
 
 		console::putc('[');
-		auto time = timer::now64();
+		auto time = ::time::now();
 		auto seconds = time/1000000;
 		auto micros = time-seconds*1000000;
 		auto str = to_string(seconds);

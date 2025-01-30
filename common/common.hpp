@@ -16,3 +16,13 @@ struct Defer {
 };
 
 #define defer Defer CONCAT(_defer, __COUNTER__) = [&]()
+
+template <typename To, typename From>
+inline auto reinterpret_value(From value) -> To {
+	union {
+		From from;
+		To to;
+	};
+	from = value;
+	return to;
+}

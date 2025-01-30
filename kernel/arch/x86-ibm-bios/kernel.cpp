@@ -5,7 +5,6 @@
 #include <kernel/drivers.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/Driver.hpp>
-#include <kernel/arch/x86/timer.hpp>
 #include <kernel/arch/x86/cpuInfo.hpp>
 #include <kernel/arch/x86-ibm/stdout.hpp>
 #include <kernel/arch/x86-ibm-bios/config.h>
@@ -74,7 +73,6 @@ namespace kernel {
 		#ifdef KERNEL_MMU
 			mmu::init();
 		#endif
-		arch::x86::timer::init();
 		// debug::halt();
 	}
 

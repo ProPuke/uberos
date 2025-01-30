@@ -7,7 +7,7 @@
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/Log.hpp>
-#include <kernel/timer.hpp>
+#include <kernel/time.hpp>
 #include <kernel/memory.hpp>
 
 static Log log("thread");
@@ -75,7 +75,7 @@ void Thread::sleep(U32 usecs) {
 		Spinlock_Guard lock(thread::threadLock, __FUNCTION__);
 
 		state = State::sleeping;
-		sleep_start_time = timer::now();
+		sleep_start_time = time::now();
 		sleep_wake_time = sleep_start_time + usecs;
 
 		thread::activeThreads.pop(*this);

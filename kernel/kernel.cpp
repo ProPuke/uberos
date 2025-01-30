@@ -19,7 +19,7 @@
 #include <kernel/Spinlock.hpp>
 #include <kernel/test.hpp>
 #include <kernel/Thread.hpp>
-#include <kernel/timer.hpp>
+#include <kernel/time.hpp>
 #include <kernel/utils/logWindow.hpp>
 
 static Log log("kernel");
@@ -69,7 +69,7 @@ namespace kernel {
 			_preInit();
 
 			framebuffer::init();
-			scheduler::init();
+			// scheduler::init();
 		}
 
 		// set cpu to default speed (some devices start at min)
@@ -297,7 +297,7 @@ namespace kernel {
 
 						U32 pixelTime = 3000;
 
-						auto lastTime = timer::now();
+						auto lastTime = time::now();
 
 						for(I32 time=0;;time+=3*timeDir){
 							const auto padding = 2u;
@@ -309,8 +309,8 @@ namespace kernel {
 
 							// displayManager->update_view(*view);
 
-							auto now = timer::now();
-							U32 steps = (U32)(min(30000u, now-lastTime))/pixelTime;
+							auto now = time::now();
+							U32 steps = (U32)(min((U64)30000u, now-lastTime))/pixelTime;
 							lastTime += steps * pixelTime;
 
 							I32 deltaX = dirX * (I32)steps;
@@ -329,10 +329,10 @@ namespace kernel {
 
 							if(deltaX||deltaY){
 								scheduler::Guard guard;
-								// auto before = timer::now();
+								// auto before = time::now();
 								// displayManager->update_view(*view);
 								view->move_to(view->x+deltaX, view->y+deltaY);
-								// auto updateTime = timer::now()-before;
+								// auto updateTime = time::now()-before;
 								// log.print_debug(updateTime, " for ", width, "x", height, " @ ", scale, " \n");
 							}else{
 								// interrupts::Guard guard;
@@ -377,10 +377,10 @@ namespace kernel {
 
 					buffer.draw_rect(0, 0, width, height, bgColour<<16|bgColour<<8|bgColour);
 
-					auto startTime = timer::now();
+					auto startTime = time::now();
 					buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 9999, 128*scale, 0x000000);
 					buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 9999, 128*scale, 0xdddddd);
-					log.print_debug("blitted in ", timer::now()-startTime);
+					log.print_debug("blitted in ", time::now()-startTime);
 
 					auto possibleFramebuffer = framebuffer::get_framebuffer(0);
 					if(!possibleFramebuffer){
@@ -396,7 +396,7 @@ namespace kernel {
 					// float scaleDelta = 0.1;
 
 					while(true){
-						// const auto startTime = timer::now();
+						// const auto startTime = time::now();
 
 						x -= speed*4;
 
@@ -408,7 +408,7 @@ namespace kernel {
 
 						view->move_to(x, y);
 						// scheduler::yield();
-						// thread.sleep(1000000/60-(timer::now()-startTime));
+						// thread.sleep(1000000/60-(time::now()-startTime));
 
 						// buffer.draw_rect(0, 0, width, height, 0x111111);
 						// buffer.draw_msdf(10-(scale-1)*graphics2d::font::openSans.atlas.width/2, 10-(scale-1)*graphics2d::font::openSans.atlas.height/2, graphics2d::font::openSans.atlas.width*scale, graphics2d::font::openSans.atlas.height*scale, graphics2d::font::openSans.atlas, 0, 0, graphics2d::font::openSans.atlas.width, graphics2d::font::openSans.atlas.height, 0xffffff);

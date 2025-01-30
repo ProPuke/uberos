@@ -6,7 +6,7 @@
 #include <kernel/PodArray.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/Thread.hpp>
-#include <kernel/timer.hpp>
+#include <kernel/drivers/Timer.hpp>
 
 static Log log("scheduler");
 
@@ -31,6 +31,8 @@ namespace scheduler {
 
 	PodArray<U32> resolutionRequirements;
 
+	DriverReference<driver::Timer> timer;
+
 	void init() {
 		auto section = log.section("init...");
 
@@ -41,7 +43,9 @@ namespace scheduler {
 		thread::activeThreads.push_back(*mainThread);
 		::thread::currentThread = mainThread;
 
-		timer::schedule_important(currentInterval, yield);
+		timer = drivers::find_and_activate<driver::Timer>();
+
+		timer->schedule_important(currentInterval, yield);
 	}
 
 	void push_resolution_requirement(U32 requirement) {
@@ -75,7 +79,7 @@ namespace scheduler {
 
 		thread::threadLock.lock();
 
-		auto now = timer::now();
+		auto now = time::now();
 		lastSchedule = now;
 
 		auto oldThread = ::thread::currentThread.load();
@@ -93,7 +97,7 @@ namespace scheduler {
 		if(thread::activeThreads.size==0||thread::activeThreads.size==1&&thread::activeThreads.head==oldThread){
 			//if no other threads to switch to, we can ease up on the scheduling a bit..
 
-			timer::schedule_important(max(currentInterval*4, currentInterval*oldThread->scheduler_timeslice_percentage/100), yield);
+			timer->schedule_important(max(currentInterval*4, currentInterval*oldThread->scheduler_timeslice_percentage/100), yield);
 			thread::threadLock.unlock();
 			spinlock.unlock();
 			return;
@@ -103,7 +107,7 @@ namespace scheduler {
 			if(thread::activeThreads.head==oldThread){
 				thread::activeThreads.push_back(*thread::activeThreads.pop_front());
 
-				timer::schedule_important(currentInterval*oldThread->scheduler_timeslice_percentage/100, yield);
+				timer->schedule_important(currentInterval*oldThread->scheduler_timeslice_percentage/100, yield);
 
 				thread::threadLock.unlock();
 				spinlock.unlock();
@@ -119,7 +123,7 @@ namespace scheduler {
 			::thread::currentThread = &newThread;
 			auto thread_timeslice = currentInterval*newThread.scheduler_timeslice_percentage/100;
 
-			timer::schedule_important(thread_timeslice, yield);
+			timer->schedule_important(thread_timeslice, yield);
 
 			deferredYields = 0; //nothing was missed as we've just left, so do not auto fire any on unlock()
 
