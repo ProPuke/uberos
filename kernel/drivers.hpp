@@ -54,7 +54,7 @@ namespace drivers {
 	auto _on_interrupt(U8, const void *cpuState) -> const void*;
 	void _on_irq(U8);
 
-	void _subscribe_driver_to_irq(Driver&, U8 irq);
+	auto _subscribe_driver_to_irq(Driver&, U8 irq) -> Try<>;
 	void _unsubscribe_driver_from_irq(Driver&, U8 irq);
 
 	template <typename Type>

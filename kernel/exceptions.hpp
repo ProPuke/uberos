@@ -1,5 +1,6 @@
 #pragma once
 
+#include <common/Try.hpp>
 #include <common/types.hpp>
 
 namespace exceptions {
@@ -18,7 +19,7 @@ namespace exceptions {
 	namespace irq {
 		typedef void (*Subscriber)(U8 irq, void*);
 
-		void subscribe(U8, Subscriber callback, void *data);
+		auto subscribe(U8, Subscriber callback, void *data) -> Try<>;
 		void unsubscribe(U8, Subscriber callback, void *data);
 	}
 

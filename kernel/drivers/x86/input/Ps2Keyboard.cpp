@@ -139,7 +139,7 @@ namespace driver::input {
 
 		if(!ps2->_install_port_device(Ps2::Port::port1, *this)) return {"Unable to install PS/2 port 1 device"};
 		
-		api.subscribe_irq(irq);
+		TRY(api.subscribe_irq(irq));
 
 		{ // enable irqs
 			ps2->write_command(Ps2::Command::read_config);

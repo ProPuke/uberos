@@ -33,17 +33,26 @@ namespace exceptions {
 	}
 
 	namespace irq {
-		void subscribe(U8 irq, irq::Subscriber callback, void *data) {
+		auto subscribe(U8 irq, irq::Subscriber callback, void *data) -> Try<> {
 			auto &subscribers = irqSubscribers[irq];
 			if(!subscribers){
 				subscribers = new PodArray<IrqSubscription>(1);
 				for(auto &driver:drivers::iterate<driver::Interrupt>()){
 					if(irq>=driver.min_irq&&irq<=driver.max_irq){
 						driver.enable_irq(0, irq); //TODO: multi-cpu?
+						goto found;
 					}
 				}
+
+				return {"IRQ not available"};
+
+				found:
+				;
 			}
+
 			subscribers->push_back(IrqSubscription{callback, data});
+
+			return {};
 		}
 
 		void unsubscribe(U8 irq, irq::Subscriber callback, void *data) {

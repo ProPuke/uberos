@@ -211,8 +211,9 @@ namespace drivers {
 		};
 	}
 
-	void _subscribe_driver_to_irq(Driver &driver, U8 irq) {
-		exceptions::irq::subscribe(irq, on_driver_irq, &driver);
+	auto _subscribe_driver_to_irq(Driver &driver, U8 irq) -> Try<> {
+		TRY(exceptions::irq::subscribe(irq, on_driver_irq, &driver));
+		return {};
 	}
 
 	void _unsubscribe_driver_from_irq(Driver &driver, U8 irq) {

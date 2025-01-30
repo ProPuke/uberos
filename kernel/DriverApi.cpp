@@ -53,12 +53,14 @@ void DriverApi::unsubscribe_all_interrupts() {
 	}
 }
 
-void DriverApi::subscribe_irq(U8 irq) {
-	if(subscribedIrqs.get(irq)) return;
+auto DriverApi::subscribe_irq(U8 irq) -> Try<> {
+	if(subscribedIrqs.get(irq)) return {};
 
-	drivers::_subscribe_driver_to_irq(this->driver(), irq);
+	TRY(drivers::_subscribe_driver_to_irq(this->driver(), irq));
 
 	subscribedIrqs.set(irq, true);
+
+	return {};
 }
 
 void DriverApi::unsubscribe_irq(U8 irq) {

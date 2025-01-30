@@ -79,7 +79,7 @@ class DriverApi {
 		void unsubscribe_all_interrupts();
 
 		// hardware irqs (before routed to possibly different interrupts)
-		void subscribe_irq(U8);
+		auto subscribe_irq(U8) -> Try<>;
 		void unsubscribe_irq(U8);
 		void unsubscribe_all_irqs();
 
