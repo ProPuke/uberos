@@ -585,6 +585,7 @@ namespace driver::system {
 					case driver::Mouse::Event::Type::scrolled: {
 						auto display = displayManager->get_display_at(cursor->x, cursor->y, false, cursor->display);
 						auto window = display?(Window*)DesktopManager::instance.get_window_from_display(*display):nullptr;
+						if(!window) break;
 
 						window->events.trigger({
 							type: Window::Event::Type::mouseScrolled,
