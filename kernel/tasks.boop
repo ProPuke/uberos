@@ -597,6 +597,7 @@ set cc   = {toolchain_prefix}gcc -I ../ {cflags} {directives} {arch_flags}
 set cxx  = {toolchain_prefix}g++ -I ../ {cxxflags} {directives} {arch_flags}
 set ld   = {toolchain_prefix}ld {lflags} {ld_arch_flags}
 set nm   = {toolchain_prefix}nm
+set a2l  = {toolchain_prefix}addr2line
 set gdb  = {toolchain_prefix}gdb
 set cpy  = {toolchain_prefix}objcopy
 set dump = {toolchain_prefix}objdump
@@ -633,23 +634,29 @@ task build
 
 	mkdir {outputdir}/boot
 
-	run {cc} -c debugSymbols/placeholder.c -o .debugSymbols.o
+	run {cxx} -c debugSymbols/placeholder.cpp -o .debugSymbols.o
 	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
 
 	# build debug from linked kernel, and relink with those included
-	run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
-	run {cc} -c debugSymbols/data.c -o .debugSymbols.o
-	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+	run ../tools/extract-symbols.sh {outputdir}/{kernel_filename} {nm} {a2l} > debugSymbols/data.cpp
+	# run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
+	run {cxx} -c debugSymbols/data.cpp -o .debugSymbols.cpp.o
+	# run {cc} -c debugSymbols/data.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.cpp.o -lgcc {obj_end}
 
 	# now they're included, we need to calculate them AGAIN, so we take into account how having them affects other addresses. However, there will be some extra symbols this time that come from that injectd file, soo..
-	run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
-	run {cc} -c debugSymbols/data.c -o .debugSymbols.o
-	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+	run ../tools/extract-symbols.sh {outputdir}/{kernel_filename} {nm} {a2l} > debugSymbols/data.cpp
+	# run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
+	run {cxx} -c debugSymbols/data.cpp -o .debugSymbols.cpp.o
+	# run {cc} -c debugSymbols/data.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.cpp.o -lgcc {obj_end}
 
 	# ..we recalculate and link the third final time, now that we know their final definite position, including 
-	run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
-	run {cc} -c debugSymbols/data.c -o .debugSymbols.o
-	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.o -lgcc {obj_end}
+	run ../tools/extract-symbols.sh {outputdir}/{kernel_filename} {nm} {a2l} > debugSymbols/data.cpp
+	# run {nm} --numeric-sort --demangle --print-size {outputdir}/{kernel_filename} | sed -r 's/^([0-9a-f]+)(\s+([0-9a-f]+))?\s+(\S+)\s+(.+)/\1💩\3💩\5/' | awk -F '💩' 'BEGIN{{ print "#include <kernel/debugSymbols.h>"; print "DebugSymbol debugSymbolsArray[]={{" }} {{ if(NF==3){print "{{\"" $3 "\", (void*)0x" $1 ", 0x" ($2?$2:0) "},"}}}} END{{print "{{0,0}} }};"}}' > debugSymbols/data.c
+	run {cxx} -c debugSymbols/data.cpp -o .debugSymbols.cpp.o
+	# run {cc} -c debugSymbols/data.c -o .debugSymbols.o
+	run {ld} -T {linker_script} -o {outputdir}/{kernel_filename} {obj_begin} {objs} .debugSymbols.cpp.o -lgcc {obj_end}
 
 	run {dump} --disassemble --demangle -M intel --source {outputdir}/{kernel_filename} > {outputdir}/{kernel_filename}.lst
 	run {cpy} -O binary {outputdir}/{kernel_filename} {outputdir}/boot/{kernel_filename}

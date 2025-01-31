@@ -82,40 +82,68 @@ namespace arch {
 
 					auto &registers = state.registers;
 
+					logging::print_error("");
 					logging::print_error("  Registers:");
 					logging::print_error("    eax = ", to_string_hex(registers.eax)/*, " ebx = ", to_string_hex(registers.ebx)*/, " ecx = ", to_string_hex(registers.ecx), " edx = ", to_string_hex(registers.edx));
 					logging::print_error("    esi = ", to_string_hex(registers.esi), " edi = ", to_string_hex(registers.edi));
 					logging::print_error("    esp = ", to_string_hex(registers.esp), " ebp = ", to_string_hex(registers.ebp));
 
 					if(registers.ebp){
+						logging::print_error("");
 						logging::print_error("  Stacktrace:");
+						{
+							auto stackFrame = (Stackframe*)registers.ebp;
+							DriverType *driverType = nullptr;
+							for(U32 depth=0;stackFrame&&depth<64;depth++){
+								// TODO: set to stack of thread
+								const auto stackBottom = (U8*)memory::stack+memory::stackSize;
+								const auto stackTop = (U8*)memory::stack;
 
-						auto stackFrame = (Stackframe*)registers.ebp;
-						for(U32 depth=0;stackFrame&&depth<64;depth++){
-							// TODO: set to stack of thread
-							const auto stackBottom = (U8*)memory::stack+memory::stackSize;
-							const auto stackTop = (U8*)memory::stack;
+								if((void*)stackFrame<stackTop||(void*)stackFrame>=stackBottom){
+									logging::print_error("    - Connection lost (at ", to_string_hex((unsigned)(size_t)stackFrame), ')');
+									break;
+								}
 
-							if((void*)stackFrame<stackTop||(void*)stackFrame>=stackBottom){
-								logging::print_error("    - Connection lost (at ", to_string_hex((unsigned)(size_t)stackFrame), ')');
-								break;
+								// sp = fp + 0x10;
+								// fp = *(U32*)fp;
+
+								// pc = *(U32*)(fp+8);
+								auto pc = stackFrame->eip;
+
+								auto function = debugSymbols::get_function_by_address((void*)pc);
+
+								if(function){
+									if(function->driverType!=driverType||depth==0){
+										driverType = function->driverType;
+
+										if(depth>0){
+											logging::print_error("");
+										}
+										if(driverType){
+											logging::print_error_start();
+											logging::print_inline("    In ", driverType->name, " (", driverType->description, ')');
+											for(auto parent = driverType->parentType; parent&&parent->parentType; parent = parent->parentType) {
+												logging::print_inline(" / ", parent->description);
+											}
+											logging::print_end();
+										}else{
+											logging::print_error("    In core:");
+										}
+									}
+									logging::print_error("      ", depth, " - ", to_string_hex(pc), " ", function->name, " + ", to_string_hex_trim(pc-(U64)function->address));
+								}else{
+									if(driverType){
+										if(depth>0){
+											logging::print_error("");
+										}
+										driverType = nullptr;
+										logging::print_error("    In core:");
+									}
+									logging::print_error("      ", depth, " - ", to_string_hex(pc));
+								}
+
+								stackFrame = stackFrame->ebp;
 							}
-
-							// sp = fp + 0x10;
-							// fp = *(U32*)fp;
-
-							// pc = *(U32*)(fp+8);
-							auto pc = stackFrame->eip;
-
-							auto symbol = debugSymbols::get_symbol_by_address((void*)pc);
-
-							if(symbol){
-								logging::print_error("    ", depth, " - ", to_string_hex(pc), " ", symbol->name, " + ", to_string_hex_trim(pc-(U64)symbol->address));
-							}else{
-								logging::print_error("    ", depth, " - ", to_string_hex(pc));
-							}
-
-							stackFrame = stackFrame->ebp;
 						}
 					}
 				#endif
