@@ -250,10 +250,10 @@ namespace arch {
 				assert(idt);
 
 				for(auto i=0u;i<48;i++){
-					idt->set_entry(i, _vectors[i], 0x8e);
+					idt->set_gate_interrupt(i, _vectors[i]);
 				}
 
-				idt->apply_entries();
+				idt->apply_gates();
 
 				::exceptions::_activate();
 			}

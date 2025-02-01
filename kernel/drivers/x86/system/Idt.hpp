@@ -12,7 +12,8 @@ namespace driver::system {
 		auto can_stop_driver() -> bool override { return false; }
 		auto can_restart_driver() -> bool override { return false; }
 
-		void set_entry(U8 i, void *isr, U8 flags);
-		void apply_entries();
+		void set_gate_trap(U8 interrupt, void *isr);
+		void set_gate_interrupt(U8 interrupt, void *isr);
+		void apply_gates();
 	};
 }

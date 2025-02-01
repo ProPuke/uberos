@@ -107,13 +107,19 @@ namespace driver::system {
 		return {};
 	}
 
-	void Idt::set_entry(U8 i, void *isr, U8 flags) {
+	void Idt::set_gate_trap(U8 i, void *isr) {
 		Spinlock_Guard guard(spinlock);
 
-		return _set_entry(i, isr, flags);
+		return _set_entry(i, isr, 0x8f);
 	}
 
-	void Idt::apply_entries() {
+	void Idt::set_gate_interrupt(U8 i, void *isr) {
+		Spinlock_Guard guard(spinlock);
+
+		return _set_entry(i, isr, 0x8e);
+	}
+
+	void Idt::apply_gates() {
 		Spinlock_Guard guard(spinlock);
 
 		return _apply_entries();
