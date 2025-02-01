@@ -331,7 +331,7 @@ namespace driver::input {
 
 					memcpy(&readBuffer[0], &readBuffer[1], readBufferPosition-=1);
 
-					Scancode translation[0x59] = {
+					Scancode translation[0x6c] = {
 						0, (Scancode)ScancodeUk::escape,
 						(Scancode)ScancodeUk::number1, (Scancode)ScancodeUk::number2, (Scancode)ScancodeUk::number3, (Scancode)ScancodeUk::number4, (Scancode)ScancodeUk::number5, (Scancode)ScancodeUk::number6, (Scancode)ScancodeUk::number7, (Scancode)ScancodeUk::number8, (Scancode)ScancodeUk::number9, (Scancode)ScancodeUk::number0, (Scancode)ScancodeUk::hyphen, (Scancode)ScancodeUk::equals, (Scancode)ScancodeUk::backspace,
 						(Scancode)ScancodeUk::tab, (Scancode)ScancodeUk::letterQ, (Scancode)ScancodeUk::letterW, (Scancode)ScancodeUk::letterE, (Scancode)ScancodeUk::letterR, (Scancode)ScancodeUk::letterT, (Scancode)ScancodeUk::letterY, (Scancode)ScancodeUk::letterU, (Scancode)ScancodeUk::letterI, (Scancode)ScancodeUk::letterO, (Scancode)ScancodeUk::letterP, (Scancode)ScancodeUk::leftBracket, (Scancode)ScancodeUk::rightBracket, (Scancode)ScancodeUk::enter,
@@ -346,7 +346,7 @@ namespace driver::input {
 						(Scancode)ScancodeUk::printScreen, // alt-sysrq
 						0, //0x55
 						(Scancode)ScancodeUk::backslash,
-						(Scancode)ScancodeUk::f11, (Scancode)ScancodeUk::f12
+						(Scancode)ScancodeUk::f11, (Scancode)ScancodeUk::f12, 0, 0, (Scancode)ScancodeUk::f13, (Scancode)ScancodeUk::f14, (Scancode)ScancodeUk::f15, 0, 0, 0, 0, 0, (Scancode)ScancodeUk::f16, (Scancode)ScancodeUk::f17, (Scancode)ScancodeUk::f18, (Scancode)ScancodeUk::f19, (Scancode)ScancodeUk::f20, (Scancode)ScancodeUk::f21, (Scancode)ScancodeUk::f22, (Scancode)ScancodeUk::f23, (Scancode)ScancodeUk::f24
 					};
 
 					if(code>sizeof(translation)||!translation[code]){
