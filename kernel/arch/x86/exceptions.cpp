@@ -249,6 +249,7 @@ namespace arch {
 				auto idt = drivers::find_and_activate<driver::system::Idt>();
 				assert(idt);
 
+				//TODO: set these numbers intelligently. Maybe just set the built in ISA 0-15 here, and add the others on demand when subscribe_interrupt is called?
 				for(auto i=0u;i<48;i++){
 					idt->set_gate_interrupt(i, _vectors[i]);
 				}
