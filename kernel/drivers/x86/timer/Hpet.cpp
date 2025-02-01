@@ -232,7 +232,7 @@ namespace driver {
 				if(!irqRequest){
 					clockCount = i;
 					log.print_warning("Not enough supported IRQs for all timers - Count dropped to ", clockCount);
-					if(clockCount<1) return {"No timers available"};
+					if(clockCount<1) return {"Not enough IRQs for timers"};
 					break;
 				}
 
