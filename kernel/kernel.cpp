@@ -18,6 +18,7 @@
 #include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/test.hpp>
+#include <kernel/time.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/time.hpp>
 #include <kernel/utils/logWindow.hpp>
@@ -66,6 +67,8 @@ namespace kernel {
 		logging::init();
 
 		{ auto section = log.section("init");
+			time::init();
+
 			_preInit();
 
 			framebuffer::init();

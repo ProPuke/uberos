@@ -246,11 +246,6 @@ namespace arch {
 			void init() {
 				auto section = log.section("init...");
 
-				auto pic8259 = drivers::find_and_activate<driver::interrupt::Pic8259>();
-				assert(pic8259);
-
-				// pic8259->disable_all_irqs();
-
 				auto idt = drivers::find_and_activate<driver::system::Idt>();
 				assert(idt);
 
