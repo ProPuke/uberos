@@ -1,37 +1,55 @@
 #pragma once
 
+#include <kernel/Spinlock.hpp>
+
 #include <common/ListOrdered.hpp>
 
+#include <atomic>
+
 template <typename Type>
-class EventEmitter {
+struct EventEmitter {
 	typedef void(*Callback)(const Type&, void*);
-	struct Subscription {
-		Callback callback;
-		void *data;
-	};
-
-	ListOrdered<Subscription> subscribers{0};
-
-public:
 
 	void subscribe(Callback, void *data);
 	void unsubscribe(Callback, void *data);
 	void unsubscribe_all();
 
 	void trigger(const Type&);
+	
+protected:
+
+	struct Subscription {
+		Callback callback;
+		void *data;
+	};
+
+	ListOrdered<Subscription> subscribers{0};
+	U32 subscribersGeneration = 0;
+
+	ListOrdered<Subscription> callableSubscribers{0};
+	U32 callableSubscribersGeneration = 0;
+
+	std::atomic<int> isTriggering{false};
+	Spinlock lockEdit;
 };
 
 template <typename Type>
 void EventEmitter<Type>::subscribe(Callback callback, void *data) {
+	Spinlock_Guard guard{lockEdit};
+
 	subscribers.push_back({callback, data});
+	subscribersGeneration++;
 }
 
 template <typename Type>
 void EventEmitter<Type>::unsubscribe(Callback callback, void *data) {
-	for(auto i=0u;i<subscribers.length;i++)	{
+	Spinlock_Guard guard{lockEdit};
+
+	for(auto i=0u;i<subscribers.length;i++) {
 		auto &subscription = subscribers[i];
 		if(subscription.callback==callback&&subscription.data==data){
 			subscribers.remove(i);
+			subscribersGeneration++;
 			break;
 		}
 	}
@@ -39,12 +57,36 @@ void EventEmitter<Type>::unsubscribe(Callback callback, void *data) {
 
 template <typename Type>
 void EventEmitter<Type>::unsubscribe_all() {
+	Spinlock_Guard guard{lockEdit};
+
 	subscribers.clear();
+	subscribersGeneration++;
 }
 
 template <typename Type>
 void EventEmitter<Type>::trigger(const Type &data) {
-	for(auto &subscription:subscribers){
-		(subscription.callback)(data, subscription.data);
+	if(isTriggering.fetch_or(1)){ // if reentrant, use a local copy
+		Spinlock_Guard guard{lockEdit};
+
+		auto subscribersCopy = subscribers; // pull from editable subscribers direct
+		for(auto &subscription:subscribersCopy){
+			(subscription.callback)(data, subscription.data);
+		}
+
+	}else{
+		{
+			Spinlock_Guard guard{lockEdit};
+
+			if(subscribersGeneration!=callableSubscribersGeneration){
+				callableSubscribers = subscribers;
+				callableSubscribersGeneration = subscribersGeneration;
+			}
+		}
+
+		for(auto &subscription:callableSubscribers){
+			(subscription.callback)(data, subscription.data);
+		}
+
+		isTriggering = 0;
 	}
 }
