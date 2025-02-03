@@ -86,10 +86,10 @@ struct DriverReference<Driver>: LListItem<DriverReference<Driver>> {
 	void *onTerminatedData = nullptr;
 	/**/ DriverReference();
 	/**/ DriverReference(Driver*, Callback onTerminated, void *onTerminatedData);
-	/**/ DriverReference(const DriverReference&) = delete;
+	/**/ DriverReference(const DriverReference&);
 	/**/~DriverReference();
 
-	auto operator=(const DriverReference&) -> DriverReference& = delete;
+	auto operator=(const DriverReference&) -> DriverReference&;
 	auto operator=(Driver*) -> DriverReference&;
 
 	explicit operator bool() { return !!driver; }

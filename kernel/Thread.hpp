@@ -1,8 +1,9 @@
 #pragma once
 
+#include <kernel/drivers/Scheduler.hpp>
 #include <kernel/Process.hpp>
 
-#include <common/Callback.hpp>
+#include <common/EventEmitter.hpp>
 #include <common/LList.hpp>
 #include <common/types.hpp>
 
@@ -36,19 +37,36 @@ struct Thread: LListItem<Thread> {
 
 	friend void arch::arm::scheduler::init();
 	friend Thread* Process::create_thread(Process::Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket);
-	friend Thread* Process::create_kernel_thread(I32(*entrypoint)());
+	friend Thread* Process::create_kernel_thread(void(*entrypoint)());
 	friend Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize);
 
-	private: /**/ Thread(Process &process);
+	private:
+		/**/ Thread(Process &process);
+		/**/~Thread();
 	public:
 
 	// /**/ Thread(void *stack, U32 stackSize, void(*entrypoint()));
 
+	DriverReference<driver::Scheduler> scheduler;
+
 	ThreadCpuState *storedState = nullptr;
 	memory::Page *stackPage = nullptr;
 	Process &process;
+	U16 priority = 100; // multiplied by process priority
 
-	LList<Callback> on_deleted;
+	struct Event {
+		enum struct Type {
+			terminated
+		} type;
+
+		union {
+			struct {
+
+			} terminated;
+		};
+	};
+
+	EventEmitter<Event> events;
 
 	static void swap_state(Thread &from, Thread &to);
 
@@ -68,16 +86,15 @@ struct Thread: LListItem<Thread> {
 		"terminated"
 	};
 
-	U32 scheduler_timeslice_percentage = 100;
-
-	U32 sleep_start_time = 0;
-	U32 sleep_wake_time = 0;
-
 	void sleep(U32 usecs);
 
 	void pause();
 	void resume();
 	void terminate();
+
+	void set_priority(U16 priority);
+
+	U32 _pending_timer_id = 0;
 };
 
 #include <common/stdlib.hpp>

@@ -1,14 +1,13 @@
 #include "Process.hpp"
 
 #include <kernel/memory.hpp>
-#include <kernel/scheduler.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/ThreadCpuState.hpp>
 
 namespace process {
 	LList<Process> processes;
 
-	auto create_kernel(const char *name, I32(*entrypoint)()) -> Process& {
+	auto create_kernel(const char *name, void(*entrypoint)()) -> Process& {
 		auto &process = *new Process(name, nullptr);
 
 		processes.push_back(process);
@@ -31,24 +30,11 @@ namespace process {
 	log(*this)
 {}
 
-namespace thread {
-	extern LList<Thread> activeThreads;
-	extern LList<Thread> sleepingThreads;
-	extern LList<Thread> pausedThreads;
-	extern LList<Thread> freedThreads;
-
-	void _cleanup_thread();
-}
-
 Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize) {
-	scheduler::Guard guard;
-
 	auto thread = new Thread(*this);
 	thread->stackPage = &stackPage;
 	thread->storedState = (ThreadCpuState*)((size_t)stackPage.physicalAddress + stackSize - sizeof(ThreadCpuState));
-
 	thread->state = Thread::State::active;
-	thread::activeThreads.push_back(*thread);
 
 	threads.push(thread);
 
@@ -56,8 +42,6 @@ Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize
 }
 
 Thread* Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) {
-	scheduler::Guard guard;
-
 	auto stackPage = memory::Transaction().allocate_page();
 	const auto stackSize = memory::pageSize;
 
@@ -65,30 +49,24 @@ Thread* Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPack
 	thread->stackPage = stackPage;
 	thread->storedState = (ThreadCpuState*)((size_t)stackPage->physicalAddress + stackSize - sizeof(ThreadCpuState));
 
-	thread->storedState->init(entrypoint, thread::_cleanup_thread, (U8*)stackPage->physicalAddress + stackSize, ipc, ipcPacket);
+	thread->storedState->init(entrypoint, (U8*)stackPage->physicalAddress + stackSize, ipc, ipcPacket);
 
 	thread->state = Thread::State::active;
-	thread::activeThreads.push_back(*thread);
 
 	threads.push(thread);
 
 	return thread;
 }
 
-Thread* Process::create_kernel_thread(I32(*entrypoint)()) {
-	scheduler::Guard guard;
-
+Thread* Process::create_kernel_thread(void(*entrypoint)()) {
 	auto stackPage = memory::Transaction().allocate_page();
 	const auto stackSize = memory::pageSize;
 
 	auto thread = new Thread(*this);
 	thread->stackPage = stackPage;
 	thread->storedState = (ThreadCpuState*)((size_t)stackPage->physicalAddress + stackSize - sizeof(ThreadCpuState));
-
-	thread->storedState->init_kernel(entrypoint, thread::_cleanup_thread, (U8*)stackPage->physicalAddress + stackSize);
-
+	thread->storedState->init_kernel(entrypoint, (U8*)stackPage->physicalAddress + stackSize);
 	thread->state = Thread::State::active;
-	thread::activeThreads.push_back(*thread);
 
 	threads.push(thread);
 

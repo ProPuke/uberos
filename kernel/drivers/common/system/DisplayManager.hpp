@@ -101,12 +101,6 @@ namespace driver::system {
 					return 0;
 				}
 			}
-
-			struct Handle_thread_deleted:Callback {
-				/**/ Handle_thread_deleted(Display &view):Callback(&view){}
-
-				void call(void *data) override;
-			} handle_thread_deleted {*this};
 		};
 
 		void set_background_colour(U32 colour);

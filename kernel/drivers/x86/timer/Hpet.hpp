@@ -12,10 +12,14 @@ namespace driver::timer {
 		auto _on_stop() -> Try<> override;
 		void _on_irq(U8) override;
 
+		using driver::Timer::schedule;
+		using driver::Timer::schedule_important;
+		using driver::Timer::set_timer;
+
 		auto now() -> U32 override;
 		auto now64() -> U64 override;
-		void schedule(U32 usecs, Callback, void *data) override;
-		void schedule_important(U32 usecs, Callback, void *data) override;
+		auto schedule(U32 usecs, ScheduledCallback, void *data) -> U32 override;
+		auto schedule_important(U32 usecs, ScheduledCallback, void *data) -> U32 override;
 
 		auto get_timer_count() -> U8 override;
 		void set_timer(U8 timer, U32 usecs, Callback, void *data) override;

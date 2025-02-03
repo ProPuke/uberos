@@ -25,6 +25,22 @@ struct Bitmask32 {
 	auto has_any() -> bool {
 		return mask!=0;
 	}
+
+	auto get_first_false() -> U8 {
+		for(auto i=0;i<32;i++){
+			if(!(mask&1<<i)) return i;
+		}
+
+		return ~0;
+	}
+
+	auto get_first_true() -> U8 {
+		for(auto i=0;i<32;i++){
+			if(mask&1<<i) return i;
+		}
+
+		return ~0;
+	}
 };
 
 struct Bitmask64 {
@@ -49,6 +65,22 @@ struct Bitmask64 {
 
 	auto has_any() -> bool {
 		return mask!=0;
+	}
+
+	auto get_first_false() -> U8 {
+		for(auto i=0;i<64;i++){
+			if(!(mask&1<<i)) return i;
+		}
+
+		return ~0;
+	}
+
+	auto get_first_true() -> U8 {
+		for(auto i=0;i<64;i++){
+			if(mask&1<<i) return i;
+		}
+
+		return ~0;
 	}
 };
 
@@ -86,5 +118,25 @@ struct Bitmask256 {
 
 	auto has_any() -> bool {
 		return mask[0]!=0||mask[1]!=0||mask[2]!=0||mask[3]!=0;
+	}
+
+	auto get_first_false() -> U8 {
+		for(auto i=0;i<4;i++){
+			for(auto i2=0;i2<64;i2++){
+				if(!(mask[i]&1<<i2)) return 64*i+i2;
+			}
+		}
+
+		return ~0;
+	}
+
+	auto get_first_true() -> U8 {
+		for(auto i=0;i<4;i++){
+			for(auto i2=0;i2<64;i2++){
+				if(mask[i]&1<<i2) return 64*i+i2;
+			}
+		}
+
+		return ~0;
 	}
 };

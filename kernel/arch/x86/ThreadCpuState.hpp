@@ -4,25 +4,24 @@
 #include <common/types.hpp>
 
 struct __attribute__((packed)) ThreadCpuState {
-	U64 x[28-18];
-	U64 fp;
-	U64 lr;
-	U64 pc;
+	U32 ebp;
+	U32 ebx;
+	U32 esi;
+	U32 edi;
 
-	void init(I32(*entrypoint)(ipc::Id, void*), void(*cleanup)(), U8* stackEnd, ipc::Id ipc, void *ipcPacket) {
-		pc = (U64)entrypoint;
-		fp = (U64)stackEnd;
-		lr = (U64)cleanup;
-		//TODO:set modes? (like cpsr on 32bit)
+	U32 esp;
+	U32 eip;
 
-		x[0] = (U32)ipc;
-		x[1] = (U64)ipcPacket;
+	void init(void(*entrypoint)(ipc::Id, void*), U8* stackEnd, ipc::Id ipc, void *ipcPacket) {
+		eip = (U64)entrypoint;
+		esp = (U64)stackEnd;
+
+		// x[0] = (U32)ipc;
+		// x[1] = (U64)ipcPacket;
 	}
 
-	void init_kernel(I32(*entrypoint)(), void(*cleanup)(), U8* stackEnd) {
-		pc = (U64)entrypoint;
-		fp = (U64)stackEnd;
-		lr = (U64)cleanup;
-		//TODO:set modes? (like cpsr on 32bit)
+	void init_kernel(void(*entrypoint)(), U8* stackEnd) {
+		eip = (U64)entrypoint;
+		esp = (U64)stackEnd;
 	}
 };

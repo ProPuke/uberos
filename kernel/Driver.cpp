@@ -16,6 +16,16 @@
 	onTerminatedData(nullptr)
 {}
 
+/**/ DriverReference<Driver>:: DriverReference(const DriverReference &copy):
+	driver(copy.driver),
+	onTerminated(copy.onTerminated),
+	onTerminatedData(copy.onTerminatedData)
+{
+	if(driver){
+		driver->references.pop(*this);
+	}
+}
+
 /**/ DriverReference<Driver>:: DriverReference(Driver *driver, Callback onTerminated, void *onTerminatedData):
 	driver(driver),
 	onTerminated(onTerminated),
@@ -30,6 +40,25 @@
 	if(driver){
 		driver->references.pop(*this);
 	}
+}
+
+auto DriverReference<Driver>::operator=(const DriverReference &copy) -> DriverReference& {
+	if(driver!=copy.driver){
+		if(driver){
+			driver->references.pop(*this);
+		}
+
+		driver = copy.driver;
+
+		if(driver){
+			driver->references.push_back(*this);
+		}
+	}
+
+	onTerminated = copy.onTerminated;
+	onTerminatedData = copy.onTerminatedData;
+
+	return *this;
 }
 
 auto DriverReference<Driver>::operator=(Driver *set) -> DriverReference& {

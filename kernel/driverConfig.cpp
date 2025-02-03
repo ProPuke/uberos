@@ -1,3 +1,4 @@
+#include <kernel/drivers/common/system/CpuScheduler.hpp>
 #include <kernel/drivers/common/system/DesktopManager.hpp>
 #include <kernel/drivers/common/system/DisplayManager.hpp>
 
@@ -40,6 +41,7 @@
 #define DRIVER(PATH, STARTUP) PATH PATH::instance(DriverApi::Startup::STARTUP)
 
 namespace driver {
+	DRIVER(system   ::CpuScheduler  , onDemand);
 	DRIVER(system   ::DesktopManager, onDemand);
 	DRIVER(system   ::DisplayManager, onDemand);
 

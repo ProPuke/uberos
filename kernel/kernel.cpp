@@ -6,6 +6,7 @@
 #include <kernel/drivers.hpp>
 #include <kernel/drivers/common/system/DisplayManager.hpp>
 #include <kernel/drivers/Processor.hpp>
+#include <kernel/drivers/Scheduler.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/framebuffer.hpp>
 #include <kernel/info.hpp>
@@ -14,8 +15,6 @@
 #include <kernel/memory.hpp>
 #include <kernel/memory/PagedPool.hpp>
 #include <kernel/Process.hpp>
-#include <kernel/scheduler.hpp>
-#include <kernel/scheduler.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/test.hpp>
 #include <kernel/time.hpp>
@@ -45,10 +44,6 @@ namespace libc {
 	void init();
 }
 
-namespace scheduler {
-	void init();
-}
-
 namespace drivers {
 	void print_summary();
 }
@@ -57,6 +52,7 @@ U64 vramWrites = 0;
 U64 ramWrites = 0;
 
 static DriverReference<driver::system::DisplayManager> displayManager{nullptr, [](void*){}, nullptr};
+static DriverReference<driver::Scheduler> scheduler{nullptr, [](void*){}, nullptr};
 
 namespace kernel {
 	void _preInit();
@@ -72,7 +68,7 @@ namespace kernel {
 			_preInit();
 
 			framebuffer::init();
-			// scheduler::init();
+			// scheduler = drivers::find_and_activate<driver::Scheduler>();
 		}
 
 		// set cpu to default speed (some devices start at min)
@@ -160,14 +156,14 @@ namespace kernel {
 		test::start_tasks();
 
 		while(true){
-			// arch::x86::ioPort::write8(0x20, 0x0b);
-			// log.print_info("PIC ISR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
+		// 	// arch::x86::ioPort::write8(0x20, 0x0b);
+		// 	// log.print_info("PIC ISR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
 
-			// arch::x86::ioPort::write8(0x20, 0x0a);
-			// log.print_info("PIC IRR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
+		// 	// arch::x86::ioPort::write8(0x20, 0x0a);
+		// 	// log.print_info("PIC IRR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
 		}
 
-		debug::halt();
+		// debug::halt();
 
 		// utils::logWindow::hide();
 
@@ -191,7 +187,7 @@ namespace kernel {
 		// 	}
 
 		// 	while(true){
-		// 		thread::currentThread->sleep(1000);
+		// 		scheduler->get_current_thread()->sleep(1000);
 		// 	}
 		// });
 
@@ -199,7 +195,7 @@ namespace kernel {
 			debug_llist(memory::kernelHeap.availableBlocks, "availableBlocks 2");
 		#endif
 
-		auto &log = thread::currentThread.load()->process.log;
+		auto &log = scheduler->get_current_thread()->process.log;
 
 		displayManager = drivers::find_and_activate<driver::system::DisplayManager>();
 
@@ -246,9 +242,9 @@ namespace kernel {
 			auto process = process::create_kernel("lightshow");
 
 			// for(auto i=0;i<2;i++)process.create_kernel_thread([]() {
-			// 	auto &log = thread::currentThread.load()->process.log;
+			// 	auto &log = scheduler->get_current_thread()->process.log;
 
-			// 	// const process = thread::currentThread->load();
+			// 	// const process = scheduler->get_current_thread()->load();
 			// 	while(true){
 			// 		log.print_info("thread 1");
 
@@ -260,12 +256,12 @@ namespace kernel {
 
 			if(true){
 				for(int i=0;i<4;i++){
-					process.create_kernel_thread([]() -> I32 {
-						auto &log = thread::currentThread.load()->process.log;
+					process.create_kernel_thread([]() {
+						auto &log = scheduler->get_current_thread()->process.log;
 						auto possibleFramebuffer = framebuffer::get_framebuffer(0);
 						if(!possibleFramebuffer){
 							log.print_error("No valid framebuffer");
-							return 0;
+							return;
 						}
 
 						auto &framebuffer = *possibleFramebuffer;
@@ -286,10 +282,10 @@ namespace kernel {
 						(void) height;
 						(void) framebuffer;
 
-						auto view = displayManager->create_display(thread::currentThread, driver::system::DisplayManager::DisplayLayer::regular, rand()%((U32)framebuffer.buffer.width-width), rand()%((U32)framebuffer.buffer.height-height), width, height, scale);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, rand()%((U32)framebuffer.buffer.width-width), rand()%((U32)framebuffer.buffer.height-height), width, height, scale);
 						if(!view) {
 							log.print_error("Error: didn't get a view");
-							return 0;
+							return;
 						}
 
 						log.print_debug("got view");
@@ -331,7 +327,6 @@ namespace kernel {
 							}
 
 							if(deltaX||deltaY){
-								scheduler::Guard guard;
 								// auto before = time::now();
 								// displayManager->update_view(*view);
 								view->move_to(view->x+deltaX, view->y+deltaY);
@@ -346,7 +341,7 @@ namespace kernel {
 
 							// timer::wait(1000000);
 
-							// scheduler::yield();
+							// scheduler->yield();
 
 							life--;
 							// if(life<1) break;
@@ -357,10 +352,10 @@ namespace kernel {
 			}
 			
 			if(true){
-				for(auto i=0;i<5;i++)process.create_kernel_thread([]() -> I32 {
+				for(auto i=0;i<5;i++)process.create_kernel_thread([]() {
 					float scale = 0.25+(rand()%256)/128.0;
 
-					auto &thread = *::thread::currentThread.load();
+					auto &thread = *scheduler->get_current_thread();
 					auto &log = thread.process.log;
 
 					I32 width = 985*scale;
@@ -372,7 +367,7 @@ namespace kernel {
 					I32 y = rand()%500;
 					I32 speed = rand()%6+1;
 
-					auto view = displayManager->create_display(thread::currentThread, driver::system::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
+					auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
 
 					auto &buffer = view->buffer;
 
@@ -388,7 +383,7 @@ namespace kernel {
 					auto possibleFramebuffer = framebuffer::get_framebuffer(0);
 					if(!possibleFramebuffer){
 						log.print_error("No valid framebuffer");
-						return 0;
+						return;
 					}
 
 					auto &framebuffer = *possibleFramebuffer;
@@ -410,13 +405,13 @@ namespace kernel {
 						}
 
 						view->move_to(x, y);
-						// scheduler::yield();
+						// scheduler->yield();
 						// thread.sleep(1000000/60-(time::now()-startTime));
 
 						// buffer.draw_rect(0, 0, width, height, 0x111111);
 						// buffer.draw_msdf(10-(scale-1)*graphics2d::font::openSans.atlas.width/2, 10-(scale-1)*graphics2d::font::openSans.atlas.height/2, graphics2d::font::openSans.atlas.width*scale, graphics2d::font::openSans.atlas.height*scale, graphics2d::font::openSans.atlas, 0, 0, graphics2d::font::openSans.atlas.width, graphics2d::font::openSans.atlas.height, 0xffffff);
 						// displayManager->update_view(*view);
-						// scheduler::yield();
+						// scheduler->yield();
 						// if(scale+scaleDelta>30){
 						// 	scaleDelta = -abs(scaleDelta);
 						// }else if(scale+scaleDelta<1){
@@ -427,7 +422,7 @@ namespace kernel {
 				});
 			}
 
-			// process.create_kernel_thread([]() -> I32 {
+			// process.create_kernel_thread([]() {
 			// 	Cli cli;
 
 			// 	while(true){
@@ -436,7 +431,7 @@ namespace kernel {
 			// });
 
 			// while(true){
-			// 	thread::currentThread.load()->sleep(1000000);
+			// 	scheduler->get_current_thread()->sleep(1000000);
 			// 	{
 			// 		auto section = log.section("Status:");
 
@@ -451,8 +446,8 @@ namespace kernel {
 
 		// finally put this thread to sleep, and keep it that way, should it ever be re-awakened
 		while(true){
-			thread::currentThread.load()->pause();
-			scheduler::yield();
+			scheduler->get_current_thread()->pause();
+			scheduler->yield();
 		}
 	}
 }

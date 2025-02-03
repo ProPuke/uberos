@@ -312,6 +312,8 @@ namespace driver {
 				return;
 			}
 
+			//TODO: check if we need to disable the timer after it triggers? (will it trigger again on wraparound?)
+
 			clock[index].callback = callback;
 			clock[index].callbackData = data;
 
@@ -339,12 +341,12 @@ namespace driver {
 			registers->timer[index].write_config(config);
 		}
 
-		void Hpet::schedule(U32 usecs, Callback callback, void *data) {
-			timerQueue.schedule(usecs, callback, data);
+		auto Hpet::schedule(U32 usecs, ScheduledCallback callback, void *data) -> U32 {
+			return timerQueue.schedule(usecs, callback, data);
 		}
 
-		void Hpet::schedule_important(U32 usecs, Callback callback, void *data) {
-			timerQueue.schedule_important(usecs, callback, data);
+		auto Hpet::schedule_important(U32 usecs, ScheduledCallback callback, void *data) -> U32 {
+			return timerQueue.schedule_important(usecs, callback, data);
 		}
 	}
 }

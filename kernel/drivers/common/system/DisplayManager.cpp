@@ -47,6 +47,16 @@ namespace driver::system {
 			_update_background();
 		}
 
+		void _on_thread_event(const Thread::Event &event, void *_display) {
+			auto &display = *(DisplayManager::Display*)_display;
+
+			switch(event.type){
+				case Thread::Event::Type::terminated:
+					delete &display;
+				break;
+			}
+		}
+
 		DisplayManager::Display* _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
 
 			#ifdef DEBUG_MEMORY
@@ -87,7 +97,7 @@ namespace driver::system {
 			}
 
 			if(thread){
-				thread->on_deleted.push_front(display->handle_thread_deleted);
+				thread->events.subscribe(_on_thread_event, display);
 			}
 
 			#ifdef DEBUG_MEMORY
@@ -746,7 +756,7 @@ namespace driver::system {
 		const auto area = graphics2d::Rect{x, y, x+(I32)get_width(), y+(I32)get_height()};
 
 		if(thread){
-			thread->on_deleted.pop(handle_thread_deleted);
+			thread->events.unsubscribe(_on_thread_event, this);
 		}
 		delete buffer.address;
 		buffer.address = nullptr;
@@ -754,12 +764,6 @@ namespace driver::system {
 
 		_update_area_solid(area);
 		_update_area_transparency(area);
-	}
-
-	void DisplayManager::Display::Handle_thread_deleted::call(void *data) {
-		auto &display = *(Display*)data;
-
-		delete &display;
 	}
 
 	void DisplayManager::set_background_colour(U32 colour) {
