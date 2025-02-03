@@ -7,6 +7,6 @@ test/ui-rendering/test
 
 .gitignore
 lib/arm-optimized-routines/.git
-kernel/debugSymbols/data.c
+kernel/debugSymbols/data.cpp
 syntax: regexp
 ^tools/
