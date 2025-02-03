@@ -13,7 +13,6 @@
 #include <kernel/memory.hpp>
 #include <kernel/mmio.hpp>
 #include <kernel/Process.hpp>
-#include <kernel/scheduler.hpp>
 
 static Log log("");
 

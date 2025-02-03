@@ -2,8 +2,6 @@
 
 #include <kernel/Log.hpp>
 
-#include <atomic>
-
 static Log log("cxa");
 
 extern "C" {
