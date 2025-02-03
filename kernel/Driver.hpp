@@ -92,7 +92,7 @@ struct DriverReference<Driver>: LListItem<DriverReference<Driver>> {
 	auto operator=(const DriverReference&) -> DriverReference& = delete;
 	auto operator=(Driver*) -> DriverReference&;
 
-	operator bool() { return !!driver; }
+	explicit operator bool() { return !!driver; }
 
 	void set_on_terminated(Callback callback, void *data) { onTerminated = callback; onTerminatedData = data; }
 
@@ -106,13 +106,15 @@ struct DriverReference: DriverReference<Driver> {
 	auto operator->() -> Type* { return (Type*)driver; }
 
 	/**/ DriverReference(): Super() {}
+	/**/ DriverReference(const DriverReference &copy):Super(copy) {}
 	/**/ DriverReference(Type *type, Callback onTerminated, void *onTerminatedData):
 		Super(type, onTerminated, onTerminatedData)
 	{}
 
+	auto operator=(const DriverReference &copy) -> DriverReference& { Super::operator=(copy); return *this; }
 	auto operator=(Driver *driver) -> DriverReference& { Super::operator=(driver); return *this; }
 
-	operator bool() { return Super::operator bool(); }
+	explicit operator bool() { return Super::operator bool(); }
 };
 
 // template<size_t length>

@@ -32,9 +32,9 @@ namespace driver {
 
 			if(
 				!bestResolutionDistance||
-				bestResolutionDistance==resolutionDistance||
-				bestResolutionDistance<0&&resolutionDistance>bestResolutionDistance||
-				bestResolutionDistance>0&&resolutionDistance>0&&resolutionDistance<bestResolutionDistance
+				*bestResolutionDistance==resolutionDistance||
+				*bestResolutionDistance<0&&resolutionDistance>*bestResolutionDistance||
+				*bestResolutionDistance>0&&resolutionDistance>0&&resolutionDistance<*bestResolutionDistance
 			){
 				bestResolutionDistance = resolutionDistance;
 
@@ -46,8 +46,8 @@ namespace driver {
 
 				}else if(
 					!bestFormatDistance||
-					bestFormatDistance<0&&formatDistance>bestFormatDistance||
-					bestFormatDistance>0&&formatDistance>0&&formatDistance<bestFormatDistance
+					*bestFormatDistance<0&&formatDistance>*bestFormatDistance||
+					*bestFormatDistance>0&&formatDistance>0&&formatDistance<*bestFormatDistance
 				){
 					bestFormatDistance = formatDistance;
 					bestCandidate = index;

@@ -10,7 +10,7 @@ struct [[nodiscard]] Try {
 	/**/ Try(Error error, const char *errorMessage):error(error),errorMessage(errorMessage){}
 	/**/ Try(Try<void, Error> failure):error(failure,error), errorMessage(failure.errorMessage){}
 
-	operator bool() { return errorMessage==nullptr; }
+	explicit operator bool() { return errorMessage==nullptr; }
 
 	auto as_error_only() -> Try<void, Error> { return {error, errorMessage}; }
 };
@@ -19,7 +19,7 @@ template <>
 struct [[nodiscard]] Try<void, void> {
 	const char *errorMessage = nullptr;
 
-	operator bool() { return errorMessage==nullptr; }
+	explicit operator bool() { return errorMessage==nullptr; }
 };
 
 template <typename Result>
@@ -31,7 +31,7 @@ struct [[nodiscard]] Try<Result, void> {
 	/**/ Try(Try<void, void> failure):errorMessage(failure.errorMessage){}
 	/**/ Try(const char *errorMessage):errorMessage(errorMessage){}
 
-	operator bool() { return errorMessage==nullptr; }
+	explicit operator bool() { return errorMessage==nullptr; }
 
 	auto as_error_only() -> Try<void, void> { return {errorMessage}; }
 };
@@ -41,7 +41,7 @@ struct [[nodiscard]] Try<void, Error> {
 	Error error;
 	const char *errorMessage = nullptr;
 
-	operator bool() { return errorMessage==nullptr; }
+	explicit operator bool() { return errorMessage==nullptr; }
 };
 
 #define TRY(ACTION) do{\

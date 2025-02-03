@@ -25,7 +25,7 @@ struct Box {
 
 	auto operator->() { return data; }
 	auto operator->() const { return data; }
-	operator bool() const { return data; }
+	explicit operator bool() const { return data; }
 	operator Type*() { return data; }
 	operator const Type*() const { return data; }
 
@@ -64,7 +64,7 @@ struct BoxT {
 
 	auto operator->() { return data; }
 	auto operator->() const { return data; }
-	operator bool() const { return data; }
+	explicit operator bool() const { return data; }
 	operator Type*() { return data; }
 	operator const Type*() const { return data; }
 

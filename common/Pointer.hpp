@@ -18,7 +18,7 @@ struct Pointer {
 	auto operator->() { return get(); }
 	auto operator->() const { return get(); }
 
-	operator bool() const { return get(); }
+	explicit operator bool() const { return get(); }
 
 	operator Type*() { return get(); }
 	operator const Type*() const { return get(); }

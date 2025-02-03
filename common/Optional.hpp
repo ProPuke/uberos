@@ -16,7 +16,7 @@ struct Optional {
 
 	void clear() { present = false; }
 
-	operator bool() const { return present; }
+	explicit operator bool() const { return present; }
 	auto operator->() { return data; }
 	auto operator->() const { return data; }
 	auto operator*() -> Type& { return data; }
