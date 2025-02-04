@@ -128,19 +128,16 @@ namespace utils {
 			window = &desktopManager->create_window("Kernel Log", viewWidth, viewHeight);
 			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
 
-			window->clientArea.draw_rect(0, 0, window->clientArea.width, window->clientArea.height, window->get_background_colour());
-
 			// window->set_status("Booting...");
 
 			columns = max(1u, window->clientArea.width / 500u);
 			columnWidth = window->clientArea.width / columns;
 
-			window->redraw();
-
 			textColour = textColourHistory;
 
 			print_multiline_text(logging::get_history_part_1());
 			print_multiline_text(logging::get_history_part_2());
+			window->redraw();
 
 			textColour = textColourInfo;
 
