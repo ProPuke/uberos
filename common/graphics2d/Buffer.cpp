@@ -30,8 +30,8 @@ namespace graphics2d {
 					}
 
 					if(character->atlasWidth&&character->atlasHeight){
-						auto x1 = x+character->offsetX.cast<I32>()*(I32)size;
-						auto y1 = y-character->offsetY.cast<I32>()*(I32)size;
+						auto x1 = x+character->offsetX*(I32)size;
+						auto y1 = y-character->offsetY*(I32)size;
 
 						auto x2 = x1 + scale*(I32)character->atlasWidth;
 						auto y2 = y1 + scale*(I32)character->atlasHeight;
@@ -55,10 +55,7 @@ namespace graphics2d {
 
 						draw_msdf(displayX1, displayY1, displayX2-displayX1, displayY2-displayY1, font.atlas, (I32)character->atlasX-skipLeft, (I32)character->atlasY-skipTop, character->atlasWidth+skipLeft+skipRight, character->atlasHeight+skipTop+skipBottom, colour, skipLeft, skipTop, skipRight, skipBottom);
 
-						updatedArea.x1 = min(updatedArea.x1, displayX1);
-						updatedArea.y1 = min(updatedArea.y1, displayY1);
-						updatedArea.x2 = max(updatedArea.x2, displayX2);
-						updatedArea.y2 = max(updatedArea.y2, displayY2);
+						updatedArea = updatedArea.include({displayX1, displayY1, displayX2, displayY2});
 					}
 
 					x += character->advance.cast<I32>()*(I32)font.size*scale;
@@ -102,8 +99,8 @@ namespace graphics2d {
 					}
 
 					if(character->atlasWidth&&character->atlasHeight){
-						auto x1 = x+character->offsetX.cast<I32>()*(I32)size;
-						auto y1 = y-character->offsetY.cast<I32>()*(I32)size;
+						auto x1 = x+character->offsetX*(I32)size;
+						auto y1 = y-character->offsetY*(I32)size;
 
 						auto x2 = x1 + scale*(I32)character->atlasWidth;
 						auto y2 = y1 + scale*(I32)character->atlasHeight;
@@ -113,10 +110,7 @@ namespace graphics2d {
 						auto displayX2 = x2.round_up();
 						auto displayY2 = y2.round_up();
 
-						updatedArea.x1 = min(updatedArea.x1, displayX1);
-						updatedArea.y1 = min(updatedArea.y1, displayY1);
-						updatedArea.x2 = max(updatedArea.x2, displayX2);
-						updatedArea.y2 = max(updatedArea.y2, displayY2);
+						updatedArea = updatedArea.include({displayX1, displayY1, displayX2, displayY2});
 					}
 
 					x += character->advance.cast<I32>()*(I32)font.size*scale;

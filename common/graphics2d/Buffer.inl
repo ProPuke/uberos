@@ -2,6 +2,7 @@
 
 #include "Buffer.hpp"
 
+#include <common/graphics2d.hpp>
 #include <common/maths.hpp>
 
 namespace graphics2d {
@@ -503,7 +504,7 @@ namespace graphics2d {
 
 				coverage += coverage*(255-coverage)/512; // push up "gamma" for better contrast
 
-				set(startX+x, startY+y, blend_rgb(get(startX+x, startY+y), colour, (U8)coverage));
+				set_blended(startX+x, startY+y, premultiply_colour(colour|(255-coverage)<<24));
 			}
 
 		//bilinear filter the msdf (looks best at half size and up, although blurs some letters slightly)
@@ -539,9 +540,9 @@ namespace graphics2d {
 				I32 screenPxDistance = ((I32)median-128)*sdfPixels;
 
 				U8 alpha = maths::clamp(screenPxDistance + 128, 0, 255);
+				if(alpha<1) continue;
 
-				set(startX+x, startY+y, blend_rgb(get(startX+x, startY+y), colour, alpha));
-				// set(startX+x, startY+y, blend_rgb(0x0, colour, alpha));
+				set_blended(startX+x, startY+y, premultiply_colour(colour|(255-alpha)<<24));
 			}
 		}
 	}
