@@ -9,14 +9,23 @@
 
 #include <common/stdlib.hpp>
 
+// #define BACKGROUND_GRID
+#define BACKGROUND_STRIP
+
 namespace driver::system {
 	namespace {
 		LList<DisplayManager::Display> displays;
 
-		U32 backgroundColour = 0x202020;
-		U32 backgroundColour2 = 0x282828;
-		// U32 backgroundColour = 0xa0a0a0;
-		// U32 backgroundColour2 = 0xa8a8a8;
+		U32 windowBackgroundColour = 0x202020;
+
+		#if defined(BACKGROUND_GRID)
+			U32 backgroundColour2 = 0x282828;
+			// U32 backgroundColour = 0xa0a0a0;
+			// U32 backgroundColour2 = 0xa8a8a8;
+
+		#elif defined(BACKGROUND_STRIP)
+			U8 backgroundStrip[256*3+1] = "<\222\263<\222\263=\223\263=\223\264>\224\264>\224\264?\225\264@\225\264@\225\264A\226\264B\226\264C\227\265D\227\265E\230\265F\230\265G\231\266H\231\266I\232\266K\233\267L\234\267M\234\270N\235\270P\235\270Q\236\271R\236\271S\237\271T\240\271U\240\272V\241\272W\242\272X\242\273Z\243\273[\244\274]\245\274^\246\275_\246\275a\247\276b\250\276d\251\277e\251\277f\252\300g\253\300h\254\300i\254\301j\255\301k\255\301l\256\301m\257\302n\260\302p\260\303q\261\303r\262\304t\263\304u\264\305v\264\305x\265\305y\266\306z\266\306{\267\306|\267\307~\270\307\177\271\310\200\272\310\201\272\310\202\273\311\203\274\311\204\274\312\206\275\312\207\276\313\210\277\314\211\300\314\212\300\315\214\301\315\215\302\315\216\302\316\217\303\316\220\304\316\220\304\317\221\305\317\223\305\317\224\306\317\225\307\320\226\307\320\227\310\320\230\311\321\231\311\321\232\312\321\233\312\322\234\313\322\235\313\322\236\314\323\237\315\323\240\315\323\242\316\324\243\316\324\244\317\325\245\317\325\246\320\325\247\320\325\250\320\325\251\321\326\251\321\326\252\322\326\253\322\326\254\323\327\255\323\327\257\324\327\260\324\327\261\325\330\262\325\330\263\326\330\265\326\331\266\327\331\267\330\331\270\330\332\271\330\332\272\331\332\273\331\332\274\332\333\274\332\333\275\332\333\276\332\333\277\333\333\277\333\333\300\333\333\301\333\333\302\334\333\303\334\333\304\334\333\306\335\333\307\335\334\310\335\334\311\336\334\312\336\334\313\337\334\314\337\335\316\337\335\317\340\335\320\340\335\321\341\335\321\341\335\322\341\335\323\341\335\324\342\335\325\342\335\325\342\335\326\342\335\326\343\334\327\343\334\327\343\334\327\342\334\326\342\333\324\340\332\321\336\331\315\333\326\306\327\324\275\322\320\240\303\307\220\274\302\210\267\276\210\267\276\212\270\277}\260\272\200\262\274\204\265\276\201\263\275{\260\273w\255\270v\253\270v\252\267{\255\267|\256\267{\255\270|\256\271x\252\265x\252\265w\251\264v\250\263v\246\262s\243\260o\240\256m\237\255L\177\227Fz\222Ex\222Cv\221G}\225Cv\220@r\215@r\215>p\213@r\215Bq\215Gr\213Ks\214Hp\211Su\213Ru\214Iq\212Al\207@l\211\067f\206\065d\204\063c\203\061b\203\060b\203/a\202/`\202.`\201._\201._\201._\200-_\200,^\177+]~+\\}*[|)Z{)Yz)Xy(Vx'Uv&St%Qr#No#Lm\"Lm!Jj\"Kk\040Ih\040Ii\037Ff\037Ed\036Db\036Ca\036B`\037B`\033>Z\034?[\032<W\033=X\033=X\033<W\033;V\033:T\033:S\033\071Q\032\070O\032\067N\031\066L\030\062G\030\061G\027\060F\027\060E\026/D\027\060E";
+		#endif
 
 		Spinlock spinlock("graphics2d");
 
@@ -24,9 +33,11 @@ namespace driver::system {
 
 		auto _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> DisplayManager::Display*;
 		void _move_display_to(DisplayManager::Display&, I32 x, I32 y, bool update);
+		void _resize_display_to(DisplayManager::Display&, U32 width, U32 height, bool update);
 		void _place_above(DisplayManager::Display&, DisplayManager::Display &other);
 		void _place_below(DisplayManager::Display&, DisplayManager::Display &other);
 		void _raise_display(DisplayManager::Display&);
+		void _set_display_layer(DisplayManager::Display&, DisplayManager::DisplayLayer);
 		auto _is_display_top(DisplayManager::Display&) -> bool;
 		void _show_display(DisplayManager::Display&);
 		void _hide_display(DisplayManager::Display&);
@@ -41,9 +52,9 @@ namespace driver::system {
 		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> graphics2d::Buffer;
 
 		void _set_background_colour(U32 colour) {
-			if(backgroundColour==colour) return;
+			if(windowBackgroundColour==colour) return;
 
-			backgroundColour = colour;
+			windowBackgroundColour = colour;
 			_update_background();
 		}
 
@@ -107,8 +118,10 @@ namespace driver::system {
 			return display;
 		}
 
-
 		auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32;
+		#if defined(BACKGROUND_STRIP)
+			auto _sample_background_strip_at(Framebuffer &framebuffer, U32 y) -> U32;
+		#endif
 
 		void _update_blending_at_rgb(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
 		void _update_blending_at_bgr(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
@@ -277,7 +290,7 @@ namespace driver::system {
 			auto foundTransparent = false;
 
 			for(auto display=displays.tail; display; display=display->prev){
-				if(!display->isVisible) continue;
+				if(!display->isVisible) goto next;
 
 				if(display==current){
 					// abort, we've now reached the current window. There is nothing more on top of it to check.
@@ -285,64 +298,71 @@ namespace driver::system {
 				}
 
 				// check just y
-				if(display->y>y||display->y+(I32)display->get_height()<=y) continue;
+				if(display->y>y||display->y+(I32)display->get_height()<=y) goto next;
 
-				// check x (+ corners)
-				const auto displayX = x-display->x;
-				const auto displayY = y-display->y;
-				auto displayLeft = display->x+(I32)display->get_left_margin(displayY);
-				auto displayRight = display->x+(I32)display->get_width()-(I32)display->get_right_margin(displayY);
+				{
+					// check x (+ corners)
+					const auto displayX = x-display->x;
+					const auto displayY = y-display->y;
+					auto displayLeft = display->x+(I32)display->get_left_margin(displayY);
+					auto displayRight = display->x+(I32)display->get_width()-(I32)display->get_right_margin(displayY);
 
-				if(displayRight<=x) continue;
+					if(displayRight<=x) goto next;
 
-				auto transparent = false;
+					auto transparent = false;
 
-				if(true){ // chop into separate regions when using solidArea
+					if(true){ // chop into separate regions when using solidArea
 
-					if(displayY<display->solidArea.y1||displayY>=display->solidArea.y2){
-						// top and bottom transparent areas
-						transparent = true;
-
-					}else{
-						if(display->solidArea.x1>0&&displayX<display->solidArea.x1){
-							// left transparent edge
-							displayRight = min(display->x+display->solidArea.x1, displayRight);
+						if(displayY<display->solidArea.y1||displayY>=display->solidArea.y2){
+							// top and bottom transparent areas
 							transparent = true;
-
-						}else if(displayX<display->solidArea.x2){
-							// centre solid area
-							displayLeft = max(displayLeft, display->x+display->solidArea.x1);
-							displayRight = min(display->x+display->solidArea.x2, displayRight);
 
 						}else{
-							// right transparent edge
-							displayLeft = max(displayLeft, display->x+display->solidArea.x2);
-							transparent = true;
+							if(display->solidArea.x1>0&&displayX<display->solidArea.x1){
+								// left transparent edge
+								displayRight = min(display->x+display->solidArea.x1, displayRight);
+								transparent = true;
+
+							}else if(displayX<display->solidArea.x2){
+								// centre solid area
+								displayLeft = max(displayLeft, display->x+display->solidArea.x1);
+								displayRight = min(display->x+display->solidArea.x2, displayRight);
+
+							}else{
+								// right transparent edge
+								displayLeft = max(displayLeft, display->x+display->solidArea.x2);
+								transparent = true;
+							}
 						}
+					}
+
+					if(displayLeft<=x){
+						// we're already inside it. Return immediately
+						foundTransparent = transparent;
+						found = display;
+						goto done;
+
+					}else if(displayLeft<foundLeft){
+						// it's further to the right, so set if the best match so far
+						foundLeft = displayLeft;
+						foundTransparent = transparent;
+						found = display;
 					}
 				}
 
-				if(displayLeft<=x){
-					// we're already inside it. Return immediately
-					isTransparent = transparent;
-					return display;
-
-				}else if(displayLeft<foundLeft){
-					// it's further to the right, so set if the best match so far
-					foundLeft = displayLeft;
-					foundTransparent = transparent;
-					found = display;
-				}
+				next:
+				;
 			}
 
 			x = min(foundLeft, x2);
+
+			done:
+
 			isTransparent = foundTransparent;
 			return found;
 		}
 
 		void _update_area_transparency(graphics2d::Rect screenRect) {
-			// return;
-
 			for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
 				auto &framebuffer = *framebuffer::get_framebuffer(i);
 
@@ -410,32 +430,66 @@ namespace driver::system {
 
 		#pragma GCC push_options
 		#pragma GCC optimize ("-O3")
-		auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32 {
-			const I32 edge = 64;
-			U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
+		#if defined(BACKGROUND_GRID)
+			auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32 {
+				const I32 edge = 64;
+				U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
 
-			if(x<edge) {
-				const U32 fade = edge-x;
-				I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
-				I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
-				I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
-				return r<<16|g<<8|b;
-
-			} else {
-				const auto right = (I32)framebuffer.buffer.width-(I32)edge;
-
-				if(x<right){
-					return colour;
-
-				} else {
-					const U32 fade = edge-(framebuffer.buffer.width-x);
+				if(x<edge) {
+					const U32 fade = edge-x;
 					I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
 					I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
 					I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
 					return r<<16|g<<8|b;
+
+				} else {
+					const auto right = (I32)framebuffer.buffer.width-(I32)edge;
+
+					if(x<right){
+						return colour;
+
+					} else {
+						const U32 fade = edge-(framebuffer.buffer.width-x);
+						I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
+						I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
+						I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
+						return r<<16|g<<8|b;
+					}
 				}
 			}
-		}
+		#elif defined(BACKGROUND_STRIP)
+			auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32 {
+				return _sample_background_strip_at(framebuffer, y);
+			}
+
+			auto _sample_background_strip_at(Framebuffer &framebuffer, U32 y) -> U32 {
+				auto pos1 = y*256/framebuffer.buffer.height;
+				auto pos2 = min(255u, y*256/framebuffer.buffer.height+1);
+
+				auto y1 = pos1*framebuffer.buffer.height/256;
+				auto y2 = pos2*framebuffer.buffer.height/256;
+
+				U32 sample1 =
+					backgroundStrip[pos1*3+0]<<16|
+					backgroundStrip[pos1*3+1]<< 8|
+					backgroundStrip[pos1*3+2]<< 0
+				;
+
+				// if(y2==y1) return sample1;
+
+				U32 sample2 =
+					backgroundStrip[pos2*3+0]<<16|
+					backgroundStrip[pos2*3+1]<< 8|
+					backgroundStrip[pos2*3+2]<< 0
+				;
+
+				// return sample1;
+				// return sample2;
+
+				return y2>y1&&maths::abs(((sample1&0xff0000)>>16)-((sample2&0xff0000)>>16))<0x20?graphics2d::blend_rgb(sample1, sample2, (U8)(255*(y-y1)/(y2-y1))):sample1;
+				// return y2>y1?graphics2d::blend_rgb(sample1, sample2, (256*(y-y1)/(y2-y1))/256.0f):sample1;
+			}
+		#endif
 
 		void _update_background_area(graphics2d::Rect rect) {
 			// mmio::PeripheralWriteGuard guard;
@@ -480,33 +534,39 @@ namespace driver::system {
 						}
 
 						if(endX>startX){
-							const I32 edge = 64;
-							I32 x = startX;
-							for(;x<min(endX,edge);x++) {
-								const U32 fade = edge-x;
-								const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
-								I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
-								I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
-								I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
-								framebuffer.set(x, y, r<<16|g<<8|b);
-							}
-							{
-								auto right = min(endX,(I32)framebuffer.buffer.width-(I32)edge);
-								while(x<right){
-									const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
-									auto next = min(((x/30)+1)*30, right);
-									framebuffer.set(x, y, colour, next-x);
-									x = next;
+							#if defined(BACKGROUND_GRID)
+								const I32 edge = 64;
+								I32 x = startX;
+								for(;x<min(endX,edge);x++) {
+									const U32 fade = edge-x;
+									const U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
+									I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
+									I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
+									I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
+									framebuffer.set(x, y, r<<16|g<<8|b);
 								}
-							}
-							for(;x<endX;x++) {
-								const U32 fade = edge-(framebuffer.buffer.width-x);
-								const U32 colour = (x/30+y/30)%2?backgroundColour:backgroundColour2;
-								I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
-								I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
-								I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
-								framebuffer.set(x, y, r<<16|g<<8|b);
-							}
+								{
+									auto right = min(endX,(I32)framebuffer.buffer.width-(I32)edge);
+									while(x<right){
+										const U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
+										auto next = min(((x/30)+1)*30, right);
+										framebuffer.set(x, y, colour, next-x);
+										x = next;
+									}
+								}
+								for(;x<endX;x++) {
+									const U32 fade = edge-(framebuffer.buffer.width-x);
+									const U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
+									I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
+									I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
+									I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
+									framebuffer.set(x, y, r<<16|g<<8|b);
+								}
+
+							#elif defined(BACKGROUND_STRIP)
+								auto bgColour = _sample_background_strip_at(framebuffer, y);
+								framebuffer.set(startX, y, bgColour, endX-startX);
+							#endif
 						}
 
 						if(nextX>endX){
@@ -540,12 +600,38 @@ namespace driver::system {
 			}
 		}
 
+		void _resize_display_to(DisplayManager::Display &display, U32 width, U32 height, bool update) {
+			width = max(16u, width);
+			height = max(16u, height);
+			if(display.get_width()==width&&display.get_height()==height) return;
+
+			const auto oldWidth = display.get_width();
+			const auto oldHeight = display.get_height();
+
+			auto bpp = graphics2d::bufferFormat::size[(U8)display.buffer.format];
+
+			delete display.buffer.address;
+			display.buffer.address = new U8[width*height*bpp];
+			display.buffer.width = width;
+			display.buffer.height = height;
+			display.buffer.stride = width*bpp;
+
+			if(display.isVisible&&update){
+				_update_area_solid({display.x, display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}, &display);
+				_update_area_transparency(
+					graphics2d::Rect{display.x, display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}
+					.include({display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()})
+				);
+			}
+		}
+
 		void _place_above(DisplayManager::Display &display, DisplayManager::Display &other) {
 			displays.pop(display);
 
 			display.layer = other.layer;
 			displays.insert_after(other, display);
 			_update_display_solid(display); //technically we only need to draw the parts that were previously obscured, oh well..
+			_update_area_transparency({display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()});
 		}
 
 		void _place_below(DisplayManager::Display &display, DisplayManager::Display &other) {
@@ -554,6 +640,7 @@ namespace driver::system {
 			display.layer = other.layer;
 			displays.insert_before(other, display);
 			_update_display_solid(display); //technically we only need to draw the parts that were previously obscured, oh well..
+			_update_area_transparency({display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()});
 		}
 
 		void _raise_display(DisplayManager::Display &display) {
@@ -573,6 +660,30 @@ namespace driver::system {
 				displays.insert_before(*displays.head, display);
 				inserted:;
 			}
+
+			const auto rect = (graphics2d::Rect){display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
+
+			_update_display_solid(display); //technically we only need to draw the parts that were previously obscured, oh well..
+			_update_area_transparency(rect);
+		}
+
+		void _set_display_layer(DisplayManager::Display &display, DisplayManager::DisplayLayer layer) {
+			if(display.layer==layer) return;
+
+			displays.pop(display);
+
+			display.layer = layer;
+
+			for(auto other=displays.head; other; other=other->next){
+				if(other->layer>=layer){
+					displays.insert_before(*other, display);
+					goto inserted;
+				}
+			}
+
+			displays.push_back(display);
+
+			inserted:
 
 			const auto rect = (graphics2d::Rect){display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
 
@@ -826,6 +937,12 @@ namespace driver::system {
 		return _move_display_to(*this, x, y, update);
 	}
 
+	void DisplayManager::Display::resize_to(U32 width, U32 height, bool update) {
+		Spinlock_Guard guard(spinlock);
+
+		return _resize_display_to(*this, width, height, update);
+	}
+
 	void DisplayManager::Display::place_above(DisplayManager::Display &other) {
 		Spinlock_Guard guard(spinlock);
 
@@ -842,6 +959,12 @@ namespace driver::system {
 		Spinlock_Guard guard(spinlock);
 
 		return _raise_display(*this);
+	}
+
+	void DisplayManager::Display::set_layer(DisplayLayer layer) {
+		Spinlock_Guard guard(spinlock);
+
+		return _set_display_layer(*this, layer);
 	}
 
 	auto DisplayManager::Display::is_top() -> bool {

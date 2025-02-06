@@ -6,7 +6,7 @@ namespace maths {
 
 	template <typename Type, unsigned divisor>
 	struct Fixed {
-	private:
+	protected:
 		constexpr /**/ explicit Fixed(Type value): value(value) {};
 
 	public:
@@ -28,15 +28,15 @@ namespace maths {
 
 		auto fract() const { return Fixed(value-round_zero()*(Type)divisor); }
 
-		auto multiply(Type op) const { return Fixed(value*op); }
-		auto divide  (Type op) const { return Fixed(value/op); }
-		auto add     (Type op) const { return Fixed(value+op*(Type)divisor); }
-		auto subtract(Type op) const { return Fixed(value-op*(Type)divisor); }
+		template <typename OpType> auto multiply(OpType op) const { return Fixed<decltype(value*op), divisor>::fraction(value*op); }
+		template <typename OpType> auto divide  (OpType op) const { return Fixed<decltype(value/op), divisor>::fraction(value/op); }
+		template <typename OpType> auto add     (OpType op) const { return Fixed<decltype(value+op), divisor>::fraction(value+op*(Type)divisor); }
+		template <typename OpType> auto subtract(OpType op) const { return Fixed<decltype(value-op), divisor>::fraction(value-op*(Type)divisor); }
 
-		template <typename OpType> auto multiply(Fixed<OpType, divisor> op) const -> Fixed<decltype(value*op.value), divisor> { return Fixed(value*op.value/(Type)divisor); }
-		template <typename OpType> auto divide  (Fixed<OpType, divisor> op) const -> Fixed<decltype(value/op.value), divisor> { return Fixed(value*(Type)divisor/op.value); }
-		template <typename OpType> auto add     (Fixed<OpType, divisor> op) const -> Fixed<decltype(value+op.value), divisor> { return Fixed(value+op.value); }
-		template <typename OpType> auto subtract(Fixed<OpType, divisor> op) const -> Fixed<decltype(value-op.value), divisor> { return Fixed(value-op.value); }
+		template <typename OpType> auto multiply(Fixed<OpType, divisor> op) const { return Fixed<decltype(value*op.value), divisor>::fraction(value*op.value/(Type)divisor); }
+		template <typename OpType> auto divide  (Fixed<OpType, divisor> op) const { return Fixed<decltype(value/op.value), divisor>::fraction(value*(Type)divisor/op.value); }
+		template <typename OpType> auto add     (Fixed<OpType, divisor> op) const { return Fixed<decltype(value+op.value), divisor>::fraction(value+op.value); }
+		template <typename OpType> auto subtract(Fixed<OpType, divisor> op) const { return Fixed<decltype(value-op.value), divisor>::fraction(value-op.value); }
 
 		static auto divide(Type a, Type b) { return Fixed(a*(Type)divisor/b); }
 
@@ -66,10 +66,10 @@ namespace maths {
 	template <typename Type1, typename Type2, unsigned divisor> auto operator*(Fixed<Type1, divisor> op1, Fixed<Type2, divisor> op2){ return op1.multiply(op2); }
 	template <typename Type1, typename Type2, unsigned divisor> auto operator/(Fixed<Type1, divisor> op1, Fixed<Type2, divisor> op2){ return op1.divide(op2); }
 
-	template <typename Type, unsigned divisor> auto operator+(Fixed<Type, divisor> op1, Type op2){ return op1.add(op2); }
-	template <typename Type, unsigned divisor> auto operator-(Fixed<Type, divisor> op1, Type op2){ return op1.subtract(op2); }
-	template <typename Type, unsigned divisor> auto operator*(Fixed<Type, divisor> op1, Type op2){ return op1.multiply(op2); }
-	template <typename Type, unsigned divisor> auto operator/(Fixed<Type, divisor> op1, Type op2){ return op1.divide(op2); }
+	template <typename Type1, typename Type2, unsigned divisor> auto operator+(Fixed<Type1, divisor> op1, Type2 op2){ return op1.add(op2); }
+	template <typename Type1, typename Type2, unsigned divisor> auto operator-(Fixed<Type1, divisor> op1, Type2 op2){ return op1.subtract(op2); }
+	template <typename Type1, typename Type2, unsigned divisor> auto operator*(Fixed<Type1, divisor> op1, Type2 op2){ return op1.multiply(op2); }
+	template <typename Type1, typename Type2, unsigned divisor> auto operator/(Fixed<Type1, divisor> op1, Type2 op2){ return op1.divide(op2); }
 
 	template <typename Type, unsigned divisor> auto operator+(Type op1, Fixed<Type, divisor> op2){ return Fixed<Type, divisor>::whole(op1).add(op2); }
 	template <typename Type, unsigned divisor> auto operator-(Type op1, Fixed<Type, divisor> op2){ return Fixed<Type, divisor>::whole(op1).subtract(op2); }

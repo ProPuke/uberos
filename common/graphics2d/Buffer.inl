@@ -641,17 +641,17 @@ namespace graphics2d {
 
 	inline U32 blend_rgb(U32 a, U32 b, float phase) {
 		return
-			 ((U32)(((a&0xff0000)>>16)*(1-phase) + ((b&0xff0000)>>16)*(0+phase)))<<16
-			|((U32)(((a&0x00ff00)>> 8)*(1-phase) + ((b&0x00ff00)>> 8)*(0+phase)))<< 8
-			|((U32)(((a&0x0000ff)>> 0)*(1-phase) + ((b&0x0000ff)>> 0)*(0+phase)))<< 0
+			 (U32)(((a&0xff0000)>>16)*(1-phase) + ((b&0xff0000)>>16)*(0+phase))<<16
+			|(U32)(((a&0x00ff00)>> 8)*(1-phase) + ((b&0x00ff00)>> 8)*(0+phase))<< 8
+			|(U32)(((a&0x0000ff)>> 0)*(1-phase) + ((b&0x0000ff)>> 0)*(0+phase))<< 0
 		;
 	}
 
 	inline U32 blend_rgb(U32 a, U32 b, U8 phase) {
 		return
-			 ((U32)(((a&0xff0000)>>16)*(255-phase)/255 + ((b&0xff0000)>>16)*(0+phase)/255))<<16
-			|((U32)(((a&0x00ff00)>> 8)*(255-phase)/255 + ((b&0x00ff00)>> 8)*(0+phase)/255))<< 8
-			|((U32)(((a&0x0000ff)>> 0)*(255-phase)/255 + ((b&0x0000ff)>> 0)*(0+phase)/255))<< 0
+			 (U32)(((a&0xff0000)>>16)*(255-phase)/256 + ((b&0xff0000)>>16)*(0+phase)/256)<<16
+			|(U32)(((a&0x00ff00)>> 8)*(255-phase)/256 + ((b&0x00ff00)>> 8)*(0+phase)/256)<< 8
+			|(U32)(((a&0x0000ff)>> 0)*(255-phase)/256 + ((b&0x0000ff)>> 0)*(0+phase)/256)<< 0
 		;
 	}
 

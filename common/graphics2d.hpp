@@ -3,13 +3,13 @@
 #include <common/types.hpp>
 
 namespace graphics2d {
-	inline void create_round_corner(U32 radius, U32 corner[]) {
-		for(auto i=0u;i<radius;i++){
-			auto y = radius-i;
-			corner[i] = radius-U32(radius*maths::sqrt(radius*radius-((y*y))));
-		}
-		corner[radius] = -1;
-	}
+	// inline void create_round_corner(U32 radius, U32 corner[]) {
+	// 	for(auto i=0u;i<radius;i++){
+	// 		auto y = radius-i;
+	// 		corner[i] = radius-U32(radius*maths::sqrt(radius*radius-((y*y))));
+	// 	}
+	// 	corner[radius] = -1;
+	// }
 
 	inline void create_diagonal_corner(U32 radius, U32 corner[]) {
 		for(auto i=0u;i<radius;i++){

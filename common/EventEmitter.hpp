@@ -9,9 +9,12 @@
 template <typename Type>
 struct EventEmitter {
 	typedef void(*Callback)(const Type&, void*);
+	typedef void(*Callback2)(const Type&);
 
 	void subscribe(Callback, void *data);
+	void subscribe(Callback2 callback) { return subscribe((Callback) callback, nullptr); }
 	void unsubscribe(Callback, void *data);
+	void unsubscribe(Callback2 callback) { return unsubscribe((Callback) callback, nullptr); }
 	void unsubscribe_all();
 
 	void trigger(const Type&);

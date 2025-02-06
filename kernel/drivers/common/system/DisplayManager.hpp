@@ -66,9 +66,11 @@ namespace driver::system {
 			U32 bottomRightCorner[16] = {};
 
 			void move_to(I32 x, I32 y, bool update=true);
-			void place_above(DisplayManager::Display &other);
-			void place_below(DisplayManager::Display &other);
+			void resize_to(U32 width, U32 height, bool update=true);
+			void place_above(Display&);
+			void place_below(Display&);
 			void raise();
+			void set_layer(DisplayLayer);
 			auto is_top() -> bool; // if true, top of its layer and not raisable
 			void show();
 			void hide();

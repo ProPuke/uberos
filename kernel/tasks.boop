@@ -674,6 +674,8 @@ task build-images
 task build-fonts
 	run {msdf_atlas_gen} -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
 	run {msdf_atlas_gen} -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
+	run {msdf_atlas_gen} -size 32 -font fonts/Manrope/Manrope-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Manrope.msdf.txt -json ../common/graphics2d/font/Manrope.msdf.json
+	run {msdf_atlas_gen} -size 32 -varfont fonts/Manrope/Manrope-VariableFont_wght.ttf?Weight=800 -format text -type msdf -imageout ../common/graphics2d/font/Manrope_extraBold.msdf.txt -json ../common/graphics2d/font/Manrope_extraBold.msdf.json
 	cd ../common/graphics2d/font
 	run ./build.sh
 

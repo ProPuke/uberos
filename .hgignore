@@ -4,9 +4,9 @@ build
 node_modules
 kernel/.kernelSymbols.c
 test/ui-rendering/test
-
 .gitignore
 lib/arm-optimized-routines/.git
 kernel/debugSymbols/data.cpp
+common/graphics2d/font/*.cpp
 syntax: regexp
 ^tools/

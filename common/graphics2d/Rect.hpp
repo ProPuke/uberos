@@ -6,7 +6,7 @@
 namespace graphics2d {
 
 	struct Rect {
-		I32 x1, y1, x2, y2;
+		I32 x1=0, y1=0, x2=0, y2=0;
 
 		auto offset(I32 x, I32 y) -> Rect {
 			return {x1+x, y1+y, x2+x, y2+y};
@@ -84,6 +84,9 @@ namespace graphics2d {
 		auto height() -> I32 { return y2-y1; }
 
 		bool isNonzero() const { return x1||y1||x2||y2; }
+
+		auto operator==(const Rect &compare) const { return x1==compare.x1&&y1==compare.y1&&x2==compare.x2&&y2==compare.y2; }
+		auto operator!=(const Rect &compare) const { return x1!=compare.x1||y1!=compare.y1||x2!=compare.x2||y2!=compare.y2; }
 	};
 
 }

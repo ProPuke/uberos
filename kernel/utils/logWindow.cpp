@@ -13,7 +13,7 @@
 namespace utils {
 	namespace logWindow {
 		namespace {
-			driver::system::DesktopManager::Window *window = nullptr;
+			driver::system::DesktopManager::StandardWindow *window = nullptr;
 			logging::Handler *logHandler = nullptr;
 
 			auto fontSize = 10;
@@ -63,41 +63,39 @@ namespace utils {
 					if(*text=='m') text++;
 				}
 
-				auto &buffer = window->clientArea;
+				auto &clientArea = window->get_client_area();
 
-				auto textResult = buffer.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
-				if(max(cursorY, textResult.updatedArea.y2)>=(I32)buffer.height){
+				auto textResult = clientArea.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
+				if(max(cursorY, textResult.updatedArea.y2)>=(I32)clientArea.height){
 
 					if(columns==1){
 						// if a single column, scroll
 
 						// auto scroll = lineHeight*8;
 						auto scroll = lineHeight*4;
-						buffer.scroll(0, -scroll);
-						// buffer.draw_rect(0, buffer.height-scroll, buffer.width, scroll, window->get_background_colour());
+						clientArea.scroll(0, -scroll);
 						cursorY -= scroll;
 
 						//redraw as it was clipped off last time
-						buffer.draw_rect(0, buffer.height-scroll, buffer.width, scroll, window->get_background_colour()); //clear the bottom section..
-						textResult = buffer.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX); //...then redraw the text
-						window->redraw();
-						dirtyArea = {0,0,0,0};
+						clientArea.draw_rect(0, clientArea.height-scroll, clientArea.width, scroll, window->get_background_colour()); //clear the bottom section..
+						textResult = clientArea.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX); //...then redraw the text
+						dirtyArea.include({0, 0, (I32)clientArea.width, (I32)clientArea.height});
 
 					}else{
 						// if multi-column, change to the next column (cyclically) and clear the space for new content
 
 						// erase the ENTIRE previous print, as we are now movig it into the next column
-						buffer.draw_rect(textResult.updatedArea.x1, textResult.updatedArea.y1, textResult.updatedArea.x2-textResult.updatedArea.x1, textResult.updatedArea.y2-textResult.updatedArea.y1, window->get_background_colour());
+						clientArea.draw_rect(textResult.updatedArea.x1, textResult.updatedArea.y1, textResult.updatedArea.x2-textResult.updatedArea.x1, textResult.updatedArea.y2-textResult.updatedArea.y1, window->get_background_colour());
 
 						cursorColumn = (cursorColumn+1)%columns;
 
 						cursorX = leftMargin + cursorColumn * columnWidth;
 						cursorY = lineHeight;
 
-						buffer.draw_rect(cursorColumn * columnWidth, 0, columnWidth, buffer.height, window->get_background_colour());
-						dirtyArea = dirtyArea.include({cursorColumn * columnWidth, 0, cursorColumn * columnWidth + columnWidth, (I32)buffer.height});
+						clientArea.draw_rect(cursorColumn * columnWidth, 0, columnWidth, clientArea.height, window->get_background_colour());
+						dirtyArea = dirtyArea.include({cursorColumn * columnWidth, 0, cursorColumn * columnWidth + columnWidth, (I32)clientArea.height});
 
-						textResult = buffer.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
+						textResult = clientArea.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
 					}
 
 				}else{
@@ -106,6 +104,29 @@ namespace utils {
 
 				cursorX = textResult.x;
 				cursorY = textResult.y;
+			}
+
+			void redraw() {
+				cursorX = leftMargin;
+				cursorY = lineHeight;
+				cursorColumn = 0;
+				auto &clientArea = window->get_client_area();
+				columns = max(1u, clientArea.width / 500u);
+				columnWidth = clientArea.width / columns;
+
+				textColour = textColourHistory;
+
+				print_multiline_text(logging::get_history_part_1());
+				print_multiline_text(logging::get_history_part_2());
+				window->redraw();
+
+				textColour = textColourInfo;
+			}
+
+			void on_window_event(const driver::system::DesktopManager::Window::Event &event) {
+				if(event.type==driver::system::DesktopManager::Window::Event::Type::clientAreaChanged){
+					redraw();
+				}
 			}
 		}
 
@@ -125,21 +146,13 @@ namespace utils {
 			auto viewHeight = min(1000u, framebuffer.buffer.height-margin*2);
 
 			// TODO:topmost?
-			window = &desktopManager->create_window("Kernel Log", viewWidth, viewHeight);
-			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
+			window = &desktopManager->create_standard_window("Kernel Log", viewWidth, viewHeight);
+			window->events.subscribe(on_window_event);
+			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.clientArea.width-margin*2), 256);
 
 			// window->set_status("Booting...");
 
-			columns = max(1u, window->clientArea.width / 500u);
-			columnWidth = window->clientArea.width / columns;
-
-			textColour = textColourHistory;
-
-			print_multiline_text(logging::get_history_part_1());
-			print_multiline_text(logging::get_history_part_2());
-			window->redraw();
-
-			textColour = textColourInfo;
+			redraw();
 
 			logHandler = new logging::Handler(
 				[](U32 indent, logging::PrintType type) {
