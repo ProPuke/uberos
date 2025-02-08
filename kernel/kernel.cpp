@@ -8,7 +8,6 @@
 #include <kernel/drivers/Processor.hpp>
 #include <kernel/drivers/Scheduler.hpp>
 #include <kernel/exceptions.hpp>
-#include <kernel/framebuffer.hpp>
 #include <kernel/info.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/logging.hpp>
@@ -67,8 +66,7 @@ namespace kernel {
 
 			_preInit();
 
-			framebuffer::init();
-			// scheduler = drivers::find_and_activate<driver::Scheduler>();
+			scheduler = drivers::find_and_activate<driver::Scheduler>();
 		}
 
 		// set cpu to default speed (some devices start at min)
@@ -96,14 +94,14 @@ namespace kernel {
 				log.print_info("device revision: ", info::device_revision);
 				log.print_info("memory: ", memory::totalMemory/1024/1024, "MB");
 
-				{ auto section = log.section("displays:");
+				// { auto section = log.section("displays:");
 
-					for(auto i=0u;i<framebuffer::get_framebuffer_count();i++){
-						auto &framebuffer = *framebuffer::get_framebuffer(i);
+				// 	for(auto i=0u;i<framebuffer::get_framebuffer_count();i++){
+				// 		auto &framebuffer = *framebuffer::get_framebuffer(i);
 
-						log.print_info(framebuffer.buffer.width, 'x', framebuffer.buffer.height, ", ", framebuffer.buffer.format);
-					}
-				}
+				// 		log.print_info(framebuffer.buffer.width, 'x', framebuffer.buffer.height, ", ", framebuffer.buffer.format);
+				// 	}
+				// }
 
 				{ auto section = log.section("drivers:");
 
@@ -258,13 +256,6 @@ namespace kernel {
 				for(int i=0;i<4;i++){
 					process.create_kernel_thread([]() {
 						auto &log = scheduler->get_current_thread()->process.log;
-						auto possibleFramebuffer = framebuffer::get_framebuffer(0);
-						if(!possibleFramebuffer){
-							log.print_error("No valid framebuffer");
-							return;
-						}
-
-						auto &framebuffer = *possibleFramebuffer;
 
 						log.print_debug("entered thread!");
 
@@ -280,9 +271,8 @@ namespace kernel {
 
 						(void) width;
 						(void) height;
-						(void) framebuffer;
 
-						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, rand()%((U32)framebuffer.buffer.width-width), rand()%((U32)framebuffer.buffer.height-height), width, height, scale);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, rand()%(displayManager->get_width()-width), rand()%(displayManager->get_height()-height), width, height, scale);
 						if(!view) {
 							log.print_error("Error: didn't get a view");
 							return;
@@ -317,11 +307,11 @@ namespace kernel {
 							// I32 deltaX = dirX * 3;
 							// I32 deltaY = dirY * 3;
 
-							if(deltaX<0&&view->x+deltaX<-30||deltaX>0&&view->x+view->get_width()+deltaX>=framebuffer.buffer.width+30){
+							if(deltaX<0&&view->x+deltaX<-30||deltaX>0&&view->x+view->get_width()+deltaX>=displayManager->get_width()+30){
 								dirX *= -1;
 								deltaX *= -1;
 							}
-							if(deltaY<0&&view->y+deltaY<-30||deltaY>0&&view->y+view->get_height()+deltaY>=framebuffer.buffer.height+30){
+							if(deltaY<0&&view->y+deltaY<-30||deltaY>0&&view->y+view->get_height()+deltaY>=displayManager->get_height()+30){
 								dirY *= -1;
 								deltaY *= -1;
 							}

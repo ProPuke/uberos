@@ -55,7 +55,7 @@ namespace driver::system {
 	}
 
 	auto Ps2::_on_start() -> Try<> {
-		auto acpi = drivers::find_and_activate<system::Acpi>();
+		auto acpi = drivers::find_and_activate<system::Acpi>(this);
 
 		if(acpi&&acpi->has_ps2()==Maybe::no) return {"PS/2 ports not available"};
 
@@ -129,15 +129,6 @@ namespace driver::system {
 
 			write_command(Command::write_config);
 			write_data(config);
-
-			log.print_info("config set ", format::Hex8{(U8)(config)});
-		}
-
-		{
-			write_command(Ps2::Command::read_config);
-			auto config = read_data();
-
-			log.print_info("config is now ", format::Hex8{(U8)(config)});
 		}
 
 		return {};

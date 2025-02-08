@@ -1,7 +1,7 @@
 #include "DisplayManager.hpp"
 
 #include <kernel/drivers.hpp>
-#include <kernel/framebuffer.hpp>
+#include <kernel/drivers/Graphics.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/mmio.hpp>
@@ -14,6 +14,16 @@
 
 namespace driver::system {
 	namespace {
+		struct Framebuffer {
+			driver::Graphics *driver;
+			U32 driverFramebuffer;
+			graphics2d::Buffer *buffer;
+			graphics2d::Rect area;
+		};
+
+		graphics2d::Rect totalArea;
+
+		ListOrdered<Framebuffer> framebuffers{0};
 		LList<DisplayManager::Display> displays;
 
 		U32 windowBackgroundColour = 0x202020;
@@ -42,14 +52,16 @@ namespace driver::system {
 		void _show_display(DisplayManager::Display&);
 		void _hide_display(DisplayManager::Display&);
 		auto _find_display_section_in_row(I32 &x, I32 y, I32 x2, bool &isTransparent, DisplayManager::Display *current = nullptr) -> DisplayManager::Display*;
+		void _update_framebuffer_positions();
 		void _update_background();
 		void _update_background_area(graphics2d::Rect);
+		void _update_area(graphics2d::Rect, DisplayManager::Display *below = nullptr);
 		void _update_area_transparency(graphics2d::Rect);
 		void _update_area_solid(graphics2d::Rect, DisplayManager::Display *below = nullptr);
 		void _update_display_solid(DisplayManager::Display&);
 		void _update_display_area_solid(DisplayManager::Display&, graphics2d::Rect);
 		void _update_blending_at(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
-		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> graphics2d::Buffer;
+		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> std::optional<graphics2d::Buffer>;
 
 		void _set_background_colour(U32 colour) {
 			if(windowBackgroundColour==colour) return;
@@ -69,13 +81,14 @@ namespace driver::system {
 		}
 
 		DisplayManager::Display* _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
-
 			#ifdef DEBUG_MEMORY
 				logging::Section section("create_view ", x, ", ", y, " ", width, "x", height);
 			#endif
 
-			auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME: handle 0 framebuffers
-			auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
+			if(framebuffers.length<1) return nullptr; //TODO: handle this more elegantly? Make this function a Try?
+
+			auto &framebuffer = framebuffers[0]; //TODO: pick out the correct framebuffer based on position
+			auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer->format];
 
 			#ifdef DEBUG_MEMORY
 				trace("new U8 ", width, "x", height, "@", bpp, "\n");
@@ -91,7 +104,7 @@ namespace driver::system {
 
 			bzero(buffer, width*height*bpp);
 
-			auto display = new DisplayManager::Display(thread, buffer, layer, framebuffer.buffer.format, framebuffer.buffer.order, x, y, width, height, scale);
+			auto display = new DisplayManager::Display(thread, buffer, layer, framebuffer.buffer->format, framebuffer.buffer->order, x, y, width, height, scale);
 			if(!display) return nullptr;
 
 			if(displays.size<1){
@@ -118,15 +131,15 @@ namespace driver::system {
 			return display;
 		}
 
-		auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32;
+		auto _sample_background_at(I32 x, I32 y) -> U32;
 		#if defined(BACKGROUND_STRIP)
-			auto _sample_background_strip_at(Framebuffer &framebuffer, U32 y) -> U32;
+			auto _sample_background_strip_at(U32 y) -> U32;
 		#endif
 
 		void _update_blending_at_rgb(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
 		void _update_blending_at_bgr(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
 		void _update_blending_at(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
-			switch(framebuffer.buffer.order){
+			switch(framebuffer.buffer->order){
 				case graphics2d::BufferFormatOrder::argb:
 					_update_blending_at_rgb(framebuffer, buffer, x, y, topDisplay);
 				break;
@@ -200,7 +213,7 @@ namespace driver::system {
 			// if(visibility==255) return; //nothing was found
 
 			{
-				auto bg = _sample_background_at(framebuffer, x, y);
+				auto bg = _sample_background_at(x, y);
 
 				result.r += min((bg>>16 & 0xff) * (U32)visibility/255u, 255u);
 				result.g += min((bg>> 8 & 0xff) * (U32)visibility/255u, 255u);
@@ -250,7 +263,7 @@ namespace driver::system {
 			// if(visibility==255) return; //nothing was found
 
 			{
-				auto bg = _sample_background_at(framebuffer, x, y);
+				auto bg = _sample_background_at(x, y);
 
 				result.r += min((bg>>16 & 0xff) * (U32)visibility/255u, 255u);
 				result.g += min((bg>> 8 & 0xff) * (U32)visibility/255u, 255u);
@@ -362,11 +375,17 @@ namespace driver::system {
 			return found;
 		}
 
-		void _update_area_transparency(graphics2d::Rect screenRect) {
-			for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
-				auto &framebuffer = *framebuffer::get_framebuffer(i);
+		void _update_area(graphics2d::Rect rect, DisplayManager::Display *below) {
+			_update_area_solid(rect, below);
+			_update_area_transparency(rect); //TODO: pass this the below rect to extrude
+		}
 
-				auto rect = screenRect.intersect({0, 0, (I32)framebuffer.buffer.width, (I32)framebuffer.buffer.height});
+		//TODO: take a rect area to exclude
+		void _update_area_transparency(graphics2d::Rect screenRect) {
+			for(auto &framebuffer:framebuffers){
+				if(!framebuffer.buffer) continue;
+
+				auto rect = screenRect.intersect(framebuffer.area);
 
 				for(auto y=rect.y1; y<rect.y2; y++){
 					auto display = (DisplayManager::Display*)nullptr;
@@ -383,7 +402,7 @@ namespace driver::system {
 								// render transparent strip to framebuffer
 								// do so in buffered chunks, to hopefully speed up the process
 
-								auto framebufferAddress = &framebuffer.buffer.address[y*framebuffer.buffer.stride+scanX*4];
+								auto framebufferAddress = &framebuffer.buffer->address[(y-framebuffer.area.y1)*framebuffer.buffer->stride+(scanX-framebuffer.area.x1)*4];
 								U32 buffer[256];
 								auto bufferPosition = buffer;
 
@@ -418,20 +437,40 @@ namespace driver::system {
 				if(display==below) break;
 				if(!display->isVisible) continue;
 
-				_update_display_area_solid(*display, {rect.x1-display->x, rect.y1-display->y, rect.x2-display->x, rect.y2-display->y});
+				_update_display_area_solid(*display, rect.offset(-display->x, -display->y));
+			}
+		}
+
+		void _update_framebuffer_positions() {
+			auto x = 0;
+			auto y = 0;
+
+			totalArea.clear();
+
+			for(auto &framebuffer:framebuffers){
+				if(!framebuffer.buffer) break; // a buffer is in a transitional state, so abort updating later stuff that depends on it!
+
+				auto newArea = graphics2d::Rect{x, y, x+(I32)framebuffer.buffer->width, y+(I32)(I32)framebuffer.buffer->height};
+
+				totalArea = totalArea.include(newArea);
+
+				if(framebuffer.area != newArea){
+					framebuffer.area = newArea;
+					_update_area(framebuffer.area);
+				}
+
+				x = framebuffer.area.x2;
 			}
 		}
 
 		void _update_background() {
-			auto &framebuffer = *framebuffer::get_framebuffer(0); //FIXME:handle 0 framebuffers
-
-			_update_background_area({0, 0, (I32)framebuffer.buffer.width, (I32)framebuffer.buffer.height});
+			_update_background_area(totalArea);
 		}
 
 		#pragma GCC push_options
 		#pragma GCC optimize ("-O3")
 		#if defined(BACKGROUND_GRID)
-			auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32 {
+			auto _sample_background_at(I32 x, I32 y) -> U32 {
 				const I32 edge = 64;
 				U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
 
@@ -443,13 +482,13 @@ namespace driver::system {
 					return r<<16|g<<8|b;
 
 				} else {
-					const auto right = (I32)framebuffer.buffer.width-(I32)edge;
+					const auto right = totalArea.x2-(I32)edge;
 
 					if(x<right){
 						return colour;
 
 					} else {
-						const U32 fade = edge-(framebuffer.buffer.width-x);
+						const U32 fade = edge-(totalArea.x2-x);
 						I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
 						I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
 						I32 b = max<I32>(0, ((colour>> 0)&0xff)-fade/5);
@@ -458,16 +497,17 @@ namespace driver::system {
 				}
 			}
 		#elif defined(BACKGROUND_STRIP)
-			auto _sample_background_at(Framebuffer &framebuffer, I32 x, I32 y) -> U32 {
-				return _sample_background_strip_at(framebuffer, y);
+			auto _sample_background_at(I32 x, I32 y) -> U32 {
+				return _sample_background_strip_at(y);
 			}
 
-			auto _sample_background_strip_at(Framebuffer &framebuffer, U32 y) -> U32 {
-				auto pos1 = y*256/framebuffer.buffer.height;
-				auto pos2 = min(255u, y*256/framebuffer.buffer.height+1);
+			auto _sample_background_strip_at(U32 y) -> U32 {
+				y -= totalArea.y1;
+				auto pos1 = y*256/totalArea.height();
+				auto pos2 = min(255u, y*256/totalArea.height()+1);
 
-				auto y1 = pos1*framebuffer.buffer.height/256;
-				auto y2 = pos2*framebuffer.buffer.height/256;
+				auto y1 = pos1*totalArea.height()/256;
+				auto y2 = pos2*totalArea.height()/256;
 
 				U32 sample1 =
 					backgroundStrip[pos1*3+0]<<16|
@@ -491,19 +531,17 @@ namespace driver::system {
 			}
 		#endif
 
-		void _update_background_area(graphics2d::Rect rect) {
+		void _update_background_area(graphics2d::Rect screenRect) {
 			// mmio::PeripheralWriteGuard guard;
 
 			// trace("update background area");
 
-			for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
-				auto &framebuffer = *framebuffer::get_framebuffer(i);
-				// auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
+			for(auto &framebuffer:framebuffers){
+				if(!framebuffer.buffer) continue;
 
-				rect.x1 = max<I32>(rect.x1, 0);
-				rect.y1 = max<I32>(rect.y1, 0);
-				rect.x2 = min<I32>(rect.x2, framebuffer.buffer.width);
-				rect.y2 = min<I32>(rect.y2, framebuffer.buffer.height);
+				// auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer->format];
+
+				auto rect = screenRect.intersect(framebuffer.area);
 
 				// trace("paint background ", rect.y1, " to ", rect.y2);
 
@@ -546,7 +584,7 @@ namespace driver::system {
 									framebuffer.set(x, y, r<<16|g<<8|b);
 								}
 								{
-									auto right = min(endX,(I32)framebuffer.buffer.width-(I32)edge);
+									auto right = min(endX, (I32)totalArea.x2-(I32)edge);
 									while(x<right){
 										const U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
 										auto next = min(((x/30)+1)*30, right);
@@ -555,7 +593,7 @@ namespace driver::system {
 									}
 								}
 								for(;x<endX;x++) {
-									const U32 fade = edge-(framebuffer.buffer.width-x);
+									const U32 fade = edge-(totalArea.x2-x);
 									const U32 colour = (x/30+y/30)%2?windowBackgroundColour:backgroundColour2;
 									I32 r = max<I32>(0, ((colour>>16)&0xff)-fade/5);
 									I32 g = max<I32>(0, ((colour>> 8)&0xff)-fade/5);
@@ -564,8 +602,8 @@ namespace driver::system {
 								}
 
 							#elif defined(BACKGROUND_STRIP)
-								auto bgColour = _sample_background_strip_at(framebuffer, y);
-								framebuffer.set(startX, y, bgColour, endX-startX);
+								auto bgColour = _sample_background_strip_at(y);
+								framebuffer.buffer->set(startX-framebuffer.area.x1, y-framebuffer.area.y1, bgColour, endX-startX);
 							#endif
 						}
 
@@ -713,12 +751,11 @@ namespace driver::system {
 
 			const auto rect = (graphics2d::Rect){display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
 
-			_update_area_solid(rect, &display);
-			_update_area_transparency(rect);
+			_update_area(rect, &display);
 		}
 
 		inline void _update_display_solid(DisplayManager::Display &display) {
-			return _update_display_area_solid(display, {0, 0, (I32)display.get_width(), (I32)display.get_height()});
+			return _update_display_area_solid(display, display.solidArea);
 		};
 
 		template <unsigned scale>
@@ -739,19 +776,18 @@ namespace driver::system {
 		#pragma GCC push_options
 		#pragma GCC optimize ("-O3")
 		template <unsigned scale>
-		void __update_display_solid_area(DisplayManager::Display &display, graphics2d::Rect _rect) {
+		void __update_display_solid_area(DisplayManager::Display &display, graphics2d::Rect displayRect) {
 			// mmio::PeripheralAccessGuard guard;
 
-			for(auto i=0u; i<framebuffer::get_framebuffer_count(); i++){
-				auto &framebuffer = *framebuffer::get_framebuffer(i);
-				auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
+			for(auto &framebuffer:framebuffers){
+				if(!framebuffer.buffer) continue;
 
-				auto rect = _rect.intersect({
-					max(display.solidArea.x1, -display.x),
-					max(display.solidArea.y1, -display.y),
-					min(display.solidArea.x2, (I32)framebuffer.buffer.width-display.x),
-					min(display.solidArea.y2, (I32)framebuffer.buffer.height-display.y)
-				});
+				auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer->format];
+
+				auto rect = displayRect
+					.intersect(display.solidArea)
+					.offset(display.x, display.y).intersect(framebuffer.area).offset(-display.x, -display.y)
+				;
 
 				for(auto y=rect.y1; y<rect.y2; y++){
 					auto startX = max(rect.x1, (I32)display.get_left_margin(y));
@@ -793,7 +829,7 @@ namespace driver::system {
 
 						if(endX>startX){
 
-							// U8 *target = &framebuffer.buffer.address[((display.y+y)*framebuffer.buffer.width+display.x+startX)*bpp];
+							// U8 *target = &framebuffer.buffer->address[((display.y+y)*framebuffer.buffer->width+display.x+startX)*bpp];
 							// U8 *source = &display.viewBuffer.address[((y/scale)*display.viewBuffer.width+startX/scale)*bpp];
 							// U32 length = (endX-startX)*bpp;
 							// if(source<display.viewBuffer.address||source+length>display.viewBuffer.address+display.viewBuffer.size){
@@ -803,7 +839,7 @@ namespace driver::system {
 							// memcpy_aligned(target, source, length);
 
 							if(scale==1){
-								U8 *target = &framebuffer.buffer.address[(display.y+y)*framebuffer.buffer.stride+(display.x+startX)*bpp];
+								U8 *target = &framebuffer.buffer->address[(display.y+y-framebuffer.area.y1)*framebuffer.buffer->stride+(display.x+startX-framebuffer.area.x1)*bpp];
 								U8 *source = &display.buffer.address[y*display.buffer.stride+startX*bpp];
 								U32 length = (endX-startX)*bpp;
 
@@ -813,7 +849,7 @@ namespace driver::system {
 								memcpy_aligned(target, source, length);
 
 							}else{
-								U8 *target = &framebuffer.buffer.address[(display.y+y)*framebuffer.buffer.stride+(display.x+startX)*bpp];
+								U8 *target = &framebuffer.buffer->address[(display.y+y-framebuffer.area.y1)*framebuffer.buffer->stride+(display.x+startX-framebuffer.area.x1)*bpp];
 								U8 *source = &display.buffer.address[(y/scale)*display.buffer.stride];
 
 								for(I32 x=startX;x<endX;x++){
@@ -839,23 +875,125 @@ namespace driver::system {
 		}
 		#pragma GCC pop_options
 
-		auto _get_screen_buffer(U32 framebuffer_id, graphics2d::Rect rect) -> graphics2d::Buffer {
-			auto possibleFramebuffer = framebuffer::get_framebuffer(framebuffer_id);
-			const auto &framebuffer = *possibleFramebuffer; //FIXME: handle invalid framebuffer
-			const auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer.format];
-			return graphics2d::Buffer(framebuffer.buffer.address+rect.y1*framebuffer.buffer.stride+rect.x1*bpp, framebuffer.buffer.stride, rect.x2-rect.x1, rect.y2-rect.y1, framebuffer.buffer.format, framebuffer.buffer.order);
+		auto _get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> std::optional<graphics2d::Buffer> {
+			if(framebufferId>=framebuffers.length) return {};
+
+			if(!framebuffers[framebufferId].buffer) return {};
+
+			return framebuffers[framebufferId].buffer->region(rect.x1, rect.y1, rect.width(), rect.height());
+		}
+
+		void _on_driver_event(const drivers::Event &event) {
+			switch(event.type){
+				case drivers::Event::Type::driverStarted: {
+					auto graphics = event.driverStarted.driver->as_type<driver::Graphics>();
+					if(!graphics) break;
+
+					// add graphics framebuffers
+					for(auto i=0u;i<graphics->get_framebuffer_count();i++){
+						framebuffers.push_back({
+							driver: graphics,
+							driverFramebuffer: i,
+							buffer: graphics->get_framebuffer(i)
+						});
+					}
+
+					_update_framebuffer_positions();
+
+					DisplayManager::instance.events.trigger({
+						type: DisplayManager::Event::Type::framebuffersChanged
+					});
+				} break;
+				case drivers::Event::Type::driverStopped: {
+					auto graphics = event.driverStopped.driver->as_type<driver::Graphics>();
+					if(!graphics) break;
+
+					// remove graphics framebuffers
+					for(auto i=0u;i<framebuffers.length;i++){
+						if(framebuffers[i].driver==graphics){
+							framebuffers.remove(i--);
+						}
+					}
+
+					_update_framebuffer_positions();
+
+					DisplayManager::instance.events.trigger({
+						type: DisplayManager::Event::Type::framebuffersChanged
+					});
+				} break;
+			}
+		}
+
+		void _on_graphics_event(const driver::Graphics::Event &event) {
+			switch(event.type){
+				case driver::Graphics::Event::Type::framebufferChanging:
+					for(auto &framebuffer:framebuffers){
+						if(framebuffer.driver==event.instance&&event.framebufferChanging.index==framebuffer.driverFramebuffer){
+							framebuffer.buffer = nullptr;
+							break;
+						}
+					}
+
+					DisplayManager::instance.events.trigger({
+						type: DisplayManager::Event::Type::framebuffersChanged
+					});
+				break;
+				case driver::Graphics::Event::Type::framebufferChanged:
+					for(auto &framebuffer:framebuffers){
+						if(framebuffer.driver==event.instance&&event.framebufferChanging.index==framebuffer.driverFramebuffer){
+							framebuffer.buffer = event.instance->get_framebuffer(event.framebufferChanged.index);
+							framebuffer.area.clear(); //invalidate
+
+							_update_framebuffer_positions();
+
+							DisplayManager::instance.events.trigger({
+								type: DisplayManager::Event::Type::framebuffersChanged
+							});
+
+							break;
+						}
+					}
+
+				break;
+			}
 		}
 	}
 
 	auto DisplayManager::_on_start() -> Try<> {
 		Spinlock_Guard guard(spinlock);
 
-		_update_background();
+		framebuffers.clear();
+		for(auto &graphics:drivers::iterate<driver::Graphics>()){
+			if(!graphics.api.is_active()){
+				if(!graphics.api.is_enabled()) continue;
+				if(!drivers::start_driver(graphics)) continue;
+			}
+
+			for(auto i=0u;i<graphics.get_framebuffer_count();i++){
+				framebuffers.push_back({
+					driver: &graphics,
+					driverFramebuffer: i,
+					buffer: graphics.get_framebuffer(i)
+				});
+			}
+		}
+
+		if(framebuffers.length<1) return {"No graphics displays available"};
+
+		_update_framebuffer_positions();
+
+		if(totalArea.width()<1||totalArea.height()<1) return {"No graphics drivers in a valid state"}; // drivers exist, but were all transitioning, so no actual display size available
+
+		drivers::events.subscribe(_on_driver_event);
+		driver::Graphics::allEvents.subscribe(_on_graphics_event);
 
 		return {};
 	}
 
 	auto DisplayManager::_on_stop() -> Try<> {
+		drivers::events.unsubscribe(_on_driver_event);
+		driver::Graphics::allEvents.unsubscribe(_on_graphics_event);
+
 		return {};
 	}
 
@@ -873,8 +1011,7 @@ namespace driver::system {
 		buffer.address = nullptr;
 		displays.pop(*this);
 
-		_update_area_solid(area);
-		_update_area_transparency(area);
+		_update_area(area);
 	}
 
 	void DisplayManager::set_background_colour(U32 colour) {
@@ -906,17 +1043,38 @@ namespace driver::system {
 		return nullptr;
 	}
 
-	auto DisplayManager::get_screen_buffer(U32 framebuffer_id, graphics2d::Rect rect) -> graphics2d::Buffer {
+	auto DisplayManager::get_screen_count() -> U32 {
 		Spinlock_Guard guard(spinlock);
 
-		return _get_screen_buffer(framebuffer_id, rect);
+		return framebuffers.length;
+	}
+
+	auto DisplayManager::get_screen_buffer(U32 framebufferId) -> graphics2d::Buffer* {
+		Spinlock_Guard guard(spinlock);
+
+		if(framebufferId>=framebuffers.length) return nullptr;
+
+		return framebuffers[framebufferId].buffer;
+	}
+
+	auto DisplayManager::get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> std::optional<graphics2d::Buffer> {
+		Spinlock_Guard guard(spinlock);
+
+		return _get_screen_buffer(framebufferId, rect);
+	}
+
+	auto DisplayManager::get_screen_area(U32 framebufferId) -> graphics2d::Rect {
+		Spinlock_Guard guard(spinlock);
+
+		if(framebufferId>=framebuffers.length) return {};
+
+		return framebuffers[framebufferId].area;
 	}
 
 	void DisplayManager::update_area(graphics2d::Rect rect, Display *below) {
 		Spinlock_Guard guard(spinlock);
 
-		_update_area_solid(rect, below);
-		_update_area_transparency(rect); //FIXME: don't do this unneccasarily here. Is update_area(Rect, Display) even used?
+		_update_area(rect, below);
 	}
 
 	void DisplayManager::update_background() {
@@ -1000,14 +1158,10 @@ namespace driver::system {
 	}
 
 	auto DisplayManager::get_width() -> U32 {
-		// TODO: support multiple framebuffers as a virtual display, and missing framebuffer 0s
-		auto &framebuffer = *framebuffer::get_framebuffer(0);
-		return framebuffer.buffer.width;
+		return totalArea.width();
 	}
 
 	auto DisplayManager::get_height() -> U32 {
-		// TODO: support multiple framebuffers as a virtual display, and missing framebuffer 0s
-		auto &framebuffer = *framebuffer::get_framebuffer(0);
-		return framebuffer.buffer.height;
+		return totalArea.height();
 	}
 }

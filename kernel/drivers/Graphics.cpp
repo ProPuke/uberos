@@ -16,7 +16,7 @@ namespace driver {
 
 		Optional<U32> bestCandidate;
 		Optional<I32> bestResolutionDistance;
-		framebuffer::Mode bestMode = { 0 };
+		Mode bestMode = { 0 };
 		Optional<I32> bestFormatDistance;
 
 		const auto modeCount = get_mode_count(framebufferId);

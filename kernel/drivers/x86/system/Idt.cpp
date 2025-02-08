@@ -94,7 +94,7 @@ namespace driver::system {
 	}
 
 	auto Idt::_on_start() -> Try<> {
-		gdt = drivers::find_and_activate<driver::system::Gdt>();
+		gdt = drivers::find_and_activate<driver::system::Gdt>(this);
 
 		if(!gdt){
 			return {"GDT not found"}; //TODO: better message

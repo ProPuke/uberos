@@ -79,6 +79,7 @@ namespace graphics2d {
 		void scroll(I32 x, I32 y);
 
 		auto cropped(U32 left, U32 top, U32 right, U32 bottom) -> Buffer;
+		auto region(U32 x, U32 y, U32 width, U32 height) -> Buffer;
 	};
 
 	auto blend_rgb(U32 from, U32 to, float phase) -> U32;

@@ -105,7 +105,7 @@ namespace driver::input {
 	}
 
 	auto Ps2Mouse::_on_start() -> Try<> {
-		ps2 = drivers::find_and_activate<Ps2>();
+		ps2 = drivers::find_and_activate<Ps2>(this);
 		if(!ps2) return {"PS/2 not available"};
 
 		if(!ps2->has_port(Ps2::Port::port2)) return {"PS/2 port 2 not present"};

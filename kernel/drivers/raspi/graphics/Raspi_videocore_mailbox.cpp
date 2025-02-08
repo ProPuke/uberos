@@ -11,7 +11,7 @@ namespace mailbox {
 namespace driver {
 	namespace graphics {
 		namespace {
-			framebuffer::Mode defaultMode;
+			Mode defaultMode;
 
 			Framebuffer framebuffer;
 
@@ -213,7 +213,7 @@ namespace driver {
 			return sizeof(possibleResolutions)/sizeof(possibleResolutions[0]) * ((U32)graphics2d::BufferFormat::max+1);
 		}
 
-		auto Raspi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode {
+		auto Raspi_videocore_mailbox::get_mode(U32 framebufferId, U32 index) -> Mode {
 			auto modeIndex = index/((U32)graphics2d::BufferFormat::max+1);
 			if(modeIndex>=sizeof(possibleResolutions)/sizeof(possibleResolutions[0])) {
 				return { 0 };
@@ -308,7 +308,7 @@ namespace driver {
 			return true;
 		}
 
-		auto Raspi_videocore_mailbox::get_default_mode() -> framebuffer::Mode {
+		auto Raspi_videocore_mailbox::get_default_mode() -> Mode {
 			return defaultMode;
 		}
 
@@ -318,7 +318,7 @@ namespace driver {
 			return 1;
 		}
 
-		auto Raspi_videocore_mailbox::get_framebuffer(U32 index) -> Framebuffer* {
+		auto Raspi_videocore_mailbox::get_framebuffer(U32 index) -> graphics2d::Buffer* {
 			return index==0&&framebuffer.driver==this?&framebuffer:nullptr;
 		}
 

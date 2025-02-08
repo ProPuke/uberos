@@ -10,19 +10,19 @@ struct DriverType;
 namespace drivers {
 	struct Event {
 		enum struct Type {
-			driver_started,
-			driver_stopped
+			driverStarted,
+			driverStopped
 		} type;
 
 		union {
 			struct {
 				Driver *driver;
-			} driver_started;
+			} driverStarted;
 
 			struct {
 				Driver *driver;
 				const char *error;
-			} driver_stopped;
+			} driverStopped;
 		};
 	};
 
@@ -86,9 +86,15 @@ namespace drivers {
 	inline auto iterate() -> Iterate<Type> { return Iterate<Type>(Type::typeInstance); }
 
 	auto find_and_activate(DriverType&, Driver *onBehalf = nullptr) -> Driver*;
+	auto find_active(DriverType&, Driver *onBehalf = nullptr) -> Driver*;
 
 	template <typename Type>
 	auto find_and_activate(Driver *onBehalf = nullptr) -> Type* {
 		return (Type*)find_and_activate(Type::typeInstance, onBehalf);
+	}
+
+	template <typename Type>
+	auto find_active(Driver *onBehalf = nullptr) -> Type* {
+		return (Type*)find_active(Type::typeInstance, onBehalf);
 	}
 }

@@ -17,9 +17,10 @@ namespace driver::graphics {
 		U16 maxHeight = 1600;
 		U16 maxBpp = 32;
 
-		Framebuffer framebuffer;
+		graphics2d::Buffer framebuffer;
+		U8 *framebufferAddress;
 
-		framebuffer::Mode modes[] = {
+		Graphics::Mode modes[] = {
 			#define COMMON_MODES(WIDTH, HEIGHT) /**/\
 				{WIDTH, HEIGHT, graphics2d::BufferFormat::grey8},\
 				{WIDTH, HEIGHT, graphics2d::BufferFormat::rgb565},\
@@ -96,8 +97,21 @@ namespace driver::graphics {
 		}
 
 		auto assign_framebuffer(U32 width, U32 height, U8 bpp) -> Try<> {
-			framebuffer.buffer.width = width;
-			framebuffer.buffer.height = height;
+			//FIXME: there is a race condition between nulling the framebuffer, and broadcasting the invalid event. The framebuffer access should likely be wrapped with a spinlock to avoid this
+			framebuffer.address = nullptr;
+			BochsVga::instance.events.trigger({
+				instance: &BochsVga::instance,
+				type: driver::Graphics::Event::Type::framebufferChanging,
+				framebufferChanging: { index: 0 }
+			});
+			BochsVga::allEvents.trigger({
+				instance: &BochsVga::instance,
+				type: driver::Graphics::Event::Type::framebufferChanging,
+				framebufferChanging: { index: 0 }
+			});
+
+			framebuffer.width = width;
+			framebuffer.height = height;
 			
 			graphics2d::BufferFormat format = graphics2d::BufferFormat::rgba8;
 			graphics2d::BufferFormatOrder order = graphics2d::BufferFormatOrder::argb;
@@ -123,19 +137,32 @@ namespace driver::graphics {
 
 			// log.print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
 
-			framebuffer.buffer.stride = width*(bpp/8);
-			framebuffer.buffer.format = format;
-			framebuffer.buffer.order = order;
+			framebuffer.stride = width*(bpp/8);
+			framebuffer.format = format;
+			framebuffer.order = order;
 
 			BochsVga::instance.api.unsubscribe_all_memory();
-			TRY(BochsVga::instance.api.subscribe_memory(framebuffer.buffer.address, framebuffer.buffer.height*framebuffer.buffer.stride));
+			TRY(BochsVga::instance.api.subscribe_memory(framebufferAddress, framebuffer.height*framebuffer.stride));
+
+			framebuffer.address = framebufferAddress;
+
+			BochsVga::instance.events.trigger({
+				instance: &BochsVga::instance,
+				type: driver::Graphics::Event::Type::framebufferChanged,
+				framebufferChanged: { index: 0 }
+			});
+			BochsVga::allEvents.trigger({
+				instance: &BochsVga::instance,
+				type: driver::Graphics::Event::Type::framebufferChanged,
+				framebufferChanged: { index: 0 }
+			});
 
 			return {};
 		}
 	}
 
 	auto BochsVga::_on_start() -> Try<> {
-		auto pci = drivers::find_and_activate<driver::system::Pci>();
+		auto pci = drivers::find_and_activate<driver::system::Pci>(this);
 		if(!pci) return {"PCI unavailable"};
 
 		auto pciDevice = pci->find_device_by_id(0x11111234)?:pci->find_device_by_id(0xbeef80ee);
@@ -155,19 +182,20 @@ namespace driver::graphics {
 
 		auto vram = get_vram();
 
-		set16(Register::enable, (U16)Enable::enable|(U16)Enable::getCaps|(U16)Enable::noClearMem);
+		set16(Register::enable, (U16)Enable::getCaps|(U16)Enable::noClearMem);
 		maxWidth = get16(Register::xRes);
 		maxHeight = get16(Register::yRes);
 		maxBpp = get16(Register::bpp);
 		set16(Register::enable, (U16)Enable::noClearMem);
 
-		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " ", maxBpp, " bpp");
+		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp");
 
 		// TRY(api.subscribe_memory((void*)0x4f00, 0x123));
 		TRY(api.subscribe_memory((void*)0xe0000000, vram));
 
-		framebuffer.index = 0;
-		framebuffer.buffer.address = (U8*)pciDevice->baseAddress[0];
+		framebufferAddress = (U8*)pciDevice->baseAddress[0];
+
+		framebuffer.address = nullptr;
 
 		// note that bochs ISN'T set as enabled at this point, so set mode is guarentted to apply a modechange, as the current enable mode will not match target
 		// return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
@@ -184,7 +212,7 @@ namespace driver::graphics {
 		return sizeof(modes)/(sizeof(modes[0]));
 	}
 
-	auto BochsVga::get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode {
+	auto BochsVga::get_mode(U32 framebufferId, U32 index) -> Mode {
 		if(framebufferId>0) return { 0 }; // not supported
 		if(index>=sizeof(modes)/(sizeof(modes[0]))) return { 0 };
 
@@ -229,10 +257,10 @@ namespace driver::graphics {
 		if(!acceptSuggestion&&(width>maxWidth||height>maxHeight||bpp>maxBpp)) return {"Mode not supported"};
 
 		set16(Register::enable, 0);
+
 		set16(Register::xRes, min<U32>(width, maxWidth));
 		set16(Register::yRes, min<U32>(height, maxHeight));
 		set16(Register::bpp, min(bpp, maxBpp));
-		set16(Register::enable, enables);
 
 		auto appliedWidth = get16(Register::xRes);
 		auto appliedHeight = get16(Register::yRes);
@@ -240,11 +268,10 @@ namespace driver::graphics {
 
 		// roll it back if this mode isn't good enough..
 		if(!acceptSuggestion&&(appliedWidth!=width||appliedHeight!=height||appliedBpp!=bpp)){
-			set16(Register::enable, 0);
 			set16(Register::xRes, initialWidth);
 			set16(Register::yRes, initialHeight);
 			set16(Register::bpp, initialBpp);
-			set16(Register::enable, enables); // but ensure we still have the required enables in the case of initial setup
+			set16(Register::enable, enables);
 
 			if(auto result=assign_framebuffer(initialWidth, initialHeight, initialBpp); !result) {
 				log.print_error("framebuffer memory not accessible");
@@ -261,6 +288,8 @@ namespace driver::graphics {
 			return result;
 		}
 
+		set16(Register::enable, enables);
+
 		return {};
 	}
 
@@ -268,10 +297,10 @@ namespace driver::graphics {
 		return 1;
 	}
 
-	auto BochsVga::get_framebuffer(U32 index) -> Framebuffer* {
+	auto BochsVga::get_framebuffer(U32 index) -> graphics2d::Buffer* {
 		if(index>0) return nullptr; // not supported
 
-		return &framebuffer;
+		return framebuffer.address?&framebuffer:nullptr;
 	}
 
 	auto BochsVga::get_framebuffer_name(U32 index) -> const char* {

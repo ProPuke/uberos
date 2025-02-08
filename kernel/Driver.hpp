@@ -59,6 +59,9 @@ struct Driver: LListItem<Driver> {
 	template <typename Type>
 	auto is_type() -> bool { return is_type(Type::typeInstance); }
 
+	template <typename Type>
+	auto as_type() -> Type* { return is_type<Type>()?(Type*)this:nullptr; }
+
 	virtual auto can_stop_driver() -> bool { return true; }
 	virtual auto can_restart_driver() -> bool { return true; }
 

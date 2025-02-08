@@ -193,7 +193,7 @@ namespace driver {
 		}
 
 		auto Hpet::_on_start() -> Try<> {
-			acpi = drivers::find_and_activate<system::Acpi>();
+			acpi = drivers::find_and_activate<system::Acpi>(this);
 			if(!acpi) return {"ACPI unavailable"};
 
 			auto table = (DescriptionTable*)acpi->find_entry_with_signature("HPET");

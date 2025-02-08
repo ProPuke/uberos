@@ -160,7 +160,6 @@ namespace driver::graphics {
 
 			U8 bios[vesa_code_size];
 
-			Framebuffer framebuffer;
 			// Edid *atiEdid = nullptr;
 			ProtectedModeInfo *protectedModeInfo = nullptr;
 
@@ -231,7 +230,7 @@ namespace driver::graphics {
 					// auto biosData = new U8[vesa_data_size]; memset(biosData, 0, vesa_data_size);
 					// auto biosStack = new U8[vesa_stack_size];
 
-					// auto gdt = drivers::find_and_activate<driver::system::Gdt>();
+					// auto gdt = drivers::find_and_activate<driver::system::Gdt>(&Graphics::Vbe::instance);
 					// if(!gdt){
 					// 	return {"Unable to connect to GDT"};
 					// }
@@ -414,10 +413,10 @@ namespace driver::graphics {
 
 		struct Mode {
 			U16 vbeModeIndex;
-			framebuffer::Mode framebufferMode;
+			Graphics::Mode framebufferMode;
 		};
 	
-		Framebuffer framebuffer;
+		graphics2d::Buffer framebuffer;
 		PodArray<Mode> modes;
 	}
 
@@ -490,7 +489,7 @@ namespace driver::graphics {
 
 				log.print_warning("Mode ", modeIndex, " unsupported - ", modeInfo->width, 'x', modeInfo->height, ", ", modeInfo->bpp, " bpp");
 
-				modes.push_back(Mode {
+				modes.push_back(graphics::Mode{
 					vbeModeIndex: *modeIndex,
 					framebufferMode: {
 						width: modeInfo->width,
@@ -516,7 +515,7 @@ namespace driver::graphics {
 		return modes.length;
 	}
 
-	auto Vbe::get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode {
+	auto Vbe::get_mode(U32 framebufferId, U32 index) -> Mode {
 		if(framebufferId>0) return { 0 }; // not supported
 		if(index>=modes.length) return { 0 };
 
@@ -538,7 +537,7 @@ namespace driver::graphics {
 		return 1;
 	}
 
-	auto Vbe::get_framebuffer(U32 index) -> Framebuffer* {
+	auto Vbe::get_framebuffer(U32 index) -> graphics2d::Buffer* {
 		if(index>0) return nullptr; // not supported
 
 		return &framebuffer;

@@ -6,7 +6,6 @@
 
 #include <kernel/console.hpp>
 #include <kernel/drivers/common/system/DesktopManager.hpp>
-#include <kernel/framebuffer.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 
@@ -138,12 +137,10 @@ namespace utils {
 			desktopManager = drivers::find_and_activate<driver::system::DesktopManager>();
 			if(!desktopManager) return;
 
-			if(framebuffer::get_framebuffer_count()<1) return;
+			auto windowArea = desktopManager->get_window_area();
 
-			auto &framebuffer = *framebuffer::get_framebuffer(0);
-
-			auto viewWidth = min(1600u, framebuffer.buffer.width-margin*2);
-			auto viewHeight = min(1000u, framebuffer.buffer.height-margin*2);
+			auto viewWidth = (U32)min(1600, windowArea.width()-margin*2);
+			auto viewHeight = (U32)min(1000, windowArea.height()-margin*2);
 
 			// TODO:topmost?
 			window = &desktopManager->create_standard_window("Kernel Log", viewWidth, viewHeight);

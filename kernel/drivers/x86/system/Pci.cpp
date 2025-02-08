@@ -230,7 +230,7 @@ namespace driver::system {
 	}
 
 	auto Pci::_on_start() -> Try<> {
-		auto smbios = drivers::find_and_activate<system::Smbios>();
+		auto smbios = drivers::find_and_activate<system::Smbios>(this);
 		if(smbios){
 			if(smbios->is_pci_supported()==Maybe::no) return {"PCI not supported"};
 		}

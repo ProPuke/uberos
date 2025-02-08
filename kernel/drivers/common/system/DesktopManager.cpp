@@ -737,14 +737,14 @@ namespace driver::system {
 
 		void _on_drivers_event(const drivers::Event &event, void*) {
 			switch(event.type){
-				case drivers::Event::Type::driver_started:
-					if(event.driver_started.driver->is_type(Mouse::typeInstance)){
-						_add_mouse(*(Mouse*)event.driver_started.driver);
+				case drivers::Event::Type::driverStarted:
+					if(auto mouse = event.driverStarted.driver->as_type<Mouse>()){
+						_add_mouse(*mouse);
 					}
 				break;
-				case drivers::Event::Type::driver_stopped:
-					if(event.driver_started.driver->is_type(Mouse::typeInstance)){
-						_remove_mouse(*(Mouse*)event.driver_started.driver);
+				case drivers::Event::Type::driverStopped:
+					if(auto mouse = event.driverStarted.driver->as_type<Mouse>()){
+						_remove_mouse(*mouse);
 					}
 				break;
 			}
@@ -1015,7 +1015,7 @@ namespace driver::system {
 					case Window::State::floating: {
 						auto area = (graphics2d::Rect){window->get_x(), window->get_y(), window->get_x()+window->get_width(), window->get_y()+window->get_height()};
 
-						if(area.width()>windowArea.width()){
+						if(area.width()>=windowArea.width()){
 							area.x1 = windowArea.x1;
 							area.x2 = windowArea.x2;
 
@@ -1026,11 +1026,11 @@ namespace driver::system {
 								area = area.offset(min((windowArea.x2-area.x2)-margin, (windowArea.x1-area.x1)*2), 0); // nudge twice the required distance, but not past the centre of the screen (spaces things nicely on adjust)
 
 							}else if(area.x2>windowArea.x2){
-								area = area.offset((windowArea.x2-area.x2)*2, 0);
+								area = area.offset(max(margin-(area.x1-windowArea.x1), (windowArea.x2-area.x2)*2), 0);
 							}
 						}
 
-						if(area.height()>windowArea.height()){
+						if(area.height()>=windowArea.height()){
 							area.y1 = windowArea.y1;
 							area.y2 = windowArea.y2;
 
@@ -1041,7 +1041,7 @@ namespace driver::system {
 								area = area.offset(0, min((windowArea.y2-area.y2)-margin, (windowArea.y1-area.y1)*2));
 
 							}else if(area.y2>windowArea.y2){
-								area = area.offset(0, (windowArea.y2-area.y2)*2);
+								area = area.offset(0, max(margin-(area.y1-windowArea.y1), (windowArea.y2-area.y2)*2));
 							}
 						}
 
@@ -1145,7 +1145,7 @@ namespace driver::system {
 	}
 
 	auto DesktopManager::_on_start() -> Try<> {
-		displayManager = drivers::find_and_activate<DisplayManager>();
+		displayManager = drivers::find_and_activate<DisplayManager>(this);
 		if(!displayManager) return {"Display manager not available"};
 
 		for(auto &mouse:drivers::iterate<Mouse>()){

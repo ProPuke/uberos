@@ -656,13 +656,17 @@ namespace graphics2d {
 	}
 
 	inline auto Buffer::cropped(U32 left, U32 top, U32 right, U32 bottom) -> Buffer {
+		return region(left, top, width-left-right, height-top-bottom);
+	}
+
+	inline auto Buffer::region(U32 x, U32 y, U32 width, U32 height) -> Buffer {
 		const auto bpp = bufferFormat::size[(U8)format];
 
 		return Buffer(
-			address+top*stride+left*bpp,
+			address+y*stride+x*bpp,
 			stride,
-			width-left-right,
-			height-top-bottom,
+			width,
+			height,
 			format, order
 		);
 	}

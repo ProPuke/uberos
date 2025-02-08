@@ -65,7 +65,7 @@ auto DriverApi::subscribe_irq(U8 irq) -> Try<> {
 }
 
 auto DriverApi::subscribe_available_irq(Bitmask256 bitmask) -> Try<U8> {
-	drivers::find_and_activate<driver::Interrupt>(); //ensure at least 1 is active
+	drivers::find_and_activate<driver::Interrupt>(&driver()); //ensure at least 1 is active
 
 	for(auto &driver:drivers::iterate<driver::Interrupt>()){
 		auto irqRequest = driver.get_available_irq(bitmask);

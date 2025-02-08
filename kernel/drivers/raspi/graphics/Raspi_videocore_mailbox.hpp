@@ -15,14 +15,14 @@ namespace driver::graphics {
 		auto set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion = true) -> Try<> override;
 
 		auto get_mode_count() -> U32 override;
-		auto get_mode(U32 framebufferId, U32 index) -> framebuffer::Mode override;
+		auto get_mode(U32 framebufferId, U32 index) -> Mode override;
 		auto set_mode(U32 framebufferId, U32 index) -> Try<> override;
 		
 		auto detect_default_mode() -> bool override;
-		auto get_default_mode() -> framebuffer::Mode override;
+		auto get_default_mode() -> Mode override;
 
 		auto get_framebuffer_count() -> U32 override;
-		auto get_framebuffer(U32 index) -> Framebuffer* override;
+		auto get_framebuffer(U32 index) -> graphics2d::Buffer* override;
 		auto get_framebuffer_name(U32 index) -> const char* override;
 	};
 }

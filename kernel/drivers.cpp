@@ -90,8 +90,8 @@ namespace drivers {
 		}
 
 		events.trigger({
-			.type = Event::Type::driver_started,
-			.driver_started = {&driver}
+			type: Event::Type::driverStarted,
+			driverStarted: { &driver }
 		});
 
 		return {};
@@ -115,8 +115,8 @@ namespace drivers {
 		}
 
 		events.trigger({
-			.type = Event::Type::driver_stopped,
-			.driver_started = {&driver}
+			type: Event::Type::driverStopped,
+			driverStopped: { &driver, nullptr }
 		});
 
 		return {};
@@ -135,8 +135,8 @@ namespace drivers {
 			log.print_error("Error restarting ", driver.type->name, ": ", result.errorMessage);
 
 			events.trigger({
-				.type = Event::Type::driver_stopped,
-				.driver_stopped = {&driver, result.errorMessage}
+				type: Event::Type::driverStopped,
+				driverStopped: { &driver, result.errorMessage }
 			});
 
 			if(!driver.api.is_active()){
@@ -150,8 +150,8 @@ namespace drivers {
 		}
 
 		events.trigger({
-			.type = Event::Type::driver_started,
-			.driver_started = {&driver}
+			type: Event::Type::driverStarted,
+			driverStarted: { &driver }
 		});
 
 		return {};
@@ -289,13 +289,12 @@ namespace drivers {
 			}
 			log.print_end();
 		}
-		if(driver.is_type<driver::Processor>()){
-			auto &processor = *(driver::Processor*)&driver;
-			log.print_info(indent, "   Architecture: ", processor.processor_arch);
-			log.print_info(indent, "   Cores: ", processor.processor_cores);
+		if(auto processor = driver.as_type<driver::Processor>()){
+			log.print_info(indent, "   Architecture: ", processor->processor_arch);
+			log.print_info(indent, "   Cores: ", processor->processor_cores);
 
-			auto speed = processor.get_clock_value(0);
-			auto temp = processor.get_temperature_value(0);
+			auto speed = processor->get_clock_value(0);
+			auto temp = processor->get_temperature_value(0);
 
 			if(speed){
 				if(speed>=1000000000){
@@ -311,66 +310,61 @@ namespace drivers {
 			if(temp){
 				log.print_info(indent, "   Temp: ", kelvin_to_celcius(temp), " C");
 				auto minTemp = celcius_to_kelvin(20);
-				auto maxTemp = processor.get_temperature_max(0);
+				auto maxTemp = processor->get_temperature_max(0);
 
 				if(maxTemp&&maxTemp>minTemp){
 					print_percent_graph(indent, "   ", temp, minTemp, maxTemp+10, maxTemp);
 				}
 			}
 
-			// for(U32 i=0;i<processor.get_voltage_count();i++){
-			// 	log.print_info(indent, "   ", processor.get_voltage_name(i), " = ", processor.get_voltage_value(i), " V");
+			// for(U32 i=0;i<processor->get_voltage_count();i++){
+			// 	log.print_info(indent, "   ", processor->get_voltage_name(i), " = ", processor->get_voltage_value(i), " V");
 			// }
 
-			// for(U32 i=0;i<processor.get_clock_count();i++){
-			// 	log.print_info(indent, "   ", processor.get_clock_name(i), " = ", processor.get_clock_value(i)/1000000.0f, " Mhz");
+			// for(U32 i=0;i<processor->get_clock_count();i++){
+			// 	log.print_info(indent, "   ", processor->get_clock_name(i), " = ", processor->get_clock_value(i)/1000000.0f, " Mhz");
 			// }
 
-			// for(U32 i=0;i<processor.get_temperature_count();i++){
-			// 	log.print_info(indent, "   ", processor.get_temperature_name(i), " = ", processor.get_temperature_value(i), " K");
+			// for(U32 i=0;i<processor->get_temperature_count();i++){
+			// 	log.print_info(indent, "   ", processor->get_temperature_name(i), " = ", processor->get_temperature_value(i), " K");
 			// }
 		}
-		if(driver.is_type<driver::Serial>()){
-			auto &serial = *(driver::Serial*)&driver;
-			if(serial.api.is_disabled()){
-				log.print_info(indent, "   Baud: ", serial.get_active_baud());
+		if(auto serial = driver.as_type<driver::Serial>()){
+			if(serial->api.is_disabled()){
+				log.print_info(indent, "   Baud: ", serial->get_active_baud());
 			}
 		}
-		if(driver.is_type<driver::Graphics>()){
-			auto &graphics = *(driver::Graphics*)&driver;
-			const auto framebufferCount = graphics.get_framebuffer_count();
+		if(auto graphics = driver.as_type<driver::Graphics>()){
+			const auto framebufferCount = graphics->get_framebuffer_count();
 			log.print_info(indent, "   Framebuffers: ", framebufferCount);
 			for(auto i=0u;i<framebufferCount;i++){
-				auto defaultMode = graphics.get_default_mode(i);
+				auto defaultMode = graphics->get_default_mode(i);
 
 				if(defaultMode.width){
-					log.print_info(indent, "    ", graphics.get_framebuffer_name(i), " - Default mode: ", defaultMode.width, "x", defaultMode.height, " @ ", defaultMode.format);
+					log.print_info(indent, "    ", graphics->get_framebuffer_name(i), " - Default mode: ", defaultMode.width, "x", defaultMode.height, " @ ", defaultMode.format);
 				}else{
-					log.print_info(indent, "    ", graphics.get_framebuffer_name(i), " - Default mode: None");
+					log.print_info(indent, "    ", graphics->get_framebuffer_name(i), " - Default mode: None");
 				}
 			}
 		}
-		if(driver.is_type<driver::Interrupt>()){
-			auto &irq = *(driver::Interrupt*)&driver;
-			log.print_info(indent, "   Provided IRQs: ", irq.min_irq, " - ", irq.max_irq);
+		if(auto irq = driver.as_type<driver::Interrupt>()){
+			log.print_info(indent, "   Provided IRQs: ", irq->min_irq, " - ", irq->max_irq);
 		}
 	}
 
 	bool print_driver_details(const char *indent, Driver &driver, const char *beforeName, const char *afterName) {
-		if(driver.is_type<driver::Processor>()){
-			auto &processor = *(driver::Processor*)&driver;
-
-			auto clocks = processor.get_clock_count();
-			auto voltages = processor.get_voltage_count();
-			auto temps = processor.get_temperature_count();
+		if(auto processor = driver.as_type<driver::Processor>()){
+			auto clocks = processor->get_clock_count();
+			auto voltages = processor->get_voltage_count();
+			auto temps = processor->get_temperature_count();
 
 			for(U32 i=0;i<clocks;i++){
-				auto name = processor.get_clock_name(i);
-				// auto min = processor.get_clock_min(i);
-				// auto max = processor.get_clock_max(i);
-				auto value = processor.get_clock_value(i);
-				auto changeable = processor.can_set_clock(i);
-				auto active = processor.get_clock_active_value(i);
+				auto name = processor->get_clock_name(i);
+				// auto min = processor->get_clock_min(i);
+				// auto max = processor->get_clock_max(i);
+				auto value = processor->get_clock_value(i);
+				auto changeable = processor->can_set_clock(i);
+				auto active = processor->get_clock_active_value(i);
 
 				if(!active) active = value;
 
@@ -415,10 +409,10 @@ namespace drivers {
 			}
 
 			for(U32 i=0;i<voltages;i++){
-				auto name = processor.get_voltage_name(i);
-				auto min = processor.get_voltage_min(i);
-				auto max = processor.get_voltage_max(i);
-				auto value = processor.get_voltage_value(i);
+				auto name = processor->get_voltage_name(i);
+				auto min = processor->get_voltage_min(i);
+				auto max = processor->get_voltage_max(i);
+				auto value = processor->get_voltage_value(i);
 
 				if(!value) continue;
 
@@ -438,10 +432,10 @@ namespace drivers {
 			}
 
 			for(U32 i=0;i<temps;i++){
-				auto name = processor.get_temperature_name(i);
+				auto name = processor->get_temperature_name(i);
 				auto min = celcius_to_kelvin(20);
-				auto max = processor.get_temperature_max(i);
-				auto value = processor.get_temperature_value(i);
+				auto max = processor->get_temperature_max(i);
+				auto value = processor->get_temperature_value(i);
 
 				if(!value) continue;
 
@@ -458,13 +452,11 @@ namespace drivers {
 
 			return clocks>0||temps>0;
 
-		}else if(driver.is_type<driver::Graphics>()){
-			auto &graphics = *(driver::Graphics*)&driver;
-
-			U32 framebuffers = graphics.get_framebuffer_count();
+		}else if(auto graphics = driver.as_type<driver::Graphics>()){
+			U32 framebuffers = graphics->get_framebuffer_count();
 
 			for(auto i=0u;i<framebuffers;i++){
-				auto name = graphics.get_framebuffer_name(i);
+				auto name = graphics->get_framebuffer_name(i);
 
 				log.print_info_start();
 				log.print_inline(indent, beforeName, "fb", i, afterName, ": ", name);
@@ -474,8 +466,8 @@ namespace drivers {
 				log.print_info(indent, "Reported video modes:");
 
 				U32 count = 0;
-				for(U32 i2=0, modeCount=graphics.get_mode_count(i);i2<modeCount;i2++){
-					auto mode = graphics.get_mode(i, i2);
+				for(U32 i2=0, modeCount=graphics->get_mode_count(i);i2<modeCount;i2++){
+					auto mode = graphics->get_mode(i, i2);
 
 					if(!mode.width) continue;
 
@@ -490,14 +482,11 @@ namespace drivers {
 		}
 
 
-		// if(driver.is_type<driver::Serial>()){
-		// 	auto &serial = *(driver::Serial*)&driver;
+		// if(auto serial = driver.as_type<driver::Serial>()){
 		// }
-		// if(driver.is_type<driver::Graphics>()){
-		// 	auto &graphics = *(driver::Graphics*)&driver;
+		// if(auto graphics = driver.as_type<driver::Graphics>()){
 		// }
-		// if(driver.is_type<driver::Interrupt>()){
-		// 	auto &interrupt = *(driver::Interrupt*)&driver;
+		// if(auto interrupt = driver.as_type<driver::Interrupt>()){
 		// }
 
 		return false;
@@ -516,8 +505,8 @@ namespace drivers {
 
 	auto find_and_activate(DriverType &type, Driver *onBehalf) -> Driver* {
 		// try to find an active first
-		for(auto &driver:Iterate<Driver>(type)){
-			if(driver.api.is_active()) return &driver;
+		if(auto active = find_active(type, onBehalf)){
+			return active;
 		}
 
 		// failing that, try to activate a candidate
@@ -529,6 +518,14 @@ namespace drivers {
 
 				if(start_driver(driver)) return &driver;
 			}
+		}
+
+		return nullptr;
+	}
+
+	auto find_active(DriverType &type, Driver *onBehalf) -> Driver* {
+		for(auto &driver:Iterate<Driver>(type)){
+			if(driver.api.is_active()) return &driver;
 		}
 
 		return nullptr;
