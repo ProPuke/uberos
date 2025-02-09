@@ -61,7 +61,7 @@ namespace driver::system {
 		void _update_display_solid(DisplayManager::Display&);
 		void _update_display_area_solid(DisplayManager::Display&, graphics2d::Rect);
 		void _update_blending_at(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
-		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> std::optional<graphics2d::Buffer>;
+		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> Optional<graphics2d::Buffer>;
 
 		void _set_background_colour(U32 colour) {
 			if(windowBackgroundColour==colour) return;
@@ -875,7 +875,7 @@ namespace driver::system {
 		}
 		#pragma GCC pop_options
 
-		auto _get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> std::optional<graphics2d::Buffer> {
+		auto _get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> Optional<graphics2d::Buffer> {
 			if(framebufferId>=framebuffers.length) return {};
 
 			if(!framebuffers[framebufferId].buffer) return {};
@@ -1057,7 +1057,7 @@ namespace driver::system {
 		return framebuffers[framebufferId].buffer;
 	}
 
-	auto DisplayManager::get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> std::optional<graphics2d::Buffer> {
+	auto DisplayManager::get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> Optional<graphics2d::Buffer> {
 		Spinlock_Guard guard(spinlock);
 
 		return _get_screen_buffer(framebufferId, rect);

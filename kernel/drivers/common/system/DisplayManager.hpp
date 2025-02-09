@@ -9,8 +9,6 @@
 #include <common/graphics2d/BufferFormat.hpp>
 #include <common/graphics2d/Rect.hpp>
 
-#include <optional>
-
 namespace driver::system {
 	//TODO: should graphics drivers also include an api for querying their active processor(s) drivers if present? This would allow us to work out what processor speeds and temps relate to this graphics adapter, which might be useful/neat
 	struct DisplayManager: Software {
@@ -130,7 +128,7 @@ namespace driver::system {
 		auto get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below = nullptr) -> Display*;
 		auto get_screen_count() -> U32;
 		auto get_screen_buffer(U32 framebuffer) -> graphics2d::Buffer*; // this may be missing while the framebuffer is changing
-		auto get_screen_buffer(U32 framebuffer, graphics2d::Rect rect) -> std::optional<graphics2d::Buffer>; // this may be missing while the framebuffer is changing
+		auto get_screen_buffer(U32 framebuffer, graphics2d::Rect rect) -> Optional<graphics2d::Buffer>; // this may be missing while the framebuffer is changing
 		auto get_screen_area(U32 framebuffer) -> graphics2d::Rect;
 
 		auto get_width() -> U32;
