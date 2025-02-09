@@ -30,7 +30,7 @@ namespace process {
 	log(*this)
 {}
 
-Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize) {
+auto Process::create_current_thread(memory::Page &stackPage, size_t stackSize) -> Thread& {
 	auto thread = new Thread(*this);
 	thread->stackPage = &stackPage;
 	thread->storedState = (ThreadCpuState*)((size_t)stackPage.physicalAddress + stackSize - sizeof(ThreadCpuState));
@@ -38,10 +38,10 @@ Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize
 
 	threads.push(thread);
 
-	return thread;
+	return *thread;
 }
 
-Thread* Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) {
+auto Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) -> Thread& {
 	auto stackPage = memory::Transaction().allocate_page();
 	const auto stackSize = memory::pageSize;
 
@@ -55,10 +55,10 @@ Thread* Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPack
 
 	threads.push(thread);
 
-	return thread;
+	return *thread;
 }
 
-Thread* Process::create_kernel_thread(void(*entrypoint)()) {
+auto Process::create_kernel_thread(void(*entrypoint)()) -> Thread& {
 	auto stackPage = memory::Transaction().allocate_page();
 	const auto stackSize = memory::pageSize;
 
@@ -70,7 +70,7 @@ Thread* Process::create_kernel_thread(void(*entrypoint)()) {
 
 	threads.push(thread);
 
-	return thread;
+	return *thread;
 }
 
 void Process::run(ipc::Id ipc, void *ipcPacket) {

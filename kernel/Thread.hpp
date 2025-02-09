@@ -36,9 +36,9 @@ struct Thread: LListItem<Thread> {
 	// note that this really stores the frozen moment in time in the kernel 
 
 	friend void arch::arm::scheduler::init();
-	friend Thread* Process::create_thread(Process::Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket);
-	friend Thread* Process::create_kernel_thread(void(*entrypoint)());
-	friend Thread* Process::create_current_thread(memory::Page &stackPage, size_t stackSize);
+	friend auto Process::create_thread(Process::Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) -> Thread&;
+	friend auto Process::create_kernel_thread(void(*entrypoint)()) -> Thread&;
+	friend auto Process::create_current_thread(memory::Page &stackPage, size_t stackSize) -> Thread&;
 
 	private:
 		/**/ Thread(Process &process);

@@ -37,10 +37,10 @@ struct Process: LListItem<Process> {
 
 	ListUnordered<Thread*> threads;
 
-	auto create_current_thread(memory::Page &stackPage, size_t stackSize) -> Thread*;
+	auto create_current_thread(memory::Page &stackPage, size_t stackSize) -> Thread&;
 
-	auto create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) -> Thread*;
-	auto create_kernel_thread(void(*entrypoint)()) -> Thread*;
+	auto create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket) -> Thread&;
+	auto create_kernel_thread(void(*entrypoint)()) -> Thread&;
 
 	void run(ipc::Id ipc, void *ipcPacket);
 };
