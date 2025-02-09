@@ -4,8 +4,8 @@
 
 template <typename Data, typename Type>
 struct Pointer {
-	/**/ Pointer() {}
-	/**/ Pointer(Type *value):
+	constexpr /**/ Pointer() {}
+	constexpr /**/ Pointer(Type *value):
 		data((Data)(size_t)value)
 	{}
 

@@ -5,7 +5,7 @@ namespace arch {
 		//TODO:allow nested use on the same processor core?
 
 		struct Spinlock {
-			/**/ Spinlock(const char *name = "unnamed"):
+			constexpr /**/ Spinlock(const char *name = "unnamed"):
 				name(name)
 			{}
 

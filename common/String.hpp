@@ -15,7 +15,7 @@ struct String {
 		Type localData[localBufferSize];
 	};
 
-	/**/ String() {
+	constexpr /**/ String() {
 		data[0] = '\0';
 	}
 

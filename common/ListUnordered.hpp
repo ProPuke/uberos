@@ -9,7 +9,12 @@ struct ListUnordered {
 	U32 allocated;
 	Type *data;
 
-	/**/ ListUnordered(U32 reserveSize=32):
+	constexpr /**/ ListUnordered():
+		allocated(0),
+		data(nullptr)
+	{}
+
+	/**/ ListUnordered(U32 reserveSize):
 		allocated(reserveSize),
 		data(reserveSize>0?new Type[reserveSize]:nullptr)
 	{}

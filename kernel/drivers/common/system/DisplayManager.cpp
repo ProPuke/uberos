@@ -23,7 +23,7 @@ namespace driver::system {
 
 		graphics2d::Rect totalArea;
 
-		ListOrdered<Framebuffer> framebuffers{0};
+		ListOrdered<Framebuffer> framebuffers;
 		LList<DisplayManager::Display> displays;
 
 		U32 windowBackgroundColour = 0x202020;

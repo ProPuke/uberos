@@ -5,8 +5,8 @@
 struct Bitmask32 {
 	U32 mask = {};
 
-	/**/ Bitmask32() {}
-	/**/ Bitmask32(U32 mask): mask(mask) {}
+	constexpr /**/ Bitmask32() {}
+	constexpr /**/ Bitmask32(U32 mask): mask(mask) {}
 
 	auto get(U8 bit) -> bool {
 		return mask&((U32)1<<bit);

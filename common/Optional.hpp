@@ -2,14 +2,14 @@
 
 template <typename Type>
 struct Optional {
-	/**/ Optional(){}
+	constexpr /**/ Optional(){}
 
-	/**/ Optional(const Type &data):
+	constexpr /**/ Optional(const Type &data):
 		present(true),
 		data(data)
 	{}
 
-	/**/ Optional(const Type &&data):
+	constexpr /**/ Optional(const Type &&data):
 		present(true),
 		data(data)
 	{}

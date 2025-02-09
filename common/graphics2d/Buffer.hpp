@@ -15,7 +15,7 @@ namespace graphics2d {
 	};
 
 	struct Buffer {
-		/**/ Buffer():
+		constexpr /**/ Buffer():
 			format(BufferFormat::rgba8),
 			order(BufferFormatOrder::argb),
 			address(nullptr),

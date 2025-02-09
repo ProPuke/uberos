@@ -27,19 +27,19 @@ static Log log("mem");
 extern U8 __start, __end;
 
 namespace memory {
-	U64 totalMemory = 0;
+	constinit U64 totalMemory = 0;
 
-	size_t lowMemorySize = 1024*4;
-	void *lowMemory = &__start-lowMemorySize;
+	constinit size_t lowMemorySize = 1024*4;
+	constinit void *lowMemory = &__start-1024*4;
 
-	size_t stackSize = KERNEL_STACK_SIZE;
-	void *stack = &__end;
+	constinit size_t stackSize = KERNEL_STACK_SIZE;
+	constinit void *stack = &__end;
 
-	void *heap = ((char*)stack)+stackSize; // start the heap after the stack
-	size_t heapSize = 1*1024*1024; // default to 1MB (hopefully overridden at boot)
+	constinit void *heap = &__end+KERNEL_STACK_SIZE; // start the heap after the stack
+	constinit size_t heapSize = 1*1024*1024; // default to 1MB (hopefully overridden at boot)
 
-	Page *pageData = nullptr;
-	size_t pageDataSize = 0;
+	constinit Page *pageData = nullptr;
+	constinit size_t pageDataSize = 0;
 
 	Spinlock lock("memory");
 	

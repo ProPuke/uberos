@@ -17,7 +17,7 @@ static Log log("drivers");
 using namespace maths;
 
 namespace drivers {
-	EventEmitter<Event> events;
+	constinit EventEmitter<Event> events;
 
 	LList<Driver> drivers;
 

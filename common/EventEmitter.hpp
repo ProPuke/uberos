@@ -11,6 +11,8 @@ struct EventEmitter {
 	typedef void(*Callback)(const Type&, void*);
 	typedef void(*Callback2)(const Type&);
 
+	constexpr /**/ EventEmitter(){}
+
 	void subscribe(Callback, void *data);
 	void subscribe(Callback2 callback) { return subscribe((Callback) callback, nullptr); }
 	void unsubscribe(Callback, void *data);
@@ -26,10 +28,10 @@ protected:
 		void *data;
 	};
 
-	ListOrdered<Subscription> subscribers{0};
+	ListOrdered<Subscription> subscribers;
 	U32 subscribersGeneration = 0;
 
-	ListOrdered<Subscription> callableSubscribers{0};
+	ListOrdered<Subscription> callableSubscribers;
 	U32 callableSubscribersGeneration = 0;
 
 	std::atomic<int> isTriggering{false};
