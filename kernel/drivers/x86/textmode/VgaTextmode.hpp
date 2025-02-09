@@ -36,5 +36,7 @@ namespace driver::textmode {
 
 		auto get_entry(U32 row, U32 col) -> Entry&;
 		auto buffer() -> Entry*;
+
+		void scroll_region(U32 startRow, U32 startCol, U32 rows, U32 cols, I32 scrollRows, I32 scrollCols, U32 FgColour, U32 background, U8 bgChar = ' ') override;
 	};
 }

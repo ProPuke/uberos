@@ -86,4 +86,35 @@ namespace driver::textmode {
 	auto VgaTextmode::buffer() -> Entry* {
 		return (Entry*)_address;
 	}
+
+	void VgaTextmode::scroll_region(U32 _startRow, U32 _startCol, U32 rows, U32 cols, I32 scrollRows, I32 scrollCols, U32 foreground, U32 background, U8 bgChar) {
+		I32 startRow = _startRow;
+		I32 startCol = _startCol;
+		I32 endRow = startRow+rows;
+
+		auto rowDir = scrollRows<=0?+1:-1;
+
+		Entry emptyRow[cols];
+		for(auto i=0u;i<cols;i++){
+			emptyRow[i].c = bgChar;
+			emptyRow[i].bgColour = background;
+			emptyRow[i].fgColour = foreground;
+		}
+
+		for(I32 row=rowDir>=0?startRow:endRow-1;rowDir>=0?row<endRow:row>=startRow;row+=rowDir) {
+			auto oldRow = row-scrollRows;
+
+			if(oldRow<startRow||oldRow>=endRow){
+				memcpy(&get_entry(row, startCol), emptyRow, sizeof(emptyRow));
+			}else{
+				if(scrollCols>0){
+					memcpy(&get_entry(row, startCol), emptyRow, sizeof(Entry)*scrollCols);
+				}
+				memcpy(&get_entry(row, startCol+(U32)max(0, scrollCols)), &get_entry(oldRow, startCol-scrollCols), sizeof(Entry)*(cols-maths::abs(scrollCols)));
+				if(scrollCols<0){
+					memcpy(&get_entry(row, cols+scrollCols), emptyRow, sizeof(Entry)*-scrollCols);
+				}
+			}
+		}
+	}
 }
