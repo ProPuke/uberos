@@ -743,7 +743,7 @@ namespace driver::system {
 					}
 				break;
 				case drivers::Event::Type::driverStopped:
-					if(auto mouse = event.driverStarted.driver->as_type<Mouse>()){
+					if(auto mouse = event.driverStopped.driver->as_type<Mouse>()){
 						_remove_mouse(*mouse);
 					}
 				break;
