@@ -735,7 +735,7 @@ namespace driver::system {
 		void _remove_mouse(Mouse &mouse);
 		auto _find_cursor(Mouse &mouse) -> Cursor*;
 
-		void _on_drivers_event(const drivers::Event &event, void*) {
+		void _on_drivers_event(const drivers::Event &event) {
 			switch(event.type){
 				case drivers::Event::Type::driverStarted:
 					if(auto mouse = event.driverStarted.driver->as_type<Mouse>()){
@@ -1075,7 +1075,7 @@ namespace driver::system {
 	}
 
 	namespace {
-		void on_keyboard_event(const driver::Keyboard::Event &event, void*) {
+		void on_keyboard_event(const driver::Keyboard::Event &event) {
 			if(focusedWindow){
 				switch(event.type){
 					case driver::Keyboard::Event::Type::pressed:
@@ -1105,7 +1105,7 @@ namespace driver::system {
 				}
 			}
 		}
-		void on_mouse_event(const driver::Mouse::Event &event, void*) {
+		void on_mouse_event(const driver::Mouse::Event &event) {
 			auto cursor = _find_cursor(*event.instance);
 			if(!cursor) return;
 
@@ -1148,18 +1148,25 @@ namespace driver::system {
 		displayManager = drivers::find_and_activate<DisplayManager>(this);
 		if(!displayManager) return {"Display manager not available"};
 
-		for(auto &mouse:drivers::iterate<Mouse>()){
-			if(!mouse.api.is_active()&&mouse.api.is_enabled()){
-				if(!drivers::start_driver(mouse)) continue;
-			}
+		drivers::events.subscribe(_on_drivers_event);
 
-			_add_mouse(mouse);
+		driver::Keyboard::allEvents.subscribe(on_keyboard_event);
+		driver::Mouse::allEvents.subscribe(on_mouse_event);
+
+		for(auto &mouse:drivers::iterate<Mouse>()){
+			if(mouse.api.is_active()){
+				_add_mouse(mouse);
+
+			}else if(mouse.api.is_enabled()){
+				TRY_IGNORE(drivers::start_driver(mouse));
+			}
 		}
 
-		drivers::events.subscribe(_on_drivers_event, nullptr);
-
-		driver::Keyboard::allEvents.subscribe(on_keyboard_event, nullptr);
-		driver::Mouse::allEvents.subscribe(on_mouse_event, nullptr);
+		for(auto &keyboard:drivers::iterate<Keyboard>()){
+			if(!keyboard.api.is_active()&&keyboard.api.is_enabled()){
+				TRY_IGNORE(drivers::start_driver(keyboard));
+			}
+		}
 
 		_update_window_area();
 
@@ -1170,8 +1177,8 @@ namespace driver::system {
 		// remove all cursors and mouse listeners
 		while(cursors.length>0) _remove_mouse(*cursors[0].mouse);
 
-		driver::Mouse::allEvents.unsubscribe(on_mouse_event, nullptr);
-		driver::Keyboard::allEvents.unsubscribe(on_keyboard_event, nullptr);
+		driver::Mouse::allEvents.unsubscribe(on_mouse_event);
+		driver::Keyboard::allEvents.unsubscribe(on_keyboard_event);
 
 		return {};
 	}
