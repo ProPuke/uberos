@@ -99,18 +99,18 @@ void DriverApi::unsubscribe_all_irqs() {
 	}
 }
 
-auto DriverApi::subscribe_memory(void *start, size_t _size) -> Try<> {
+auto DriverApi::subscribe_memory(void *start, size_t size) -> Try<> {
 	auto &driver = this->driver();
 
 	// deny if this memory is already in use by an active driver
 	for(auto &otherDriver:drivers::iterate<Driver>()){
 		if(&otherDriver==&driver||!otherDriver.api.is_active()) continue;
 
-		if(otherDriver.api.is_subscribed_to_memory(start, _size)) return {"Memory not available - Already in use"};
+		if(otherDriver.api.is_subscribed_to_memory(start, size)) return {"Memory not available - Already in use"};
 	}
 
 	// grow existing subscriptions if it overlaps or comes before an entry
-	void *end = (U8*)start+_size;
+	void *end = (U8*)start+size;
 	for(auto i=0u;i<subscribedMemory.length;i++){
 		auto &subscribed = subscribedMemory[i];
 
