@@ -127,7 +127,7 @@ extern "C" char* strcat(char *destination, const char *source) {
 		return destination;
 	}
 
-	extern "C" int strcmp(const char* str1, const char* str2) {
+	extern "C" int strcmp(const char *str1, const char *str2) {
 		while(*str1&&*str2){
 			int diff = *str1-*str2;
 			if(diff) return diff;
@@ -139,7 +139,7 @@ extern "C" char* strcat(char *destination, const char *source) {
 	}
 #endif
 
-extern "C" auto strchr(const char* str, char c) -> const char* {
+extern "C" auto strchr(const char *str, char c) -> const char* {
 	for(;*str;str++){
 		if(*str == c) return str;
 	}
