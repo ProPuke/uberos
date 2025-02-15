@@ -102,6 +102,10 @@ void DriverApi::unsubscribe_all_irqs() {
 auto DriverApi::subscribe_memory(void *start, size_t size) -> Try<> {
 	auto &driver = this->driver();
 
+	if(start<(U8*)memory::heap+memory::heapSize&&(U8*)start+size>(U8*)memory::heap){
+		return {"Memory not available - Overlaps heap"};
+	}
+
 	// deny if this memory is already in use by an active driver
 	for(auto &otherDriver:drivers::iterate<Driver>()){
 		if(&otherDriver==&driver||!otherDriver.api.is_active()) continue;
