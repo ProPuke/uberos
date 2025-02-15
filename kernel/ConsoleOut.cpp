@@ -1,8 +1,19 @@
 #include "ConsoleOut.hpp"
 
+#include <common/stdlib.hpp>
+
 void ConsoleOut::write_text(const char *str) {
+	auto lastString = str;
+
 	for(auto c=str;*c;c++){
 		if(*c=='\x1b'||_currentEscapeLength>0) {
+			if(_currentEscapeLength==0){
+				char buffer[c-lastString+1];
+				memcpy(buffer, lastString, sizeof(buffer)-1);
+				buffer[sizeof(buffer)-1] = '\0';
+				write_raw_text(buffer);
+			}
+
 			_currentEscape[_currentEscapeLength++] = *c;
 
 			// if invalid, dump sequence to screen and reset
@@ -13,6 +24,7 @@ void ConsoleOut::write_text(const char *str) {
 				_currentEscape[_currentEscapeLength] = '\0';
 				write_raw_text(_currentEscape);
 				_currentEscapeLength = 0;
+				lastString = str+1;
 				continue;
 			}
 
@@ -118,13 +130,11 @@ void ConsoleOut::write_text(const char *str) {
 				}
 
 				_currentEscapeLength = 0;
+				lastString = c+1;
 				continue;
 			}
-
-		}else{
-			char string[2] = {*c, '\0'};
-			write_raw_text(string);
 		}
 	}
-	// write_raw_text(str);
+
+	write_raw_text(lastString);
 }

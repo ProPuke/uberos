@@ -128,39 +128,62 @@ namespace driver {
 		if(cursor.row>=rows||cursor.col>=cursor.colEnd) return;
 
 		switch(wrapMode){
-			case WrapMode::none:
-				for(auto c=text;*c&&cursor.col<cursor.colEnd;c++,cursor.col++) {
+			case WrapMode::none: {
+				auto fromChar = text;
+				auto fromCol = cursor.col;
+
+				auto c = text;
+				for(;*c&&cursor.col<cursor.colEnd;c++,cursor.col++) {
 					if(*c=='\n'){
+						if(c-1>fromChar){
+							set_chars(cursor.row, fromCol, foreground, background, c-1-fromChar, (const U8*)fromChar);
+						}
 						cursor.row++;
 						cursor.col = cursor.colStart;
+						fromChar = c+1;
+						fromCol = cursor.col;
 
 						if(cursor.row>=rows) {
 							if(autoScroll){
 								Textmode::scroll(-1, 0, foreground, background);
 								cursor.row = rows-1;
 								cursor.col = cursor.colStart;
+								fromCol = cursor.col;
 							}else{
 								break;
 							}
 						}
+
 					}else{
-						_set_char(*this, cursor.row, cursor.col, foreground, background, *c);
 						cursor.col++;
 					}
 				}
-			break;
-			case WrapMode::endOfLine:
-				for(auto c=text;*c&&cursor.row<rows;c++) {
+
+				set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
+			} break;
+			case WrapMode::endOfLine: {
+				auto fromChar = text;
+				auto fromCol = cursor.col;
+
+				auto c = text;
+				for(;*c&&cursor.row<rows;c++) {
 					if(*c=='\n'){
+						if(c-1>fromChar){
+							set_chars(cursor.row, fromCol, foreground, background, c-1-fromChar, (const U8*)fromChar);
+						}
 						cursor.row++;
 						cursor.col = cursor.colStart;
+						fromChar = c+1;
+						fromCol = cursor.col;
 
 					}else{
-						_set_char(*this, cursor.row, cursor.col, foreground, background, *c);
 						cursor.col++;
 						if(cursor.col>=cursor.colEnd){
+							set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
 							cursor.row++;
-							cursor.col = cursor.colStart;
+							cursor.col = cursor.colStart;	
+							fromChar = c;
+							fromCol = cursor.col;
 						}
 					}
 
@@ -169,61 +192,72 @@ namespace driver {
 							Textmode::scroll(-1, 0, foreground, background);
 							cursor.row = rows-1;
 							cursor.col = cursor.colStart;
+							fromCol = cursor.col;
 						}else{
 							break;
 						}
 					}
 				}
-			break;
+
+				set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
+			} break;
 			case WrapMode::whitespace: {
 				auto lastChar = text;
 				auto lastCharCol = cursor.col;
-				for(auto c=text;*c&&cursor.col<cursor.colEnd;c++,cursor.col++) {
+
+				auto fromChar = text;
+				auto fromCol = cursor.col;
+
+				auto c = text;
+				for(;*c&&cursor.col<cursor.colEnd;c++) {
 					if(*c=='\n'){
-						for(;lastChar<c;lastChar++,lastCharCol++){
-							_set_char(*this, cursor.row, lastCharCol, foreground, background, *lastChar);
-						}
+						set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
 
 						lastChar++; //skip over this char
 
 						cursor.row++;
 						cursor.col = cursor.colStart;
-						lastCharCol = cursor.col;
+						fromChar = c+1;
+						fromCol = lastCharCol = cursor.col;
 						if(cursor.row>=rows) {
 							if(autoScroll){
 								Textmode::scroll(-1, 0, foreground, background);
 								cursor.row = rows-1;
 								cursor.col = cursor.colStart;
+								fromCol = cursor.col;
 							}else{
 								break;
 							}
 						}
 
 					}else if(*c==' '||*c=='-'){
-						for(;lastChar<c;lastChar++,lastCharCol++){
-							_set_char(*this, cursor.row, lastCharCol, foreground, background, *lastChar);
-						}
+						lastCharCol += (c-lastChar);
+						lastChar = c;
+
+						cursor.col++;
 
 						if(cursor.col>=cursor.colEnd){
+							set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
+
 							if(*c==' ') lastChar++; //skip over this char
 
 							cursor.row++;
 							cursor.col = cursor.colStart;
 							lastCharCol = cursor.col;
+							fromChar = c;
+							fromCol = cursor.col;
 							if(cursor.row>=rows) {
 								if(autoScroll){
 									Textmode::scroll(-1, 0, foreground, background);
 									cursor.row = rows-1;
 									cursor.col = cursor.colStart;
+									fromCol = cursor.col;
 								}else{
 									break;
 								}
 							}
 
 						}else{
-							_set_char(*this, cursor.row, cursor.col, foreground, background, *c);
-
-							cursor.col++;
 							lastChar = c+1;
 							lastCharCol = cursor.col;
 						}
@@ -235,34 +269,45 @@ namespace driver {
 							//word started at beginning of line (and so longer than the line?)
 							if(lastCharCol==cursor.colStart){
 								//write out a partial, to do a wordbreak
-								for(;lastChar<=c;lastChar++,lastCharCol++){
-									_set_char(*this, cursor.row, lastCharCol, foreground, background, *lastChar);
-								}
+								set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
+
+								fromChar = c;
+								fromCol = cursor.col;
+
 							} else {
+								set_chars(cursor.row, fromCol, foreground, background, lastChar-fromChar, (const U8*)fromChar);
+
+								fromChar = lastChar;
+								fromCol = lastCharCol;
+
 								//fill the remainder of the line with spaces (so the word can start on the next line)
-								for(auto spaceCol = lastCharCol;spaceCol<cursor.col;spaceCol++){
-									_set_char(*this, cursor.row, spaceCol, foreground, background, ' ');
+								U8 spaces[cursor.col-lastCharCol];
+								for(auto i=0u;i<sizeof(spaces);i++){
+									spaces[i] = ' ';
 								}
+								set_chars(cursor.row, fromCol, foreground, background, sizeof(spaces), spaces);
 							}
 
 							cursor.row++;
 							cursor.col = cursor.colStart;
 							lastCharCol = cursor.col;
+							fromCol = cursor.col;
+
 							if(cursor.row>=rows) {
 								if(autoScroll){
 									Textmode::scroll(-1, 0, foreground, background);
 									cursor.row = rows-1;
 									cursor.col = cursor.colStart;
+									fromCol = cursor.col;
 								}else{
 									break;
 								}
 							}
 						}
-
-						_set_char(*this, cursor.row, cursor.col, foreground, background, *c);
-						cursor.col++;
 					}
 				}
+
+				set_chars(cursor.row, fromCol, foreground, background, c-fromChar, (const U8*)fromChar);
 			} break;
 		}
 	}

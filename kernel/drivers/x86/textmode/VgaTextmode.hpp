@@ -30,6 +30,7 @@ namespace driver::textmode {
 		auto get_colour(U32) -> U32 override;
 
 		void set_char(U32 row, U32 col, U32 foreground, U32 background, U8) override;
+		void set_chars(U32 row, U32 col, U32 foreground, U32 background, U32 count, const U8 *chars) override;
 		auto get_char(U32 row, U32 col) -> U8 override;
 		auto get_char_foreground(U32 row, U32 col) -> U32 override;
 		auto get_char_background(U32 row, U32 col) -> U32 override;

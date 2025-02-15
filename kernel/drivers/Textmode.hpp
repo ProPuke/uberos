@@ -22,11 +22,12 @@ namespace driver {
 		};
 
 		virtual void set_char(U32 row, U32 col, U32 foreground, U32 background, U8) = 0;
+		virtual void set_chars(U32 row, U32 col, U32 foreground, U32 background, U32 count, const U8 *chars) { while(count--) set_char(row, col++, foreground, background, *chars++); }
 		virtual auto get_char(U32 row, U32 col) -> U8 = 0;
 		virtual auto get_char_foreground(U32 row, U32 col) -> U32 = 0;
 		virtual auto get_char_background(U32 row, U32 col) -> U32 = 0;
 
-		/*   */ void write_text(U32 foreground, U32 background, const char *s) override { write_text(consoleOutCursor, foreground, background, WrapMode::endOfLine, s, true); }
+		/*   */ void write_text(U32 foreground, U32 background, const char *s) override { write_text(consoleOutCursor, foreground, background, WrapMode::whitespace, s, true); }
 		virtual void write_text(Cursor&, U32 foreground, U32 background, WrapMode wrapMode, const char *, bool autoScroll);
 
 		virtual void clear();

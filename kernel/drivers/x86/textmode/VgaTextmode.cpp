@@ -70,6 +70,17 @@ namespace driver::textmode {
 		get_entry(row, col) = {c, (U8)foreground, (U8)background};
 	}
 
+	void VgaTextmode::set_chars(U32 row, U32 col, U32 foreground, U32 background, U32 count, const U8 *chars) {
+		Entry buffer[count];
+		for(auto i=0u;i<count;i++){
+			buffer[i].c = chars[i];
+			buffer[i].bgColour = background;
+			buffer[i].fgColour = foreground;
+		}
+
+		memcpy(&get_entry(row, col), buffer, sizeof(buffer));
+	}
+
 	auto VgaTextmode::get_char(U32 row, U32 col) -> U8 {
 		return get_entry(row, col).c;
 	}
