@@ -94,7 +94,7 @@ namespace kernel {
 				log.print_info("device type: ", info::device_type);
 				log.print_info("device model: ", info::device_model);
 				log.print_info("device revision: ", info::device_revision);
-				log.print_info("memory: ", memory::totalMemory/1024/1024, "MB");
+				log.print_info("memory: ", (memory::totalMemory/1024+1023)/1024, "MB");
 
 				// { auto section = log.section("displays:");
 
