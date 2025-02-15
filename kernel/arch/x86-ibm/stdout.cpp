@@ -25,10 +25,11 @@ namespace arch {
 				#elif defined(ARCH_UEFI)
 					auto device = drivers::find_and_activate<driver::textmode::UefiTextmode>();
 				#endif
-				assert(device);
 
-				device->bind_to_console();
-				device->clear();
+				if(device){
+					device->bind_to_console();
+					device->clear();
+				}
 			}
 		}
 	}

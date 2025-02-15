@@ -19,7 +19,9 @@ extern "C" auto strlen(const C8 *str) -> size_t;
 extern "C" auto strcpy(char *__restrict destination, const char *__restrict source) -> char*;
 extern "C" auto strcat(char *destination, const char *source) -> char*;
 extern "C" auto strcmp(const char *str1, const char *str2) -> int;
+extern "C" auto strncmp(const char *str1, const char *str2, size_t) -> int;
 extern "C" auto strchr(const char *str, char) -> const char*;
+extern "C" auto strstr(const char *haystack, const char *needle) -> const char*;
 
 template <typename T> constexpr inline auto align(/* */ T *pointer, U8 alignment) -> /* */ T* { return (/* */ T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }
 template <typename T> constexpr inline auto align(const T *pointer, U8 alignment) -> const T* { return (const T*)((size_t)pointer+((size_t)pointer%alignment?(alignment-(size_t)pointer%alignment):0)); }

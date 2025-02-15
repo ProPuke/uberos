@@ -23,9 +23,13 @@ namespace {
 
 		{ // serial debug
 			// cmdline passed?
-			if(multiboot->flags & 1<<2){
+			if(multiboot->flags & MULTIBOOT_INFO_CMDLINE){
 				//TODO: if "serial_debug" is present, hook stdout to COM1, 8-N-1 57600 baud
-				(void)multiboot->cmdline;
+				auto cmdline = (const char*)multiboot->cmdline;
+
+				if(auto param=strstr(cmdline, "safemode");param&&(param==cmdline||param[-1]==' ')&&(param[8]==' '||param[8]=='\0')){
+					kernel::isSafemode = true;
+				}
 			}
 		}
 
@@ -69,7 +73,9 @@ namespace arch {
 
 namespace kernel {
 	void _preInit() {
-		arch::x86_ibm::stdout::init();
+		if(isSafemode){
+			arch::x86_ibm::stdout::init();
+		}
 		exceptions::init();
 		#ifdef KERNEL_MMU
 			mmu::init();

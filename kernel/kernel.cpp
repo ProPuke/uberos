@@ -54,6 +54,8 @@ static DriverReference<driver::system::DisplayManager> displayManager{nullptr, [
 static DriverReference<driver::Scheduler> scheduler{nullptr, [](void*){}, nullptr};
 
 namespace kernel {
+	constinit bool isSafemode = false;
+
 	void _preInit();
 	void _postInit();
 

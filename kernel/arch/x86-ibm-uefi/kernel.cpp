@@ -20,7 +20,9 @@ namespace arch::x86_ibm_uefi::kernel {
 
 namespace kernel {
 	void _preInit() {
-		arch::x86_ibm::stdout::init();
+		if(isSafemode){
+			arch::x86_ibm::stdout::init();
+		}
 		arch::x86::gdt::init();
 		exceptions::init();
 		arch::x86::acpi::init();

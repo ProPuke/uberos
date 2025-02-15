@@ -137,11 +137,34 @@ extern "C" char* strcat(char *destination, const char *source) {
 		
 		return *str1?+1:*str2?-1:0;
 	}
+
+	extern "C" int strncmp(const char *str1, const char *str2, size_t length) {
+		while(length&&*str1&&*str2){
+			int diff = *str1-*str2;
+			if(diff) return diff;
+			str1++;
+			str2++;
+			length--;
+		}
+
+		return 0;
+	}
 #endif
 
 extern "C" auto strchr(const char *str, char c) -> const char* {
 	for(;*str;str++){
 		if(*str == c) return str;
+	}
+
+	return nullptr;
+}
+
+extern "C" auto strstr(const char *haystack, const char *needle) -> const char* {
+	const auto length = strlen(needle);
+	if(!length) return haystack;
+
+	for(auto search=haystack; (search=strchr(search, needle[0]))!=0; search++){
+		if(!strncmp(search, needle, length)) return search;
 	}
 
 	return nullptr;

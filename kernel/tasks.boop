@@ -467,8 +467,7 @@ flag x86-ibm-bios
 	task debug
 		requires task build
 
-		run {qemu} -s -S -kernel {outputdir}/{kernel_filename}
-		# run {qemu} -s -S -kernel {outputdir}/boot/{kernel_filename}
+		run {qemu} -s -S -kernel {outputdir}/{kernel_filename} -append "safemode"
 
 flag x86-64-ibm-bios
 	set outputdir = {outputdir}/x86-ibm-bios
@@ -543,8 +542,7 @@ flag x86-64-ibm-bios
 	task debug
 		requires task build
 
-		run {qemu} -s -S -kernel {outputdir}/{kernel_filename}
-		# run {qemu} -s -S -kernel {outputdir}/boot/{kernel_filename}
+		run {qemu} -s -S -kernel {outputdir}/{kernel_filename} -append "safemode"
 
 flag hosted-linux
 	set outputdir = {outputdir}/hosted-linux
