@@ -421,7 +421,7 @@ namespace driver::graphics {
 	}
 
 	auto Vbe::_on_start() -> Try<> {
-		TRY(api.subscribe_memory((void*)0x4f00, 0x123));
+		TRY(api.subscribe_memory((void*)0x4f00, 0x123, mmu::Caching::writeCombining));
 
 		modes.clear();
 

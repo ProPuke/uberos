@@ -142,7 +142,7 @@ namespace driver::graphics {
 			framebuffer.order = order;
 
 			BochsVga::instance.api.unsubscribe_all_memory();
-			TRY(BochsVga::instance.api.subscribe_memory(framebufferAddress, framebuffer.height*framebuffer.stride));
+			TRY(BochsVga::instance.api.subscribe_memory(framebufferAddress, framebuffer.height*framebuffer.stride, mmu::Caching::writeCombining));
 
 			framebuffer.address = framebufferAddress;
 
@@ -191,7 +191,7 @@ namespace driver::graphics {
 		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp");
 
 		// TRY(api.subscribe_memory((void*)0x4f00, 0x123));
-		TRY(api.subscribe_memory((void*)0xe0000000, vram));
+		TRY(api.subscribe_memory((void*)0xe0000000, vram, mmu::Caching::uncached));
 
 		framebufferAddress = (U8*)pciDevice->baseAddress[0];
 

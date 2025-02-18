@@ -1,6 +1,7 @@
 #pragma once
 
 #include <kernel/arch/x86/PciDevice.hpp>
+#include <kernel/mmu.hpp>
 #include <kernel/PodArray.hpp>
 #ifdef ARCH_X86
 	#include <kernel/arch/x86/ioPort.hpp>
@@ -85,7 +86,7 @@ class DriverApi {
 		void unsubscribe_irq(U8);
 		void unsubscribe_all_irqs();
 
-		auto subscribe_memory(void*, size_t) -> Try<>;
+		auto subscribe_memory(void*, size_t, mmu::Caching) -> Try<>;
 		void unsubscribe_memory(void*, size_t);
 		void unsubscribe_all_memory();
 		auto is_subscribed_to_memory(void*, size_t) -> bool;

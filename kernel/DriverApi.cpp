@@ -99,7 +99,7 @@ void DriverApi::unsubscribe_all_irqs() {
 	}
 }
 
-auto DriverApi::subscribe_memory(void *start, size_t size) -> Try<> {
+auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching) -> Try<> {
 	auto &driver = this->driver();
 
 	if(start<(U8*)memory::heap+memory::heapSize&&(U8*)start+size>(U8*)memory::heap){
@@ -145,10 +145,18 @@ auto DriverApi::subscribe_memory(void *start, size_t size) -> Try<> {
 	// insert at the very end if it wasn't merged in prior
 	subscribedMemory.push_back(MemoryRange{start, end});
 
+	//TODO: use from an existing recycle pool of mappings instead, if available there
+	auto virtualAddress = mmu::kernel::map_physical_high(start, size, {.caching = caching});
+
+	//TODO: return this address, and make it a [[nodiscard]]
+	(void)virtualAddress;
+
 	return {};
 }
 
 void DriverApi::unsubscribe_memory(void *start, size_t _size) {
+	//TODO: move these virtual mappings into a recycle pool, so they can be claimed again by other drivers when needed
+
 	void *end = (U8*)start+_size;
 	for(auto i=0u;i<subscribedMemory.length;i++){
 		auto &subscribed = subscribedMemory[i];
@@ -177,6 +185,8 @@ void DriverApi::unsubscribe_memory(void *start, size_t _size) {
 }
 
 void DriverApi::unsubscribe_all_memory() {
+	//TODO: move these virtual mappings into a recycle pool, so they can be claimed again by other drivers when needed
+
 	subscribedMemory.clear();
 }
 
