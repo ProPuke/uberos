@@ -146,8 +146,8 @@ namespace graphics2d {
 		;
 
 		#ifdef HAS_128BIT
-			if(length>=16/4&&(uintptr_t)address&3==0){
-				while((uintptr_t)address&15){
+			if(length>=16/4&&(UPtr)address&3==0){
+				while((UPtr)address&15){
 					*data++ = value;
 					length--;
 				}
@@ -163,8 +163,8 @@ namespace graphics2d {
 				data = (U32*)phatData;
 			}
 		#else
-			if(length>=8/4&&(uintptr_t)address&3==0){
-				while((uintptr_t)address&15){
+			if(length>=8/4&&(UPtr)address&3==0){
+				while((UPtr)address&15){
 					*data++ = value;
 					length--;
 				}
@@ -194,8 +194,8 @@ namespace graphics2d {
 		;
 
 		#ifdef HAS_128BIT
-			if(length>=16/4&&(uintptr_t)address&3==0){
-				while((uintptr_t)address&15){
+			if(length>=16/4&&(UPtr)address&3==0){
+				while((UPtr)address&15){
 					*data++ = value;
 					length--;
 				}
@@ -211,8 +211,8 @@ namespace graphics2d {
 				data = (U32*)phatData;
 			}
 		#else
-			if(length>=8/4&&(uintptr_t)address&3==0){
-				while((uintptr_t)address&15){
+			if(length>=8/4&&(UPtr)address&3==0){
+				while((UPtr)address&15){
 					*data++ = value;
 					length--;
 				}

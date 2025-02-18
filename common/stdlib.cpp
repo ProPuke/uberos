@@ -18,8 +18,8 @@ extern "C" void* memcpy_aligned(void *__restrict dest, const void *__restrict sr
 		auto d = (char*)dest;
 		auto s = (const char*)src;
 
-		if(bytes>=16&&(uintptr_t)s&15==(uintptr_t)d&15){
-			while((uintptr_t)s&15){
+		if(bytes>=16&&(UPtr)s&15==(UPtr)d&15){
+			while((UPtr)s&15){
 				*d++ = *s++;
 				bytes--;
 			}
@@ -40,8 +40,8 @@ extern "C" void* memcpy_aligned(void *__restrict dest, const void *__restrict sr
 		auto d = (char*)dest;
 		auto s = (const char*)src;
 
-		if(bytes>=8&&(uintptr_t)s&7==(uintptr_t)d&7){
-			while((uintptr_t)s&7){
+		if(bytes>=8&&(UPtr)s&7==(UPtr)d&7){
+			while((UPtr)s&7){
 				*d++ = *s++;
 				bytes--;
 			}

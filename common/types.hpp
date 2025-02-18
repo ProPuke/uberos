@@ -37,6 +37,8 @@ typedef signed int I32;
 typedef uintmax_t UMax;
 typedef intmax_t IMax;
 
+typedef uintptr_t UPtr;
+
 typedef uint_fast8_t  U8Fast;
 typedef uint_fast16_t U16Fast;
 typedef uint_fast32_t U32Fast;

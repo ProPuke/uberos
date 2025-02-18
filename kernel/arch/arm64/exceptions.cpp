@@ -190,14 +190,14 @@ namespace arch {
 						U32 *to = (size_t)(void*)current<SIZE_MAX-(1+10)*sizeof(U32)?current+10+1:((U32*)SIZE_MAX)-1;
 
 						for(U32 *i=from; i<current; i++){
-							log.print_error("Error:     ", format::Hex64{i}, " : ", (uintptr_t)i%4?"UNALIGNED":disassemble::arm64::to_string(*i, (U64)(void*)i));
+							log.print_error("Error:     ", format::Hex64{i}, " : ", (UPtr)i%4?"UNALIGNED":disassemble::arm64::to_string(*i, (U64)(void*)i));
 						}
 						{
 							U32 *i = current;
-							log.print_error("Error:   > ", format::Hex64{i}, " : ", (uintptr_t)current%4?"UNALIGNED":disassemble::arm64::to_string(*current, (U64)(void*)i));
+							log.print_error("Error:   > ", format::Hex64{i}, " : ", (UPtr)current%4?"UNALIGNED":disassemble::arm64::to_string(*current, (U64)(void*)i));
 						}
 						for(U32 *i=current+1; i<to; i++){
-							log.print_error("Error:     ", format::Hex64{i}, " : ", (uintptr_t)i%4?"UNALIGNED":disassemble::arm64::to_string(*i, (U64)(void*)i));
+							log.print_error("Error:     ", format::Hex64{i}, " : ", (UPtr)i%4?"UNALIGNED":disassemble::arm64::to_string(*i, (U64)(void*)i));
 						}
 
 					}else{
@@ -212,7 +212,7 @@ namespace arch {
 						unsigned x = 0;
 						for(U32 *data = from;data<to;data++){
 							if(false){
-								if((uintptr_t)data&0x4){
+								if((UPtr)data&0x4){
 									log.print_inline("UNALIGNED");
 								}else{
 									log.print_inline(format::Hex32{(*data)});

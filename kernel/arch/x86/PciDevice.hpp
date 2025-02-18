@@ -27,10 +27,10 @@ struct PciDevice {
 
 	U32 baseAddress[6];
 
-	auto readConfig8(uintptr_t offset) -> U8;
-	auto readConfig16(uintptr_t offset) -> U16;
-	auto readConfig32(uintptr_t offset) -> U32;
-	void writeConfig8(uintptr_t offset, U8 value);
-	void writeConfig16(uintptr_t offset, U16 value);
-	void writeConfig32(uintptr_t offset, U32 value);
+	auto readConfig8(UPtr offset) -> U8;
+	auto readConfig16(UPtr offset) -> U16;
+	auto readConfig32(UPtr offset) -> U32;
+	void writeConfig8(UPtr offset, U8 value);
+	void writeConfig16(UPtr offset, U16 value);
+	void writeConfig32(UPtr offset, U32 value);
 };

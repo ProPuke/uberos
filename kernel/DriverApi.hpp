@@ -59,7 +59,7 @@ class DriverApi {
 
 		Bitmask256 subscribedIrqs;
 		Bitmask256 subscribedInterrupts;
-		bool    subscribedAllInterrupts = false;
+		bool       subscribedAllInterrupts = false;
 		PodArray<MemoryRange> subscribedMemory;
 		PodArray<PciDevice*> subscribedPciDevices;
 		#ifdef ARCH_X86

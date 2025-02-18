@@ -12,32 +12,32 @@ namespace driver::system {
 		const U16 ioConfig = 0x0cf8;
 		const U16 ioData = 0x0cfc;
 
-		auto readConfig8(U8 bus, U8 slot, U8 function, uintptr_t offset) -> U8 {
+		auto readConfig8(U8 bus, U8 slot, U8 function, UPtr offset) -> U8 {
 			assert((offset&3) == 0); // must be 4-byte aligned
 			arch::x86::ioPort::write32(ioConfig, (U32)(0x80000000 | (bus << 16) | (slot << 11) | (function << 8) | offset));
 			return arch::x86::ioPort::read8(ioData);
 		}
-		auto readConfig16(U8 bus, U8 slot, U8 function, uintptr_t offset) -> U16 {
+		auto readConfig16(U8 bus, U8 slot, U8 function, UPtr offset) -> U16 {
 			assert((offset&3) == 0); // must be 4-byte aligned
 			arch::x86::ioPort::write32(ioConfig, (U32)(0x80000000 | (bus << 16) | (slot << 11) | (function << 8) | offset));
 			return arch::x86::ioPort::read16(ioData);
 		}
-		auto readConfig32(U8 bus, U8 slot, U8 function, uintptr_t offset) -> U32 {
+		auto readConfig32(U8 bus, U8 slot, U8 function, UPtr offset) -> U32 {
 			assert((offset&3) == 0); // must be 4-byte aligned
 			arch::x86::ioPort::write32(ioConfig, (U32)(0x80000000 | (bus << 16) | (slot << 11) | (function << 8) | offset));
 			return arch::x86::ioPort::read32(ioData);
 		}
-		void writeConfig8(U8 bus, U8 slot, U8 function, uintptr_t offset, U8 value) {
+		void writeConfig8(U8 bus, U8 slot, U8 function, UPtr offset, U8 value) {
 			assert((offset&3) == 0); // must be 4-byte aligned
 			arch::x86::ioPort::write32(ioConfig, (U32)(0x80000000 | (bus << 16) | (slot << 11) | (function << 8) | offset));
 			arch::x86::ioPort::write8(ioData, value);
 		}
-		void writeConfig16(U8 bus, U8 slot, U8 function, uintptr_t offset, U16 value) {
+		void writeConfig16(U8 bus, U8 slot, U8 function, UPtr offset, U16 value) {
 			assert((offset&3) == 0); // must be 4-byte aligned
 			arch::x86::ioPort::write32(ioConfig, (U32)(0x80000000 | (bus << 16) | (slot << 11) | (function << 8) | offset));
 			arch::x86::ioPort::write16(ioData, value);
 		}
-		void writeConfig32(U8 bus, U8 slot, U8 function, uintptr_t offset, U32 value) {
+		void writeConfig32(U8 bus, U8 slot, U8 function, UPtr offset, U32 value) {
 			assert((offset&3) == 0); // must be 4-byte aligned
 			arch::x86::ioPort::write32(ioConfig, (U32)(0x80000000 | (bus << 16) | (slot << 11) | (function << 8) | offset));
 			arch::x86::ioPort::write32(ioData, value);
@@ -277,21 +277,21 @@ namespace driver::system {
 	}
 }
 
-auto PciDevice::readConfig8(uintptr_t offset) -> U8 {
+auto PciDevice::readConfig8(UPtr offset) -> U8 {
 	return driver::system::readConfig8(bus, device, function, offset);
 }
-auto PciDevice::readConfig16(uintptr_t offset) -> U16 {
+auto PciDevice::readConfig16(UPtr offset) -> U16 {
 	return driver::system::readConfig16(bus, device, function, offset);
 }
-auto PciDevice::readConfig32(uintptr_t offset) -> U32 {
+auto PciDevice::readConfig32(UPtr offset) -> U32 {
 	return driver::system::readConfig32(bus, device, function, offset);
 }
-void PciDevice::writeConfig8(uintptr_t offset, U8 value) {
+void PciDevice::writeConfig8(UPtr offset, U8 value) {
 	return driver::system::writeConfig8(bus, device, function, offset, value);
 }
-void PciDevice::writeConfig16(uintptr_t offset, U16 value) {
+void PciDevice::writeConfig16(UPtr offset, U16 value) {
 	return driver::system::writeConfig16(bus, device, function, offset, value);
 }
-void PciDevice::writeConfig32(uintptr_t offset, U32 value) {
+void PciDevice::writeConfig32(UPtr offset, U32 value) {
 	return driver::system::writeConfig32(bus, device, function, offset, value);
 }
