@@ -45,7 +45,7 @@ namespace memory {
 	
 	LList<::memory::Page> freePages;
 
-	memory::PagedPool<sizeof(size_t)> kernelHeap(heap, heapSize);
+	memory::PagedPool<sizeof(size_t)> kernelHeap;
 	// MemoryPool<32> *heap;
 
 	auto get_used_heap() -> size_t {
@@ -166,5 +166,30 @@ namespace memory {
 
 	void Transaction::unlock() {
 		memory::lock.unlock();
+	}
+
+	void init() {
+		const auto pageCount = ((UPtr)heap+heapSize+pageSize)/pageSize;
+
+		pageData = (Page*)heap;
+		pageDataSize = (pageCount * sizeof(Page) + pageSize-1) / pageSize * pageSize;
+
+		for(auto i=0u;i<pageCount;i++){
+			const auto address = (void*)(i*pageSize);
+			auto page = new (&pageData[i]) Page(address);
+
+			if((UPtr)address<(UPtr)pageData+pageDataSize){
+				//not available
+				page->isAllocated = true;
+				page->isKernel = true;
+
+			}else{
+				if(i>0&&!freePages.tail->isAllocated){
+					freePages.tail->hasNextPage = true;
+				}
+
+				freePages.push_back(*page);
+			}
+		}
 	}
 }

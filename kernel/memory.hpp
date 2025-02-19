@@ -38,6 +38,8 @@ namespace memory {
 	#endif
 	// extern MemoryPool<32> *heap;
 
+	void init();
+
 	auto get_used_heap() -> size_t;
 	auto get_available_heap() -> size_t;
 
