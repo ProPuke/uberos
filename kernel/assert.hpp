@@ -11,11 +11,21 @@
 		// C++20
 		#include <source_location>
 
-		template<typename ...Params>
-		inline void assert(bool assertion, Params ...messageParams, const std::source_location location = std::source_location::current()) {
-			if(assertion) return;
+		struct AssertAssertion {
+			bool assertion;
+			std::source_location location;
 
-			logging::print_error("CRITICAL ERROR in ", location.file_name(), ':', location.line(), " in ", location.function_name(), "() ", messageParams...);
+			/**/ AssertAssertion(bool assertion, std::source_location location = std::source_location::current()):
+				assertion(assertion),
+				location(location)
+			{}
+		};
+
+		template<typename ...Params>
+		inline void assert(AssertAssertion assertion, Params ...messageParams) {
+			if(assertion.assertion) return;
+
+			logging::print_error("CRITICAL ERROR in ", assertion.location.file_name(), ':', assertion.location.line(), " in ", assertion.location.function_name(), "() ", messageParams...);
 			while(true);
 		}
 
