@@ -7,6 +7,10 @@
 namespace mmu {
 	void init() {
 		assert(::arch::x86::cpuInfo::get_features().pat, "PAT not supported by cpu");
+
+		// we'll identity map the stack as low. This is fine - we won't need the stack while running from other mappings
+		kernel::map_physical_low((void*)0x00, (UPtr)memory::stack+memory::stackSize, {.caching = Caching::uncached});
+		kernel::set_virtual_options(memory::stack, memory::stackSize, {.caching = Caching::writeBack});
 	}
 
 	void activate(Mapping &mapping) {
@@ -55,6 +59,9 @@ namespace mmu {
 
 		void set_virtual_options(void *address, MapOptions options) {
 			kernelMapping.set_virtual_options(address, options);
+		}
+		void set_virtual_options(void *address, UPtr size, MapOptions options) {
+			kernelMapping.set_virtual_options(address, size, options);
 		}
 	}
 
@@ -307,6 +314,12 @@ namespace mmu {
 				:"m" (*(U8*)tableEntry.get_address())
 				:"memory"
 			);
+		}
+	}
+
+	void Mapping::set_virtual_options(void *address, UPtr size, MapOptions options) {
+		for(auto physicalAddress = (UPtr)address&~0b111111111111; physicalAddress < (UPtr)address+size; physicalAddress += 4096){
+			set_virtual_options((void*)physicalAddress, options);
 		}
 	}
 }

@@ -30,6 +30,7 @@ namespace mmu {
 		auto map_physical_high(void*, UPtr size, MapOptions) -> void*;
 
 		void set_virtual_options(void*, MapOptions);
+		void set_virtual_options(void*, UPtr size, MapOptions);
 	}
 }
 
