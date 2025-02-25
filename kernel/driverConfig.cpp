@@ -8,6 +8,7 @@
 
 #ifdef ARCH_X86
 #include <drivers/x86/graphics/BochsVga.hpp>
+#include <drivers/x86/graphics/MultibootFramebuffer.hpp>
 #include <drivers/x86/graphics/Vbe.hpp>
 #include <drivers/x86/input/Ps2Keyboard.hpp>
 #include <drivers/x86/input/Ps2Mouse.hpp>
@@ -50,26 +51,27 @@ namespace driver {
 	#endif
 
 	#ifdef ARCH_X86
-	DRIVER(graphics ::BochsVga   , onDemand);
-	// DRIVER(graphics ::Vbe        , onDemand);
-	DRIVER(input    ::Ps2Keyboard, automatic);
-	DRIVER(input    ::Ps2Mouse   , onDemand);
-	DRIVER(interrupt::Pic8259    , onDemand);
-	DRIVER(processor::X86        , onDemand);
-	DRIVER(system   ::Acpi       , onDemand);
-	DRIVER(system   ::Apic       , automatic);
-	DRIVER(system   ::Gdt        , onDemand);
-	DRIVER(system   ::IbmBios    , automatic);
-	DRIVER(system   ::Idt        , onDemand);
-	DRIVER(system   ::Pci        , onDemand);
-	DRIVER(system   ::Ps2        , onDemand);
-	DRIVER(system   ::Smbios     , onDemand);
-	DRIVER(textmode ::VgaTextmode, onDemand);
-	DRIVER(timer    ::Hpet       , automatic);
+	DRIVER(graphics ::MultibootFramebuffer, onDemand);
+	DRIVER(graphics ::BochsVga            , onDemand);
+	// DRIVER(graphics ::Vbe                 , onDemand);
+	DRIVER(input    ::Ps2Keyboard         , automatic);
+	DRIVER(input    ::Ps2Mouse            , onDemand);
+	DRIVER(interrupt::Pic8259             , onDemand);
+	DRIVER(processor::X86                 , onDemand);
+	DRIVER(system   ::Acpi                , onDemand);
+	DRIVER(system   ::Apic                , automatic);
+	DRIVER(system   ::Gdt                 , onDemand);
+	DRIVER(system   ::IbmBios             , automatic);
+	DRIVER(system   ::Idt                 , onDemand);
+	DRIVER(system   ::Pci                 , onDemand);
+	DRIVER(system   ::Ps2                 , onDemand);
+	DRIVER(system   ::Smbios              , onDemand);
+	DRIVER(textmode ::VgaTextmode         , onDemand);
+	DRIVER(timer    ::Hpet                , automatic);
 	#endif
 
 	#ifdef ARCH_HOSTED
-	DRIVER(serial   ::Stdout     , automatic);
+	DRIVER(serial   ::Stdout              , automatic);
 	#endif
 
 	#ifdef ARCH_RASPI

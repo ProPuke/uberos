@@ -1,14 +1,15 @@
-#include <kernel/mmu.hpp>
-#include <kernel/logging.hpp>
-#include <kernel/kernel.hpp>
-#include <kernel/exceptions.hpp>
-#include <kernel/drivers.hpp>
-#include <kernel/drivers.hpp>
-#include <kernel/Driver.hpp>
-#include <kernel/arch/x86/cpuInfo.hpp>
-#include <kernel/arch/x86-ibm/stdout.hpp>
-#include <kernel/arch/x86-ibm-bios/config.h>
 #include <kernel/arch/x86-ibm-bios/bios.hpp>
+#include <kernel/arch/x86-ibm-bios/config.h>
+#include <kernel/arch/x86-ibm/stdout.hpp>
+#include <kernel/arch/x86/cpuInfo.hpp>
+#include <kernel/Driver.hpp>
+#include <kernel/drivers.hpp>
+#include <kernel/drivers.hpp>
+#include <kernel/exceptions.hpp>
+#include <kernel/kernel.hpp>
+#include <kernel/logging.hpp>
+#include <kernel/mmu.hpp>
+#include <kernel/multiboot.hpp>
 
 #include <common/format.hpp>
 
@@ -20,6 +21,8 @@ extern U8 __end;
 namespace {
 	void init_multiboot(unsigned long magic, multiboot_info *multiboot) {
 		if(magic!=MULTIBOOT_BOOTLOADER_MAGIC) return;
+
+		::multiboot::multiboot1 = multiboot;
 
 		{ // serial debug
 			// cmdline passed?

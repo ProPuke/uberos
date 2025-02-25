@@ -687,5 +687,5 @@ task build-iso
 
 task clean
 	rm {outputdir}
-	each file in {**/*.o} {**/*.cpp.output} {../common/**/*.o} {../common/**/*.cpp.output} {../support/**/*.o}
+	each file in {**/*.o} {**/*.cpp.output} {../drivers/**/*.o} {../common/**/*.o} {../common/**/*.cpp.output} {../support/**/*.o}
 		rm {file}
