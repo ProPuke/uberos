@@ -1,6 +1,6 @@
 #include "logWindow.hpp"
 
-#include <drivers/common/system/DesktopManager.hpp>
+#include <drivers/DesktopManager.hpp>
 
 #include <kernel/console.hpp>
 #include <kernel/drivers.hpp>
@@ -14,7 +14,7 @@
 namespace utils {
 	namespace logWindow {
 		namespace {
-			driver::system::DesktopManager::StandardWindow *window = nullptr;
+			driver::DesktopManager::StandardWindow *window = nullptr;
 			logging::Handler *logHandler = nullptr;
 
 			auto fontSize = 10;
@@ -35,7 +35,7 @@ namespace utils {
 
 			graphics2d::Rect dirtyArea;
 
-			DriverReference<driver::system::DesktopManager> desktopManager{nullptr, [](void*){
+			DriverReference<driver::DesktopManager> desktopManager{nullptr, [](void*){
 				if(window){
 					//TODO:free this?
 					window = nullptr;
@@ -124,8 +124,8 @@ namespace utils {
 				textColour = textColourInfo;
 			}
 
-			void on_window_event(const driver::system::DesktopManager::Window::Event &event) {
-				if(event.type==driver::system::DesktopManager::Window::Event::Type::clientAreaChanged){
+			void on_window_event(const driver::DesktopManager::Window::Event &event) {
+				if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 					redraw();
 				}
 			}
@@ -136,7 +136,7 @@ namespace utils {
 
 			auto margin = 20;
 
-			desktopManager = drivers::find_and_activate<driver::system::DesktopManager>();
+			desktopManager = drivers::find_and_activate<driver::DesktopManager>();
 			if(!desktopManager) return;
 
 			auto windowArea = desktopManager->get_window_area();

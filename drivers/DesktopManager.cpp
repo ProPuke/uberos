@@ -17,7 +17,7 @@ namespace ui2d::image {
 	}
 }
 
-namespace driver::system {
+namespace driver {
 	namespace {
 		DriverReference<DisplayManager> displayManager{nullptr, [](void*){
 
@@ -345,7 +345,7 @@ namespace driver::system {
 		}
 
 		struct StandardWindow: Window, DesktopManager::StandardWindow {
-			typedef system::Window Super;
+			typedef driver::Window Super;
 
 			static const auto cornerRadius = enableTransparency?5:2;
 			U32 corner[cornerRadius+1];
@@ -758,7 +758,7 @@ namespace driver::system {
 			auto display = displayManager->get_display_at(cursor->x, cursor->y, false, cursor->display);
 			// auto window = display?(Window*)DesktopManager::instance.get_window_from_display(*display):nullptr;
 			auto windowInterface = display?DesktopManager::instance.get_window_from_display(*display):nullptr;
-			auto window = windowInterface?(system::Window*)(system::StandardWindow*)windowInterface->as_standardWindow()?:(system::Window*)(system::CustomWindow*)windowInterface->as_customWindow():nullptr;
+			auto window = windowInterface?(driver::Window*)(driver::StandardWindow*)windowInterface->as_standardWindow()?:(driver::Window*)(driver::CustomWindow*)windowInterface->as_customWindow():nullptr;
 
 			switch(event.type){
 				case Mouse::Event::Type::pressed:
@@ -1241,7 +1241,7 @@ namespace driver::system {
 			}
 		}
 
-		auto &window = *new system::StandardWindow(x, y, width, height, title);
+		auto &window = *new driver::StandardWindow(x, y, width, height, title);
 
 		window.draw_frame();
 
@@ -1264,7 +1264,7 @@ namespace driver::system {
 			}
 		}
 
-		auto &window = *new system::CustomWindow(x, y, width, height, title);
+		auto &window = *new driver::CustomWindow(x, y, width, height, title);
 
 		windows.push_back(window);
 		focusedWindow = &window;

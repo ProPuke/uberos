@@ -1,6 +1,6 @@
-#include <drivers/common/system/CpuScheduler.hpp>
-#include <drivers/common/system/DesktopManager.hpp>
-#include <drivers/common/system/DisplayManager.hpp>
+#include <drivers/CpuScheduler.hpp>
+#include <drivers/DesktopManager.hpp>
+#include <drivers/DisplayManager.hpp>
 
 #ifdef ARCH_UEFI
 #include <drivers/uefi/console/UefiConsole.hpp>
@@ -41,9 +41,9 @@
 #define DRIVER(PATH, STARTUP) PATH PATH::instance(DriverApi::Startup::STARTUP)
 
 namespace driver {
-	DRIVER(system   ::CpuScheduler  , onDemand);
-	DRIVER(system   ::DesktopManager, onDemand);
-	DRIVER(system   ::DisplayManager, onDemand);
+	DRIVER(           CpuScheduler  , onDemand);
+	DRIVER(           DesktopManager, onDemand);
+	DRIVER(           DisplayManager, onDemand);
 
 	#ifdef ARCH_UEFI
 	DRIVER(console  ::UefiConsole   , automatic);

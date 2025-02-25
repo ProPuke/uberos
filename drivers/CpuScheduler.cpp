@@ -2,18 +2,14 @@
 
 #include <kernel/Thread.hpp>
 
-namespace driver::system {
+namespace driver {
 	auto CpuScheduler::_on_start() -> Try<> {
 		timer = TRY_RESULT(driver::Timer::find_and_claim_timer([](void *_scheduler) {
 			auto &scheduler = *(CpuScheduler*)_scheduler;
 			scheduler.api.fail_driver("Timer dropped");
 		}, this));
 
-		kernelThread = kernelProcess.create_kernel_thread([](){});
-
-		idleThread = idleProcess.create_kernel_thread([](){
-			while(true) asm("hlt");
-		});
+		kernelThread = &kernelProcess.create_kernel_thread([](){});
 
 		currentThread = kernelThread;
 
@@ -66,7 +62,7 @@ namespace driver::system {
 
 	// yield() without a timer clear (not needed when called direct _from_ a timeout)
 	void CpuScheduler::_yield() {
-		if(currentThread&&currentThread!=idleThread){
+		if(currentThread&&currentThread!=kernelThread){
 			switch(currentThread->state){
 				case Thread::State::active:
 					activeThreads.pop(*currentThread);
@@ -98,7 +94,7 @@ namespace driver::system {
 			Thread::swap_state(*oldThread, *currentThread);
 
 		}else{
-			currentThread = idleThread;
+			currentThread = kernelThread;
 
 			timer.set(maxInterval, _on_yield_timeout, this);
 

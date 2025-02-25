@@ -8,7 +8,7 @@
 
 #include <common/LList.hpp>
 
-namespace driver::system {
+namespace driver {
 	struct CpuScheduler: Scheduler {
 		DRIVER_INSTANCE(CpuScheduler, 0xfe8dac43, "cpuSched", "CPU Scheduler", Scheduler)
 

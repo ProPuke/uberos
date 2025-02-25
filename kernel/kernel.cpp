@@ -1,4 +1,4 @@
-#include <drivers/common/system/DisplayManager.hpp>
+#include <drivers/DisplayManager.hpp>
 #include <drivers/Processor.hpp>
 #include <drivers/Scheduler.hpp>
 
@@ -52,7 +52,7 @@ namespace drivers {
 U64 vramWrites = 0;
 U64 ramWrites = 0;
 
-static DriverReference<driver::system::DisplayManager> displayManager{nullptr, [](void*){}, nullptr};
+static DriverReference<driver::DisplayManager> displayManager{nullptr, [](void*){}, nullptr};
 static DriverReference<driver::Scheduler> scheduler{nullptr, [](void*){}, nullptr};
 
 namespace kernel {
@@ -202,7 +202,7 @@ namespace kernel {
 
 		auto &log = scheduler->get_current_thread()->process.log;
 
-		displayManager = drivers::find_and_activate<driver::system::DisplayManager>();
+		displayManager = drivers::find_and_activate<driver::DisplayManager>();
 
 		if(displayManager){
 			log.print_info("Putting on lightshow...");
@@ -279,7 +279,7 @@ namespace kernel {
 						(void) width;
 						(void) height;
 
-						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, rand()%(displayManager->get_width()-width), rand()%(displayManager->get_height()-height), width, height, scale);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::DisplayManager::DisplayLayer::regular, rand()%(displayManager->get_width()-width), rand()%(displayManager->get_height()-height), width, height, scale);
 						if(!view) {
 							log.print_error("Error: didn't get a view");
 							return;
@@ -367,7 +367,7 @@ namespace kernel {
 						I32 y = rand()%500;
 						I32 speed = rand()%6+1;
 
-						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
 
 						auto &buffer = view->buffer;
 

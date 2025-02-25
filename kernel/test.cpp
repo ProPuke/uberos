@@ -1,4 +1,4 @@
-#include <drivers/common/system/DesktopManager.hpp>
+#include <drivers/DesktopManager.hpp>
 #include <drivers/Keyboard.hpp>
 #include <drivers/Mouse.hpp>
 
@@ -55,7 +55,7 @@ namespace test {
 	}
 
 	void start_tasks() {
-		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
+		if(auto desktopManager = drivers::find_and_activate<driver::DesktopManager>()) {
 			const auto width = 600;
 			const auto height = 150;
 			const static auto shadowLength = 8;
@@ -70,8 +70,8 @@ namespace test {
 			window->set_interact_area({shadowLength,shadowLength,shadowLength+width,shadowLength+height});
 			window->set_titlebar_area({shadowLength,shadowLength,shadowLength+width,shadowLength+height});
 			window->set_max_docked_size(170, 70);
-			window->dock(driver::system::DesktopManager::Window::DockedType::top);
-			window->set_layer(driver::system::DesktopManager::Window::Layer::topmost);
+			window->dock(driver::DesktopManager::Window::DockedType::top);
+			window->set_layer(driver::DesktopManager::Window::Layer::topmost);
 
 			static auto redraw = [](){
 				auto width = window->get_width();
@@ -79,26 +79,26 @@ namespace test {
 				auto &clientArea = window->get_client_area();
 				auto &windowArea = window->get_window_area();
 
-				if(window->get_state()==driver::system::DesktopManager::Window::State::docked){
+				if(window->get_state()==driver::DesktopManager::Window::State::docked){
 					window->set_solid_area({0,0,0,0});
 					window->set_titlebar_area({0, 0, width, height});
 
 					clientArea.draw_rect(0, 0, width, height, transparentBackgroundColour);
 
 					switch(window->get_docked_type()){
-						case driver::system::DesktopManager::Window::DockedType::top:
+						case driver::DesktopManager::Window::DockedType::top:
 							windowArea.set(shadowLength, shadowLength+height-1, borderColour, width);
 							for(auto i=0;i<shadowLength;i++){
 								windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
 							}
 						break;
-						case driver::system::DesktopManager::Window::DockedType::bottom:
+						case driver::DesktopManager::Window::DockedType::bottom:
 							windowArea.set(shadowLength, shadowLength, borderColour, width);
 							for(auto i=0;i<shadowLength;i++){
 								windowArea.set(0, i, 0x000000|(255-20*i/(shadowLength-1))<<24, width);
 							}
 						break;
-						case driver::system::DesktopManager::Window::DockedType::left:
+						case driver::DesktopManager::Window::DockedType::left:
 							windowArea.draw_line(shadowLength+width-1, shadowLength, shadowLength+width-1, shadowLength+height-1, borderColour);
 							for(auto i=0;i<shadowLength;i++){
 								windowArea.draw_line(
@@ -108,7 +108,7 @@ namespace test {
 								);
 							}
 						break;
-						case driver::system::DesktopManager::Window::DockedType::right:
+						case driver::DesktopManager::Window::DockedType::right:
 							windowArea.draw_line(shadowLength, shadowLength, shadowLength, shadowLength+height-1, borderColour);
 							for(auto i=0;i<shadowLength;i++){
 								windowArea.draw_line(
@@ -118,7 +118,7 @@ namespace test {
 								);
 							}
 						break;
-						case driver::system::DesktopManager::Window::DockedType::full:
+						case driver::DesktopManager::Window::DockedType::full:
 						break;
 					}
 
@@ -158,14 +158,14 @@ namespace test {
 			redraw();
 			window->redraw();
 
-			window->events.subscribe([](const driver::system::DesktopManager::Window::Event &event){
-				if(event.type==driver::system::DesktopManager::Window::Event::Type::clientAreaChanged){
+			window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
+				if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 					redraw();
 				}
 			});
 		}
 
-		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
+		if(auto desktopManager = drivers::find_and_activate<driver::DesktopManager>()) {
 			static auto window = &desktopManager->create_standard_window("Font Test", 320, 320);
 			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
 
@@ -199,11 +199,11 @@ namespace test {
 
 			redraw();
 
-			window->events.subscribe([](const driver::system::DesktopManager::Window::Event &event, void*){
-				if(event.type==driver::system::DesktopManager::Window::Event::Type::clientAreaChanged){
+			window->events.subscribe([](const driver::DesktopManager::Window::Event &event, void*){
+				if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 					redraw();
 
-				}else if(event.type==driver::system::DesktopManager::Window::Event::Type::mouseScrolled){
+				}else if(event.type==driver::DesktopManager::Window::Event::Type::mouseScrolled){
 					scale = maths::clamp(scale - event.mouseScrolled.distance*(scale>20?3:scale>16?2:1), 1, 60);
 					redraw();
 				}
@@ -211,7 +211,7 @@ namespace test {
 			}, nullptr);
 		}
 
-		if(auto desktopManager = drivers::find_and_activate<driver::system::DesktopManager>()) {
+		if(auto desktopManager = drivers::find_and_activate<driver::DesktopManager>()) {
 			const static auto padding = 6;
 
 			static auto window = &desktopManager->create_standard_window("Keyboard Test", 888+padding*2, 292+padding*2);
@@ -336,14 +336,14 @@ namespace test {
 
 			redraw();
 
-			window->events.subscribe([](const driver::system::DesktopManager::Window::Event &event){
-				if(event.type==driver::system::DesktopManager::Window::Event::Type::clientAreaChanged){
+			window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
+				if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 					redraw();
 				}
 			});
 
 			driver::Keyboard::allEvents.subscribe([](const driver::Keyboard::Event &event, void *_window){
-				auto &window = *(driver::system::DesktopManager::StandardWindow*)_window;
+				auto &window = *(driver::DesktopManager::StandardWindow*)_window;
 				auto &clientArea = window.get_client_area();
 
 				static char statusBuffer[256] = "";

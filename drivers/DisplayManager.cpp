@@ -13,7 +13,7 @@
 // #define BACKGROUND_GRID
 #define BACKGROUND_STRIP
 
-namespace driver::system {
+namespace driver {
 	namespace {
 		struct Framebuffer {
 			driver::Graphics *driver;

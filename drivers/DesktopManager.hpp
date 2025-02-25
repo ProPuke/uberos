@@ -1,6 +1,6 @@
 #pragma once
 
-#include <drivers/common/system/DisplayManager.hpp>
+#include <drivers/DisplayManager.hpp>
 #include <drivers/Software.hpp>
 
 #include <kernel/keyboard.hpp>
@@ -14,7 +14,7 @@ namespace driver {
 	struct Mouse;
 }
 
-namespace driver::system {
+namespace driver {
 	//TODO: should graphics drivers also include an api for querying their active processor(s) drivers if present? This would allow us to work out what processor speeds and temps relate to this graphics adapter, which might be useful/neat
 	struct DesktopManager: Software {
 		DRIVER_INSTANCE(DesktopManager, 0x3a11d5b3, "desktop", "DesktopManager", Software);
