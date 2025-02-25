@@ -12,6 +12,7 @@ namespace driver::graphics {
 		auto get_mode_count(U32 framebufferId) -> U32 override;
 		auto get_mode(U32 framebufferId, U32 index) -> Mode override;
 		auto set_mode(U32 framebufferId, U32 index) -> Try<> override;
+		auto get_default_mode(U32 framebufferId) -> Mode override;
 		
 		auto get_framebuffer_count() -> U32 override;
 		auto get_framebuffer(U32 index) -> graphics2d::Buffer* override;

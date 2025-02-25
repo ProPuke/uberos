@@ -17,6 +17,9 @@
 namespace driver::graphics {
 	namespace {
 		graphics2d::Buffer framebuffer;
+		U32 defaultWidth = 0;
+		U32 defaultHeight = 0;
+		graphics2d::BufferFormat defaultFormat;
 	}
 
 	auto MultibootFramebuffer::_on_start() -> Try<> {
@@ -139,6 +142,10 @@ namespace driver::graphics {
 		framebuffer.width = multiboot->framebuffer_width;
 		framebuffer.height = multiboot->framebuffer_height;
 
+		defaultWidth = multiboot->framebuffer_width;
+		defaultHeight = multiboot->framebuffer_height;
+		defaultFormat = format;
+
 		return {};
 	}
 
@@ -165,6 +172,10 @@ namespace driver::graphics {
 
 		// nothing to do, keeping mode 0
 		return {};
+	}
+
+	auto MultibootFramebuffer::get_default_mode(U32 framebufferId) -> Mode {
+		return { defaultWidth, defaultHeight, defaultFormat };
 	}
 
 	auto MultibootFramebuffer::get_framebuffer_count() -> U32 {
