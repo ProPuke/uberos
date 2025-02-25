@@ -2,9 +2,9 @@
 
 #if defined(ARCH_RASPI4)
 	#define HAS_GIC400
-	#include <kernel/drivers/arm/interrupt/Arm_gicV2.hpp>
+	#include <drivers/arm/interrupt/Arm_gicV2.hpp>
 #endif
-#include <kernel/drivers/raspi/interrupt/Arm_raspi_legacy.hpp>
+#include <drivers/raspi/interrupt/Arm_raspi_legacy.hpp>
 
 #include <kernel/mmio.hpp>
 

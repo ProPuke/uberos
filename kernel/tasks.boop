@@ -10,13 +10,13 @@ set lflags   = -nostdlib
 set directives = -fpic -D KERNEL
 
 # set kernel_srcs    = {**/*.S exclude arch/**/*/*} {**/*.cpp exclude arch/**/*/*} {**/*.c exclude arch/**/*/*}
-set kernel_asm     = {*.S} {drivers/*.S} {drivers/common/**/*.S} {fonts/**/*.S} {graphics2d/**/*.S} {memory/**/*.S} {mmu/**/*.S}
+set kernel_asm     = {*.S} {../drivers/*.S} {../drivers/common/**/*.S} {fonts/**/*.S} {graphics2d/**/*.S} {memory/**/*.S} {mmu/**/*.S}
 set kernel_c       =
-# set kernel_c       = {*.c} {drivers/*.c} {drivers/common/**/*.c} {fonts/**/*.c} {graphics2d/**/*.c} {memory/**/*.c} {mmu/**/*.c}
-set kernel_cpp     = {*.cpp} {drivers/*.cpp} {drivers/common/**/*.cpp} {fonts/**/*.cpp} {graphics2d/**/*.cpp} {memory/**/*.cpp} {mmu/**/*.cpp} {utils/**/*.cpp}
+# set kernel_c       = {*.c} {../drivers/*.c} {../drivers/common/**/*.c} {fonts/**/*.c} {graphics2d/**/*.c} {memory/**/*.c} {mmu/**/*.c}
+set kernel_cpp     = {*.cpp} {../drivers/*.cpp} {../drivers/common/**/*.cpp} {fonts/**/*.cpp} {graphics2d/**/*.cpp} {memory/**/*.cpp} {mmu/**/*.cpp} {utils/**/*.cpp}
 # set kernel_headers = {**/*.hpp exclude arch/**/*/*} {**/*.h exclude arch/**/*/*} {**/*.inl exclude arch/**/*/*}
 set kernel_headers = {*.hpp} {*.h} {*.inl}
-set kernel_headers = {kernel_headers} {drivers/*.hpp} {drivers/*.h} {drivers/*.inl} {drivers/common/**/*.hpp} {drivers/common/**/*.h} {drivers/common/**/*.inl}
+set kernel_headers = {kernel_headers} {../drivers/*.hpp} {../drivers/*.h} {../drivers/*.inl} {../drivers/common/**/*.hpp} {../drivers/common/**/*.h} {../drivers/common/**/*.inl}
 set kernel_headers = {kernel_headers} {fonts/**/*.hpp} {fonts/**/*.h} {fonts/**/*.inl}
 set kernel_headers = {kernel_headers} {graphics2d/**/*.hpp} {graphics2d/**/*.h} {graphics2d/**/*.inl}
 set kernel_headers = {kernel_headers} {memory/**/*.hpp} {memory/**/*.h} {memory/**/*.inl}
@@ -73,20 +73,20 @@ flag raspi1
 	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv7/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/raspi-armv7/**/*.hpp} {arch/raspi-armv7/**/*.h} {arch/raspi-armv7/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm/**/*.hpp} {../drivers/arm/**/*.h} {../drivers/arm/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm32/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm32/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm32/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm32/**/*.hpp} {drivers/arm32/**/*.h} {drivers/arm32/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm32/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm32/**/*.hpp} {../drivers/arm32/**/*.h} {../drivers/arm32/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi/**/*.hpp} {../drivers/raspi/**/*.h} {../drivers/raspi/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/arm32/**/*.S}
 	set support_c       = {support_c}       {../support/arch/arm32/**/*.c}
@@ -157,25 +157,25 @@ flag raspi2
 	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv7/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/raspi-armv7/**/*.hpp} {arch/raspi-armv7/**/*.h} {arch/raspi-armv7/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm/**/*.hpp} {../drivers/arm/**/*.h} {../drivers/arm/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm32/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm32/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm32/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm32/**/*.hpp} {drivers/arm32/**/*.h} {drivers/arm32/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm32/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm32/**/*.hpp} {../drivers/arm32/**/*.h} {../drivers/arm32/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi/**/*.hpp} {../drivers/raspi/**/*.h} {../drivers/raspi/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi-armv7/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi-armv7/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi-armv7/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi-armv7/**/*.hpp} {drivers/raspi-armv7/**/*.h} {drivers/raspi-armv7/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi-armv7/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi-armv7/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi-armv7/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi-armv7/**/*.hpp} {../drivers/raspi-armv7/**/*.h} {../drivers/raspi-armv7/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/arm32/**/*.S}
 	set support_c       = {support_c}       {../support/arch/arm32/**/*.c}
@@ -246,25 +246,25 @@ flag raspi3
 	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv8/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/raspi-armv8/**/*.hpp} {arch/raspi-armv8/**/*.h} {arch/raspi-armv8/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm/**/*.hpp} {../drivers/arm/**/*.h} {../drivers/arm/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm64/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm64/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm64/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm64/**/*.hpp} {drivers/arm64/**/*.h} {drivers/arm64/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm64/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm64/**/*.hpp} {../drivers/arm64/**/*.h} {../drivers/arm64/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi/**/*.hpp} {../drivers/raspi/**/*.h} {../drivers/raspi/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi-armv8/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi-armv8/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi-armv8/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi-armv8/**/*.hpp} {drivers/raspi-armv8/**/*.h} {drivers/raspi-armv8/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi-armv8/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi-armv8/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi-armv8/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi-armv8/**/*.hpp} {../drivers/raspi-armv8/**/*.h} {../drivers/raspi-armv8/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/arm64/**/*.S}
 	set support_c       = {support_c}       {../support/arch/arm64/**/*.c}
@@ -337,25 +337,25 @@ flag raspi4
 	set kernel_cpp     = {kernel_cpp}     {arch/raspi-armv8/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/raspi-armv8/**/*.hpp} {arch/raspi-armv8/**/*.h} {arch/raspi-armv8/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm/**/*.hpp} {drivers/arm/**/*.h} {drivers/arm/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm/**/*.hpp} {../drivers/arm/**/*.h} {../drivers/arm/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/arm64/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/arm64/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/arm64/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/arm64/**/*.hpp} {drivers/arm64/**/*.h} {drivers/arm64/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/arm64/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/arm64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/arm64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/arm64/**/*.hpp} {../drivers/arm64/**/*.h} {../drivers/arm64/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi/**/*.hpp} {drivers/raspi/**/*.h} {drivers/raspi/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi/**/*.hpp} {../drivers/raspi/**/*.h} {../drivers/raspi/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/raspi-armv8/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/raspi-armv8/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/raspi-armv8/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/raspi-armv8/**/*.hpp} {drivers/raspi-armv8/**/*.h} {drivers/raspi-armv8/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/raspi-armv8/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/raspi-armv8/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/raspi-armv8/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/raspi-armv8/**/*.hpp} {../drivers/raspi-armv8/**/*.h} {../drivers/raspi-armv8/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/arm64/**/*.S}
 	set support_c       = {support_c}       {../support/arch/arm64/**/*.c}
@@ -425,10 +425,10 @@ flag x86-ibm-bios
 	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm-bios/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/x86-ibm-bios/**/*.hpp} {arch/x86-ibm-bios/**/*.h} {arch/x86-ibm-bios/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/x86/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/x86/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/x86/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/x86/**/*.hpp} {drivers/x86/**/*.h} {drivers/x86/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/x86/**/*.hpp} {../drivers/x86/**/*.h} {../drivers/x86/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
 	set support_c       = {support_c}       {../support/arch/x86/**/*.c}
@@ -498,15 +498,15 @@ flag x86-64-ibm-bios
 	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm-bios/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/x86-ibm-bios/**/*.hpp} {arch/x86-ibm-bios/**/*.h} {arch/x86-ibm-bios/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/x86/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/x86/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/x86/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/x86/**/*.hpp} {drivers/x86/**/*.h} {drivers/x86/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/x86/**/*.hpp} {../drivers/x86/**/*.h} {../drivers/x86/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/x86-64/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/x86-64/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/x86-64/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/x86-64/**/*.hpp} {drivers/x86-64/**/*.h} {drivers/x86-64/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/x86-64/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/x86-64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/x86-64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/x86-64/**/*.hpp} {../drivers/x86-64/**/*.h} {../drivers/x86-64/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
 	set support_c       = {support_c}       {../support/arch/x86/**/*.c}
@@ -566,15 +566,15 @@ flag hosted-linux
 	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm-bios/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/x86-ibm-bios/**/*.hpp} {arch/x86-ibm-bios/**/*.h} {arch/x86-ibm-bios/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/x86/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/x86/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/x86/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/x86/**/*.hpp} {drivers/x86/**/*.h} {drivers/x86/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/x86/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/x86/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/x86/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/x86/**/*.hpp} {../drivers/x86/**/*.h} {../drivers/x86/**/*.inl}
 
-	set kernel_asm     = {kernel_asm}     {drivers/x86-64/**/*.S}
-	set kernel_c       = {kernel_c}       {drivers/x86-64/**/*.c}
-	set kernel_cpp     = {kernel_cpp}     {drivers/x86-64/**/*.cpp}
-	set kernel_headers = {kernel_headers} {drivers/x86-64/**/*.hpp} {drivers/x86-64/**/*.h} {drivers/x86-64/**/*.inl}
+	set kernel_asm     = {kernel_asm}     {../drivers/x86-64/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/x86-64/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/x86-64/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/x86-64/**/*.hpp} {../drivers/x86-64/**/*.h} {../drivers/x86-64/**/*.inl}
 
 	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
 	set support_c       = {support_c}       {../support/arch/x86/**/*.c}

@@ -1,10 +1,11 @@
 #include "drivers.hpp"
 
+#include <drivers/Graphics.hpp>
+#include <drivers/Interrupt.hpp>
+#include <drivers/Processor.hpp>
+#include <drivers/Serial.hpp>
+
 #include <kernel/Driver.hpp>
-#include <kernel/drivers/Graphics.hpp>
-#include <kernel/drivers/Interrupt.hpp>
-#include <kernel/drivers/Processor.hpp>
-#include <kernel/drivers/Serial.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/PodArray.hpp>

@@ -1,16 +1,14 @@
-#include <kernel/drivers.hpp>
-
 #if defined(ARCH_RASPI1)
-	#include <kernel/drivers/raspi/processor/Raspi_bcm2835.hpp>
+	#include <drivers/raspi/processor/Raspi_bcm2835.hpp>
 
 #elif defined(ARCH_RASPI2)
-	#include <kernel/drivers/raspi/processor/Raspi_bcm2836.hpp>
+	#include <drivers/raspi/processor/Raspi_bcm2836.hpp>
 
 #elif defined(ARCH_RASPI3)
-	#include <kernel/drivers/raspi/processor/Raspi_bcm2837.hpp>
+	#include <drivers/raspi/processor/Raspi_bcm2837.hpp>
 
 #elif defined(ARCH_RASPI4)
-	#include <kernel/drivers/raspi/processor/Raspi_bcm2711.hpp>
+	#include <drivers/raspi/processor/Raspi_bcm2711.hpp>
 #endif
 
 namespace arch {

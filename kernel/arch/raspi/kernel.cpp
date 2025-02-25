@@ -1,3 +1,5 @@
+#include <drivers/raspi/serial/Raspi_uart.hpp>
+
 #include <kernel/arch/raspi/atags.hpp>
 #include <kernel/arch/raspi/hwquery.hpp>
 #include <kernel/arch/raspi/irq.hpp>
@@ -5,7 +7,6 @@
 #include <kernel/arch/raspi/serial.hpp>
 #include <kernel/arch/raspi/timer.hpp>
 #include <kernel/arch/raspi/usb.hpp>
-#include <kernel/drivers/raspi/serial/Raspi_uart.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/mmu.hpp>

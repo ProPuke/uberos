@@ -1,14 +1,17 @@
 #include "serial.hpp"
 
+#include <drivers/raspi/serial/Raspi_mini_uart.hpp>
+#include <drivers/raspi/serial/Raspi_uart.hpp>
+
 #include <kernel/arch/raspi/mailbox.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/arch/raspi/mmio.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/raspi/serial/Raspi_mini_uart.hpp>
-#include <kernel/drivers/raspi/serial/Raspi_uart.hpp>
-#include <kernel/log.hpp>
+#include <kernel/Log.hpp>
 
 #include <common/types.hpp>
+
+static Log log("arch::raspi::serial");
 
 namespace mmio {
 	using namespace arch::raspi;
@@ -73,16 +76,17 @@ namespace arch {
 				serial.bind_to_console();
 
 				if(serial.state==Driver::State::enabled) {
-					log::Section section("arch::raspi::serial::init...");
+					auto section = log.section("init");
+
 					#if defined(ARCH_RASPI_UART0)
-						log::print_info("UART0 active");
+						log.print_info("UART0 active");
 					#elif defined(ARCH_RASPI_UART1)
-						log::print_info("UART1 active");
+						log.print_info("UART1 active");
 					#endif
 
 					// char buffer[1024];
 					// serial.gets(buffer, 1024);
-					// log::print_info("got ", (const char *)&buffer[0]);
+					// log.print_info("got ", (const char *)&buffer[0]);
 				}
 			}
 		}

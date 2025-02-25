@@ -1,6 +1,6 @@
 #pragma once
 
-#include <kernel/drivers/raspi/timer/Raspi_bcm.hpp>
+#include <drivers/raspi/timer/Raspi_bcm.hpp>
 
 namespace arch {
 	namespace raspi {

@@ -1,11 +1,13 @@
-#include <common/graphics2d.hpp>
-#include <common/graphics2d/font.hpp>
+#include <drivers/common/system/DesktopManager.hpp>
+#include <drivers/Keyboard.hpp>
+#include <drivers/Mouse.hpp>
+
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/common/system/DesktopManager.hpp>
-#include <kernel/drivers/Keyboard.hpp>
-#include <kernel/drivers/Mouse.hpp>
 #include <kernel/keyboard.hpp>
 #include <kernel/keyboard/layout/uk.hpp>
+
+#include <common/graphics2d.hpp>
+#include <common/graphics2d/font.hpp>
 
 namespace test {
 	auto get_scankey_name(keyboard::Scancode scancode) -> const char * {

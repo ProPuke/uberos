@@ -1,6 +1,6 @@
 #include "time.hpp"
 
-#include <kernel/drivers/Timer.hpp>
+#include <drivers/Timer.hpp>
 
 namespace time {
 	DriverReference<driver::Timer> timer; //TODO: make this a weak reference? It's okay if this reference gets dropped (so we don't need to keep the driver alive). We can grab it again on each use

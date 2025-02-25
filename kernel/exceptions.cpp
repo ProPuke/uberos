@@ -1,10 +1,11 @@
 #include "exceptions.hpp"
 
+#include <drivers/Interrupt.hpp>
+
 #include <kernel/Cli.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/PodArray.hpp>
-#include <kernel/drivers/Interrupt.hpp>
 
 #include <common/types.hpp>
 #include <atomic>

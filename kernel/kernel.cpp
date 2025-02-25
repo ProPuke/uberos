@@ -1,18 +1,16 @@
-#include <common/debugUtils.hpp>
-#include <common/graphics2d/font.hpp>
-#include <common/stdlib.hpp>
+#include <drivers/common/system/DisplayManager.hpp>
+#include <drivers/Processor.hpp>
+#include <drivers/Scheduler.hpp>
 
 #include <kernel/Cli.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/common/system/DisplayManager.hpp>
-#include <kernel/drivers/Processor.hpp>
-#include <kernel/drivers/Scheduler.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/info.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/memory/PagedPool.hpp>
+#include <kernel/panic.hpp>
 #include <kernel/Process.hpp>
 #include <kernel/Spinlock.hpp>
 #include <kernel/test.hpp>
@@ -20,6 +18,10 @@
 #include <kernel/Thread.hpp>
 #include <kernel/time.hpp>
 #include <kernel/utils/logWindow.hpp>
+
+#include <common/debugUtils.hpp>
+#include <common/graphics2d/font.hpp>
+#include <common/stdlib.hpp>
 
 static Log log("kernel");
 
@@ -61,6 +63,7 @@ namespace kernel {
 
 	[[noreturn]] void run() {
 		libc::init();
+		memory::init();
 		logging::init();
 
 		{ auto section = log.section("init");
@@ -79,6 +82,8 @@ namespace kernel {
 		{ auto section = log.section("startup");
 
 			utils::logWindow::install();
+
+			// panic::init();
 
 			{ // try to load all remaining automatic drivers
 				for(auto &driver:drivers::iterate()) {
@@ -156,11 +161,11 @@ namespace kernel {
 		test::start_tasks();
 
 		while(true){
-		// 	// arch::x86::ioPort::write8(0x20, 0x0b);
-		// 	// log.print_info("PIC ISR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
+		// // 	// arch::x86::ioPort::write8(0x20, 0x0b);
+		// // 	// log.print_info("PIC ISR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
 
-		// 	// arch::x86::ioPort::write8(0x20, 0x0a);
-		// 	// log.print_info("PIC IRR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
+		// // 	// arch::x86::ioPort::write8(0x20, 0x0a);
+		// // 	// log.print_info("PIC IRR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
 		}
 
 		// debug::halt();
@@ -256,7 +261,7 @@ namespace kernel {
 
 			if(true){
 				for(int i=0;i<4;i++){
-					process.create_kernel_thread([]() {
+					auto &thread = process.create_kernel_thread([]() {
 						auto &log = scheduler->get_current_thread()->process.log;
 
 						log.print_debug("entered thread!");
@@ -339,79 +344,77 @@ namespace kernel {
 							// if(life<1) break;
 						}
 					});
+
+					scheduler->add_thread(thread);
 				}
 
 			}
 			
 			if(true){
-				for(auto i=0;i<5;i++)process.create_kernel_thread([]() {
-					float scale = 0.25+(rand()%256)/128.0;
+				for(auto i=0;i<5;i++){
+					auto &thread = process.create_kernel_thread([]() {
+						float scale = 0.25+(rand()%256)/128.0;
 
-					auto &thread = *scheduler->get_current_thread();
-					auto &log = thread.process.log;
+						auto &thread = *scheduler->get_current_thread();
+						auto &log = thread.process.log;
 
-					I32 width = 985*scale;
-					I32 height = 128*scale;
+						I32 width = 985*scale;
+						I32 height = 128*scale;
 
-					log.print_info(width, "x", height);
+						log.print_info(width, "x", height);
 
-					I32 x = rand()%(800+width);
-					I32 y = rand()%500;
-					I32 speed = rand()%6+1;
+						I32 x = rand()%(800+width);
+						I32 y = rand()%500;
+						I32 speed = rand()%6+1;
 
-					auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::system::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
 
-					auto &buffer = view->buffer;
+						auto &buffer = view->buffer;
 
-					U8 bgColour = rand()%0x18;
+						U8 bgColour = rand()%0x18;
 
-					buffer.draw_rect(0, 0, width, height, bgColour<<16|bgColour<<8|bgColour);
+						buffer.draw_rect(0, 0, width, height, bgColour<<16|bgColour<<8|bgColour);
 
-					auto startTime = time::now();
-					buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 9999, 128*scale, 0x000000);
-					buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 9999, 128*scale, 0xdddddd);
-					log.print_debug("blitted in ", time::now()-startTime);
+						auto startTime = time::now();
+						buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 9999, 128*scale, 0x000000);
+						buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 9999, 128*scale, 0xdddddd);
+						log.print_debug("blitted in ", time::now()-startTime);
 
-					auto possibleFramebuffer = framebuffer::get_framebuffer(0);
-					if(!possibleFramebuffer){
-						log.print_error("No valid framebuffer");
-						return;
-					}
+						view->update();
 
-					auto &framebuffer = *possibleFramebuffer;
+						// float scale = 1.0;
+						// float scaleDelta = 0.1;
 
-					view->update();
+						while(true){
+							// const auto startTime = time::now();
 
-					// float scale = 1.0;
-					// float scaleDelta = 0.1;
+							x -= speed*4;
 
-					while(true){
-						// const auto startTime = time::now();
+							if(x+width<1){
+								x = displayManager->get_width();
+								y = rand()%550-50;
+								// break;
+							}
 
-						x -= speed*4;
+							view->move_to(x, y);
+							// scheduler->yield();
+							// thread.sleep(1000000/60-(time::now()-startTime));
 
-						if(x+width<1){
-							x = framebuffer.buffer.width;
-							y = rand()%550-50;
-							// break;
+							// buffer.draw_rect(0, 0, width, height, 0x111111);
+							// buffer.draw_msdf(10-(scale-1)*graphics2d::font::openSans.atlas.width/2, 10-(scale-1)*graphics2d::font::openSans.atlas.height/2, graphics2d::font::openSans.atlas.width*scale, graphics2d::font::openSans.atlas.height*scale, graphics2d::font::openSans.atlas, 0, 0, graphics2d::font::openSans.atlas.width, graphics2d::font::openSans.atlas.height, 0xffffff);
+							// displayManager->update_view(*view);
+							// scheduler->yield();
+							// if(scale+scaleDelta>30){
+							// 	scaleDelta = -abs(scaleDelta);
+							// }else if(scale+scaleDelta<1){
+							// 	scaleDelta = +abs(scaleDelta);
+							// }
+							// scale *= 1.0+scaleDelta;
 						}
+					});
 
-						view->move_to(x, y);
-						// scheduler->yield();
-						// thread.sleep(1000000/60-(time::now()-startTime));
-
-						// buffer.draw_rect(0, 0, width, height, 0x111111);
-						// buffer.draw_msdf(10-(scale-1)*graphics2d::font::openSans.atlas.width/2, 10-(scale-1)*graphics2d::font::openSans.atlas.height/2, graphics2d::font::openSans.atlas.width*scale, graphics2d::font::openSans.atlas.height*scale, graphics2d::font::openSans.atlas, 0, 0, graphics2d::font::openSans.atlas.width, graphics2d::font::openSans.atlas.height, 0xffffff);
-						// displayManager->update_view(*view);
-						// scheduler->yield();
-						// if(scale+scaleDelta>30){
-						// 	scaleDelta = -abs(scaleDelta);
-						// }else if(scale+scaleDelta<1){
-						// 	scaleDelta = +abs(scaleDelta);
-						// }
-						// scale *= 1.0+scaleDelta;
-					}
-				});
+					scheduler->add_thread(thread);
+				}
 			}
 
 			// process.create_kernel_thread([]() {
@@ -438,7 +441,7 @@ namespace kernel {
 
 		// finally put this thread to sleep, and keep it that way, should it ever be re-awakened
 		while(true){
-			scheduler->get_current_thread()->pause();
+			// scheduler->get_current_thread()->pause();
 			scheduler->yield();
 		}
 	}

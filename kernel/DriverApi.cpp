@@ -1,8 +1,9 @@
 #include "DriverApi.hpp"
 
+#include <drivers/Interrupt.hpp>
+
 #include <kernel/Driver.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/Interrupt.hpp>
 #include <kernel/PodArray.hpp>
 
 #include <cstddef>

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <kernel/drivers/Scheduler.hpp>
+#include <drivers/Scheduler.hpp>
+
 #include <kernel/Process.hpp>
 
 #include <common/EventEmitter.hpp>

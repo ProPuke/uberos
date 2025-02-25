@@ -1,12 +1,13 @@
 #include "exceptions.hpp"
 
+#include <drivers/x86/interrupt/Pic8259.hpp>
+#include <drivers/x86/system/Idt.hpp>
+
 #include <kernel/arch/x86/CpuState.hpp>
 #include <kernel/assert.hpp>
 #include <kernel/CriticalSection.hpp>
 #include <kernel/debugSymbols.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/x86/interrupt/Pic8259.hpp>
-#include <kernel/drivers/x86/system/Idt.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/logging.hpp>

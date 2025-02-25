@@ -1,18 +1,19 @@
 #include "Cli.hpp"
 
-#include <common/Box.hpp>
+#include <drivers/Graphics.hpp>
+#include <drivers/Interrupt.hpp>
+#include <drivers/Processor.hpp>
+#include <drivers/Serial.hpp>
 
 #include <kernel/console.hpp>
 #include <kernel/Driver.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/Graphics.hpp>
-#include <kernel/drivers/Interrupt.hpp>
-#include <kernel/drivers/Processor.hpp>
-#include <kernel/drivers/Serial.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/mmio.hpp>
 #include <kernel/Process.hpp>
+
+#include <common/Box.hpp>
 
 static Log log("");
 

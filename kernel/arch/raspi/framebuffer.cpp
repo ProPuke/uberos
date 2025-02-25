@@ -1,4 +1,5 @@
-#include <kernel/drivers/raspi/graphics/Raspi_videocore_mailbox.hpp>
+#include <drivers/raspi/graphics/Raspi_videocore_mailbox.hpp>
+
 #include <kernel/arch/raspi/mmio.hpp>
 
 namespace arch {

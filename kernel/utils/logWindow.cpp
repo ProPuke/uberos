@@ -1,14 +1,15 @@
 #include "logWindow.hpp"
 
-#include <common/graphics2d/Rect.hpp>
-#include <common/graphics2d/font.hpp>
-#include <common/stdlib.hpp>
+#include <drivers/common/system/DesktopManager.hpp>
 
 #include <kernel/console.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/drivers/common/system/DesktopManager.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
+
+#include <common/graphics2d/Rect.hpp>
+#include <common/graphics2d/font.hpp>
+#include <common/stdlib.hpp>
 
 namespace utils {
 	namespace logWindow {
