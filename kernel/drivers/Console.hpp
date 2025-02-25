@@ -7,7 +7,7 @@
 
 namespace driver {
 	struct Console: Hardware {
-		DRIVER_TYPE(Console, "console", "Console Output Driver", Hardware);
+		DRIVER_TYPE(Console, 0xa6598413, "console", "Console Output Driver", Hardware);
 
 		struct Mode {
 			U32 rows;

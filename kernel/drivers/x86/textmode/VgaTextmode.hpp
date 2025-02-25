@@ -6,7 +6,7 @@
 
 namespace driver::textmode {
 	struct VgaTextmode final: driver::Textmode {
-		DRIVER_INSTANCE(VgaTextmode, "vgaText", "VGA Textmode", driver::Textmode)
+		DRIVER_INSTANCE(VgaTextmode, 0xa57cc675, "vgaText", "VGA Textmode", driver::Textmode)
 
 		struct __attribute__((packed)) Entry {
 			U8 c;

@@ -4,7 +4,7 @@
 
 namespace driver::system {
 	struct Idt final: Hardware {
-		DRIVER_INSTANCE(Idt, "idt", "Interrupt Descriptor Table", Hardware)
+		DRIVER_INSTANCE(Idt, 0xeca193f8, "idt", "Interrupt Descriptor Table", Hardware)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

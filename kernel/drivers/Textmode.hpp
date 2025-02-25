@@ -6,7 +6,7 @@
 
 namespace driver {
 	struct Textmode: driver::Console {
-		DRIVER_TYPE(Textmode, "textmode", "Textmode Display Driver", driver::Console)
+		DRIVER_TYPE(Textmode, 0x9ac8b7b4, "textmode", "Textmode Display Driver", driver::Console)
 
 		enum struct WrapMode {
 			none,

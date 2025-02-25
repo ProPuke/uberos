@@ -1,7 +1,6 @@
 #pragma once
 
 #include <kernel/DriverApi.hpp>
-#include <kernel/drivers.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/memory.hpp>
 
@@ -11,36 +10,43 @@
 
 #include <algorithm>
 
+typedef U32 DriverTypeId;
+
 struct DriverType {
+	DriverTypeId id; // unique. must be cycled whenever this driver interface changes
 	const char *name;
 	const char *description;
 	DriverType *parentType = nullptr;
 };
 
-#define DRIVER_TYPE(TYPE, NAME, DESCRIPTION, PARENT) /**/\
-	DRIVER_DECLARE_TYPE(NAME, DESCRIPTION)\
+#define DRIVER_TYPE(TYPE, ID, NAME, DESCRIPTION, PARENT) /**/\
+	DRIVER_DECLARE_TYPE(ID, NAME, DESCRIPTION)\
 	typedef PARENT Super;\
 	static inline Log log{NAME};\
 	protected:\
 	/**/ TYPE(DriverApi::Startup startup):Super(startup) { DRIVER_DECLARE_INIT(); }\
 	public:
 
-#define DRIVER_TYPE_CUSTOM_CTOR(TYPE, NAME, DESCRIPTION, PARENT) /**/\
-	DRIVER_DECLARE_TYPE(NAME, DESCRIPTION)\
+#define DRIVER_TYPE_CUSTOM_CTOR(TYPE, ID, NAME, DESCRIPTION, PARENT) /**/\
+	DRIVER_DECLARE_TYPE(ID, NAME, DESCRIPTION)\
 	typedef PARENT Super;
 
-#define DRIVER_INSTANCE(TYPE, NAME, DESCRIPTION, PARENT) /**/\
-	DRIVER_TYPE(TYPE, NAME, DESCRIPTION, PARENT)\
+#define DRIVER_INSTANCE(TYPE, ID, NAME, DESCRIPTION, PARENT) /**/\
+	DRIVER_TYPE(TYPE, ID, NAME, DESCRIPTION, PARENT)\
 	static TYPE instance;
 
-#define DRIVER_DECLARE_TYPE(NAME, DESCRIPTION) static inline DriverType typeInstance{NAME, DESCRIPTION};
+#define DRIVER_DECLARE_TYPE(ID, NAME, DESCRIPTION) static inline DriverType typeInstance{ID, NAME, DESCRIPTION};
 #define DRIVER_DECLARE_INIT() do { typeInstance.parentType = type; type = &typeInstance; } while(false)
 
 template <typename Type = Driver>
 struct DriverReference;
 
+namespace drivers {
+	auto _on_interrupt(U8 vector, const void *cpuState) -> const void*;
+}
+
 struct Driver: LListItem<Driver> {
-	DRIVER_DECLARE_TYPE("module", "Kernel Module")
+	DRIVER_DECLARE_TYPE(0x1f24f156, "module", "Kernel Module")
 
 	/*   */ /**/ Driver(DriverApi::Startup);
 	virtual /**/~Driver() {}
@@ -49,9 +55,10 @@ struct Driver: LListItem<Driver> {
 	DriverApi api;
 	LList<DriverReference<Driver>> references;
 
-	auto is_type(DriverType &compare) -> bool {
+	auto is_type(DriverType &type) -> bool { return is_type(type.id); }
+	auto is_type(DriverTypeId typeId) -> bool {
 		for(auto type=this->type;type;type=type->parentType){
-			if(type==&compare) return true;
+			if(type->id==typeId) return true;
 		}
 		return false;
 	}

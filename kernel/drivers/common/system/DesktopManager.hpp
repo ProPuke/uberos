@@ -16,7 +16,7 @@ namespace driver {
 namespace driver::system {
 	//TODO: should graphics drivers also include an api for querying their active processor(s) drivers if present? This would allow us to work out what processor speeds and temps relate to this graphics adapter, which might be useful/neat
 	struct DesktopManager: Software {
-		DRIVER_INSTANCE(DesktopManager, "desktop", "DesktopManager", Software);
+		DRIVER_INSTANCE(DesktopManager, 0x3a11d5b3, "desktop", "DesktopManager", Software);
 		
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

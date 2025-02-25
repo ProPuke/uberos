@@ -5,6 +5,7 @@
 #include <common/stdlib.hpp>
 
 #include <kernel/console.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/drivers/common/system/DesktopManager.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>

@@ -6,7 +6,7 @@
 
 namespace driver::system {
 	struct Acpi final: Hardware {
-		DRIVER_INSTANCE(Acpi, "acpi", "Advanced Configuration and Power Interface", Hardware)
+		DRIVER_INSTANCE(Acpi, 0xb3de6156, "acpi", "Advanced Configuration and Power Interface", Hardware)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

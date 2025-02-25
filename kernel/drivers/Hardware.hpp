@@ -4,6 +4,6 @@
 
 namespace driver {
 	struct Hardware: Driver {
-		DRIVER_TYPE(Hardware, "hardware", "Hardware Driver", Driver)
+		DRIVER_TYPE(Hardware, 0x68216bb2, "hardware", "Hardware Driver", Driver)
 	};
 }

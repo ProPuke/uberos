@@ -7,7 +7,7 @@
 
 namespace driver::graphics {
 	struct Raspi_videocore_mailbox final: driver::Graphics {
-		DRIVER_INSTANCE(Raspi_videocore_mailbox, "videocore", "Raspi Videocore Firmware", driver::Graphics)
+		DRIVER_INSTANCE(Raspi_videocore_mailbox, 0x809d34ea, "videocore", "Raspi Videocore Firmware", driver::Graphics)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

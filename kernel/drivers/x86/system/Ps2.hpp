@@ -8,7 +8,7 @@ namespace driver::system {
 	//TODO: merge into a 8259 PIC driver?
 
 	struct Ps2 final: Hardware {
-		DRIVER_INSTANCE(Ps2, "ps2", "PS/2", Hardware)
+		DRIVER_INSTANCE(Ps2, 0x68d9019a, "ps2", "PS/2", Hardware)
 
 		enum struct Port: U8 {
 			port1,

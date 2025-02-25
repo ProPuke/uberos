@@ -2,6 +2,8 @@
 
 #include "Timer.hpp"
 
+#include <kernel/drivers.hpp>
+
 namespace driver {
 	inline auto Timer::find_and_claim_timer(Callback onTerminated, void *onTerminatedData) -> Try<ClaimedTimer> {
 		auto timer = drivers::find_and_activate<driver::Timer>();

@@ -1,5 +1,6 @@
 #include "Ps2Mouse.hpp"
 
+#include <kernel/drivers.hpp>
 #include <kernel/drivers/x86/system/Ps2.hpp>
 
 namespace driver::input {

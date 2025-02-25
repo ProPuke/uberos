@@ -1,11 +1,10 @@
 #pragma once
 
+#include <kernel/Driver.hpp>
+
 #include <common/EventEmitter.hpp>
 #include <common/LList.hpp>
 #include <common/Try.hpp>
-
-struct Driver;
-struct DriverType;
 
 namespace drivers {
 	struct Event {
@@ -34,17 +33,17 @@ namespace drivers {
 	auto stop_driver(Driver&) -> Try<>;
 	auto restart_driver(Driver&) -> Try<>;
 
-	auto find_first(DriverType&) -> Driver*;
-	auto find_next(Driver &after, DriverType&) -> Driver*;
+	auto find_first(DriverTypeId) -> Driver*;
+	auto find_next(Driver &after, DriverTypeId) -> Driver*;
 
 	template <typename T>
-	auto find_first(DriverType &type) -> T* { return (T*)find_first(type); }
+	auto find_first(DriverType &type) -> T* { return (T*)find_first(type.id); }
 	template <typename T>
 	auto find_first() -> T* { return find_first<T>(T::typeInstance); }
 	template <typename T>
-	auto find_next(Driver &after, DriverType &type) -> T* { return (T*)find_next(after, type); }
+	auto find_next(Driver &after, DriverType &type) -> T* { return (T*)find_next(after, type.id); }
 	template <typename T>
-	auto find_next(Driver &after) -> T* { return find_next<T>(after, T::typeInstance); }
+	auto find_next(Driver &after) -> T* { return find_next<T>(after, T::typeInstance.id); }
 
 	void print_driver_summary(const char *indent, Driver&);
 	bool print_driver_details(const char *indent, Driver&, const char *beforeName="", const char *afterName="");

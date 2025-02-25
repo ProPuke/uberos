@@ -4,7 +4,7 @@
 
 namespace driver::system {
 	struct Gdt final: Hardware {
-		DRIVER_INSTANCE(Gdt, "gdt", "Global Descriptor Table", Hardware)
+		DRIVER_INSTANCE(Gdt, 0xb8a16193, "gdt", "Global Descriptor Table", Hardware)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

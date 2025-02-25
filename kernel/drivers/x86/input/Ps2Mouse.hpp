@@ -10,7 +10,7 @@ namespace driver::system {
 
 namespace driver::input {
 	struct Ps2Mouse final: Mouse {
-		DRIVER_INSTANCE(Ps2Mouse, "ps2Mouse", "PS/2 Mouse Controller", Mouse)
+		DRIVER_INSTANCE(Ps2Mouse, 0x65954e1e, "ps2Mouse", "PS/2 Mouse Controller", Mouse)
 
 		enum struct Ps2Command {
 			setScale1 = 0xe6,

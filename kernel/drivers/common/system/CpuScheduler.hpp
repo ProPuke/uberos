@@ -9,7 +9,7 @@
 
 namespace driver::system {
 	struct CpuScheduler: Scheduler {
-		DRIVER_INSTANCE(CpuScheduler, "cpuSched", "CPU Scheduler", Scheduler)
+		DRIVER_INSTANCE(CpuScheduler, 0xfe8dac43, "cpuSched", "CPU Scheduler", Scheduler)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override { return {"Thread scheduler drivers cannot be stopped"}; };

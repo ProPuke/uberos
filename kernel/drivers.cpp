@@ -157,16 +157,16 @@ namespace drivers {
 		return {};
 	}
 
-	auto find_first(DriverType &type) -> Driver* {
+	auto find_first(DriverTypeId typeId) -> Driver* {
 		for(Driver *driver = drivers.head; driver; driver = driver->next){
-			if(driver->is_type(type)) return driver;
+			if(driver->is_type(typeId)) return driver;
 		}
 
 		return nullptr;
 	}
-	auto find_next(Driver &after, DriverType &type) -> Driver* {
+	auto find_next(Driver &after, DriverTypeId typeId) -> Driver* {
 		for(Driver *driver = after.next; driver; driver = driver->next){
-			if(driver->is_type(type)) return driver;
+			if(driver->is_type(typeId)) return driver;
 		}
 
 		return nullptr;

@@ -10,7 +10,7 @@
 namespace driver {
 	//TODO: should graphics drivers also include an api for querying their active processor(s) drivers if present? This would allow us to work out what processor speeds and temps relate to this graphics adapter, which might be useful/neat
 	struct Graphics: Hardware {
-		DRIVER_TYPE(Graphics, "graphics", "Graphics Hardware", Hardware);
+		DRIVER_TYPE(Graphics, 0x2d7d3b85, "graphics", "Graphics Hardware", Hardware);
 
 		struct Mode {
 			U32 width;

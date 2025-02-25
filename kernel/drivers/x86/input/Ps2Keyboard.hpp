@@ -6,7 +6,7 @@
 
 namespace driver::input {
 	struct Ps2Keyboard final: Keyboard {
-		DRIVER_INSTANCE(Ps2Keyboard, "ps2Keyboard", "PS/2 Keyboard Controller", Keyboard)
+		DRIVER_INSTANCE(Ps2Keyboard, 0xeceda7cc, "ps2Keyboard", "PS/2 Keyboard Controller", Keyboard)
 
 		enum struct Ps2Command {
 			setLeds = 0xed,

@@ -6,7 +6,7 @@
 
 namespace driver::console {
 	struct UefiConsole: driver::Console {
-		DRIVER_INSTANCE(UefiConsole, "uefiConsole", "UEFI Simple Text Output", driver::Console)
+		DRIVER_INSTANCE(UefiConsole, 0x10d47305, "uefiConsole", "UEFI Simple Text Output", driver::Console)
 
 		auto get_mode_count() -> U32 override;
 		auto get_mode(U32 mode) -> Mode override;

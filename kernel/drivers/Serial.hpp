@@ -7,7 +7,7 @@
 
 namespace driver {
 	struct Serial: Hardware {
-		DRIVER_TYPE(Serial, "serial", "Serial Driver", Hardware)
+		DRIVER_TYPE(Serial, 0x81502b1, "serial", "Serial Driver", Hardware)
 
 		virtual void set_baud(U32 set) = 0;
 

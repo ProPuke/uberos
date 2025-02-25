@@ -4,7 +4,7 @@
 
 namespace driver::interrupt {
 	struct Arm_raspi_legacy final: driver::Interrupt {
-		DRIVER_INSTANCE(Arm_raspi_legacy, "raspiIrq", "Raspi Legacy Interrupt Controller", driver::Interrupt)
+		DRIVER_INSTANCE(Arm_raspi_legacy, 0x5c0145e8, "raspiIrq", "Raspi Legacy Interrupt Controller", driver::Interrupt)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

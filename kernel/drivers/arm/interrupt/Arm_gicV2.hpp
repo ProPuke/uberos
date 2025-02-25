@@ -4,7 +4,7 @@
 
 namespace driver::interrupt {
 	struct Arm_gicV2: driver::Interrupt {
-		DRIVER_TYPE_CUSTOM_CTOR(Arm_gicV2, "gic2", "GIC v2", driver::Interrupt)
+		DRIVER_TYPE_CUSTOM_CTOR(Arm_gicV2, 0xf8c0c9e4, "gic2", "GIC v2", driver::Interrupt)
 
 		/**/ Arm_gicV2(U32 address):
 			Super(DriverApi::Startup::automatic),

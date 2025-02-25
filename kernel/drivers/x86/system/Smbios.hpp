@@ -6,7 +6,7 @@
 
 namespace driver::system {
 	struct Smbios final: Hardware {
-		DRIVER_INSTANCE(Smbios, "smbios", "System Management BIOS", Hardware)
+		DRIVER_INSTANCE(Smbios, 0x73c92949, "smbios", "System Management BIOS", Hardware)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

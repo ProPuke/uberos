@@ -4,7 +4,7 @@
 
 namespace driver::interrupt {
 	struct Pic8259 final: driver::Interrupt {
-		DRIVER_INSTANCE(Pic8259, "pic8259", "8259 PIC", driver::Interrupt)
+		DRIVER_INSTANCE(Pic8259, 0xd8055fb2, "pic8259", "8259 PIC", driver::Interrupt)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

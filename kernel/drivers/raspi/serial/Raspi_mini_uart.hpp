@@ -7,7 +7,7 @@
 namespace driver {
 	namespace serial {
 		struct Raspi_mini_uart final: driver::Serial {
-			DRIVER_TYPE_CUSTOM_CTOR(Raspi_mini_uart, "miniuart", "Raspberry Pi Mini UART Serial", driver::Serial)
+			DRIVER_TYPE_CUSTOM_CTOR(Raspi_mini_uart, 0x599cf227, "miniuart", "Raspberry Pi Mini UART Serial", driver::Serial)
 
 			/**/ Raspi_mini_uart(U32 address):
 				Super(DriverApi::Startup::automatic),

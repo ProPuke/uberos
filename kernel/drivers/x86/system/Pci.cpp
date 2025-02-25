@@ -2,6 +2,7 @@
 
 #include <kernel/arch/x86/ioPort.hpp>
 #include <kernel/assert.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/drivers/x86/system/Smbios.hpp>
 #include <kernel/PodArray.hpp>
 

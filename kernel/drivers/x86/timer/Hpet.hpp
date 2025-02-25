@@ -6,7 +6,7 @@
 
 namespace driver::timer {
 	struct Hpet final: driver::Timer {
-		DRIVER_INSTANCE(Hpet, "hpet", "High Precision Event Timer", driver::Timer)
+		DRIVER_INSTANCE(Hpet, 0xf4e88cee, "hpet", "High Precision Event Timer", driver::Timer)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

@@ -7,7 +7,7 @@
 
 namespace driver {
 	struct Keyboard: Hardware {
-		DRIVER_TYPE_CUSTOM_CTOR(Keyboard, "keyboard", "Keyboard Driver", Hardware)
+		DRIVER_TYPE_CUSTOM_CTOR(Keyboard, 0x9dcef482, "keyboard", "Keyboard Driver", Hardware)
 
 		/**/ Keyboard(DriverApi::Startup &startup):
 			Super(startup)

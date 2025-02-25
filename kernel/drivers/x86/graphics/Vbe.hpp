@@ -7,7 +7,7 @@
 
 namespace driver::graphics {
 	struct Vbe final: driver::Graphics {
-		DRIVER_INSTANCE(Vbe, "vbe", "VESA BIOS Extensions", driver::Graphics)
+		DRIVER_INSTANCE(Vbe, 0x9695f10e, "vbe", "VESA BIOS Extensions", driver::Graphics)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

@@ -5,7 +5,7 @@
 
 namespace driver::system {
 	struct IbmBios final: Hardware {
-		DRIVER_INSTANCE(IbmBios, "ibmbios", "IBM-Compatible BIOS", Hardware)
+		DRIVER_INSTANCE(IbmBios, 0x8c9fb94d, "ibmbios", "IBM-Compatible BIOS", Hardware)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

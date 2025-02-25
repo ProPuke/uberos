@@ -4,7 +4,7 @@
 
 namespace driver::processor {
 	struct Raspi_bcm2837 final: Raspi {
-		DRIVER_INSTANCE(Raspi_bcm2837, "bcm2837", "BCM2837 AArch64 Processor", Raspi)
+		DRIVER_INSTANCE(Raspi_bcm2837, 0x61a965d8, "bcm2837", "BCM2837 AArch64 Processor", Raspi)
 
 		auto _on_start() -> Try<> override {
 			processor_arch = "AArch64";

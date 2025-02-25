@@ -6,7 +6,7 @@
 
 namespace driver::processor {
 	struct Raspi: driver::Processor {
-		DRIVER_TYPE(Raspi, "raspi", "Raspberry Pi Processor", driver::Processor)
+		DRIVER_TYPE(Raspi, 0x683cb733, "raspi", "Raspberry Pi Processor", driver::Processor)
 
 		auto _on_start() -> Try<> override;
 

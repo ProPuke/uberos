@@ -6,7 +6,7 @@
 
 namespace driver {
 	struct Timer: Hardware {
-		DRIVER_TYPE(Timer, "timer", "Hardware Timer Driver", Hardware)
+		DRIVER_TYPE(Timer, 0x72ded0a6, "timer", "Hardware Timer Driver", Hardware)
 
 		typedef void (*ScheduledCallback)(void *data, U32 id);
 		typedef void (*ScheduledCallback2)(void *data);

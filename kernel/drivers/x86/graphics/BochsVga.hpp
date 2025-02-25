@@ -7,7 +7,7 @@
 
 namespace driver::graphics {
 	struct BochsVga final: driver::Graphics {
-		DRIVER_INSTANCE(BochsVga, "bochsVga", "Bochs VGA", driver::Graphics)
+		DRIVER_INSTANCE(BochsVga, 0x99815895, "bochsVga", "Bochs VGA", driver::Graphics)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

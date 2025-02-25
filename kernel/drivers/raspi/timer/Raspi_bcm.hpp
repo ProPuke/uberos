@@ -7,7 +7,7 @@
 namespace driver {
 	namespace timer {
 		struct Raspi_bcm final: driver::Timer {
-			DRIVER_TYPE_CUSTOM_CTOR(Raspi_bcm, "bcm", "Raspberry Pi BCM", driver::Timer)
+			DRIVER_TYPE_CUSTOM_CTOR(Raspi_bcm, 0x647627ea, "bcm", "Raspberry Pi BCM", driver::Timer)
 
 			/**/ Raspi_bcm(
 				U64 address = (U64)arch::raspi::mmio::Address::system_timer_base,

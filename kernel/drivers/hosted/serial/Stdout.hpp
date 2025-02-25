@@ -7,7 +7,7 @@
 namespace driver::serial {
 	//TODO: replace with Console driver that uses Serial?
 	struct Stdout final: driver::Serial {
-		DRIVER_INSTANCE(Stdout, "stdout", "Serial Stdout Interface", driver::Serial)
+		DRIVER_INSTANCE(Stdout, 0x56c9000d, "stdout", "Serial Stdout Interface", driver::Serial)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;

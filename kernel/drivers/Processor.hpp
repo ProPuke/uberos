@@ -6,7 +6,7 @@
 
 namespace driver {
 	struct Processor: Hardware {
-		DRIVER_TYPE(Processor, "processor", "Processor Driver", Hardware);
+		DRIVER_TYPE(Processor, 0xc7834a3f, "processor", "Processor Driver", Hardware);
 
 		const char *processor_arch = "";
 		U32 processor_cores = 1;

@@ -6,7 +6,7 @@ struct Thread;
 
 namespace driver {
 	struct Scheduler: Software {
-		DRIVER_TYPE(Scheduler, "scheduler", "Thread Scheduler", Software)
+		DRIVER_TYPE(Scheduler, 0xc35897a, "scheduler", "Thread Scheduler", Software)
 
 		virtual void add_thread(Thread&) = 0;
 		virtual void remove_thread(Thread&) = 0;

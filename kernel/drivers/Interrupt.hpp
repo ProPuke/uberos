@@ -7,7 +7,7 @@
 
 namespace driver {
 	struct Interrupt: Hardware {
-		DRIVER_TYPE(Interrupt, "Interrupt", "Interrupt Controller", Hardware);
+		DRIVER_TYPE(Interrupt, 0xf0854990, "Interrupt", "Interrupt Controller", Hardware);
 
 		U32 min_irq = 0;
 		U32 max_irq = 0;

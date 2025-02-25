@@ -1,6 +1,7 @@
 #include "Idt.hpp"
 
 #include <kernel/Spinlock.hpp>
+#include <kernel/drivers.hpp>
 #include <kernel/drivers/x86/system/Gdt.hpp>
 
 namespace driver::system {

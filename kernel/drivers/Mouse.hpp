@@ -6,7 +6,7 @@
 
 namespace driver {
 	struct Mouse: Hardware {
-		DRIVER_TYPE(Mouse, "mouse", "Mouse Driver", Hardware)
+		DRIVER_TYPE(Mouse, 0x639990c6, "mouse", "Mouse Driver", Hardware)
 
 		struct Event {
 			Mouse *instance;
