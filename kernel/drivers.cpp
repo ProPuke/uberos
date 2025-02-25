@@ -246,6 +246,7 @@ namespace drivers {
 		// 	log.print_inline(" @ ", to_string(driver.address));
 		// }
 		log.print_end();
+
 		// log.print_info("   State: ", driver.state);
 		for(auto &subscription:driver.api.subscribedMemory){
 			#ifdef _64BIT
@@ -331,7 +332,7 @@ namespace drivers {
 			// }
 		}
 		if(auto serial = driver.as_type<driver::Serial>()){
-			if(serial->api.is_disabled()){
+			if(serial->api.is_enabled()){
 				log.print_info(indent, "   Baud: ", serial->get_active_baud());
 			}
 		}
