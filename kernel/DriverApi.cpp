@@ -281,6 +281,13 @@ auto DriverApi::start_driver() -> Try<> {
 
 	if(auto result = driver()._on_start(); !result){
 		state = State::failed;
+
+		unsubscribe_all_memory();
+		unsubscribe_all_interrupts();
+		unsubscribe_all_irqs();
+		unsubscribe_all_pci();
+		unsubscribe_all_ioPort();
+
 		return result;
 	}
 
@@ -298,6 +305,7 @@ auto DriverApi::stop_driver() -> Try<> {
 	unsubscribe_all_interrupts();
 	unsubscribe_all_irqs();
 	unsubscribe_all_pci();
+	unsubscribe_all_ioPort();
 
 	for(auto reference = driver().references.head; reference; reference=reference->next) {
 		reference->terminate();
@@ -327,4 +335,5 @@ void DriverApi::fail_driver(const char *reason) {
 	unsubscribe_all_interrupts();
 	unsubscribe_all_irqs();
 	unsubscribe_all_pci();
+	unsubscribe_all_ioPort();
 }
