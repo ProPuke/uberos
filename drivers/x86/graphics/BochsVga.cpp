@@ -182,6 +182,10 @@ namespace driver::graphics {
 			return {"unrecognised version"};
 		}
 
+		// check framebuffer address first before enabling, so we don't trample other drivers
+		framebufferAddress = (U8*)pciDevice->baseAddress[0];
+		TRY(api.subscribe_memory((void*)framebufferAddress, 1024*768*3, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
+
 		auto vram = get_vram();
 
 		set16(Register::enable, (U16)Enable::getCaps|(U16)Enable::noClearMem);
@@ -194,8 +198,6 @@ namespace driver::graphics {
 
 		// TRY(api.subscribe_memory((void*)0x4f00, 0x123));
 		TRY(api.subscribe_memory((void*)0xe0000000, vram, mmu::Caching::uncached));
-
-		framebufferAddress = (U8*)pciDevice->baseAddress[0];
 
 		framebuffer.address = nullptr;
 
