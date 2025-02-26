@@ -184,6 +184,8 @@ namespace driver {
 				auto config = registers->read_config();
 				config.enableLegacyReplacementMapping = true;
 				registers->write_config(config);
+
+				return {};
 			}
 
 			void clearAllInterrupts() {

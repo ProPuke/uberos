@@ -30,7 +30,7 @@ namespace driver::graphics {
 
 		switch(multiboot->framebuffer_type){
 			case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED:
-				return {"multiboot framebuffer is indexes, which is not supported "}; // :( We should probably support this mapped as RGB242 or grey8 something?
+				return {"multiboot framebuffer is indexes, which is not supported "}; // :( We should probably support this mapped as RGB332 or grey8 something?
 			break;
 			case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
 				// okay!
