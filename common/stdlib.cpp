@@ -63,7 +63,7 @@ extern "C" void* memcpy_backwards_aligned(void *__restrict dest, const void *__r
 	auto d = (char*)dest+bytes;
 	auto s = (const char*)src+bytes;
 
-	while(bytes--) *d-- = *s--;
+	while(bytes--) *--d = *--s;
 
 	return dest;
 }
@@ -71,20 +71,28 @@ extern "C" void* memcpy_backwards_aligned(void *__restrict dest, const void *__r
 #ifndef HAS_UNALIGNED_ACCESS
 	extern "C" void* memmove(void *dest, const void *src, size_t bytes) {
 		if(dest>=src){
-			return memcpy_backwards_aligned(dest, src, bytes);
+			auto d = (char*)dest+bytes;
+			auto s = (const char*)src+bytes;
+		
+			while(bytes--) *--d = *--s;
 		}else{
-			return memcpy_forwards_aligned(dest, src, bytes);
+
+			auto d = (char*)dest;
+			auto s = (const char*)src;
+		
+			while(bytes--) *d++ = *s++;
 		}
+
+		return dest;
 	}
 
 	extern "C" int memcmp(const void *a, const void *b, size_t bytes) {
 		while(bytes--){
-			const auto diff = *((C8*)a)-*((C8*)b);
-			a = (C8*)a+1;
-			b = (C8*)b+1;
-			if(diff){
+			if(const auto diff = *((C8*)a)-*((C8*)b)){
 				return diff;
 			}
+			a = (C8*)a+1;
+			b = (C8*)b+1;
 		}
 		return 0;
 	}
