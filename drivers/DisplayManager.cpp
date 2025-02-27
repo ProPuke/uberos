@@ -410,7 +410,7 @@ namespace driver {
 								for(auto x=scanX; x<nextScanX; x++){
 									_update_blending_at(framebuffer, bufferPosition, x, y, display);
 
-									if(bufferPosition>&buffer[sizeof(buffer)/sizeof(buffer[0])]){
+									if(bufferPosition>=&buffer[sizeof(buffer)/sizeof(buffer[0])]){
 										memcpy(framebufferAddress, buffer, (U8*)bufferPosition-(U8*)buffer);
 										framebufferAddress += (U8*)bufferPosition-(U8*)buffer;
 										bufferPosition = buffer;
