@@ -465,7 +465,7 @@ flag x86-ibm-bios
 	task test-iso
 		requires task build-iso
 
-		run {qemu} -cdrom {outputdir}/cdrom.iso
+		run {qemu} -cdrom {outputdir}/image.iso
 
 	task debug
 		requires task build
@@ -540,7 +540,7 @@ flag x86-64-ibm-bios
 	task test-iso
 		requires task build-iso
 
-		run {qemu} -cdrom {outputdir}/cdrom.iso
+		run {qemu} -cdrom {outputdir}/image.iso
 
 	task debug
 		requires task build
@@ -686,7 +686,7 @@ task build-iso
 	mkdir {outputdir}/iso/boot/grub
 	run cp {outputdir}/{kernel_filename} {outputdir}/iso/boot/os.bin
 	run cp -r ../assets/x86/* {outputdir}/iso/boot/
-	run grub-mkrescue -o {outputdir}/cdrom.iso {outputdir}/iso
+	run grub-mkrescue -o {outputdir}/image.iso {outputdir}/iso
 
 task clean
 	rm {outputdir}
