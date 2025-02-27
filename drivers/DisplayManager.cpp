@@ -92,13 +92,13 @@ namespace driver {
 			auto bpp = graphics2d::bufferFormat::size[(U8)framebuffer.buffer->format];
 
 			#ifdef DEBUG_MEMORY
-				trace("new U8 ", width, "x", height, "@", bpp, "\n");
+				debug::trace("new U8 ", width, "x", height, "@", bpp, "\n");
 			#endif
 
 			auto buffer = new U8[width*height*bpp]; //TODO:allocate from pages and map to current thread
 
 			#ifdef DEBUG_MEMORY
-				trace("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
+				debug::trace("new U8 ", width, "x", height, "@", bpp, " = ", buffer, "\n");
 			#endif
 
 			if(!buffer) return nullptr;
@@ -126,7 +126,7 @@ namespace driver {
 			}
 
 			#ifdef DEBUG_MEMORY
-				trace("created display ", display);
+				debug::trace("created display ", display);
 			#endif
 
 			return display;
@@ -535,7 +535,7 @@ namespace driver {
 		void _update_background_area(graphics2d::Rect screenRect) {
 			// mmio::PeripheralWriteGuard guard;
 
-			// trace("update background area");
+			// debug::trace("update background area");
 
 			for(auto &framebuffer:framebuffers){
 				if(!framebuffer.buffer) continue;
@@ -544,10 +544,10 @@ namespace driver {
 
 				auto rect = screenRect.intersect(framebuffer.area);
 
-				// trace("paint background ", rect.y1, " to ", rect.y2);
+				// debug::trace("paint background ", rect.y1, " to ", rect.y2);
 
 				for(auto y=rect.y1;y<rect.y2;y++){
-					// trace("y = ", y, "\n");
+					// debug::trace("y = ", y, "\n");
 					auto startX = rect.x1;
 					while(startX<rect.x2){
 						auto endX = rect.x2;
@@ -834,9 +834,9 @@ namespace driver {
 							// U8 *source = &display.viewBuffer.address[((y/scale)*display.viewBuffer.width+startX/scale)*bpp];
 							// U32 length = (endX-startX)*bpp;
 							// if(source<display.viewBuffer.address||source+length>display.viewBuffer.address+display.viewBuffer.size){
-							// 	trace("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", display.viewBuffer.address, " -> ", display.viewBuffer.address+display.viewBuffer.size, "\n");
+							// 	debug::trace("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", display.viewBuffer.address, " -> ", display.viewBuffer.address+display.viewBuffer.size, "\n");
 							// }
-							// trace(source, " -> ", source+length, "\n");
+							// debug::trace(source, " -> ", source+length, "\n");
 							// memcpy_aligned(target, source, length);
 
 							if(scale==1){
@@ -845,7 +845,7 @@ namespace driver {
 								U32 length = (endX-startX)*bpp;
 
 								// if(source<display.viewBuffer.address||source+length>display.viewBuffer.address+display.viewBuffer.size){
-								// 	trace("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", display.viewBuffer.address, " -> ", display.viewBuffer.address+display.viewBuffer.size, "\n");
+								// 	debug::trace("READ OUT OF BUFFER! ", source, " -> ", source+length, " vs ", display.viewBuffer.address, " -> ", display.viewBuffer.address+display.viewBuffer.size, "\n");
 								// }
 								memcpy_aligned(target, source, length);
 
@@ -857,7 +857,7 @@ namespace driver {
 									U8 *sourceData = &source[(x/scale)*bpp]; 
 									for(unsigned i=0;i<bpp;i++){
 										// if(sourceData<display.viewBuffer.address||source>=display.viewBuffer.address+display.viewBuffer.size){
-										// 	trace("READ OUT OF BUFFER! ", source, " vs ", display.viewBuffer.address, " -> ", display.viewBuffer.address+display.viewBuffer.size, "\n");
+										// 	debug::trace("READ OUT OF BUFFER! ", source, " vs ", display.viewBuffer.address, " -> ", display.viewBuffer.address+display.viewBuffer.size, "\n");
 										// }
 										*target++ = *sourceData++;
 									}

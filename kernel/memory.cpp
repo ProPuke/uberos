@@ -16,7 +16,7 @@ static Log log("mem");
 #ifndef HAS_UNALIGNED_ACCESS
 	extern "C" auto memset(void *dest, int value, size_t size) -> void* {
 		#ifdef MEMORY_CHECKS
-			trace("memset ", to_string(dest), size, "\n");
+			debug::trace("memset ", to_string(dest), size, "\n");
 		#endif
 		auto d = (char*)dest;
 		while(--size) *d++ = value;
@@ -83,7 +83,7 @@ namespace memory {
 		for(auto page=freePages.head; page; page=page->next){
 			U32 needed = count-1;
 			for(auto checkPage=page; needed&&checkPage->hasNextPage&&!(checkPage+1)->isAllocated; checkPage++,needed--);
-			// trace("searched\n");
+			// debug::trace("searched\n");
 
 			if(needed==0){
 				U32 needed = count;
@@ -100,7 +100,7 @@ namespace memory {
 			}
 		}
 
-		// trace("didn't get pages\n");
+		// debug::trace("didn't get pages\n");
 		return nullptr;
 	}
 
@@ -130,7 +130,7 @@ namespace memory {
 		}
 
 		#ifdef MEMORY_CHECKS
-			trace("kmalloc ", size, " @ ", address);
+			debug::trace("kmalloc ", size, " @ ", address);
 			debug_llist(kernelHeap.availableBlocks, "availableBlocks after kmalloc");
 		#endif
 
@@ -143,7 +143,7 @@ namespace memory {
 		// auto section = log.section("kfree");
 
 		#ifdef MEMORY_CHECKS
-			trace("kfree ", address);
+			debug::trace("kfree ", address);
 		#endif
 
 		if(!address) return;

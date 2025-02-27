@@ -34,22 +34,22 @@ namespace memory {
 				if(blockHeaderSize+requiredSize>=memory::pageSize){
 					const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 					#ifdef MEMORY_CHECKS
-						trace("try to add ", pageCount, " pages\n");
+						debug::trace("try to add ", pageCount, " pages\n");
 					#endif
 					if(!add_pages(pageCount)) {
 						#ifdef MEMORY_CHECKS
-							trace("could not allocate ", pageCount, " pages \n");
+							debug::trace("could not allocate ", pageCount, " pages \n");
 						#endif
 						return nullptr;
 					}
 
 				}else{
 					#ifdef MEMORY_CHECKS
-						trace("try to add page\n");
+						debug::trace("try to add page\n");
 					#endif
 					if(!add_page()) {
 						#ifdef MEMORY_CHECKS
-							trace("could not allocate page \n");
+							debug::trace("could not allocate page \n");
 						#endif
 						return nullptr;
 					}
@@ -57,7 +57,7 @@ namespace memory {
 			}
 
 			#ifdef MEMORY_CHECKS
-				trace("try to malloc 2 ", requiredSize, "\n");
+				debug::trace("try to malloc 2 ", requiredSize, "\n");
 			#endif
 
 			void *result;
@@ -67,7 +67,7 @@ namespace memory {
 
 				if(!result){
 					#ifdef MEMORY_CHECKS
-						trace("could not allocate ", requiredSize, "\n");
+						debug::trace("could not allocate ", requiredSize, "\n");
 					#endif
 					if(blockHeaderSize+requiredSize>=memory::pageSize){
 						#ifdef MEMORY_CHECKS
@@ -75,22 +75,22 @@ namespace memory {
 						#endif
 						const auto pageCount = (blockHeaderSize+requiredSize+memory::pageSize-1)/memory::pageSize;
 						#ifdef MEMORY_CHECKS
-							trace("trying to allocate ", pageCount, " pages\n");
+							debug::trace("trying to allocate ", pageCount, " pages\n");
 						#endif
 						if(!add_pages(pageCount)) {
 							#ifdef MEMORY_CHECKS
-								trace("could not allocate ", pageCount, " pages \n");
+								debug::trace("could not allocate ", pageCount, " pages \n");
 							#endif
 							return nullptr;
 						}
 						#ifdef MEMORY_CHECKS
-							trace("managed to allocate ", this->available-sizeBefore, "\n");
+							debug::trace("managed to allocate ", this->available-sizeBefore, "\n");
 						#endif
 
 					}else{
 						if(!add_page()) {
 							#ifdef MEMORY_CHECKS
-								trace("could not allocate page \n");
+								debug::trace("could not allocate page \n");
 							#endif
 							return nullptr;
 						}
@@ -99,7 +99,7 @@ namespace memory {
 			}while(!result);
 
 			#ifdef MEMORY_CHECKS
-				trace("returned memory ", result, "\n");
+				debug::trace("returned memory ", result, "\n");
 			#endif
 			
 			return result;

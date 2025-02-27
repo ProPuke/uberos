@@ -38,6 +38,9 @@ flag uart1
 flag debug
 	set directives = {directives} -Og -g -D DEBUG
 
+flag debug-memory
+	set directives = {directives} -D MEMORY_CHECKS
+
 flag not debug
 	set directives = {directives} -O2
 	set lflags = {lflags} -O2
