@@ -61,7 +61,7 @@ namespace driver {
 		void _update_area_solid(graphics2d::Rect, DisplayManager::Display *below = nullptr);
 		void _update_display_solid(DisplayManager::Display&);
 		void _update_display_area_solid(DisplayManager::Display&, graphics2d::Rect);
-		void _update_blending_at(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
+		void _calculate_blending_at(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
 		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> Optional<graphics2d::Buffer>;
 
 		void _set_background_colour(U32 colour) {
@@ -137,16 +137,17 @@ namespace driver {
 			auto _sample_background_strip_at(U32 y) -> U32;
 		#endif
 
-		void _update_blending_at_rgb(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
-		void _update_blending_at_bgr(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
-		void _update_blending_at(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
+		template <graphics2d::BufferFormatOrder>
+		void __calculate_blending_at(U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
+
+		void _calculate_blending_at(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
 			switch(framebuffer.buffer->order){
 				case graphics2d::BufferFormatOrder::argb:
-					_update_blending_at_rgb(framebuffer, buffer, x, y, topDisplay);
+					__calculate_blending_at<graphics2d::BufferFormatOrder::argb>(buffer, x, y, topDisplay);
 				break;
 				case graphics2d::BufferFormatOrder::bgra:
 				default:
-					_update_blending_at_bgr(framebuffer, buffer, x, y, topDisplay);
+					__calculate_blending_at<graphics2d::BufferFormatOrder::bgra>(buffer, x, y, topDisplay);
 				break;
 			}
 		}
@@ -177,8 +178,9 @@ namespace driver {
 		};
 
 		//TODO: implement alpha testing instead on non rgba modes (palette index 0 or 0xff00ff perhaps?)
-		void _update_blending_at_rgb(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
-			PackedPixel<graphics2d::BufferFormatOrder::argb> result{0,0,0,0};
+		template <graphics2d::BufferFormatOrder formatOrder>
+		void __calculate_blending_at(U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
+			PackedPixel<formatOrder> result{0,0,0,0};
 			U8 visibility = 255;
 
 			for(auto display=topDisplay; display; display=display->prev){
@@ -194,7 +196,7 @@ namespace driver {
 
 				const auto displayX = x-display->x;
 
-				auto &read = *(PackedPixel<graphics2d::BufferFormatOrder::argb>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
+				auto &read = *(PackedPixel<formatOrder>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
 
 				result.r = min(result.r + read.r*(U32)visibility/255, 255u);
 				result.g = min(result.g + read.g*(U32)visibility/255, 255u);
@@ -223,58 +225,7 @@ namespace driver {
 
 			done:
 
-			*buffer = result.value;
-			buffer++;
-		}
-
-		void _update_blending_at_bgr(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
-			PackedPixel<graphics2d::BufferFormatOrder::bgra> result{0,0,0,0};
-			U8 visibility = 255;
-
-			for(auto display=topDisplay; display; display=display->prev){
-				// check just y
-				if(display->y>y||display->y+(I32)display->get_height()<=y) continue;
-
-				// check x (+ corners)
-				const auto displayY = y-display->y;
-				if(
-					display->x+(I32)display->get_left_margin(displayY)>x||
-					display->x+(I32)display->get_width()-(I32)display->get_right_margin(displayY)<=x
-				) continue;
-
-				const auto displayX = x-display->x;
-
-				auto &read = *(PackedPixel<graphics2d::BufferFormatOrder::bgra>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
-
-				result.r = min(result.r + read.r*(U32)visibility/255, 255u);
-				result.g = min(result.g + read.g*(U32)visibility/255, 255u);
-				result.b = min(result.b + read.b*(U32)visibility/255, 255u);
-
-				auto displayTransparent = !display->solidArea.contains(displayX, displayY);
-
-				// return early if we hit something solid
-				if(!displayTransparent) goto done;
-
-				// all visibility used up
-				if(visibility<=255-read.a) goto done;
-
-				visibility -= 255-read.a;
-			}
-
-			// if(visibility==255) return; //nothing was found
-
-			{
-				auto bg = _sample_background_at(x, y);
-
-				result.r += min((bg>>16 & 0xff) * (U32)visibility/255u, 255u);
-				result.g += min((bg>> 8 & 0xff) * (U32)visibility/255u, 255u);
-				result.b += min((bg>> 0 & 0xff) * (U32)visibility/255u, 255u);
-			}
-
-			done:
-
-			*buffer = result.value;
-			buffer++;
+			*buffer++ = result.value;
 		}
 
 		auto _find_display_section_in_row(I32 &x, I32 y, I32 x2, bool &isTransparent, DisplayManager::Display *current) -> DisplayManager::Display* {
@@ -408,7 +359,7 @@ namespace driver {
 								auto bufferPosition = buffer;
 
 								for(auto x=scanX; x<nextScanX; x++){
-									_update_blending_at(framebuffer, bufferPosition, x, y, display);
+									_calculate_blending_at(framebuffer, bufferPosition, x, y, display);
 
 									if(bufferPosition>=&buffer[sizeof(buffer)/sizeof(buffer[0])]){
 										memcpy(framebufferAddress, buffer, (U8*)bufferPosition-(U8*)buffer);
