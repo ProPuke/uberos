@@ -2,8 +2,8 @@
 
 #include <common/types.hpp>
 
-#include "BufferFormat.hpp"
-#include "Rect.hpp"
+#include <common/graphics2d/BufferFormat.hpp>
+#include <common/graphics2d/Rect.hpp>
 
 namespace graphics2d {
 	struct Font;
@@ -67,12 +67,18 @@ namespace graphics2d {
 		void draw_rect_outline(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_line(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
 		void draw_msdf(I32 x, I32 y, U32 width, U32 height, Buffer &source, I32 source_x, I32 source_y, U32 source_width, U32 source_height, U32 colour, U32 skipSourceLeft=0, U32 skipSourceTop=0, U32 skipSourceRight=0, U32 skipSourceBottom=0);
-		auto draw_text(Font &font, const char *text, I32 x, I32 y, U32 width, U32 size, U32 colour) { return draw_text(font, text, x, y, width, size, colour, size*5/4, x); }
-		auto draw_text(Font &font, const char *text, I32 x, I32 y, U32 width, U32 size, U32 colour, U32 lineHeight) { return draw_text(font, text, x, y, width, size, colour, lineHeight, x); }
-		auto draw_text(Font &font, const char *text, I32 x, I32 y, U32 width, U32 size, U32 colour, U32 lineHeight, I32 cursorX) -> DrawTextResult;
-		auto measure_text(Font &font, const char *text, I32 x, I32 y, U32 size) { return measure_text(font, text, x, y, size, size*5/4, x); }
-		auto measure_text(Font &font, const char *text, I32 x, I32 y, U32 size, U32 lineHeight) { return measure_text(font, text, x, y, size, lineHeight, x); }
-		auto measure_text(Font &font, const char *text, I32 x, I32 y, U32 size, U32 lineHeight, I32 cursorX) -> DrawTextResult;
+
+		struct FontSettings {
+			Font &font;
+			U32 size = 14;
+			I32 lineSpacing = 0;
+			I32 charSpacing = 0;
+		};
+
+		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour) { return draw_text(fontSettings, text, x, y, width, colour, x); }
+		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour, I32 cursorX) -> DrawTextResult;
+		auto measure_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width) { return measure_text(fontSettings, text, x, y, width, x); }
+		auto measure_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, I32 cursorX) -> DrawTextResult;
 		void draw_buffer_area(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image);
 		void draw_4slice(I32 x, I32 y, U32 width, U32 height, Buffer &image);
 

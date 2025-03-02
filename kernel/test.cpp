@@ -140,17 +140,19 @@ namespace test {
 				{
 					const char *time = "00:00";
 
-					auto &font = graphics2d::font::manrope_extraBold;
-					const auto fontSize = 48;
+					auto fontSettings = graphics2d::Buffer::FontSettings{
+						.font = graphics2d::font::manrope_extraBold,
+						.size = 48
+					};
 
-					auto fontMeasurements = clientArea.measure_text(font, time, 0, 0, fontSize);
+					auto fontMeasurements = clientArea.measure_text(fontSettings, time, 0, 0, ~0);
 
 					if(clientArea.width>=clientArea.height){
-						clientArea.draw_text(font, time, width-fontMeasurements.maxX-12+1, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2, fontMeasurements.maxX, fontSize, 0x000000);
-						clientArea.draw_text(font, time, width-fontMeasurements.maxX-12, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2-1, fontMeasurements.maxX, fontSize, 0xffffff);
+						clientArea.draw_text(fontSettings, time, width-fontMeasurements.maxX-12+1, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2, fontMeasurements.maxX, 0x000000);
+						clientArea.draw_text(fontSettings, time, width-fontMeasurements.maxX-12, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2-1, fontMeasurements.maxX, 0xffffff);
 					}else{
-						clientArea.draw_text(font, time, (width-fontMeasurements.maxX)/2+1, height-fontMeasurements.updatedArea.y2-fontMeasurements.updatedArea.y2-12+1, fontMeasurements.maxX, fontSize, 0x000000);
-						clientArea.draw_text(font, time, (width-fontMeasurements.maxX)/2, height-fontMeasurements.updatedArea.y2-fontMeasurements.updatedArea.y2-12, fontMeasurements.maxX, fontSize, 0xffffff);
+						clientArea.draw_text(fontSettings, time, (width-fontMeasurements.maxX)/2+1, height-fontMeasurements.updatedArea.y2-fontMeasurements.updatedArea.y2-12+1, fontMeasurements.maxX, 0x000000);
+						clientArea.draw_text(fontSettings, time, (width-fontMeasurements.maxX)/2, height-fontMeasurements.updatedArea.y2-fontMeasurements.updatedArea.y2-12, fontMeasurements.maxX, 0xffffff);
 					}
 				}
 			};
@@ -169,29 +171,33 @@ namespace test {
 			static auto window = &desktopManager->create_standard_window("Font Test", 320, 320);
 			// view = graphics2d::create_view(nullptr, graphics2d::DisplayLayer::topMost, margin, margin, min(1300u, framebuffer.buffer.width-margin*2), 256);
 
-			static auto scale = 30;
+			static auto scale = 30u;
 
 			static auto redraw = [](){
-				auto fontSize = scale;
 				auto &clientArea = window->get_client_area();
 
 				clientArea.draw_rect(0, 0, window->get_width(), window->get_height(), window->get_background_colour());
 
-				for(auto y=scale;y<window->get_height();y++){
-					if(fontSize>24){
-						clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10+1, y+1, 320, fontSize, 0x222222);
-						clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, fontSize, 0xaaaaaa);
+				auto fontSettings = graphics2d::Buffer::FontSettings{
+					.font = *graphics2d::font::default_sans,
+					.size = scale
+				};
+
+				for(auto y=scale;y<(U32)window->get_height();y++){
+					if(fontSettings.size>24){
+						clientArea.draw_text(fontSettings, "Abc", 10+1, y+1, 320, 0x222222);
+						clientArea.draw_text(fontSettings, "Abc", 10, y, 320, 0xaaaaaa);
 					}else{
-						clientArea.draw_text(*graphics2d::font::default_sans, "Abc", 10, y, 320, fontSize, 0x222222);
+						clientArea.draw_text(fontSettings, "Abc", 10, y, 320, 0x222222);
 					}
 
-					fontSize += scale;
-					y += fontSize * 4 / 5;
+					fontSettings.size += scale;
+					y += fontSettings.size * 4 / 5;
 				}
 
 				static char statusBuffer[64];
 				strcpy(statusBuffer, "Step: ");
-				strcat(statusBuffer, itoa(scale));
+				strcat(statusBuffer, utoa(scale));
 				window->set_status(statusBuffer);
 
 				window->redraw();
@@ -262,7 +268,7 @@ namespace test {
 				#define KEY(NAME,...) \
 					if(i==0)clientArea.draw_rect_outline(colX(row, col)+1, offsetY+(keyboard::Position::maxRows-1-row)*keySize+1, colX(row, col+1)-colX(row, col)-2, keySize-2, 0xbbbbbb, 1, corner, corner, corner, corner);\
 					if(i==1)clientArea.draw_rect(colX(row, col)+2, offsetY+(keyboard::Position::maxRows-1-row)*keySize+2, colX(row, col+1)-colX(row, col)-4, keySize-4, 0xffffff);\
-					if(i==1&&(false,##__VA_ARGS__))clientArea.draw_text(*graphics2d::font::default_sans, ("",##__VA_ARGS__), colX(row, col)+1+3, offsetY+(keyboard::Position::maxRows-1-row)*keySize+3+8, keySize-6, 8, 0x222222);\
+					if(i==1&&(false,##__VA_ARGS__))clientArea.draw_text({.font=*graphics2d::font::default_sans, .size=8}, ("",##__VA_ARGS__), colX(row, col)+1+3, offsetY+(keyboard::Position::maxRows-1-row)*keySize+3+8, keySize-6, 0x222222);\
 					col++;
 				#define EMPTY \
 					if(i==0)clientArea.draw_rect_outline(colX(row, col)+1, offsetY+(keyboard::Position::maxRows-1-row)*keySize+1, colX(row, col+1)-colX(row, col)-2, keySize-2, 0xdddddd, 1, corner, corner, corner, corner);\

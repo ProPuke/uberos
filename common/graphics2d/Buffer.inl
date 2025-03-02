@@ -444,13 +444,13 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::draw_line(U32 x1, U32 y1, U32 x2, U32 y2, U32 colour) {
-		const I32 xVec = x2-x1;
-		const I32 yVec = y2-y1;
+		const I32 xVec = (I32)x2-(I32)x1;
+		const I32 yVec = (I32)y2-(I32)y1;
 		const I32 xLength = maths::abs(xVec);
 		const I32 yLength = maths::abs(yVec);
 
 		if(xLength>=yLength){
-			const auto dir = maths::sign(x2-x1);
+			const auto dir = maths::sign((I32)x2-(I32)x1);
 			for(auto step=0;step<=xLength;step++){
 				const auto phase = step/(float)xLength;
 				const auto x = x1+step*dir;
@@ -458,7 +458,7 @@ namespace graphics2d {
 				set(x, y, colour);
 			}
 		}else{
-			const auto dir = maths::sign(y2-y1);
+			const auto dir = maths::sign((I32)y2-(I32)y1);
 			for(auto step=0;step<=yLength;step++){
 				const auto phase = step/(float)yLength;
 				const auto y = y1+step*dir;

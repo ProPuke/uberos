@@ -496,14 +496,14 @@ namespace driver {
 				}
 
 				{ // draw titlebar text
-					auto lineHeight = 14*5/4;
-					const auto width = graphicsDisplay->buffer.measure_text(*graphics2d::font::default_sans, title, 0, 0, 14).x;
-					graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, title, rect.x1+get_width()/2-width/2, rect.y1+1+lineHeight, get_width(), 14, titlebarTextColour);
+					auto lineHeight = (U32)(graphics2d::font::default_sans->lineHeight * 14 + 0.5);
+					const auto width = graphicsDisplay->buffer.measure_text({.font=*graphics2d::font::default_sans, .size=14}, title, 0, 0, ~0).x;
+					graphicsDisplay->buffer.draw_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.x1+get_width()/2-width/2, rect.y1+1+lineHeight, get_width(), titlebarTextColour);
 				}
 
 				{ // draw statusbar text
 					// auto lineHeight = 14*5/4;
-					graphicsDisplay->buffer.draw_text(*graphics2d::font::default_sans, status, rect.x1+4, rect.y2-7, get_width(), 14, statusbarTextColour);
+					graphicsDisplay->buffer.draw_text({.font=*graphics2d::font::default_sans, .size=14}, status, rect.x1+4, rect.y2-7, get_width(), statusbarTextColour);
 				}
 			}
 

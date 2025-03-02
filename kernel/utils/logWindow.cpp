@@ -17,11 +17,11 @@ namespace utils {
 			driver::DesktopManager::StandardWindow *window = nullptr;
 			logging::Handler *logHandler = nullptr;
 
-			auto fontSize = 10;
-			auto lineHeight = fontSize*5/4;
+			auto fontSize = 10u;
+			auto lineHeight = (U32)(graphics2d::font::default_console->lineHeight * fontSize + 0.5);
 			auto leftMargin = 4;
 			auto cursorX = leftMargin;
-			auto cursorY = lineHeight;
+			auto cursorY = (I32)lineHeight;
 			auto cursorColumn = 0;
 			auto columns = 1;
 			auto columnWidth = 1000;
@@ -66,7 +66,12 @@ namespace utils {
 
 				auto &clientArea = window->get_client_area();
 
-				auto textResult = clientArea.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
+				auto fontSettings = graphics2d::Buffer::FontSettings{
+					.font = *graphics2d::font::default_console,
+					.size = fontSize
+				};
+
+				auto textResult = clientArea.draw_text(fontSettings, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, textColour, cursorX);
 				if(max(cursorY, textResult.updatedArea.y2)>=(I32)clientArea.height){
 
 					if(columns==1){
@@ -79,7 +84,7 @@ namespace utils {
 
 						//redraw as it was clipped off last time
 						clientArea.draw_rect(0, clientArea.height-scroll, clientArea.width, scroll, window->get_background_colour()); //clear the bottom section..
-						textResult = clientArea.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX); //...then redraw the text
+						textResult = clientArea.draw_text(fontSettings, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, textColour, cursorX); //...then redraw the text
 						dirtyArea.include({0, 0, (I32)clientArea.width, (I32)clientArea.height});
 
 					}else{
@@ -96,7 +101,7 @@ namespace utils {
 						clientArea.draw_rect(cursorColumn * columnWidth, 0, columnWidth, clientArea.height, window->get_background_colour());
 						dirtyArea = dirtyArea.include({cursorColumn * columnWidth, 0, cursorColumn * columnWidth + columnWidth, (I32)clientArea.height});
 
-						textResult = clientArea.draw_text(*graphics2d::font::default_console, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, fontSize, textColour, lineHeight, cursorX);
+						textResult = clientArea.draw_text(fontSettings, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, textColour, cursorX);
 					}
 
 				}else{
