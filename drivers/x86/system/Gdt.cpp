@@ -1,10 +1,10 @@
 #include "Gdt.hpp"
 
-#include <kernel/Spinlock.hpp>
+#include <kernel/Lock.hpp>
 
 namespace driver::system {
 	namespace {
-		Spinlock spinlock("gdt");
+		Lock<LockType::flat> lock("gdt");
 
 		struct __attribute__((packed)) Gdtr {
 			U16 limit; // the last valid byte (size-1)
@@ -93,7 +93,7 @@ namespace driver::system {
 	}
 
 	auto Gdt::_on_start() -> Try<> {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		kernelCodeOffset = 0;
 		kernelDataOffset = 0;
@@ -115,19 +115,19 @@ namespace driver::system {
 	}
 
 	void Gdt::set_entry(U32 i, U32 base, U32 limit, U8 access, DescriptorSize descriptorSize, bool granularity4k) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _set_entry(i, base, limit, access, descriptorSize, granularity4k);
 	}
 
 	auto Gdt::add_entry(U32 base, U32 limit, U8 access, DescriptorSize descriptorSize, bool granularity4k) -> U32 {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _add_entry(base, limit, access, descriptorSize, granularity4k);
 	}
 
 	void Gdt::apply_entries() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _apply_entries();
 	}

@@ -2,12 +2,12 @@
 
 #include <drivers/x86/system/Gdt.hpp>
 
-#include <kernel/Spinlock.hpp>
 #include <kernel/drivers.hpp>
+#include <kernel/Lock.hpp>
 
 namespace driver::system {
 	namespace {
-		Spinlock spinlock("idt");
+		Lock<LockType::flat> lock("idt");
 
 		struct __attribute__((packed)) Idtr {
 			U16 limit; // the last valid byte (size-1)
@@ -110,19 +110,19 @@ namespace driver::system {
 	}
 
 	void Idt::set_gate_trap(U8 i, void *isr) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _set_entry(i, isr, 0x8f);
 	}
 
 	void Idt::set_gate_interrupt(U8 i, void *isr) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _set_entry(i, isr, 0x8e);
 	}
 
 	void Idt::apply_gates() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _apply_entries();
 	}

@@ -6,10 +6,10 @@
 #include <common/stdlib.hpp>
 
 #include <kernel/kernel.h>
+#include <kernel/Lock.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/memory/Page.hpp>
 #include <kernel/memory/PagedPool.hpp>
-#include <kernel/Spinlock.hpp>
 
 static Log log("mem");
 
@@ -41,7 +41,7 @@ namespace memory {
 	constinit Page *pageData = nullptr;
 	constinit size_t pageDataSize = 0;
 
-	Spinlock lock("memory");
+	Lock<LockType::flat> lock("memory");
 	
 	LList<::memory::Page> freePages;
 

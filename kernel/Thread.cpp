@@ -4,7 +4,6 @@
 // 	#include <kernel/arch/arm/scheduler.hpp>
 // #endif
 
-#include <kernel/Spinlock.hpp>
 #include <kernel/Log.hpp>
 #include <kernel/time.hpp>
 #include <kernel/memory.hpp>

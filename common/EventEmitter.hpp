@@ -1,6 +1,6 @@
 #pragma once
 
-#include <kernel/Spinlock.hpp>
+#include <kernel/Lock.hpp>
 
 #include <common/ListOrdered.hpp>
 
@@ -35,20 +35,21 @@ protected:
 	U32 callableSubscribersGeneration = 0;
 
 	std::atomic<int> isTriggering{false};
-	Spinlock lockEdit;
+	Lock<LockType::flat> lockEdit;
 };
 
 template <typename Type>
 void EventEmitter<Type>::subscribe(Callback callback, void *data) {
-	Spinlock_Guard guard{lockEdit};
+	Lock_Guard guard{lockEdit};
 
 	subscribers.push_back({callback, data});
+
 	subscribersGeneration++;
 }
 
 template <typename Type>
 void EventEmitter<Type>::unsubscribe(Callback callback, void *data) {
-	Spinlock_Guard guard{lockEdit};
+	Lock_Guard guard{lockEdit};
 
 	for(auto i=0u;i<subscribers.length;i++) {
 		auto &subscription = subscribers[i];
@@ -62,7 +63,7 @@ void EventEmitter<Type>::unsubscribe(Callback callback, void *data) {
 
 template <typename Type>
 void EventEmitter<Type>::unsubscribe_all() {
-	Spinlock_Guard guard{lockEdit};
+	Lock_Guard guard{lockEdit};
 
 	subscribers.clear();
 	subscribersGeneration++;
@@ -71,16 +72,20 @@ void EventEmitter<Type>::unsubscribe_all() {
 template <typename Type>
 void EventEmitter<Type>::trigger(const Type &data) {
 	if(isTriggering.fetch_or(1)){ // if reentrant, use a local copy
-		Spinlock_Guard guard{lockEdit};
+		ListOrdered<Subscription> subscribersCopy;
 
-		auto subscribersCopy = subscribers; // pull from editable subscribers direct
+		{
+			Lock_Guard guard{lockEdit};
+			subscribersCopy = subscribers; // pull from editable subscribers direct
+		}
+
 		for(auto &subscription:subscribersCopy){
 			(subscription.callback)(data, subscription.data);
 		}
 
 	}else{
 		{
-			Spinlock_Guard guard{lockEdit};
+			Lock_Guard guard{lockEdit};
 
 			if(subscribersGeneration!=callableSubscribersGeneration){
 				callableSubscribers = subscribers;

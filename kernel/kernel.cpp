@@ -12,7 +12,6 @@
 #include <kernel/memory/PagedPool.hpp>
 #include <kernel/panic.hpp>
 #include <kernel/Process.hpp>
-#include <kernel/Spinlock.hpp>
 #include <kernel/test.hpp>
 #include <kernel/time.hpp>
 #include <kernel/Thread.hpp>

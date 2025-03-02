@@ -3,10 +3,10 @@
 #include <drivers/Graphics.hpp>
 
 #include <kernel/drivers.hpp>
+#include <kernel/Lock.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/mmio.hpp>
-#include <kernel/Spinlock.hpp>
 
 #include <common/stdlib.hpp>
 
@@ -38,7 +38,8 @@ namespace driver {
 			U8 backgroundStrip[256*3+1] = "<\222\263<\222\263=\223\263=\223\264>\224\264>\224\264?\225\264@\225\264@\225\264A\226\264B\226\264C\227\265D\227\265E\230\265F\230\265G\231\266H\231\266I\232\266K\233\267L\234\267M\234\270N\235\270P\235\270Q\236\271R\236\271S\237\271T\240\271U\240\272V\241\272W\242\272X\242\273Z\243\273[\244\274]\245\274^\246\275_\246\275a\247\276b\250\276d\251\277e\251\277f\252\300g\253\300h\254\300i\254\301j\255\301k\255\301l\256\301m\257\302n\260\302p\260\303q\261\303r\262\304t\263\304u\264\305v\264\305x\265\305y\266\306z\266\306{\267\306|\267\307~\270\307\177\271\310\200\272\310\201\272\310\202\273\311\203\274\311\204\274\312\206\275\312\207\276\313\210\277\314\211\300\314\212\300\315\214\301\315\215\302\315\216\302\316\217\303\316\220\304\316\220\304\317\221\305\317\223\305\317\224\306\317\225\307\320\226\307\320\227\310\320\230\311\321\231\311\321\232\312\321\233\312\322\234\313\322\235\313\322\236\314\323\237\315\323\240\315\323\242\316\324\243\316\324\244\317\325\245\317\325\246\320\325\247\320\325\250\320\325\251\321\326\251\321\326\252\322\326\253\322\326\254\323\327\255\323\327\257\324\327\260\324\327\261\325\330\262\325\330\263\326\330\265\326\331\266\327\331\267\330\331\270\330\332\271\330\332\272\331\332\273\331\332\274\332\333\274\332\333\275\332\333\276\332\333\277\333\333\277\333\333\300\333\333\301\333\333\302\334\333\303\334\333\304\334\333\306\335\333\307\335\334\310\335\334\311\336\334\312\336\334\313\337\334\314\337\335\316\337\335\317\340\335\320\340\335\321\341\335\321\341\335\322\341\335\323\341\335\324\342\335\325\342\335\325\342\335\326\342\335\326\343\334\327\343\334\327\343\334\327\342\334\326\342\333\324\340\332\321\336\331\315\333\326\306\327\324\275\322\320\240\303\307\220\274\302\210\267\276\210\267\276\212\270\277}\260\272\200\262\274\204\265\276\201\263\275{\260\273w\255\270v\253\270v\252\267{\255\267|\256\267{\255\270|\256\271x\252\265x\252\265w\251\264v\250\263v\246\262s\243\260o\240\256m\237\255L\177\227Fz\222Ex\222Cv\221G}\225Cv\220@r\215@r\215>p\213@r\215Bq\215Gr\213Ks\214Hp\211Su\213Ru\214Iq\212Al\207@l\211\067f\206\065d\204\063c\203\061b\203\060b\203/a\202/`\202.`\201._\201._\201._\200-_\200,^\177+]~+\\}*[|)Z{)Yz)Xy(Vx'Uv&St%Qr#No#Lm\"Lm!Jj\"Kk\040Ih\040Ii\037Ff\037Ed\036Db\036Ca\036B`\037B`\033>Z\034?[\032<W\033=X\033=X\033<W\033;V\033:T\033:S\033\071Q\032\070O\032\067N\031\066L\030\062G\030\061G\027\060F\027\060E\026/D\027\060E";
 		#endif
 
-		Spinlock spinlock("graphics2d");
+		Lock<LockType::recursive> lock;
+		Lock<LockType::flat> displaysLock;
 
 		void _set_background_colour(U32 colour);
 
@@ -912,7 +913,7 @@ namespace driver {
 	}
 
 	auto DisplayManager::_on_start() -> Try<> {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		framebuffers.clear();
 		for(auto &graphics:drivers::iterate<driver::Graphics>()){
@@ -950,30 +951,34 @@ namespace driver {
 	}
 
 	/**/ DisplayManager::Display::~Display() {
-		Spinlock_Guard guard(spinlock);
+		graphics2d::Rect area;
 
-		if(!displays.contains(*this)) return; //if not in the list it's already been recycled
+		{
+			Lock_Guard guard(displaysLock);
 
-		const auto area = graphics2d::Rect{x, y, x+(I32)get_width(), y+(I32)get_height()};
+			if(!displays.contains(*this)) return; //if not in the list it's already been recycled
 
-		if(thread){
-			thread->events.unsubscribe(_on_thread_event, this);
+			area = graphics2d::Rect{x, y, x+(I32)get_width(), y+(I32)get_height()};
+
+			if(thread){
+				thread->events.unsubscribe(_on_thread_event, this);
+			}
+			delete buffer.address;
+			buffer.address = nullptr;
+			displays.pop(*this);
 		}
-		delete buffer.address;
-		buffer.address = nullptr;
-		displays.pop(*this);
 
 		_update_area(area);
 	}
 
 	void DisplayManager::set_background_colour(U32 colour) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _set_background_colour(colour);
 	}
 
 	auto DisplayManager::create_display(Thread *thread, DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) -> Display* {
-		Spinlock_Guard guard(spinlock, "create_view");
+		Lock_Guard guard(lock, "create_view");
 
 		return _create_view(thread, layer, x, y, width, height, scale);
 	}
@@ -996,13 +1001,13 @@ namespace driver {
 	}
 
 	auto DisplayManager::get_screen_count() -> U32 {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return framebuffers.length;
 	}
 
 	auto DisplayManager::get_screen_buffer(U32 framebufferId) -> graphics2d::Buffer* {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		if(framebufferId>=framebuffers.length) return nullptr;
 
@@ -1010,13 +1015,13 @@ namespace driver {
 	}
 
 	auto DisplayManager::get_screen_buffer(U32 framebufferId, graphics2d::Rect rect) -> Optional<graphics2d::Buffer> {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _get_screen_buffer(framebufferId, rect);
 	}
 
 	auto DisplayManager::get_screen_area(U32 framebufferId) -> graphics2d::Rect {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		if(framebufferId>=framebuffers.length) return {};
 
@@ -1024,86 +1029,86 @@ namespace driver {
 	}
 
 	void DisplayManager::update_area(graphics2d::Rect rect, Display *below) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		_update_area(rect, below);
 	}
 
 	void DisplayManager::update_background() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _update_background();
 	}
 
 	void DisplayManager::update_background_area(graphics2d::Rect rect) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _update_background_area(rect);
 	}
 
 	void DisplayManager::Display::move_to(I32 x, I32 y, bool update) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _move_display_to(*this, x, y, update);
 	}
 
 	void DisplayManager::Display::resize_to(U32 width, U32 height, bool update) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _resize_display_to(*this, width, height, update);
 	}
 
 	void DisplayManager::Display::place_above(DisplayManager::Display &other) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _place_above(*this, other);
 	}
 
 	void DisplayManager::Display::place_below(DisplayManager::Display &other) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _place_below(*this, other);
 	}
 
 	void DisplayManager::Display::raise() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _raise_display(*this);
 	}
 
 	void DisplayManager::Display::set_layer(DisplayLayer layer) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _set_display_layer(*this, layer);
 	}
 
 	auto DisplayManager::Display::is_top() -> bool {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _is_display_top(*this);
 	}
 
 	void DisplayManager::Display::show() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _show_display(*this);
 	}
 
 	void DisplayManager::Display::hide() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		return _hide_display(*this);
 	}
 
 	void DisplayManager::Display::update() {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		_update_display_solid(*this);
 		_update_area_transparency(graphics2d::Rect{x, y, x+(I32)get_width(), y+(I32)get_height()});
 	}
 
 	void DisplayManager::Display::update_area(graphics2d::Rect rect) {
-		Spinlock_Guard guard(spinlock);
+		Lock_Guard guard(lock);
 
 		_update_display_area_solid(*this, rect);
 		_update_area_transparency(rect.offset(x, y)); //TODO: avoid unneccasary redraws here if this area is obscured

@@ -10,7 +10,6 @@
 #include <kernel/kernel.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/mmu.hpp>
-#include <kernel/Spinlock.hpp>
 
 #include <common/stdlib.hpp>
 #include <common/types.hpp>
