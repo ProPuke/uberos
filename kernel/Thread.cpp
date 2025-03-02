@@ -5,8 +5,8 @@
 // #endif
 
 #include <kernel/Log.hpp>
-#include <kernel/time.hpp>
 #include <kernel/memory.hpp>
+#include <kernel/time.hpp>
 
 static Log log("thread");
 
