@@ -28,7 +28,7 @@ struct ListUnordered {
 		if(newSize==allocated) return;
 
 		auto newData = new Type[allocated=newSize];
-		memcpy(newData, data, length);
+		memcpy(newData, data, length*sizeof(Type));
 
 		delete data;
 		data = newData;
@@ -36,7 +36,7 @@ struct ListUnordered {
 
 	auto push(const Type &item) -> Type& {
 		if(length+1>=allocated){
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
 		return data[length++] = item;
 	}

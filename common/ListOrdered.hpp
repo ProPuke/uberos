@@ -28,7 +28,7 @@ struct ListOrdered {
 		if(newSize==allocated) return;
 
 		auto newData = new Type[allocated=newSize];
-		memcpy(newData, data, length);
+		memcpy(newData, data, length*sizeof(Type));
 
 		delete data;
 		data = newData;
@@ -36,7 +36,7 @@ struct ListOrdered {
 
 	void push_back(const Type &item){
 		if(length+1>=allocated){
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
 		data[length++] = item;
 	}
@@ -44,9 +44,9 @@ struct ListOrdered {
 	void push_front(const Type &item){
 		if(length+1>=allocated){
 			//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
-		memmove(&data[1], &data[0], length++);
+		memmove(&data[1], &data[0], (length++)*sizeof(Type));
 		data[0] = item;
 	}
 
@@ -60,7 +60,7 @@ struct ListOrdered {
 		debug::assert(length>0);
 
 		Type value = data[0];
-		memmove(&data[1], &data[0], --length);
+		memmove(&data[1], &data[0], (--length)*sizeof(Type));
 
 		return value;
 	}
@@ -73,7 +73,7 @@ struct ListOrdered {
 
 		Type value = data[index];
 
-		memmove(&data[index], &data[index+1], --length-index);
+		memmove(&data[index], &data[index+1], (--length-index)*sizeof(Type));
 
 		return value;
 	}
@@ -84,7 +84,7 @@ struct ListOrdered {
 		--length;
 
 		if(index<length){
-			memmove(&data[index], &data[index+1], length-index);
+			memmove(&data[index], &data[index+1], (length-index)*sizeof(Type));
 		}
 	}
 
@@ -93,10 +93,10 @@ struct ListOrdered {
 
 		if(length+1>=allocated){
 			//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
 
-		memmove(&data[index+1], memmove(&data[index]), length++-index);
+		memmove(&data[index+1], memmove(&data[index]), (length++-index)*sizeof(Type));
 	}
 
 	void clear(){
