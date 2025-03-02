@@ -21,7 +21,7 @@ struct EventEmitter {
 
 	void trigger(const Type&);
 	
-protected:
+// protected:
 
 	struct Subscription {
 		Callback callback;

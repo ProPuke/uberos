@@ -14,11 +14,11 @@ namespace exceptions {
 		return eflags & 0x200;
 	}
 
-	inline void _activate() {
+	__attribute__((always_inline)) inline void _activate() {
 		asm volatile("sti");
 	}
 
-	inline void _deactivate() {
+	__attribute__((always_inline)) inline void _deactivate() {
 		asm volatile("cli");
 	}
 }
