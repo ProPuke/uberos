@@ -33,7 +33,7 @@ namespace process {
 auto Process::create_current_thread(memory::Page &stackPage, size_t stackSize) -> Thread& {
 	auto thread = new Thread(*this);
 	thread->stackPage = &stackPage;
-	thread->storedState = (ThreadCpuState*)((size_t)stackPage.physicalAddress + stackSize - sizeof(ThreadCpuState));
+	thread->storedState = (ThreadCpuState*)((UPtr)&stackPage + stackSize - sizeof(ThreadCpuState));
 	thread->state = Thread::State::active;
 
 	threads.push(thread);
@@ -47,9 +47,9 @@ auto Process::create_thread(Entrypoint entrypoint, ipc::Id ipc, void *ipcPacket)
 
 	auto thread = new Thread(*this);
 	thread->stackPage = stackPage;
-	thread->storedState = (ThreadCpuState*)((size_t)stackPage->physicalAddress + stackSize - sizeof(ThreadCpuState));
+	thread->storedState = (ThreadCpuState*)((UPtr)stackPage + stackSize - sizeof(ThreadCpuState));
 
-	thread->storedState->init(entrypoint, (U8*)stackPage->physicalAddress + stackSize, ipc, ipcPacket);
+	thread->storedState->init(entrypoint, (U8*)stackPage + stackSize, ipc, ipcPacket);
 
 	thread->state = Thread::State::active;
 
@@ -64,8 +64,8 @@ auto Process::create_kernel_thread(void(*entrypoint)()) -> Thread& {
 
 	auto thread = new Thread(*this);
 	thread->stackPage = stackPage;
-	thread->storedState = (ThreadCpuState*)((size_t)stackPage->physicalAddress + stackSize - sizeof(ThreadCpuState));
-	thread->storedState->init_kernel(entrypoint, (U8*)stackPage->physicalAddress + stackSize);
+	thread->storedState = (ThreadCpuState*)((UPtr)stackPage + stackSize - sizeof(ThreadCpuState));
+	thread->storedState->init_kernel(entrypoint, (U8*)stackPage + stackSize);
 	thread->state = Thread::State::active;
 
 	threads.push(thread);

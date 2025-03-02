@@ -8,6 +8,6 @@
 
 namespace memory {
 	inline auto _get_memory_page(void *address) -> Page& {
-		return pageData[(size_t)address/sizeof(Page)];
+		return *(Page*)((UPtr)address/memory::pageSize*memory::pageSize);
 	}
 }
