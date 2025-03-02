@@ -6,6 +6,9 @@
 	.global _start
 	.type _start, @function
 	_start:
+		// disable interrupts
+			cli
+
 		// set stack pointer
 			lea esp, __end
 			add esp, KERNEL_STACK_SIZE

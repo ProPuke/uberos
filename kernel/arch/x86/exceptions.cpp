@@ -281,5 +281,6 @@ namespace exceptions {
 
 	void init() {
 		arch::x86::exceptions::init();
+		enable();
 	}
 }

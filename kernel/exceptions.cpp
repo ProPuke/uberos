@@ -11,6 +11,7 @@
 #include <atomic>
 
 namespace exceptions {
+	volatile bool _enabled = false;
 	// std::atomic<U32> _lock_depth = 0;
 	volatile U32 _lock_depth = 0;
 

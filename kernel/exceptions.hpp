@@ -4,9 +4,6 @@
 #include <common/types.hpp>
 
 namespace exceptions {
-	void lock(bool apply=true);
-	void unlock(bool apply=true);
-
 	namespace interrupt {
 		typedef const void* (*Subscriber)(void *cpu);
 
@@ -22,6 +19,12 @@ namespace exceptions {
 		auto subscribe(U8, Subscriber callback, void *data) -> Try<>;
 		void unsubscribe(U8, Subscriber callback, void *data);
 	}
+
+	void enable();
+	void disable();
+
+	void lock();
+	void unlock();
 
 	void init();
 
