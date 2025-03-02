@@ -38,7 +38,7 @@ struct DynamicArray:Array<Type> {
 	template <typename ...Params>
 	void push_back(Params ...params){
 		if(length+1>=allocated){
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
 		new ((void*)&data[length++]) Type(params...);
 	}
@@ -46,7 +46,7 @@ struct DynamicArray:Array<Type> {
 	// void push_front(Type &item){
 	// 	if(length+1>=allocated){
 	// 		//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-	// 		resize(allocated+allocated/2);
+	// 		resize(length+1+length/2);
 	// 	}
 	// 	memmove(&data[1], &data[0], length++);
 	// 	data[0] = &item;
@@ -85,7 +85,7 @@ struct DynamicArray:Array<Type> {
 	// void insert(U32 index, Type *value){
 	// 	if(length+1>=allocated){
 	// 		//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-	// 		resize(allocated+allocated/2);
+	// 		resize(length+1+length/2);
 	// 	}
 
 	// 	memmove(&data[index+1], memmove(&data[index]), length++-index);
@@ -94,7 +94,7 @@ struct DynamicArray:Array<Type> {
 	template <typename ...Params>
 	void insert(U32 index, Params ...params) {
 		if(length+1>=allocated){
-			auto newData = (Type*)kmalloc(allocated=allocated+allocated/2+1);
+			auto newData = (Type*)kmalloc(allocated=length+1+length/2+1);
 			for(auto i=0u;i<index;i++){
 				new ((void*)&newData[i]) Type(data[i]);
 				data[i].~Type();

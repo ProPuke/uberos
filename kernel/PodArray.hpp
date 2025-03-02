@@ -33,7 +33,7 @@ struct PodArray:Array<Type> {
 	template <typename ...Params>
 	auto push_back(Params ...params) -> Type& {
 		if(length+1>=allocated){
-			resize(allocated+allocated/2+1);
+			resize(length+1+length/2);
 		}
 		return *new ((void*)&data[length++]) Type{params...};
 	}
@@ -41,7 +41,7 @@ struct PodArray:Array<Type> {
 	// void push_front(Type &item){
 	// 	if(length+1>=allocated){
 	// 		//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-	// 		resize(allocated+allocated/2+1);
+	// 		resize(length+1+length/2);
 	// 	}
 	// 	memmove(&data[1], &data[0], (length++)*sizeof(Type));
 	// 	data[0] = &item;
@@ -101,7 +101,7 @@ struct PodArray:Array<Type> {
 	// void insert(U32 index, Type *value){
 	// 	if(length+1>=allocated){
 	// 		//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-	// 		resize(allocated+allocated/2+1);
+	// 		resize(length+1+length/2);
 	// 	}
 
 	// 	memmove(&data[index+1], memmove(&data[index]), (length++-index)*sizeof(Type));
