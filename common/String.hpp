@@ -55,11 +55,11 @@ struct String {
 	void append(Type c){
 		if(data==localData){
 			if(length+1>localBufferSize-1){
-				resize(localBufferSize+localBufferSize/2);
+				resize(length+1+length);
 			}
 		}
 		if(length+1>=allocated){
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
 		data[length++] = c;
 	}
@@ -68,7 +68,7 @@ struct String {
 		auto sourceLength = strlen(source);
 
 		if(length+sourceLength>=allocated){
-			resize(allocated+sourceLength);
+			resize(length+sourceLength+1);
 		}
 		memcpy(&data[length], source, sourceLength);
 		length += sourceLength;
@@ -76,7 +76,7 @@ struct String {
 
 	void append(const String &source){
 		if(length+source.length>=allocated){
-			resize(allocated+source.length);
+			resize(length+source.length+1);
 		}
 		memcpy(&data[length], source.data, source.length);
 		length += source.length;
@@ -85,7 +85,7 @@ struct String {
 	void insert(U32 index, Type c){
 		if(length+1>=allocated){
 			//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-			resize(allocated+allocated/2);
+			resize(length+1+length/2);
 		}
 
 		memmove(&data[index+1], memmove(&data[index]), length++-index);
