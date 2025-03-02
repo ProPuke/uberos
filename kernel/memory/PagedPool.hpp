@@ -109,7 +109,7 @@ namespace memory {
 			auto page = memory::_allocate_page();
 			if(!page) return false;
 
-			auto &block = *new ((MemoryPoolBlock*)page->physicalAddress) MemoryPoolBlock(memory::pageSize);
+			auto &block = *new ((MemoryPoolBlock*)page) MemoryPoolBlock(memory::pageSize);
 			this->claim_block(block);
 
 			return true;
@@ -119,7 +119,7 @@ namespace memory {
 			auto newPages = memory::_allocate_pages(count);
 			if(!newPages) return false;
 
-			auto &block = *new ((MemoryPoolBlock*)newPages->physicalAddress) MemoryPoolBlock(memory::pageSize*count);
+			auto &block = *new ((MemoryPoolBlock*)newPages) MemoryPoolBlock(memory::pageSize*count);
 			this->claim_block(block);
 
 			return true;

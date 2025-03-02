@@ -38,9 +38,6 @@ namespace memory {
 	constinit void *heap = &__end+KERNEL_STACK_SIZE; // start the heap after the stack
 	constinit size_t heapSize = 1*1024*1024; // default to 1MB (hopefully overridden at boot)
 
-	constinit Page *pageData = nullptr;
-	constinit size_t pageDataSize = 0;
-
 	Lock<LockType::flat> lock("memory");
 	
 	LList<::memory::Page> freePages;
@@ -56,10 +53,6 @@ namespace memory {
 		return kernelHeap.available;
 	}
 
-	void Page::clear() {
-		bzero(physicalAddress, pageSize);
-	}
-
 	Page* _allocate_page() {
 		if(freePages.size<1){
 			return nullptr;
@@ -68,7 +61,6 @@ namespace memory {
 		auto page = freePages.pop_front();
 		if(!page) return nullptr;
 
-		page->isAllocated = true;
 		page->clear();
 
 		asm volatile("" ::: "memory");
@@ -76,23 +68,27 @@ namespace memory {
 		return page;
 	}
 
+	//NOTE: this will eventually fail. we don't bother to sort and reconnect free'd pages with `hasNextPage`, thus we'll eventually run out of sequenal pages
+	// BUT we shouldn't need this function anyway, as with an mmu we can join up single _allocate_page() requests with linear addresses instead
 	Page* _allocate_pages(U32 count){
 		if(count<1) return nullptr;
 		if(count==1) return _allocate_page();
 
+		// since we always allocate from the head, there is no need to clear `hasNextPage` (as we're always grabbing _before_ pages, not after)
+
 		for(auto page=freePages.head; page; page=page->next){
 			U32 needed = count-1;
-			for(auto checkPage=page; needed&&checkPage->hasNextPage&&!(checkPage+1)->isAllocated; checkPage++,needed--);
+			for(auto checkPage=page; needed&&checkPage->hasNextPage; checkPage=&checkPage->next_page(), needed--);
 			// debug::trace("searched\n");
 
 			if(needed==0){
 				U32 needed = count;
 				U32 popped = 0;
 
-				for(auto reservePage=page; needed; reservePage++, needed--){
+				for(auto reservePage=page; needed; reservePage=&reservePage->next_page(), needed--){
 					popped++;
 					freePages.pop(*reservePage);
-					reservePage->isAllocated = true;
+
 					reservePage->clear();
 				}
 
@@ -105,11 +101,11 @@ namespace memory {
 	}
 
 	void _free_page(Page &page) {
-		page.isAllocated = false;
-
 		asm volatile("" : "=m" (page)); //ensure any writes to page are definitely finished before we finally let it go ¯\_(ツ)_/¯
 		
 		freePages.push_back(page);
+
+		//TODO: if no mmu exists, then sort this page when inserting back into freePages, and set `hasNextPage` on its sibling before, and itself, when appropriate
 	}
 
 	void* _kmalloc(size_t size) {
@@ -147,7 +143,7 @@ namespace memory {
 		#endif
 
 		if(!address) return;
-		
+
 		kernelHeap.free(address);
 		// heap->free(address);
 	}
@@ -169,27 +165,15 @@ namespace memory {
 	}
 
 	void init() {
-		const auto pageCount = ((UPtr)heap+heapSize+pageSize)/pageSize;
+		// we'll allocate the pages OVER each block of memory
+		// thus once a page is allocated we clear it and it stops being a page structure, and is just raw memory
+		for(auto page=(Page*)heap; page<(Page*)((UPtr)heap+heapSize); page = (Page*)((UPtr)page+memory::pageSize)){
+			page->hasNextPage = true;
+			freePages.push_back(*page);
+		}
 
-		pageData = (Page*)heap;
-		pageDataSize = (pageCount * sizeof(Page) + pageSize-1) / pageSize * pageSize;
-
-		for(auto i=0u;i<pageCount;i++){
-			const auto address = (void*)(i*pageSize);
-			auto page = new (&pageData[i]) Page(address);
-
-			if((UPtr)address<(UPtr)pageData+pageDataSize){
-				//not available
-				page->isAllocated = true;
-				page->isKernel = true;
-
-			}else{
-				if(i>0&&!freePages.tail->isAllocated){
-					freePages.tail->hasNextPage = true;
-				}
-
-				freePages.push_back(*page);
-			}
+		if(freePages.tail){
+			freePages.tail->hasNextPage = false;
 		}
 	}
 }

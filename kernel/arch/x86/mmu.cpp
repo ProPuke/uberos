@@ -101,7 +101,7 @@ namespace mmu {
 			directoryEntry.isWritable = false;
 			directoryEntry.isUserspaceAccessible = false;
 
-			auto table = (Table*)memory::Transaction().allocate_page()->physicalAddress; //4k alignment needed, so allocate direct as a page
+			auto table = (Table*)memory::Transaction().allocate_page(); //4k alignment needed, so allocate direct as a page
 			for(auto i=0;i<1024;i++){
 				table->entry[i].isPresent = false;
 			}
@@ -190,7 +190,7 @@ namespace mmu {
 			directoryEntry.isWritable = false;
 			directoryEntry.isUserspaceAccessible = false;
 
-			auto table = (Table*)memory::Transaction().allocate_page()->physicalAddress; //4k alignment needed, so allocate direct as a page
+			auto table = (Table*)memory::Transaction().allocate_page(); //4k alignment needed, so allocate direct as a page
 			for(auto i=0;i<1024;i++){
 				table->entry[i].isPresent = false;
 			}
