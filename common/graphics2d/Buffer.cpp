@@ -60,7 +60,7 @@ namespace graphics2d {
 						updatedArea = updatedArea.include({displayX1, displayY1, displayX2, displayY2});
 					}
 
-					x += character->advance.cast<I32>()*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
+					x += (character->advance*(I32)fontSettings.font.size*scale).cast<I32>() + fontSettings.charSpacing;
 					if(x>=right){
 						//TODO: proper wordwrapping
 						x = FixedI32::whole(startX);

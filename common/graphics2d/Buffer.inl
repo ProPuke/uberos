@@ -582,13 +582,14 @@ namespace graphics2d {
 					coverage += median;
 				}
 
-				coverage /= (samplesX*samplesY);
+				// note that we divide by the _expected_ number of samples, not the actual (minus those skipped). We _want_ the edges to fade out there, as they are not full covering those pixels
+				coverage /= samplesX*samplesY;
 
-				coverage = maths::clamp(((I32)coverage-128)*(samplesX>4?13:11)/10+128, 0, 255); // sharpen to remove fuzzy edges at smaller sizes
+				U8 alpha = maths::clamp(coverage*3/2, 0u, 255u); // technically this should maybe be *2, but we'll go for a mid of *3/2
 
-				coverage += coverage*(255-coverage)/512; // push up "gamma" for better contrast
+				if(alpha<1) continue;
 
-				set_blended(startX+x, startY+y, premultiply_colour(colour|(255-coverage)<<24));
+				set_blended(startX+x, startY+y, premultiply_colour((colour&0xffffff)|((255-alpha)*(255-(colour>>24))/255)<<24));
 			}
 
 		//bilinear filter the msdf (looks best at half size and up, although blurs some letters slightly)
@@ -623,10 +624,11 @@ namespace graphics2d {
 
 				I32 screenPxDistance = ((I32)median-128)*sdfPixels;
 
-				U8 alpha = maths::clamp(screenPxDistance + 128, 0, 255);
+				U8 alpha = maths::clamp(screenPxDistance*3/2 + 128, 0, 255); // technically this should maybe be *2, but we'll go for a mid of *3/2 
+
 				if(alpha<1) continue;
 
-				set_blended(startX+x, startY+y, premultiply_colour(colour|(255-alpha)<<24));
+				set_blended(startX+x, startY+y, premultiply_colour((colour&0xffffff)|((255-alpha)*(255-(colour>>24))/255)<<24));
 			}
 		}
 	}
