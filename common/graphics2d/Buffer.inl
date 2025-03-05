@@ -500,6 +500,58 @@ namespace graphics2d {
 		}
 	}
 
+	inline void Buffer::draw_line_aa(U32 x1, U32 y1, U32 x2, U32 y2, U32 colour) {
+		auto xVec = (I32)x2-(I32)x1;
+		auto yVec = (I32)y2-(I32)y1;
+		const I32 xLength = maths::abs(xVec);
+		const I32 yLength = maths::abs(yVec);
+
+		if(xLength==0||yLength==0) return draw_line(x1, y1, x2, y2, colour);
+
+		auto xDir = maths::sign((I32)x2-(I32)x1);
+		auto yDir = maths::sign((I32)y2-(I32)y1);
+
+		if(xLength>=yLength){
+			if(yDir<0){
+				// swap
+				auto x3=x1; x1=x2; x2=x3;
+				auto y3=y1; y1=y2; y2=y3;
+				xVec = -xVec;
+				yVec = -yVec;
+				xDir = -xDir;
+				yDir = -yDir;
+			}
+
+			for(auto step=0;step<=xLength;step++){
+				const auto phase = step/(float)xLength;
+				const auto x = x1+step*xDir;
+				const auto y = y1 + phase*yVec;
+				const U32 trans = 255*(y-(U32)y);
+				set_blended(x, y, premultiply_colour(colour|(trans<<24)));
+				set_blended(x, y+yDir, premultiply_colour(colour|((255-trans)<<24)));
+			}
+		}else{
+			if(xDir<0){
+				// swap
+				auto x3=x1; x1=x2; x2=x3;
+				auto y3=y1; y1=y2; y2=y3;
+				xVec = -xVec;
+				yVec = -yVec;
+				xDir = -xDir;
+				yDir = -yDir;
+			}
+
+			for(auto step=0;step<=yLength;step++){
+				const auto phase = step/(float)yLength;
+				const auto y = y1+step*yDir;
+				const auto x = x1 + phase*xVec;
+				const U32 trans = 255*(x-(U32)x);
+				set_blended(x, y, premultiply_colour(colour|(trans<<24)));
+				set_blended(x+xDir, y, premultiply_colour(colour|((255-trans)<<24)));
+			}
+		}
+	}
+
 	inline void Buffer::draw_msdf(I32 startX, I32 startY, U32 width, U32 height, Buffer &source, I32 source_x, I32 source_y, U32 source_width, U32 source_height, U32 colour, U32 skipSourceLeft, U32 skipSourceTop, U32 skipSourceRight, U32 skipSourceBottom) {
 		if(width<1||height<1) return;
 
