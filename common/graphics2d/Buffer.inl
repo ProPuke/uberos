@@ -8,12 +8,14 @@
 namespace graphics2d {
 
 	inline void Buffer::set(I32 x, I32 y, U32 colour, U32 length) {
-		if(x<0||y<0||(U32)x>=width||(U32)y>=height) return;
+		if(x<0||y<0) return;
 
 		return set((U32)x, (U32)y, colour, length);
 	}
 
 	inline void Buffer::set(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		// return _set(x, y, colour);
 
 		static_assert((int)BufferFormatOrder::max<2);
@@ -31,12 +33,14 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_blended(I32 x, I32 y, U32 colour) {
-		if(x<0||y<0||(U32)x>=width||(U32)y>=height) return;
+		if(x<0||y<0) return;
 
 		return set_blended((U32)x, (U32)y, colour);
 	}
 
 	inline void Buffer::set_blended(U32 x, U32 y, U32 colour) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		switch(format){
 			case BufferFormat::grey8:
 			case BufferFormat::rgb565:
@@ -72,6 +76,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_grey8(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
 		auto data = (U16*)&address[y*stride+x];
@@ -85,6 +91,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_rgb565(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
 		auto data = (U16*)&address[y*stride+x*2];
@@ -99,6 +107,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_bgr565(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		//TODO:dither? (based on frame, once there is such a concept?)
 		
 		auto data = (U16*)&address[y*stride+x*2];
@@ -113,6 +123,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_rgb8(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		auto data = (U8*)&address[y*stride+x*3];
 
 		//TODO:optimise
@@ -125,6 +137,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_bgr8(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		auto data = (U8*)&address[y*stride+x*3];
 
 		//TODO:optimise
@@ -137,6 +151,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_rgba8(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		auto data = (U32*)&address[y*stride+x*4];
 		U32 value = 0
 			|((colour&0x00ff0000)>>16)<<16
@@ -185,6 +201,8 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::set_bgra8(U32 x, U32 y, U32 colour, U32 length) {
+		if((U32)x>=width||(U32)y>=height) return;
+
 		auto data = (U32*)&address[y*stride+x*4];
 		U32 value = 0
 			|((colour&0x000000ff)>> 0)<< 0
@@ -233,7 +251,7 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get(I32 x, I32 y) {
-		if(x<0||y<0||(U32)x>=width||(U32)y>=height) return 0x000000;
+		if(x<0||y<0) return 0x000000;
 
 		return get((U32)x, (U32)y);
 	}
@@ -258,11 +276,15 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_grey8(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		U8 value = address[y*stride+x];
 		return value<<16|value<<8|value;
 	}
 
 	inline U32 Buffer::get_rgb565(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		U16 data = *(U16*)&address[y*stride+x*2];
 		return 0
 			|(((data>>11)&0x1f)<<3<<16)
@@ -272,6 +294,8 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_bgr565(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		U16 data = *(U16*)&address[y*stride+x*2];
 		return 0
 			|(((data>> 0)&0x1f)<<3<<16)
@@ -281,6 +305,8 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_rgb8(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		auto offset = y*stride+x*3;
 		return 0
 			|(address[offset+0]<<16)
@@ -290,6 +316,8 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_bgr8(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		auto offset = y*stride+x*3;
 		return 0
 			|(address[offset+2]<<16)
@@ -299,6 +327,8 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_rgba8(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		auto offset = y*stride+x*4;
 		return 0
 			|address[offset+0]<<16
@@ -309,6 +339,8 @@ namespace graphics2d {
 	}
 
 	inline U32 Buffer::get_bgra8(U32 x, U32 y) {
+		if((U32)x>=width||(U32)y>=height) return 0x000000;
+
 		auto offset = y*stride+x*4;
 		return 0
 			|address[offset+2]<<16
