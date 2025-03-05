@@ -916,6 +916,7 @@ namespace driver {
 		Lock_Guard guard(lock);
 
 		framebuffers.clear();
+
 		for(auto &graphics:drivers::iterate<driver::Graphics>()){
 			if(!graphics.api.is_active()){
 				if(!graphics.api.is_enabled()) continue;
