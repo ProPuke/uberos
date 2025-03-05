@@ -27,7 +27,6 @@ namespace kernel {
 		exceptions::init();
 		arch::x86::acpi::init();
 		arch::x86::cpu::init();
-		debug::halt();
 		#ifdef KERNEL_MMU
 			mmu::init();
 		#endif

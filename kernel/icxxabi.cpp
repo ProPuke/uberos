@@ -1,16 +1,17 @@
 #include "icxxabi.hpp"
 
 #include <kernel/Log.hpp>
+#include <kernel/panic.hpp>
 
 static Log log("cxa");
 
 extern "C" {
 
 void __cxa_pure_virtual() {
-	log.print_error("Error: Pure virtual method called");
-	//TODO:drop to an emergency debug console?
-	//TODO:halt on release?
-	debug::halt();
+	panic::panic()
+		.print_details("Error: Pure virtual method called")
+		.print_stacktrace()
+	;
 }
 
 atexitFuncEntry_t __atexitFuncs[ATEXIT_FUNC_MAX];

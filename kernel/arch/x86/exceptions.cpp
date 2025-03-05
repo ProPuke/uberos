@@ -12,6 +12,7 @@
 #include <kernel/Log.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
+#include <kernel/panic.hpp>
 #include <kernel/PodArray.hpp>
 
 #include <common/types.hpp>
@@ -52,20 +53,22 @@ namespace arch {
 			#endif
 
 			void handle_error(CpuState state, const char *error) {
-				logging::print_error_start();
-					logging::print_inline("Error: ", error);
+				auto panic = panic::panic();
+
+				panic.print_details_start();
+					panic.print_details_inline("Error: ", error);
 
 					#ifdef _64BIT
-						if(state.interruptFrame.rip) logging::print_inline(" from ", to_string_hex(state.interruptFrame.rip));
+						if(state.interruptFrame.rip) panic.print_details_inline(" from ", to_string_hex(state.interruptFrame.rip));
 					#else
-						if(state.interruptFrame.eip) logging::print_inline(" from ", to_string_hex(state.interruptFrame.eip));
+						if(state.interruptFrame.eip) panic.print_details_inline(" from ", to_string_hex(state.interruptFrame.eip));
 					#endif
 					if(state.interruptFrame.error){
-						logging::print_inline(" with error ", to_string_hex_trim(state.interruptFrame.error));
+						panic.print_details_inline(" with error ", to_string_hex_trim(state.interruptFrame.error));
 					}
-					// if(reg.far) logging::print_inline(" touching ", to_string_hex(reg.far));
-					// if(reg.esr) logging::print_inline(" with esr ", to_string_hex(reg.esr));
-				logging::print_end();
+					// if(reg.far) panic.print_details_inline(" touching ", to_string_hex(reg.far));
+					// if(reg.esr) panic.print_details_inline(" with esr ", to_string_hex(reg.esr));
+				panic.print_details_end();
 
 					// U32 ebp;
 					// U32 eax;
@@ -83,73 +86,15 @@ namespace arch {
 
 					auto &registers = state.registers;
 
-					logging::print_error("");
-					logging::print_error("  Registers:");
-					logging::print_error("    eax = ", to_string_hex(registers.eax)/*, " ebx = ", to_string_hex(registers.ebx)*/, " ecx = ", to_string_hex(registers.ecx), " edx = ", to_string_hex(registers.edx));
-					logging::print_error("    esi = ", to_string_hex(registers.esi), " edi = ", to_string_hex(registers.edi));
-					logging::print_error("    esp = ", to_string_hex(registers.esp), " ebp = ", to_string_hex(registers.ebp));
+					panic.print_details("");
+					panic.print_details("  Registers:");
+					panic.print_details("    eax = ", to_string_hex(registers.eax)/*, " ebx = ", to_string_hex(registers.ebx)*/, " ecx = ", to_string_hex(registers.ecx), " edx = ", to_string_hex(registers.edx));
+					panic.print_details("    esi = ", to_string_hex(registers.esi), " edi = ", to_string_hex(registers.edi));
+					panic.print_details("    esp = ", to_string_hex(registers.esp), " ebp = ", to_string_hex(registers.ebp));
 
-					if(registers.ebp){
-						logging::print_error("");
-						logging::print_error("  Stacktrace:");
-						{
-							auto stackFrame = (Stackframe*)registers.ebp;
-							DriverType *driverType = nullptr;
-							for(U32 depth=0;stackFrame&&depth<64;depth++){
-								// TODO: set to stack of thread
-								const auto stackBottom = (U8*)memory::stack+memory::stackSize;
-								const auto stackTop = (U8*)memory::stack;
-
-								if((void*)stackFrame<stackTop||(void*)stackFrame>=stackBottom){
-									logging::print_error("    - Connection lost (at ", to_string_hex((unsigned)(size_t)stackFrame), ')');
-									break;
-								}
-
-								// sp = fp + 0x10;
-								// fp = *(U32*)fp;
-
-								// pc = *(U32*)(fp+8);
-								auto pc = stackFrame->eip;
-
-								auto function = debugSymbols::get_function_by_address((void*)pc);
-
-								if(function){
-									if(function->driverType!=driverType||depth==0){
-										driverType = function->driverType;
-
-										if(depth>0){
-											logging::print_error("");
-										}
-										if(driverType){
-											logging::print_error_start();
-											logging::print_inline("    In ", driverType->name, " (", driverType->description, ')');
-											for(auto parent = driverType->parentType; parent&&parent->parentType; parent = parent->parentType) {
-												logging::print_inline(" / ", parent->description);
-											}
-											logging::print_end();
-										}else{
-											logging::print_error("    In core:");
-										}
-									}
-									logging::print_error("      ", depth, " - ", to_string_hex(pc), " ", function->name, " + ", to_string_hex_trim(pc-(U64)function->address));
-								}else{
-									if(driverType){
-										if(depth>0){
-											logging::print_error("");
-										}
-										driverType = nullptr;
-										logging::print_error("    In core:");
-									}
-									logging::print_error("      ", depth, " - ", to_string_hex(pc));
-								}
-
-								stackFrame = stackFrame->ebp;
-							}
-						}
-					}
+					// TODO: set to stack of thread
+					panic.print_stacktrace(registers.ebp);
 				#endif
-
-				halt();
 			}
 
 			namespace interrupt {

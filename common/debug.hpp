@@ -2,6 +2,7 @@
 
 #ifdef KERNEL
 	#include <kernel/exceptions.hpp>
+	#include <kernel/panic.hpp>
 #endif
 
 namespace debug {
@@ -14,7 +15,7 @@ namespace debug {
 		inline void assert(bool test) { if(!test) halt(); }
 		// inline void halt() { ::halt(); }
 		#ifdef KERNEL
-			inline void halt() { exceptions::_deactivate(); asm volatile("hlt"); }
+			inline void halt() { panic::panic().print_details("DEBUG HALT").print_stacktrace(); }
 		#else
 			inline void halt() { asm volatile("hlt"); }
 		#endif

@@ -64,6 +64,7 @@ namespace kernel {
 		libc::init();
 		memory::init();
 		logging::init();
+		panic::init();
 
 		{ auto section = log.section("init");
 			time::init();
@@ -81,8 +82,6 @@ namespace kernel {
 		{ auto section = log.section("startup");
 
 			utils::logWindow::install();
-
-			// panic::init();
 
 			{ // try to load all remaining automatic drivers
 				for(auto &driver:drivers::iterate()) {

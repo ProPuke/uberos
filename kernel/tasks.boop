@@ -418,6 +418,11 @@ flag x86-ibm-bios
 	set kernel_cpp     = {kernel_cpp}     {arch/x86/**/*.cpp}
 	set kernel_headers = {kernel_headers} {arch/x86/**/*.hpp} {arch/x86/**/*.h} {arch/x86/**/*.inl}
 
+	set kernel_asm     = {kernel_asm}     {arch/x86-32/**/*.S}
+	set kernel_c       = {kernel_c}       {arch/x86-32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {arch/x86-32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {arch/x86-32/**/*.hpp} {arch/x86/**/*.h} {arch/x86/**/*.inl}
+
 	set kernel_asm     = {kernel_asm}     {arch/x86-ibm/**/*.S}
 	set kernel_c       = {kernel_c}       {arch/x86-ibm/**/*.c}
 	set kernel_cpp     = {kernel_cpp}     {arch/x86-ibm/**/*.cpp}
@@ -433,10 +438,20 @@ flag x86-ibm-bios
 	set kernel_cpp     = {kernel_cpp}     {../drivers/x86/**/*.cpp}
 	set kernel_headers = {kernel_headers} {../drivers/x86/**/*.hpp} {../drivers/x86/**/*.h} {../drivers/x86/**/*.inl}
 
+	set kernel_asm     = {kernel_asm}     {../drivers/x86-32/**/*.S}
+	set kernel_c       = {kernel_c}       {../drivers/x86-32/**/*.c}
+	set kernel_cpp     = {kernel_cpp}     {../drivers/x86-32/**/*.cpp}
+	set kernel_headers = {kernel_headers} {../drivers/x86-32/**/*.hpp} {../drivers/x86/**/*.h} {../drivers/x86/**/*.inl}
+
 	set support_asm     = {support_asm}     {../support/arch/x86/**/*.S}
 	set support_c       = {support_c}       {../support/arch/x86/**/*.c}
 	set support_cpp     = {support_cpp}     {../support/arch/x86/**/*.cpp}
 	set support_headers = {support_headers} {../support/arch/x86/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
+
+	set support_asm     = {support_asm}     {../support/arch/x86-32/**/*.S}
+	set support_c       = {support_c}       {../support/arch/x86-32/**/*.c}
+	set support_cpp     = {support_cpp}     {../support/arch/x86-32/**/*.cpp}
+	set support_headers = {support_headers} {../support/arch/x86-32/**/*.hpp} {../support/arch/x86/**/*.h} {../support/arch/x86/**/*.inl}
 
 	set linker_script = arch/x86-ibm-bios/linker.ld
 
