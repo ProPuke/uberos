@@ -425,7 +425,8 @@ namespace driver::input {
 	}
 
 	auto Ps2Mouse::get_button_state(U8 button) -> bool {
-		return false;
+		if(button>=buttonCount) return false;
+		return buttonState[0];
 	}
 
 	void Ps2Mouse::send_ps2_command(Ps2Command command) {
