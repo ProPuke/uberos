@@ -1,6 +1,8 @@
 #include "Ps2Keyboard.hpp"
 
 #include <drivers/x86/system/Ps2.hpp>
+
+#include <kernel/panic.hpp>
 #include <kernel/keyboard.hpp>
 
 namespace driver::input {
@@ -356,6 +358,14 @@ namespace driver::input {
 
 					auto scancode = translation[code];
 					keystate.set(scancode, isDown);
+
+					if(isDown&&(ScancodeUk)scancode==ScancodeUk::_pause){
+						const auto control = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::leftControl)||Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::rightControl);
+						const auto alt = Ps2Keyboard::instance.is_pressed((Scancode)ScancodeUk::alt);
+						if(control&&alt){
+							panic::panic().print_details("Keyboard interrupt - CTRL+ALT+BREAK");
+						}
+					}
 
 					if(isDown){
 						trigger_event({
