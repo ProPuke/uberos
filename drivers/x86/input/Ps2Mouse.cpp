@@ -356,11 +356,13 @@ namespace driver::input {
 					}
 				});
 
-				if(scale==1&&(maths::abs(xMotion)>=127||maths::abs(yMotion)>=127)){
-					rescale = 2;
+				if(false){ // auto-rescale on high movements
+					if(scale==1&&(maths::abs(xMotion)>=127||maths::abs(yMotion)>=127)){
+						rescale = 2;
 
-				}else if(scale==2&&(maths::abs(xMotion)<64||maths::abs(yMotion)<64)){
-					rescale = 1;
+					}else if(scale==2&&(maths::abs(xMotion)<64||maths::abs(yMotion)<64)){
+						rescale = 1;
+					}
 				}
 			}
 
