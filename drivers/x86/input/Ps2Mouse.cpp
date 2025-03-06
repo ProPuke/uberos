@@ -348,7 +348,6 @@ namespace driver::input {
 			// auto yMotion = -((U8)packet.yChange - (packet.data[0]<<3 & 0x100));
 
 			if(xMotion||yMotion){
-				// log.print_info("motion = ", xMotion, ' ', yMotion);
 				trigger_event({
 					type: Event::Type::moved,
 					moved: {
