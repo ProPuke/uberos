@@ -133,11 +133,9 @@ namespace driver::graphics {
 			break;
 		}
 
-		TRY(api.subscribe_memory((void*)multiboot->framebuffer_addr, multiboot->framebuffer_pitch*multiboot->framebuffer_width, mmu::Caching::writeCombining));
-
+		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>((void*)multiboot->framebuffer_addr, multiboot->framebuffer_pitch*multiboot->framebuffer_width, mmu::Caching::writeCombining));
 		framebuffer.format = format;
 		framebuffer.order = formatOrder;
-		framebuffer.address = (U8*)multiboot->framebuffer_addr;
 		framebuffer.stride = multiboot->framebuffer_pitch;
 		framebuffer.width = multiboot->framebuffer_width;
 		framebuffer.height = multiboot->framebuffer_height;
