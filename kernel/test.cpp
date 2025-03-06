@@ -1,3 +1,4 @@
+#include <drivers/Clock.hpp>
 #include <drivers/DesktopManager.hpp>
 #include <drivers/Keyboard.hpp>
 #include <drivers/Mouse.hpp>
@@ -138,7 +139,30 @@ namespace test {
 				}
 
 				{
-					const char *time = "00:00";
+					char time[] = "00:00";
+
+					auto clock = drivers::find_and_activate<driver::Clock>();
+					if(clock){
+						auto clockTime = clock->get_time();
+						auto clockDate = clock->get_date();
+						(void)clockDate;
+						
+						auto str = utoa((U16)clockTime.hours);
+						if(str[1]=='\0'){
+							time[1] = str[0];
+						}else{
+							time[0] = str[0];
+							time[1] = str[1];
+						}
+
+						str = utoa((U16)clockTime.minutes);
+						if(str[1]=='\0'){
+							time[4] = str[0];
+						}else{
+							time[3] = str[0];
+							time[4] = str[1];
+						}
+					}
 
 					auto fontSettings = graphics2d::Buffer::FontSettings{
 						.font = graphics2d::font::manrope_extraBold,

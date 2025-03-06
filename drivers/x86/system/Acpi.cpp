@@ -200,6 +200,7 @@ namespace driver::system {
 					hasMsi = !fadt->bootArchitectureFlags.msiNotSupported?Maybe::yes:Maybe::no;
 					hasOspmAspm = !fadt->bootArchitectureFlags.pcieAspmControls?Maybe::yes:Maybe::no;
 					hasCmosRtc = !fadt->bootArchitectureFlags.cmosRtcNotPresent?Maybe::yes:Maybe::no;
+					//TODO: handle the `century` field (for CmosRtc date lookups)
 
 					if(hasLpcIsaDevices==Maybe::maybe) log.print_info("LPC & ISA devices may be present");
 					if(hasPs2==Maybe::yes) log.print_info("PS2 controller is present");

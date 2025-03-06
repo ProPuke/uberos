@@ -7,6 +7,7 @@
 #endif
 
 #ifdef ARCH_X86
+#include <drivers/x86/clock/CmosRtc.hpp>
 #include <drivers/x86/graphics/BochsVga.hpp>
 #include <drivers/x86/graphics/MultibootFramebuffer.hpp>
 #include <drivers/x86/graphics/Vbe.hpp>
@@ -51,6 +52,7 @@ namespace driver {
 	#endif
 
 	#ifdef ARCH_X86
+	DRIVER(clock    ::CmosRtc             , onDemand);
 	DRIVER(graphics ::MultibootFramebuffer, onDemand);
 	DRIVER(graphics ::BochsVga            , onDemand);
 	// DRIVER(graphics ::Vbe                 , onDemand);

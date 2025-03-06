@@ -5,6 +5,8 @@ namespace arch {
 		namespace nmi {
 			void enable();
 			void disable();
+
+			auto isEnabled() -> bool;
 		}
 	}
 }

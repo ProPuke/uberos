@@ -2,6 +2,7 @@
 #include <kernel/arch/x86-ibm-bios/config.h>
 #include <kernel/arch/x86-ibm/stdout.hpp>
 #include <kernel/arch/x86/cpuInfo.hpp>
+#include <kernel/arch/x86/nmi.hpp>
 #include <kernel/Driver.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/drivers.hpp>
@@ -65,6 +66,8 @@ namespace arch {
 		namespace kernel {
 			extern "C" void entrypoint(unsigned long magic, multiboot_info *multiboot) {
 				::arch::x86::cpuInfo::enable_sse(); //mmx/sse instructions may be present in startup code, so get this in early
+				::arch::x86::nmi::disable();
+				::exceptions::disable();
 
 				init_multiboot(magic, multiboot);
 
