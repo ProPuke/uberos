@@ -14,8 +14,6 @@ namespace driver::textmode {
 			U8 bgColour:4;
 		};
 
-		U64 _address = 0xb8000;
-
 		auto get_mode_count() -> U32 override;
 		auto get_mode(U32 mode) -> Mode override;
 		void set_mode(U32 mode) override;

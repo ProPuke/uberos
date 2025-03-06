@@ -20,7 +20,7 @@ namespace driver::graphics {
 		U16 maxBpp = 32;
 
 		graphics2d::Buffer framebuffer;
-		U8 *framebufferAddress;
+		U8 *physicalFramebufferAddress;
 
 		Graphics::Mode modes[] = {
 			#define COMMON_MODES(WIDTH, HEIGHT) /**/\
@@ -144,9 +144,7 @@ namespace driver::graphics {
 			framebuffer.order = order;
 
 			BochsVga::instance.api.unsubscribe_all_memory();
-			TRY(BochsVga::instance.api.subscribe_memory(framebufferAddress, framebuffer.height*framebuffer.stride, mmu::Caching::writeCombining));
-
-			framebuffer.address = framebufferAddress;
+			framebuffer.address = TRY_RESULT(BochsVga::instance.api.subscribe_memory<U8>(physicalFramebufferAddress, framebuffer.height*framebuffer.stride, mmu::Caching::writeCombining));
 
 			BochsVga::instance.events.trigger({
 				instance: &BochsVga::instance,
@@ -183,10 +181,11 @@ namespace driver::graphics {
 		}
 
 		// check framebuffer address first before enabling, so we don't trample other drivers
-		framebufferAddress = (U8*)pciDevice->baseAddress[0];
-		TRY(api.subscribe_memory((void*)framebufferAddress, 1024*768*3, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
+		physicalFramebufferAddress = (U8*)pciDevice->baseAddress[0];
+		auto virtualAddresss = TRY_RESULT(api.subscribe_memory<U8>((void*)physicalFramebufferAddress, 1024*768*3, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
+		(void)virtualAddresss;
 
-		auto vram = get_vram();
+		auto vramSize = get_vram();
 
 		set16(Register::enable, (U16)Enable::getCaps|(U16)Enable::noClearMem);
 		maxWidth = get16(Register::xRes);
@@ -197,13 +196,15 @@ namespace driver::graphics {
 		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp");
 
 		// TRY(api.subscribe_memory((void*)0x4f00, 0x123));
-		TRY(api.subscribe_memory((void*)0xe0000000, vram, mmu::Caching::uncached));
+		auto vram = TRY_RESULT(api.subscribe_memory((void*)0xe0000000, vramSize, mmu::Caching::uncached));
+		(void)vram;
 
 		framebuffer.address = nullptr;
 
 		// note that bochs ISN'T set as enabled at this point, so set mode is guarentted to apply a modechange, as the current enable mode will not match target
 		// return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
 		return set_mode(0, 1920, 1080, graphics2d::BufferFormat::rgba8, true);
+		// return set_mode(0, 640, 480, graphics2d::BufferFormat::rgba8, true);
 	}
 
 	auto BochsVga::_on_stop() -> Try<> {

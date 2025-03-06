@@ -13,6 +13,9 @@ struct [[nodiscard]] Try {
 	explicit operator bool() { return errorMessage==nullptr; }
 
 	auto as_error_only() -> Try<void, Error> { return {error, errorMessage}; }
+
+	template <typename Cast>
+	auto cast() -> Try<Cast, Error> { return errorMessage?Try<Cast, Error>{error, errorMessage}:Try<Cast, Error>{(Cast)result}; }
 };
 
 template <>
@@ -34,6 +37,9 @@ struct [[nodiscard]] Try<Result, void> {
 	explicit operator bool() { return errorMessage==nullptr; }
 
 	auto as_error_only() -> Try<void, void> { return {errorMessage}; }
+
+	template <typename Cast>
+	auto cast() -> Try<Cast, void> { return errorMessage?Try<Cast, void>{errorMessage}:Try<Cast, void>{(Cast)result}; }
 };
 
 template <typename Error>
@@ -49,3 +55,5 @@ struct [[nodiscard]] Try<void, Error> {
 }while(false)
 #define TRY_IGNORE(ACTION) ((void)(ACTION))
 #define TRY_RESULT(ACTION) ({ auto action = (ACTION); if(!action) return action.as_error_only(); action.result; })
+#define TRY_RESULT_CAST(TYPE, ACTION) ({ auto action = (ACTION); if(!action) return action.as_error_only_cast<TYPE>(); (TYPE)action.result; })
+#define TRY_RESULT_OR(ACTION, OR) ({ auto action = (ACTION); if(!action) return OR; action.result; })

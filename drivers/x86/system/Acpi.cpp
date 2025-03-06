@@ -32,8 +32,9 @@ namespace driver::system {
 			auto get_sdt_count() -> unsigned {
 				return (length - sizeof(Acpi::TableHeader)) / sizeof(sdts[0]);
 			}
-			auto get_sdt(unsigned i) -> Acpi::Sdt* {
-				return (Acpi::Sdt*)(size_t)sdts[i];
+			auto get_sdt(unsigned i) -> Try<Acpi::Sdt*> {
+				auto sdt = TRY_RESULT(Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sizeof(Acpi::Sdt), mmu::Caching::writeThrough));
+				return Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sdt->length, mmu::Caching::writeThrough);
 			}
 		};
 
@@ -43,8 +44,9 @@ namespace driver::system {
 			auto get_sdt_count() -> unsigned {
 				return (length - sizeof(Acpi::TableHeader)) / sizeof(sdts[0]);
 			}
-			auto get_sdt(unsigned i) -> Acpi::Sdt* {
-				return (Acpi::Sdt*)(size_t)sdts[i];
+			auto get_sdt(unsigned i) -> Try<Acpi::Sdt*> {
+				auto sdt = TRY_RESULT(Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sizeof(Acpi::Sdt), mmu::Caching::writeThrough));
+				return Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sdt->length, mmu::Caching::writeThrough);
 			}
 		};
 
@@ -233,9 +235,9 @@ namespace driver::system {
 
 	auto Acpi::get_entry(unsigned i) -> Sdt* {
 		if(xsdt){
-			return xsdt->get_sdt(i);
+			return TRY_RESULT_OR(xsdt->get_sdt(i), nullptr);
 		}else if(rsdt){
-			return rsdt->get_sdt(i);
+			return TRY_RESULT_OR(rsdt->get_sdt(i), nullptr);
 		}else{
 			return nullptr;
 		}

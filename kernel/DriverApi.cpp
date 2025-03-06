@@ -101,7 +101,7 @@ void DriverApi::unsubscribe_all_irqs() {
 	}
 }
 
-auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching) -> Try<> {
+auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching) -> Try<void*> {
 	auto &driver = this->driver();
 
 	if(start<(U8*)memory::heap+memory::heapSize&&(U8*)start+size>(U8*)memory::heap){
@@ -122,7 +122,8 @@ auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching)
 
 		if(subscribed.start>end){ // this region is after, so insert a new record before
 			subscribedMemory.insert(i, MemoryRange{start, end});
-			return {};
+			//TODO: return virtual address
+			return {start};
 		}
 
 		if(subscribed.end<start) continue; // this is before, continue
@@ -141,7 +142,8 @@ auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching)
 			}
 		}
 
-		return {};
+		//TODO: return virtual address
+		return {start};
 	}
 
 	// insert at the very end if it wasn't merged in prior
@@ -153,7 +155,7 @@ auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching)
 	//TODO: return this address, and make it a [[nodiscard]]
 	(void)virtualAddress;
 
-	return {};
+	return {start};
 }
 
 void DriverApi::unsubscribe_memory(void *start, size_t _size) {

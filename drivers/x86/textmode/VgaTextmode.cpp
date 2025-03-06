@@ -25,6 +25,10 @@ namespace driver::textmode {
 			0xf0f000, // light_brown
 			0xffffff, // white
 		};
+
+		const auto physicalAddress = (void*)0xb8000;
+
+		VgaTextmode::Entry *buffer = nullptr;
 	}
 
 	auto VgaTextmode::get_mode_count() -> U32 {
@@ -42,7 +46,7 @@ namespace driver::textmode {
 	auto VgaTextmode::_on_start() -> Try<> {
 		if(auto superError = Super::_on_start(); !superError) return superError;
 
-		TRY(api.subscribe_memory((void*)_address, rows*cols*sizeof(Entry), mmu::Caching::writeCombining));
+		textmode::buffer = TRY_RESULT(api.subscribe_memory<Entry>(physicalAddress, rows*cols*sizeof(Entry), mmu::Caching::writeCombining));
 
 		return {};
 	}
@@ -95,7 +99,7 @@ namespace driver::textmode {
 		return buffer()[row*cols+col];
 	}
 	auto VgaTextmode::buffer() -> Entry* {
-		return (Entry*)_address;
+		return textmode::buffer;
 	}
 
 	void VgaTextmode::scroll_region(U32 _startRow, U32 _startCol, U32 rows, U32 cols, I32 scrollRows, I32 scrollCols, U32 foreground, U32 background, U8 bgChar) {

@@ -205,11 +205,9 @@ namespace driver {
 			memset(irqToClockId, -1, sizeof(irqToClockId));
 
 			// TRY(api.subscribe_memory((void*)table->address.address, 0x137));
-			TRY(api.subscribe_memory((void*)table->address.address, sizeof(Registers), mmu::Caching::uncached));
+			registers = TRY_RESULT(api.subscribe_memory<Registers>((void*)table->address.address, sizeof(Registers), mmu::Caching::uncached));
 
 			// log.print_info("HPET present at ", (void*)table->address.address);
-
-			registers = (Registers*)table->address.address;
 
 			auto capabilities = registers->read_capabilities();
 

@@ -422,7 +422,7 @@ namespace driver::graphics {
 	}
 
 	auto Vbe::_on_start() -> Try<> {
-		TRY(api.subscribe_memory((void*)0x4f00, 0x123, mmu::Caching::writeCombining));
+		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>((void*)0x4f00, 0x123, mmu::Caching::writeCombining));
 
 		modes.clear();
 
