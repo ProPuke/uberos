@@ -849,7 +849,7 @@ namespace driver {
 
 			log.print_info("mouse added");
 
-			auto x = 0;//(I32)displayManager->get_width()/2;
+			auto x = (I32)displayManager->get_width()/2;
 			auto y = (I32)displayManager->get_height()/2;
 			auto &cursorImage = ui2d::image::cursors::_default;
 
