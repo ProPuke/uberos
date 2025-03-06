@@ -169,7 +169,7 @@ namespace test {
 						.size = 48
 					};
 
-					auto fontMeasurements = clientArea.measure_text(fontSettings, time, 0, 0, clientArea.width);
+					auto fontMeasurements = clientArea.measure_text(fontSettings, time, clientArea.width);
 
 					if(clientArea.width>=clientArea.height){
 						clientArea.draw_text(fontSettings, time, width-fontMeasurements.maxX-12+1, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2, fontMeasurements.maxX, 0x000000);

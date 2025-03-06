@@ -78,8 +78,7 @@ namespace graphics2d {
 
 		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour) { return draw_text(fontSettings, text, x, y, width, colour, x); }
 		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour, I32 cursorX) -> DrawTextResult;
-		auto measure_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width) { return measure_text(fontSettings, text, x, y, width, x); }
-		auto measure_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, I32 cursorX) -> DrawTextResult;
+		auto measure_text(FontSettings fontSettings, const char *text, U32 width = ~0, I32 cursorX = 0) -> DrawTextResult;
 		void draw_buffer_area(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image);
 		void draw_4slice(I32 x, I32 y, U32 width, U32 height, Buffer &image);
 

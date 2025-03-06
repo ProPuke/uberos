@@ -497,7 +497,7 @@ namespace driver {
 
 				{ // draw titlebar text
 					auto lineHeight = (U32)(graphics2d::font::default_sans->lineHeight * 14 + 0.5);
-					const auto width = graphicsDisplay->buffer.measure_text({.font=*graphics2d::font::default_sans, .size=14}, title, 0, 0, rect.width()).x;
+					const auto width = graphicsDisplay->buffer.measure_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.width()).x;
 					graphicsDisplay->buffer.draw_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.x1+rect.width()/2-width/2, rect.y1+1+lineHeight, rect.width(), titlebarTextColour);
 				}
 

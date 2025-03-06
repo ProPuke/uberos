@@ -78,11 +78,11 @@ namespace graphics2d {
 			updatedArea,
 		};
 	}
-	auto Buffer::measure_text(FontSettings fontSettings, const char *text, I32 startX, I32 startY, U32 width, I32 cursorX) -> DrawTextResult {
+	auto Buffer::measure_text(FontSettings fontSettings, const char *text, U32 width, I32 cursorX) -> DrawTextResult {
 		auto x = FixedI32::whole(cursorX);
-		auto y = FixedI32::whole(startY);
+		auto y = FixedI32::whole(0);
 
-		auto right = FixedI32::whole(startX + (I32)width);
+		auto right = FixedI32::whole((I32)min(width, ((1u<<31)-1)/256));
 
 		auto maxX = cursorX;
 
@@ -90,12 +90,12 @@ namespace graphics2d {
 
 		const auto lineheight = (U32)(fontSettings.font.lineHeight * fontSettings.size + 0.5) + fontSettings.lineSpacing;
 
-		Rect updatedArea = {cursorX,startY, cursorX,startY};
+		Rect updatedArea = {cursorX, 0, cursorX, 0};
 
 		for(const char *c=text;*c;c++){
 			switch(*c){
 				case '\n':
-					x = FixedI32::whole(startX);
+					x = FixedI32::whole(0);
 					y += lineheight;
 				break;
 				default: {
@@ -122,7 +122,7 @@ namespace graphics2d {
 					x += character->advance*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
 					if(x>=right){
 						//TODO: proper wordwrapping
-						x = FixedI32::whole(startX);
+						x = FixedI32::whole(0);
 						y += lineheight;
 					}
 				}
