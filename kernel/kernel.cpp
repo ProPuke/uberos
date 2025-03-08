@@ -13,8 +13,8 @@
 #include <kernel/panic.hpp>
 #include <kernel/Process.hpp>
 #include <kernel/test.hpp>
-#include <kernel/time.hpp>
 #include <kernel/Thread.hpp>
+#include <kernel/time.hpp>
 #include <kernel/time.hpp>
 #include <kernel/utils/logWindow.hpp>
 
@@ -158,15 +158,13 @@ namespace kernel {
 
 		test::start_tasks();
 
-		while(true){
+		// while(true){
 		// // 	// arch::x86::ioPort::write8(0x20, 0x0b);
 		// // 	// log.print_info("PIC ISR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
 
 		// // 	// arch::x86::ioPort::write8(0x20, 0x0a);
 		// // 	// log.print_info("PIC IRR = ", format::Hex8{arch::x86::ioPort::read8(0x20)});
-		}
-
-		// debug::halt();
+		// }
 
 		// utils::logWindow::hide();
 
@@ -241,6 +239,7 @@ namespace kernel {
 			// 		// log.print("update view\n");
 			// 	}
 			// });
+			while(true) {}
 
 			auto process = process::create_kernel("lightshow");
 
@@ -347,7 +346,7 @@ namespace kernel {
 				}
 
 			}
-			
+
 			if(true){
 				for(auto i=0;i<5;i++){
 					auto &thread = process.create_kernel_thread([]() {
@@ -374,8 +373,8 @@ namespace kernel {
 						buffer.draw_rect(0, 0, width, height, bgColour<<16|bgColour<<8|bgColour);
 
 						auto startTime = time::now();
-						buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 9999, 128*scale, 0x000000);
-						buffer.draw_text(*graphics2d::font::default_sans, "Lots of test text!", 10*scale, (128-20)*scale, 9999, 128*scale, 0xdddddd);
+						buffer.draw_text({.font=*graphics2d::font::default_sans, .size=(U32)(128*scale)}, "Lots of test text!", 10*scale+6, (128-20)*scale+6, 9999, 0x000000);
+						buffer.draw_text({.font=*graphics2d::font::default_sans, .size=(U32)(128*scale)}, "Lots of test text!", 10*scale, (128-20)*scale, 9999, 0xdddddd);
 						log.print_debug("blitted in ", time::now()-startTime);
 
 						view->update();
