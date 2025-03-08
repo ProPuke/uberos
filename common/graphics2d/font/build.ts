@@ -29,11 +29,23 @@ for await(const dirEntry of Deno.readDir('.')){
 				`			;\n`+
 				`			FontCharacter characters[${msdfJson.glyphs.length}] = {\n`
 			;
+
+			let capHeight:null|number = null;
+
 			for(const glyph of msdfJson.glyphs){
+				if(capHeight===null && (glyph.unicode=='M'.charCodeAt(0)||glyph.unicode=='W'.charCodeAt(0)||glyph.unicode=='X'.charCodeAt(0))){
+					capHeight = glyph.planeBounds.top;
+				}
+
 				cppSource +=
 				`				{${glyph.unicode}, FixedI16::fraction(${Math.round(glyph.advance*256)}), FixedI16::fraction(${glyph.planeBounds?Math.round(glyph.planeBounds.left*256):0}), FixedI16::fraction(${glyph.planeBounds?Math.round(glyph.planeBounds.top*256):0}), ${glyph.atlasBounds?Math.round(glyph.atlasBounds.left-0.5):0}, ${glyph.atlasBounds?Math.round(msdfJson.atlas.height-glyph.atlasBounds.top-0.5):0}, ${glyph.atlasBounds?Math.ceil(glyph.atlasBounds.right-glyph.atlasBounds.left):0}, ${glyph.atlasBounds?Math.ceil(glyph.atlasBounds.top-glyph.atlasBounds.bottom):0}},\n`
 				;
 			}
+
+			if(capHeight===null){
+				capHeight = 0.8;
+			}
+
 			cppSource +=
 				`			};\n`+
 				`		}\n`+
@@ -42,6 +54,7 @@ for await(const dirEntry of Deno.readDir('.')){
 				`			{msdfData, ${msdfJson.atlas.width*3}, ${msdfJson.atlas.width}, ${msdfJson.atlas.height}, graphics2d::BufferFormat::rgb8, graphics2d::BufferFormatOrder::argb},\n`+
 				`			${msdfJson.atlas.size},\n`+
 				`			${msdfJson.metrics.lineHeight},\n`+
+				`			${capHeight},\n`+
 				`			${msdfJson.metrics.ascender},\n`+
 				`			${msdfJson.metrics.descender},\n`+
 				`			${msdfJson.metrics.underlineY},\n`+

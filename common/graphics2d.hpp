@@ -27,4 +27,24 @@ namespace graphics2d {
 			colour&0xff000000
 		;
 	}
+
+	inline auto blend_colours(U32 colourA, U32 colourB) -> U32 {
+		const auto trans = colourB>>24;
+		return
+			(((colourA>> 0&0xff)*trans/255)+(colourB>> 0&0xff))<< 0|
+			(((colourA>> 8&0xff)*trans/255)+(colourB>> 8&0xff))<< 8|
+			(((colourA>>16&0xff)*trans/255)+(colourB>>16&0xff))<<16|
+			((colourA>>24)*trans/255)<<24
+		;
+	}
+
+	inline auto blend_colours(U32 colourA, U32 colourB, U8 opacity) -> U32 {
+		const auto trans = 255-((255-colourB>>24)*opacity/255);
+		return
+			(((colourA>> 0&0xff)*trans/255)+(colourB>> 0&0xff)*opacity/255)<< 0|
+			(((colourA>> 8&0xff)*trans/255)+(colourB>> 8&0xff)*opacity/255)<< 8|
+			(((colourA>>16&0xff)*trans/255)+(colourB>>16&0xff)*opacity/255)<<16|
+			((colourA>>24)*trans/255)<<24
+		;
+	}
 }

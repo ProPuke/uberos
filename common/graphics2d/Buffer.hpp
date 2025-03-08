@@ -9,9 +9,10 @@ namespace graphics2d {
 	struct Font;
 
 	struct DrawTextResult {
-		I32 x, y;
-		I32 maxX;
-		Rect updatedArea;
+		I32 x, y; // the final x & y
+		I32 capHeight; // how far above is the top of a capital letter
+		I32 blockWidth, blockHeight; // the width and height of the rendered text block, excluding overhangs
+		Rect updatedArea; // the actual area of pixels updated (including overhang)
 	};
 
 	struct Buffer {
@@ -41,8 +42,8 @@ namespace graphics2d {
 
 		void set(I32 x, I32 y, U32 colour, U32 length = 1);
 		void set(U32 x, U32 y, U32 colour, U32 length = 1);
-		void set_blended(I32 x, I32 y, U32 colour);
-		void set_blended(U32 x, U32 y, U32 colour);
+		void set_blended(I32 x, I32 y, U32 colour, U8 opacity=255);
+		void set_blended(U32 x, U32 y, U32 colour, U8 opacity=255);
 		void set_grey8(U32 x, U32 y, U32 colour, U32 length = 1);
 		void set_rgb565(U32 x, U32 y, U32 colour, U32 length = 1);
 		void set_bgr565(U32 x, U32 y, U32 colour, U32 length = 1);
@@ -62,8 +63,10 @@ namespace graphics2d {
 		auto get_bgra8(U32 x, U32 y) -> U32;
 
 		void draw_rect(Rect rect, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
+		void draw_rect_blended(Rect rect, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect_blended(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
 		void draw_rect_outline(Rect rect, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect_outline(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, borderWidth, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
 		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
+		void draw_rect_blended(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_rect_outline(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_line(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
 		void draw_line_aa(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
@@ -79,7 +82,8 @@ namespace graphics2d {
 		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour) { return draw_text(fontSettings, text, x, y, width, colour, x); }
 		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour, I32 cursorX) -> DrawTextResult;
 		auto measure_text(FontSettings fontSettings, const char *text, U32 width = ~0, I32 cursorX = 0) -> DrawTextResult;
-		void draw_buffer_area(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image);
+		void draw_buffer(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image);
+		void draw_buffer_blended(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image, U8 opacity = 0xff);
 		void draw_4slice(I32 x, I32 y, U32 width, U32 height, Buffer &image);
 
 		void scroll(I32 x, I32 y);

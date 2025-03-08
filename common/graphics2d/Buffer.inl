@@ -32,13 +32,13 @@ namespace graphics2d {
 		}
 	}
 
-	inline void Buffer::set_blended(I32 x, I32 y, U32 colour) {
+	inline void Buffer::set_blended(I32 x, I32 y, U32 colour, U8 opacity) {
 		if(x<0||y<0) return;
 
-		return set_blended((U32)x, (U32)y, colour);
+		return set_blended((U32)x, (U32)y, colour, opacity);
 	}
 
-	inline void Buffer::set_blended(U32 x, U32 y, U32 colour) {
+	inline void Buffer::set_blended(U32 x, U32 y, U32 colour, U8 opacity) {
 		if((U32)x>=width||(U32)y>=height) return;
 
 		switch(format){
@@ -50,23 +50,23 @@ namespace graphics2d {
 				}
 			break;
 			case BufferFormat::rgba8: {
-				const U8 trans = colour>>24;
+				const U8 trans = 255-((255-(colour>>24)) * opacity/255);
 				auto &data = *(U32*)&address[y*stride+x*4];
 
 				switch(order){
 					case BufferFormatOrder::argb:
 						data =
 							(trans - ((255-((data&0x000000ff)>>24)))*trans/255)<<0|
-							(((colour&0x00ff0000)>>16) + ((data&0x0000ff00)>> 8)*trans/255)<< 8|
-							(((colour&0x0000ff00)>> 8) + ((data&0x00ff0000)>>16)*trans/255)<<16|
-							(((colour&0x000000ff)>> 0) + ((data&0xff000000)>>24)*trans/255)<<24
+							(((colour&0x00ff0000)>>16)*opacity/255 + ((data&0x0000ff00)>> 8)*trans/255)<< 8|
+							(((colour&0x0000ff00)>> 8)*opacity/255 + ((data&0x00ff0000)>>16)*trans/255)<<16|
+							(((colour&0x000000ff)>> 0)*opacity/255 + ((data&0xff000000)>>24)*trans/255)<<24
 						;
 					break;
 					case BufferFormatOrder::bgra:
 						data =
-							(((colour&0x000000ff)>> 0) + ((data&0x000000ff)>> 0)*trans/255)<< 0|
-							(((colour&0x0000ff00)>> 8) + ((data&0x0000ff00)>> 8)*trans/255)<< 8|
-							(((colour&0x00ff0000)>>16) + ((data&0x00ff0000)>>16)*trans/255)<<16|
+							(((colour&0x000000ff)>> 0)*opacity/255 + ((data&0x000000ff)>> 0)*trans/255)<< 0|
+							(((colour&0x0000ff00)>> 8)*opacity/255 + ((data&0x0000ff00)>> 8)*trans/255)<< 8|
+							(((colour&0x00ff0000)>>16)*opacity/255 + ((data&0x00ff0000)>>16)*trans/255)<<16|
 							(trans - ((255-((data&0xff000000)>>24)))*trans/255)<<24
 						;
 					break;
@@ -373,6 +373,31 @@ namespace graphics2d {
 		}
 	}
 
+	inline void Buffer::draw_rect_blended(U32 startX, U32 startY, U32 width, U32 height, U32 colour, U32 topLeftCorners[], U32 topRightCorners[], U32 bottomLeftCorners[], U32 bottomRightCorners[]) {
+		U32 topLeftRadius = 0; if(topLeftCorners) while(topLeftRadius[topLeftCorners]!=~0u) topLeftRadius++;
+		U32 topRightRadius = 0; if(topRightCorners) while(topRightRadius[topRightCorners]!=~0u) topRightRadius++;
+		U32 bottomLeftRadius = 0; if(bottomLeftCorners) while(bottomLeftRadius[bottomLeftCorners]!=~0u) bottomLeftRadius++;
+		U32 bottomRightRadius = 0; if(bottomRightCorners) while(bottomRightRadius[bottomRightCorners]!=~0u) bottomRightRadius++;
+
+		// clip height at bottom
+		const U32 clippedHeight = max(0, min<I32>(startY+height, (I32)this->height)-(I32)startY);
+
+		U32 y = 0;
+		for(;y<clippedHeight;y++){
+			I32 left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			I32 right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			// clip right at right
+			right = min<I32>(startX+right, (I32)this->width)-(I32)startX;
+
+			if(left<right){
+				for(auto x=(U32)left;x<(U32)right;x++){
+					set_blended(startX+x, startY+y, colour);
+				}
+			}
+		}
+	}
+
 	inline void Buffer::draw_rect_outline(U32 startX, U32 startY, U32 width, U32 height, U32 colour, U32 borderWidth, U32 topLeftCorners[], U32 topRightCorners[], U32 bottomLeftCorners[], U32 bottomRightCorners[]) {
 		if(width<1||height<1) return;
 		if(borderWidth<1) return;
@@ -633,13 +658,23 @@ namespace graphics2d {
 		}
 	}
 
-	// TODO: optimise this to use memcpy strips?
-	inline void Buffer::draw_buffer_area(I32 destX, I32 destY, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image) {
+	// TODO: optimise this to use memcpy strips? (if it's the same format)
+	inline void Buffer::draw_buffer(I32 destX, I32 destY, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image) {
 		if(destX>=(I32)this->width||destY>=(I32)this->height||destX+width<=0||destY+height<=0) return;
 
 		for(U32 y=maths::max((I32)0, -destX); y<maths::min(maths::min(height, image.height-sourceX), height-destX); y++){
-			for(U32 x=maths::max((I32)0, -destY); x<maths::min(maths::min(width, image.width-sourceY), width-destY); x++){
+			for(U32 x=maths::max((I32)0, -destX); x<maths::min(maths::min(width, image.width-sourceX), width-destX); x++){
 				set(destX+x, destY+y, image.get(sourceX+x, sourceY+y));
+			}
+		}
+	}
+
+	inline void Buffer::draw_buffer_blended(I32 destX, I32 destY, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image, U8 opacity) {
+		if(destX>=(I32)this->width||destY>=(I32)this->height||destX+width<=0||destY+height<=0) return;
+
+		for(U32 y=maths::max((I32)0, -destX); y<maths::min(maths::min(height, image.height-sourceX), height-destX); y++){
+			for(U32 x=maths::max((I32)0, -destX); x<maths::min(maths::min(width, image.width-sourceX), width-destX); x++){
+				set_blended(destX+x, destY+y, image.get(sourceX+x, sourceY+y), opacity);
 			}
 		}
 	}
@@ -650,10 +685,10 @@ namespace graphics2d {
 		U32 cornerWidth = maths::min(width/2, image.width);
 		U32 cornerHeight = maths::min(height/2, image.height);
 
-		draw_buffer_area(startX, startY, 0, 0, cornerWidth, cornerHeight, image);
-		draw_buffer_area(startX+width-cornerWidth, startY, image.width-cornerWidth, 0, cornerWidth, cornerHeight, image);
-		draw_buffer_area(startX, startY+height-cornerHeight, 0, image.height-cornerHeight, cornerWidth, cornerHeight, image);
-		draw_buffer_area(startX+width-cornerWidth, startY+height-cornerHeight, image.width-cornerWidth, image.height-cornerHeight, cornerWidth, cornerHeight, image);
+		draw_buffer(startX, startY, 0, 0, cornerWidth, cornerHeight, image);
+		draw_buffer(startX+width-cornerWidth, startY, image.width-cornerWidth, 0, cornerWidth, cornerHeight, image);
+		draw_buffer(startX, startY+height-cornerHeight, 0, image.height-cornerHeight, cornerWidth, cornerHeight, image);
+		draw_buffer(startX+width-cornerWidth, startY+height-cornerHeight, image.width-cornerWidth, image.height-cornerHeight, cornerWidth, cornerHeight, image);
 
 		for(U32 x=startX+cornerWidth;x<width-cornerWidth;x++){
 			for(U32 y=0;y<cornerHeight;y++){

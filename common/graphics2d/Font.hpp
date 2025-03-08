@@ -24,6 +24,7 @@ namespace graphics2d {
 
 		U32 size;
 		float lineHeight;
+		float capHeight;
 		float ascender;
 		float descender;
 		float underlineY;

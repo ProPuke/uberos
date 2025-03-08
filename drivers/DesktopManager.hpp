@@ -18,6 +18,35 @@ namespace driver {
 	//TODO: should graphics drivers also include an api for querying their active processor(s) drivers if present? This would allow us to work out what processor speeds and temps relate to this graphics adapter, which might be useful/neat
 	struct DesktopManager: Software {
 		DRIVER_INSTANCE(DesktopManager, 0x3a11d5b3, "desktop", "DesktopManager", Software);
+
+		struct Window;
+
+		struct Event {
+			Mouse *instance;
+
+			enum struct Type {
+				windowAdded,
+				windowRemoved,
+				windowFocused
+			} type;
+
+			union {
+				struct {
+					Window *window;
+				} windowAdded;
+
+				struct {
+					Window *window;
+				} windowRemoved;
+
+				struct {
+					Window *window;
+				} windowFocused;
+			};
+		};
+
+		static inline EventEmitter<Event> allEvents;
+		EventEmitter<Event> events;
 		
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;
@@ -121,6 +150,7 @@ namespace driver {
 			EventEmitter<Event> events;
 
 			virtual void set_title(const char*) = 0;
+			virtual auto get_title() -> const char* = 0;
 
 			virtual auto get_x() -> I32 = 0;
 			virtual auto get_y() -> I32 = 0;
@@ -128,6 +158,7 @@ namespace driver {
 			virtual auto get_height() -> I32 = 0;
 			virtual auto get_client_area() -> graphics2d::Buffer& = 0;
 			virtual void raise() = 0;
+			virtual void focus() = 0;
 			virtual auto is_top() -> bool = 0;
 			virtual void show() = 0;
 			virtual void hide() = 0;
@@ -176,5 +207,10 @@ namespace driver {
 
 		auto get_default_window_colour() -> U32;
 		auto get_default_window_border_colour() -> U32;
+
+		auto get_window_count() -> U32;
+		auto get_window(U32) -> Window*;
+
+		auto get_focused_window() -> Window*;
 	};
 }

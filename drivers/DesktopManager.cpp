@@ -8,12 +8,21 @@
 #include <common/graphics2d.hpp>
 #include <common/graphics2d/font.hpp>
 #include <common/maths.hpp>
+#include <common/ui2d/Gui.hpp>
+#include <common/ui2d/theme/Clean.hpp>
+#include <common/ui2d/control/ColouredButton.hpp>
 
 namespace ui2d::image {
 	namespace cursors {
 		extern graphics2d::Buffer _default;
 		extern graphics2d::Buffer _default_left;
 		extern graphics2d::Buffer _default_right;
+	}
+
+	namespace widgets {
+		extern graphics2d::Buffer close;
+		extern graphics2d::Buffer maximise;
+		extern graphics2d::Buffer minimise;
 	}
 }
 
@@ -37,7 +46,45 @@ namespace driver {
 
 		graphics2d::Rect windowArea;
 
+		struct Window;
+
+		extern Window *focusedWindow;
+
+		ui2d::theme::Clean theme;
+
+		struct DeferWindowMove {
+			/**/ DeferWindowMove(Window &window);
+			/**/~DeferWindowMove();
+
+			static inline U32 depth = 0;
+
+			Window &window;
+			graphics2d::Rect oldRect;
+			U8 *oldBuffer;
+			U32 oldBufferWidth;
+			U32 oldBufferHeight;
+		};
+
 		struct Window: LListItem<Window>, virtual DesktopManager::Window {
+			struct Gui: ui2d::Gui {
+				typedef ui2d::Gui Super;
+
+				/**/ Gui():
+					Super(graphics2d::Buffer(), driver::theme)
+				{}
+
+				void update_area(graphics2d::Rect rect) {
+					if(isFrozen) return;
+					if(DeferWindowMove::depth<1){
+						window().graphicsDisplay->update_area(rect);
+					}
+				}
+
+				auto window() -> Window& {
+					return *(Window*)((char*)(this)-offsetof(Window, gui));
+				}
+			} gui;
+
 			/**/ Window(U32 x, U32 y, U32 width, U32 height, const char *title):
 				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width, height)),
 				title(title)
@@ -75,8 +122,21 @@ namespace driver {
 				redraw_decorations(); //TODO: only update the text itself, not the full frame?
 			}
 
+			auto get_title() -> const char * override {
+				return title;
+			}
+
 			void raise() override {
 				graphicsDisplay->raise();
+			}
+
+			void focus() override {
+				if(focusedWindow==this) return;
+				focusedWindow = this;
+
+				//TODO: avoid redrawing twice here
+				raise();
+				update_focused_window();
 			}
 
 			void set_layer(Layer layer) override {
@@ -138,6 +198,14 @@ namespace driver {
 				graphicsDisplay->update_area(rect.offset(leftMargin, topMargin));
 			}
 
+			virtual void _set_titlebar_area(graphics2d::Rect rect) {
+				titlebarArea = rect;
+			}
+
+			virtual void _on_mouse_moved(I32 x, I32 y) {}
+			virtual void _on_mouse_pressed(I32 x, I32 y, U32 button) {}
+			virtual void _on_mouse_released(I32 x, I32 y, U32 button) {}
+
 			DisplayManager::Display *graphicsDisplay;
 			const char *title;
 			graphics2d::Buffer clientArea;
@@ -158,53 +226,6 @@ namespace driver {
 			U32 topMargin = 0;
 			U32 rightMargin = 0;
 			U32 bottomMargin = 0;
-		};
-
-		struct DeferWindowMove {
-			/**/ DeferWindowMove(Window &window):
-				window(window),
-				oldRect{window.graphicsDisplay->x, window.graphicsDisplay->y, window.graphicsDisplay->x+(I32)window.graphicsDisplay->get_width(), window.graphicsDisplay->y+(I32)window.graphicsDisplay->get_height()},
-				oldBuffer(window.graphicsDisplay->buffer.address),
-				oldBufferWidth(window.graphicsDisplay->buffer.width),
-				oldBufferHeight(window.graphicsDisplay->buffer.height)
-			{
-				depth++;
-			}
-
-			/**/~DeferWindowMove() {
-				auto newRect = (graphics2d::Rect){window.graphicsDisplay->x, window.graphicsDisplay->y, window.graphicsDisplay->x+(I32)window.graphicsDisplay->get_width(), window.graphicsDisplay->y+(I32)window.graphicsDisplay->get_height()};
-
-				auto changed = false;
-
-				if(newRect!=oldRect) {
-					changed = true;
-					displayManager->update_area(oldRect, window.graphicsDisplay);
-				}
-
-				if(window.graphicsDisplay->buffer.address!=oldBuffer||window.graphicsDisplay->buffer.width!=oldBufferWidth||window.graphicsDisplay->buffer.height!=oldBufferHeight){
-					changed = true;
-
-					window._draw_decorations();
-
-					window.events.trigger({
-						type: DesktopManager::Window::Event::Type::clientAreaChanged
-					});
-				}
-
-				if(changed){
-					window.graphicsDisplay->update();
-				}
-
-				depth--;
-			}
-
-			static inline U32 depth = 0;
-
-			Window &window;
-			graphics2d::Rect oldRect;
-			U8 *oldBuffer;
-			U32 oldBufferWidth;
-			U32 oldBufferHeight;
 		};
 
 		void _enable_docked_window(Window&);
@@ -344,8 +365,51 @@ namespace driver {
 			}
 		}
 
+		/**/ DeferWindowMove:: DeferWindowMove(Window &window):
+			window(window),
+			oldRect{window.graphicsDisplay->x, window.graphicsDisplay->y, window.graphicsDisplay->x+(I32)window.graphicsDisplay->get_width(), window.graphicsDisplay->y+(I32)window.graphicsDisplay->get_height()},
+			oldBuffer(window.graphicsDisplay->buffer.address),
+			oldBufferWidth(window.graphicsDisplay->buffer.width),
+			oldBufferHeight(window.graphicsDisplay->buffer.height)
+		{
+			depth++;
+		}
+
+		/**/ DeferWindowMove::~DeferWindowMove(){
+			auto newRect = (graphics2d::Rect){window.graphicsDisplay->x, window.graphicsDisplay->y, window.graphicsDisplay->x+(I32)window.graphicsDisplay->get_width(), window.graphicsDisplay->y+(I32)window.graphicsDisplay->get_height()};
+
+			auto changed = false;
+
+			if(newRect!=oldRect) {
+				changed = true;
+				displayManager->update_area(oldRect, window.graphicsDisplay);
+			}
+
+			if(window.graphicsDisplay->buffer.address!=oldBuffer||window.graphicsDisplay->buffer.width!=oldBufferWidth||window.graphicsDisplay->buffer.height!=oldBufferHeight){
+				changed = true;
+
+				window._draw_decorations();
+
+				window.events.trigger({
+					type: DesktopManager::Window::Event::Type::clientAreaChanged
+				});
+			}
+
+			if(changed){
+				window.graphicsDisplay->update();
+			}
+
+			depth--;
+		}
+
 		struct StandardWindow: Window, DesktopManager::StandardWindow {
 			typedef driver::Window Super;
+
+			ui2d::control::ColouredButton closeButton;
+			ui2d::control::ColouredButton maximiseButton;
+			ui2d::control::ColouredButton minimiseButton;
+
+			static const auto widgetSpacing = 4;
 
 			static const auto cornerRadius = enableTransparency?5:2;
 			U32 corner[cornerRadius+1];
@@ -364,21 +428,29 @@ namespace driver {
 			const char *status = "";
 
 			/**/ StandardWindow(U32 x, U32 y, U32 width, U32 height, const char *title):
-				Super(x-leftShadow, y-topShadow, width+leftShadow+rightShadow, height+topShadow+bottomShadow, title)
+				Super(x-leftShadow, y-topShadow, width+leftShadow+rightShadow, height+topShadow+bottomShadow, title),
+				closeButton(gui, {0,0,0,0}, 0xff0000, ""),
+				maximiseButton(gui, {0,0,0,0}, 0xff8800, ""),
+				minimiseButton(gui, {0,0,0,0}, 0xffff00, "")
 			{
 				leftMargin = leftShadow;
 				topMargin = topShadow;
 				rightMargin = rightShadow;
 				bottomMargin = bottomShadow;
 
+				closeButton.icon = &ui2d::image::widgets::close;
+				maximiseButton.icon = &ui2d::image::widgets::maximise;
+				minimiseButton.icon = &ui2d::image::widgets::minimise;
+
 				if(graphicsDisplay){
 					clientArea = graphicsDisplay->buffer.cropped(leftMargin, topMargin, rightMargin, bottomMargin);
+					gui.buffer = graphicsDisplay->buffer;
 					if(enableTransparency){
 						graphicsDisplay->buffer.draw_rect((graphics2d::Rect){0,0,(I32)graphicsDisplay->buffer.width,(I32)graphicsDisplay->buffer.height}, 0xff000000);
 					}
 				}
 
-				titlebarArea = {(I32)leftShadow, (I32)topShadow, (I32)leftShadow+(I32)width, (I32)topShadow+titlebarHeight};
+				_set_titlebar_area({(I32)leftShadow, (I32)topShadow, (I32)leftShadow+(I32)width, (I32)topShadow+titlebarHeight});
 
 				// graphics2d::create_round_corner(cornerRadius, corner);
 				graphics2d::create_diagonal_corner(cornerRadius, corner);
@@ -408,6 +480,18 @@ namespace driver {
 
 			void redraw() override;
 			void redraw_area(graphics2d::Rect) override;
+
+			void _set_titlebar_area(graphics2d::Rect rect) override {
+				Super::_set_titlebar_area(rect);
+
+				const auto size = titlebarArea.height()-widgetSpacing*2;
+
+				closeButton.rect = {titlebarArea.x2-widgetSpacing-size, titlebarArea.y1+widgetSpacing, titlebarArea.x2-widgetSpacing, titlebarArea.y2-widgetSpacing};
+				maximiseButton.rect = {closeButton.rect.x1-widgetSpacing-1-widgetSpacing-size, titlebarArea.y1+widgetSpacing, closeButton.rect.x1-widgetSpacing-1-widgetSpacing, titlebarArea.y2-widgetSpacing};
+				minimiseButton.rect = {maximiseButton.rect.x1-widgetSpacing-size, titlebarArea.y1+widgetSpacing, maximiseButton.rect.x1-widgetSpacing, titlebarArea.y2-widgetSpacing};
+
+				gui.redraw(false);
+			}
 
 			void _draw_decorations() override {
 				auto rect = get_border_rect();
@@ -496,10 +580,19 @@ namespace driver {
 				}
 
 				{ // draw titlebar text
-					auto lineHeight = (U32)(graphics2d::font::default_sans->lineHeight * 14 + 0.5);
-					const auto width = graphicsDisplay->buffer.measure_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.width()).x;
-					graphicsDisplay->buffer.draw_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.x1+rect.width()/2-width/2, rect.y1+1+lineHeight, rect.width(), titlebarTextColour);
+					const auto textSize = graphicsDisplay->buffer.measure_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.width());
+					graphicsDisplay->buffer.draw_text({.font=*graphics2d::font::default_sans, .size=14}, title, rect.x1+(rect.width()-textSize.blockWidth)/2, rect.y1+(titlebarHeight-2)/2+textSize.capHeight-textSize.blockHeight/2, rect.width(), titlebarTextColour);
 				}
+
+				closeButton.opacity = _draw_focused?0xff:0x66;
+				maximiseButton.opacity = _draw_focused?0xff:0x66;
+				minimiseButton.opacity = _draw_focused?0xff:0x66;
+
+				{ // draw widget divide
+					graphicsDisplay->buffer.draw_line(closeButton.rect.x1-widgetSpacing-1, titlebarArea.y1+widgetSpacing+1, closeButton.rect.x1-widgetSpacing-1, titlebarArea.y2-widgetSpacing-1, graphics2d::blend_colours(titlebarBgColour, _draw_focused?0xdd000000:0xee000000));
+				}
+
+				gui.redraw();
 
 				{ // draw statusbar text
 					// auto lineHeight = 14*5/4;
@@ -523,7 +616,7 @@ namespace driver {
 				graphicsDisplay->update_area(graphics2d::Rect{0, (I32)get_height()-statusbarHeight, (I32)get_width(), (I32)get_height()}.offset(rect.x1, rect.y1));
 			}
 
-			static const auto titlebarHeight = 28;
+			static const auto titlebarHeight = 30;
 			static const auto statusbarHeight = 23;
 
 			void draw_frame() {
@@ -539,6 +632,7 @@ namespace driver {
 
 				clientArea = display.buffer.cropped(leftShadow+1, topShadow+titlebarHeight, rightShadow+1, bottomShadow+23);
 				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, windowBackgroundColour);
+				gui.redraw(false);
 				display.update();
 			}
 
@@ -632,6 +726,16 @@ namespace driver {
 				graphicsDisplay->update_area({(I32)leftShadow+get_width(), 0, (I32)leftShadow+get_width()+(I32)rightShadow, (I32)buffer.height});
 				graphicsDisplay->update_area({(I32)leftShadow, (I32)topShadow+get_height(), get_width(), (I32)topShadow+get_height()+(I32)bottomShadow});
 			}
+
+			void _on_mouse_moved(I32 x, I32 y) override {
+				gui.on_mouse_moved(x, y);
+			}
+			void _on_mouse_pressed(I32 x, I32 y, U32 button) override {
+				gui.on_mouse_pressed(x, y, button);
+			}
+			void _on_mouse_released(I32 x, I32 y, U32 button) override {
+				gui.on_mouse_released(x, y, button);
+			}
 		};
 
 		struct CustomWindow: Window, DesktopManager::CustomWindow {
@@ -679,7 +783,13 @@ namespace driver {
 			}
 		};
 
-		extern Window *focusedWindow;
+		auto get_window_at(I32 x, I32 y, DisplayManager::Display *below = nullptr) -> Window* {
+			auto display = displayManager->get_display_at(x, y, false, below);
+			auto windowInterface = display?DesktopManager::instance.get_window_from_display(*display):nullptr;
+			auto window = windowInterface?(Window*)(StandardWindow*)windowInterface->as_standardWindow()?:(Window*)(CustomWindow*)windowInterface->as_customWindow():nullptr;
+
+			return window;
+		}
 
 		struct Cursor {
 			Mouse *mouse = nullptr;
@@ -751,14 +861,13 @@ namespace driver {
 			}
 		}
 
+		//TODO: move all of this into on_mouse_event instead (since ity has an instance param)
+		// trigger raising, grabbing and focusing windows BEFORE firing window events, so that events can do their own thing and override afterwards
 		void _on_cursor_mouse_event(const Mouse::Event &event, void *_mouse) {
 			auto cursor = _find_cursor(*(Mouse*)_mouse);
 			if(!cursor) return;
 
-			auto display = displayManager->get_display_at(cursor->x, cursor->y, false, cursor->display);
-			// auto window = display?(Window*)DesktopManager::instance.get_window_from_display(*display):nullptr;
-			auto windowInterface = display?DesktopManager::instance.get_window_from_display(*display):nullptr;
-			auto window = windowInterface?(driver::Window*)(driver::StandardWindow*)windowInterface->as_standardWindow()?:(driver::Window*)(driver::CustomWindow*)windowInterface->as_customWindow():nullptr;
+			auto window = get_window_at(cursor->x, cursor->y, cursor->display);
 
 			switch(event.type){
 				case Mouse::Event::Type::pressed:
@@ -774,7 +883,7 @@ namespace driver {
 					if(event.pressed.button==0){
 						{
 							auto &cursorImage = ui2d::image::cursors::_default_left;
-							cursor->display->buffer.draw_buffer_area(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
 							cursor->display->update();
 						}
 						if(!cursor->dragWindow.window){
@@ -786,7 +895,7 @@ namespace driver {
 					}else if(event.pressed.button==1){
 						{
 							auto &cursorImage = ui2d::image::cursors::_default_right;
-							cursor->display->buffer.draw_buffer_area(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
 							cursor->display->update();
 						}
 					}
@@ -794,7 +903,7 @@ namespace driver {
 				case Mouse::Event::Type::released:
 					if(event.released.button==0||event.released.button==1){
 						auto &cursorImage = ui2d::image::cursors::_default;
-						cursor->display->buffer.draw_buffer_area(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+						cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
 							cursor->display->update();
 					}
 
@@ -832,6 +941,26 @@ namespace driver {
 								cursor->dragWindow.window->move_to(cursor->x+cursor->dragWindow.dragOffsetX, cursor->y+cursor->dragWindow.dragOffsetY);
 							}
 						}
+
+						// if(cursor->dragWindow.window->state==DesktopManager::Window::State::docked){
+						// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, cursor->display);
+						// 	if(hoveredWindow!=cursor->dragWindow.window){
+						// 		auto other_x = hoveredWindow->get_x();
+						// 		auto other_y = hoveredWindow->get_y();
+						// 		auto other_width = hoveredWindow->get_width();
+						// 		auto other_height = hoveredWindow->get_height();
+
+						// 		hoveredWindow->move_and_resize_to(
+						// 			cursor->dragWindow.window->get_x(), cursor->dragWindow.window->get_y(),
+						// 			cursor->dragWindow.window->get_width(), cursor->dragWindow.window->get_height()
+						// 		);
+
+						// 		cursor->dragWindow.window->move_and_resize_to(
+						// 			other_x, other_y,
+						// 			other_width, other_height
+						// 		);
+						// 	}
+						// }
 					}
 
 					if(!cursor->isVisible){
@@ -856,7 +985,7 @@ namespace driver {
 			auto cursorDisplay = displayManager->create_display(nullptr, DisplayManager::DisplayLayer::cursor, x, y, cursorImage.width, cursorImage.height);
 			// cursorDisplay->mode = DisplayManager::DisplayMode::transparent; // TODO: add some kind of api for specifically marking displays as transparent
 			cursorDisplay->solidArea.clear();
-			cursorDisplay->buffer.draw_buffer_area(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+			cursorDisplay->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
 			cursorDisplay->hide();
 
 			cursors.push({&mouse, cursorDisplay, x, y, false});
@@ -1072,6 +1201,11 @@ namespace driver {
 					window->redraw_decorations();
 				}
 			}
+
+			DesktopManager::instance.events.trigger({
+				type: DesktopManager::Event::Type::windowFocused,
+				windowFocused: { window: focusedWindow }
+			});	
 		}
 	}
 
@@ -1080,6 +1214,12 @@ namespace driver {
 			if(focusedWindow){
 				switch(event.type){
 					case driver::Keyboard::Event::Type::pressed:
+						// cancel all window drags on escape
+						if(event.pressed.scancode==(keyboard::Scancode)keyboard::ScancodeUk::escape){
+							for(auto &cursor:cursors){
+								cursor.release_window();
+							}
+						}
 						focusedWindow->events.trigger({
 							type: StandardWindow::Event::Type::keyPressed,
 							keyPressed: { event.instance, event.pressed.scancode, event.pressed.repeat, event.pressed.modifiers }
@@ -1112,27 +1252,32 @@ namespace driver {
 
 			if(focusedWindow){
 				switch(event.type){
-					case driver::Mouse::Event::Type::moved:
-						focusedWindow->events.trigger({
-							type: StandardWindow::Event::Type::mouseMoved,
-							mouseMoved: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.moved.x, event.moved.y }
+					case driver::Mouse::Event::Type::moved: {
+						auto window = get_window_at(cursor->x, cursor->y, cursor->display);
+						if(!window) break;
+
+						window->_on_mouse_moved(cursor->x-focusedWindow->graphicsDisplay->x, cursor->y-focusedWindow->graphicsDisplay->y);
+						window->events.trigger({
+							type: Window::Event::Type::mouseMoved,
+							mouseMoved: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.moved.x, event.moved.y }
 						});
-					break;
+					} break;
 					case driver::Mouse::Event::Type::pressed:
+						focusedWindow->_on_mouse_pressed(cursor->x-focusedWindow->graphicsDisplay->x, cursor->y-focusedWindow->graphicsDisplay->y, event.pressed.button);
 						focusedWindow->events.trigger({
 							type: StandardWindow::Event::Type::mousePressed,
 							mousePressed: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.pressed.button }
 						});
 					break;
 					case driver::Mouse::Event::Type::released:
+						focusedWindow->_on_mouse_released(cursor->x-focusedWindow->graphicsDisplay->x, cursor->y-focusedWindow->graphicsDisplay->y, event.released.button);
 						focusedWindow->events.trigger({
 							type: StandardWindow::Event::Type::mouseReleased,
 							mouseReleased: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.released.button }
 						});
 					break;
 					case driver::Mouse::Event::Type::scrolled: {
-						auto display = displayManager->get_display_at(cursor->x, cursor->y, false, cursor->display);
-						auto window = display?DesktopManager::instance.get_window_from_display(*display)->as_standardWindow():nullptr;
+						auto window = get_window_at(cursor->x, cursor->y, cursor->display);
 						if(!window) break;
 
 						window->events.trigger({
@@ -1209,8 +1354,9 @@ namespace driver {
 
 		clientArea = graphicsDisplay->buffer.cropped(leftMargin+1, topMargin+titlebarHeight, rightMargin+1, bottomMargin+23);
 		clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, windowBackgroundColour);
+		gui.buffer = graphicsDisplay->buffer;
 
-		titlebarArea = {(I32)leftMargin, (I32)topMargin, (I32)leftMargin+(I32)width, (I32)topMargin+titlebarHeight};
+		_set_titlebar_area({(I32)leftMargin, (I32)topMargin, (I32)leftMargin+(I32)width, (I32)topMargin+titlebarHeight});
 
 		if(DeferWindowMove::depth<1){
 			events.trigger({
@@ -1249,8 +1395,15 @@ namespace driver {
 		focusedWindow = &window;
 		update_focused_window();
 
+		events.trigger({
+			type: Event::Type::windowAdded,
+			windowAdded: { window: &window }
+		});
+
 		return window;
 	}
+
+	// TODO: mutex these functions
 
 	auto DesktopManager::create_custom_window(const char *title, I32 width, I32 height, I32 x, I32 y) -> CustomWindow& {
 		// centre by default
@@ -1269,6 +1422,11 @@ namespace driver {
 		windows.push_back(window);
 		focusedWindow = &window;
 		update_focused_window();
+
+		events.trigger({
+			type: Event::Type::windowAdded,
+			windowAdded: { window: &window }
+		});
 
 		return window;
 	}
@@ -1295,5 +1453,22 @@ namespace driver {
 
 	auto DesktopManager::get_default_window_border_colour() -> U32 {
 		return windowBorderColour;
+	}
+
+	auto DesktopManager::get_window_count() -> U32 {
+		return windows.length();
+	}
+
+	// FIXME: add some extra protection around this, so that a thread doesn't try accessing a window pointer while another frees it
+	auto DesktopManager::get_window(U32 index) -> Window* {
+		driver::Window *window;
+		for(window=windows.head; index>0; window=window->next){
+			index--;
+		}
+		return window;
+	}
+
+	auto DesktopManager::get_focused_window() -> Window* {
+		return focusedWindow;
 	}
 }
