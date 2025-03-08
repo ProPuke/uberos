@@ -5,8 +5,8 @@
 #include <kernel/Cli.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/logging.hpp>
-#include <kernel/PodArray.hpp>
 
+#include <common/PodArray.hpp>
 #include <common/types.hpp>
 #include <atomic>
 

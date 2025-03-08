@@ -2,12 +2,12 @@
 
 #include <kernel/arch/x86/PciDevice.hpp>
 #include <kernel/mmu.hpp>
-#include <kernel/PodArray.hpp>
 #ifdef ARCH_X86
 	#include <kernel/arch/x86/ioPort.hpp>
 #endif
 
 #include <common/Bitmask.hpp>
+#include <common/PodArray.hpp>
 #include <common/Try.hpp>
 #include <common/types.hpp>
 

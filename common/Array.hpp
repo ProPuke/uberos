@@ -1,6 +1,8 @@
 #pragma once
 
-#include <kernel/memory.hpp>
+#ifdef KERNEL
+	#include <kernel/memory.hpp>
+#endif
 
 #include <common/types.hpp>
 
@@ -13,11 +15,11 @@ struct Array {
 	/**/ Array(U32 reserveSize=0):
 		allocated(reserveSize)
 	{
-		data = reserveSize?(Type*)kmalloc(reserveSize*sizeof(Type)):nullptr;
+		data = reserveSize?new Type[reserveSize]:nullptr;
 	}
 
 	/**/~Array(){
-		kfree(data);
+		delete data;
 	}
 
 	auto begin() -> Type* { return &data[0]; }

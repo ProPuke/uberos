@@ -4,11 +4,11 @@
 
 #include <kernel/arch/x86-ibm/memory.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/PodArray.hpp>
 // #include <kernel/arch/x86/vm86.hpp>
 
 #include <common/Box.hpp>
 #include <common/graphics2d/BufferFormat.hpp>
+#include <common/PodArray.hpp>
 #include <common/stdlib.hpp>
 
 // #define VBE_ATI_WORKAROUND

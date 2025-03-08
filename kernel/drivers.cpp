@@ -8,8 +8,8 @@
 #include <kernel/Driver.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/Log.hpp>
-#include <kernel/PodArray.hpp>
 
+#include <common/PodArray.hpp>
 #include <common/format.hpp>
 #include <common/maths.hpp>
 

@@ -5,9 +5,9 @@
 #include <kernel/arch/x86/ioPort.hpp>
 #include <kernel/assert.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/PodArray.hpp>
 
 #include <common/format.hpp>
+#include <common/PodArray.hpp>
 
 namespace driver::system {
 	namespace {

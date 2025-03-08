@@ -48,7 +48,7 @@ namespace driver {
 	};
 }
 
-#include <kernel/PodArray.hpp>
+#include <common/PodArray.hpp>
 
 namespace driver {
 	struct TimerQueue {

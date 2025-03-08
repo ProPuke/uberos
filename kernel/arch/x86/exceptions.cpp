@@ -13,8 +13,8 @@
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/panic.hpp>
-#include <kernel/PodArray.hpp>
 
+#include <common/PodArray.hpp>
 #include <common/types.hpp>
 
 #include <atomic>

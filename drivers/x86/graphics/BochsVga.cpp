@@ -5,12 +5,12 @@
 #include <kernel/arch/x86/ioPort.hpp>
 // #include <kernel/arch/x86/vm86.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/PodArray.hpp>
 
 #include <common/Box.hpp>
 #include <common/common.hpp>
 #include <common/format.hpp>
 #include <common/graphics2d/BufferFormat.hpp>
+#include <common/PodArray.hpp>
 #include <common/stdlib.hpp>
 
 namespace driver::graphics {

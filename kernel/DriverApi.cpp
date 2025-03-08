@@ -4,7 +4,8 @@
 
 #include <kernel/Driver.hpp>
 #include <kernel/drivers.hpp>
-#include <kernel/PodArray.hpp>
+
+#include <common/PodArray.hpp>
 
 #include <cstddef>
 

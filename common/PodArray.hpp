@@ -21,12 +21,12 @@ struct PodArray:Array<Type> {
 		newSize = max(max(length, (U32)1), newSize);
 		if(newSize==allocated) return;
 
-		const auto newData = (Type*)kmalloc((allocated=newSize)*sizeof(Type));
+		const auto newData = new Type[allocated=newSize];
 
 		length = min(length, newSize);
 		memcpy(newData, data, length*sizeof(Type));
 
-		kfree(data);
+		delete data;
 		data = newData;
 	}
 
@@ -110,10 +110,10 @@ struct PodArray:Array<Type> {
 	template <typename ...Params>
 	auto insert(U32 index, Params ...params) -> Type& {
 		if(length+1>=allocated){
-			auto newData = (Type*)kmalloc((allocated=allocated+allocated/2+1)*sizeof(Type));
+			auto newData = new Type[allocated=allocated+allocated/2+1];
 			memmove(newData, data, index*sizeof(Type));
 			memmove(&newData[index+1], &data[index], (length-index)*sizeof(Type));
-			kfree(data);
+			delete data;
 			data = newData;
 
 		}else{
