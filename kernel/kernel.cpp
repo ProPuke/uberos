@@ -12,7 +12,7 @@
 #include <kernel/memory/PagedPool.hpp>
 #include <kernel/panic.hpp>
 #include <kernel/Process.hpp>
-#include <kernel/test.hpp>
+#include <kernel/tests.hpp>
 #include <kernel/Thread.hpp>
 #include <kernel/time.hpp>
 #include <kernel/time.hpp>
@@ -156,7 +156,7 @@ namespace kernel {
 		// 	"out 0x20, al\n"
 		// );
 
-		test::start_tasks();
+		tests::run();
 
 		// while(true){
 		// // 	// arch::x86::ioPort::write8(0x20, 0x0b);
