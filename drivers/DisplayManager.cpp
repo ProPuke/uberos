@@ -185,6 +185,8 @@ namespace driver {
 			U8 visibility = 255;
 
 			for(auto display=topDisplay; display; display=display->prev){
+				if(!display->isVisible) continue;
+
 				// check just y
 				if(display->y>y||display->y+(I32)display->get_height()<=y) continue;
 
@@ -986,6 +988,8 @@ namespace driver {
 
 	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below) -> Display* {
 		for(auto display=below?below->prev:displays.tail; display; display=display->prev){
+			if(!display->isVisible) continue;
+
 			if(
 				x>=display->x&&
 				y>=display->y&&
