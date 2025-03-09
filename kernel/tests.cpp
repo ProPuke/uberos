@@ -1,0 +1,13 @@
+#include "tests.hpp"
+
+#include "tests/fontTest.hpp"
+#include "tests/keyboardTest.hpp"
+#include "tests/taskbar.hpp"
+
+namespace tests {
+	void run() {
+		taskbar::run();
+		fontTest::run();
+		keyboardTest::run();
+	}
+}
