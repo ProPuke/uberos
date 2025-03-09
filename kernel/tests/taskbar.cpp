@@ -25,6 +25,7 @@ namespace tests::taskbar {
 
 		driver::DesktopManager *desktopManager = nullptr;
 		PodArray<WindowButton*> windowButtons;
+		driver::DesktopManager::Window *lastFocusedWindow = nullptr;
 
 		const auto width = 600;
 		const auto height = 150;
@@ -81,27 +82,24 @@ namespace tests::taskbar {
 		}
 
 		void WindowButton::on_clicked() {
-			if(this->toggleActive){
-				switch(window.get_state()){
-					case driver::DesktopManager::Window::State::docked:
-					case driver::DesktopManager::Window::State::floating:
-						if(window.is_top()){
-							window.minimise();
-						}else{
-							window.focus();
-						}
-					break;
-					case driver::DesktopManager::Window::State::minimised:
+			switch(window.get_state()){
+				case driver::DesktopManager::Window::State::docked:
+				case driver::DesktopManager::Window::State::floating:
+					if(&window==lastFocusedWindow&&window.is_top()){
+						window.minimise();
+					}else{
 						window.focus();
-					break;
-				}
+					}
+				break;
+				case driver::DesktopManager::Window::State::minimised:
+					window.focus();
+				break;
 			}
 		}
 
 		void update_windowButton_states() {
-			auto focusedWindow = desktopManager->get_focused_window();
 			for(auto windowButton:windowButtons){
-				windowButton->set_toggle(&windowButton->window==focusedWindow);
+				windowButton->set_toggle(&windowButton->window==lastFocusedWindow);
 			}
 		}
 	}
@@ -109,6 +107,8 @@ namespace tests::taskbar {
 	void run() {
 		desktopManager = drivers::find_and_activate<driver::DesktopManager>();
 		if(!desktopManager) return;
+
+		lastFocusedWindow = desktopManager->get_focused_window();
 
 		const static auto shadowLength = 8;
 
@@ -300,6 +300,8 @@ namespace tests::taskbar {
 			}
 		}
 
+		update_windowButton_states();
+
 		redraw();
 		window->redraw();
 
@@ -310,8 +312,12 @@ namespace tests::taskbar {
 				window->redraw();
 
 			}else if(event.type==driver::DesktopManager::Event::Type::windowRemoved){
+				if(event.windowRemoved.window==lastFocusedWindow){
+					lastFocusedWindow = nullptr;
+				}
+
 				for(auto i=0u;i<windowButtons.length;i++){
-					if(&windowButtons[i]->window==event.windowAdded.window){
+					if(&windowButtons[i]->window==event.windowRemoved.window){
 						windowButtons.remove(i);
 						redraw();
 						window->redraw();
@@ -320,6 +326,9 @@ namespace tests::taskbar {
 				}
 
 			}else if(event.type==driver::DesktopManager::Event::Type::windowFocused){
+				if(event.windowFocused.window==window) return; // ignore focusing the taskbar itself
+
+				lastFocusedWindow = event.windowFocused.window;
 				update_windowButton_states();
 			}
 		});
