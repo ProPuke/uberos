@@ -8,10 +8,10 @@
 
 namespace memory {
 	struct Page: LListItem<Page> {
-		bool hasNextPage:1 = false;
+		U32 count = 0; // how many consecutive free pages are there starting from here
 
 		void clear();
-		auto next_page() -> Page&;
+		auto get_offset_page(U32 ahead=1) -> Page&;
 	};
 }
 

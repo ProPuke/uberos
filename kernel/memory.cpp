@@ -41,6 +41,7 @@ namespace memory {
 	Lock<LockType::flat> lock("memory");
 	
 	LList<::memory::Page> freePages;
+	auto needsCompacting = false;
 
 	memory::PagedPool<sizeof(size_t)> kernelHeap;
 	// MemoryPool<32> *heap;
@@ -53,59 +54,44 @@ namespace memory {
 		return kernelHeap.available;
 	}
 
-	Page* _allocate_page() {
-		if(freePages.size<1){
-			return nullptr;
-		}
+	// for allocating and freeing pages we do the dumb/fast thing by default - allocate from the front, slap frees on the end
+	// periodically we may want to compact() to clean that up, and sort and consolidate fragmented free page entries
 
-		auto page = freePages.pop_front();
-		if(!page) return nullptr;
-
-		page->clear();
-
-		asm volatile("" ::: "memory");
-
-		return page;
-	}
-
-	//NOTE: this will eventually fail. we don't bother to sort and reconnect free'd pages with `hasNextPage`, thus we'll eventually run out of sequenal pages
-	// BUT we shouldn't need this function anyway, as with an mmu we can join up single _allocate_page() requests with linear addresses instead
 	Page* _allocate_pages(U32 count){
 		if(count<1) return nullptr;
-		if(count==1) return _allocate_page();
-
-		// since we always allocate from the head, there is no need to clear `hasNextPage` (as we're always grabbing _before_ pages, not after)
 
 		for(auto page=freePages.head; page; page=page->next){
-			U32 needed = count-1;
-			for(auto checkPage=page; needed&&checkPage->hasNextPage; checkPage=&checkPage->next_page(), needed--);
-			// debug::trace("searched\n");
-
-			if(needed==0){
-				U32 needed = count;
-				U32 popped = 0;
-
-				for(auto reservePage=page; needed; reservePage=&reservePage->next_page(), needed--){
-					popped++;
-					freePages.pop(*reservePage);
-
-					reservePage->clear();
+			if(page->count>=count){
+				const auto remainingPages = count-page->count;
+				if(remainingPages>0){
+					auto &nextPages = page->get_offset_page(count);
+					nextPages.count = remainingPages;
+					freePages.insert_after(*page, nextPages);
 				}
+				freePages.pop(*page);
 
+				page->clear();
 				return page;
 			}
+		}
+
+		if(needsCompacting){
+			// if we failed, but we're compacted, clean it all up and try once again
+			_compact();
+			return _allocate_pages(count);
 		}
 
 		// debug::trace("didn't get pages\n");
 		return nullptr;
 	}
 
-	void _free_page(Page &page) {
+	void _free_pages(Page &page, U32 count) {
 		asm volatile("" : "=m" (page)); //ensure any writes to page are definitely finished before we finally let it go ¯\_(ツ)_/¯
-		
-		freePages.push_back(page);
 
-		//TODO: if no mmu exists, then sort this page when inserting back into freePages, and set `hasNextPage` on its sibling before, and itself, when appropriate
+		page.count = count;
+
+		freePages.push_back(page);
+		needsCompacting = true;
 	}
 
 	void* _kmalloc(size_t size) {
@@ -156,6 +142,39 @@ namespace memory {
 		}
 	}
 
+	void _compact() {
+		if(!needsCompacting) return;
+
+		{ // sort pages by address (by building a new sorted list, and then replacing with it)
+			LList<::memory::Page> sortedPages;
+
+			while(auto page = freePages.pop_front()){
+				for(auto other=sortedPages.head; page; page=page->next){
+					if(other>page){
+						sortedPages.insert_before(*other, *page);
+						goto sorted;
+					}
+				}
+
+				sortedPages.push_back(*page);
+				sorted:
+				;
+			}
+
+			freePages = sortedPages;
+		}
+
+		// consolidate consecutive pages
+		for(auto page=freePages.head; page&&page->next; page=page->next){
+			if(page->next==&page->get_offset_page(page->count)){
+				page->count += page->next->count;
+				freePages.pop(*page->next);
+			}
+		}
+
+		needsCompacting = false;
+	}
+
 	void Transaction::lock() {
 		memory::lock.lock();
 	}
@@ -165,15 +184,12 @@ namespace memory {
 	}
 
 	void init() {
-		// we'll allocate the pages OVER each block of memory
-		// thus once a page is allocated we clear it and it stops being a page structure, and is just raw memory
-		for(auto page=(Page*)heap; page<(Page*)((UPtr)heap+heapSize); page = (Page*)((UPtr)page+memory::pageSize)){
-			page->hasNextPage = true;
-			freePages.push_back(*page);
-		}
-
-		if(freePages.tail){
-			freePages.tail->hasNextPage = false;
+		{ // all heap as a single page entry at the start
+			auto &page = *(Page*)heap;
+			page.count = ((UPtr)heap+heapSize)/pageSize;
+			if(page.count>0){
+				freePages.push_back(page);
+			}
 		}
 	}
 }

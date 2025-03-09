@@ -106,13 +106,7 @@ namespace memory {
 		}
 
 		bool add_page() {
-			auto page = memory::_allocate_page();
-			if(!page) return false;
-
-			auto &block = *new ((MemoryPoolBlock*)page) MemoryPoolBlock(memory::pageSize);
-			this->claim_block(block);
-
-			return true;
+			return add_pages(1);
 		}
 
 		bool add_pages(U32 count) {

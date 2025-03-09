@@ -47,12 +47,13 @@ namespace memory {
 	auto _kmalloc(size_t size) -> void*;
 	void _kfree(void *address);
 
-	auto _allocate_page() -> Page*;
 	auto _allocate_pages(U32 count) -> Page*;
-	void _free_page(Page &page);
+	void _free_pages(Page &page, U32 count);
 	auto _get_memory_page(void *address) -> Page&;
 
 	void _check_dangerous_address(void *from, void *to);
+
+	void _compact();
 
 	// inline void memset(U8 *address, U8 value, U32 size) {
 	// 	while(--size) *address++ = value;
@@ -66,16 +67,21 @@ namespace memory {
 		static void unlock();
 
 		auto allocate_page() -> Page* {
-			return _allocate_page();
+			return _allocate_pages(1);
 		}
 		auto allocate_pages(U32 count) -> Page* {
 			return _allocate_pages(count);
 		}
 		void free_page(Page &page) {
-			return _free_page(page);
+			return _free_pages(page, 1);
 		}
-		void free_page_with_address(void *address) {
-			return free_page(get_memory_page(address));
+		void free_pages(Page &page, U32 count) {
+			return _free_pages(page, count);
+		}
+		void free_page_with_address(void *address, UPtr size = 1) {
+			const auto &from = get_memory_page(address);
+			const auto &to = get_memory_page((U8*)address+size);
+			return free_pages(get_memory_page(address), ((UPtr)&to-(UPtr)&from+pageSize-1)/pageSize);
 		}
 		auto get_memory_page(void *address) -> Page& {
 			return _get_memory_page(address);
@@ -92,6 +98,10 @@ namespace memory {
 
 		void check_dangerous_address(void *from, void *to) {
 			return _check_dangerous_address(from, to);
+		}
+
+		void compact() {
+			return _compact();
 		}
 	};
 }
