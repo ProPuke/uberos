@@ -82,7 +82,19 @@ namespace tests::taskbar {
 
 		void WindowButton::on_clicked() {
 			if(this->toggleActive){
-				window.focus();
+				switch(window.get_state()){
+					case driver::DesktopManager::Window::State::docked:
+					case driver::DesktopManager::Window::State::floating:
+						if(window.is_top()){
+							window.minimise();
+						}else{
+							window.focus();
+						}
+					break;
+					case driver::DesktopManager::Window::State::minimised:
+						window.focus();
+					break;
+				}
 			}
 		}
 

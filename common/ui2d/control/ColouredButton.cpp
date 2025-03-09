@@ -13,7 +13,7 @@ namespace ui2d {
 					gui.theme.draw_coloured_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, icon, isHover, isHover&&isPressed);
 				break;
 				case Type::toggle:
-					gui.theme.draw_coloured_toggle_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, icon, toggleActive, isHover, isHover&&isPressed);
+					gui.theme.draw_coloured_toggle_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
 				break;
 			}
 			if(flush){

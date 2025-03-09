@@ -8,7 +8,7 @@ namespace ui2d {
 					gui.theme.draw_button(gui.buffer, rect, text, icon, isHover, isHover&&isPressed);
 				break;
 				case Type::toggle:
-					gui.theme.draw_toggle_button(gui.buffer, rect, text, icon, toggleActive, isHover, isHover&&isPressed);
+					gui.theme.draw_toggle_button(gui.buffer, rect, text, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
 				break;
 			}
 
