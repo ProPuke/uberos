@@ -26,3 +26,10 @@ inline auto reinterpret_value(From value) -> To {
 	from = value;
 	return to;
 }
+
+#include <common/types.hpp>
+
+template <typename Parent, typename Type>
+inline auto parent(Type &object, Type Parent::*member) -> Parent& {
+	return *(Parent*)((UPtr)&object-(UPtr)&((Parent*)(0)->*member));
+}

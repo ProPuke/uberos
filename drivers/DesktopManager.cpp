@@ -81,7 +81,7 @@ namespace driver {
 				}
 
 				auto window() -> Window& {
-					return *(Window*)((char*)(this)-offsetof(Window, gui));
+					return parent(*this, &Window::gui);
 				}
 			} gui;
 
@@ -115,6 +115,7 @@ namespace driver {
 			void move_and_resize_to(I32 x, I32 y, U32 width, U32 height) override;
 
 			void dock(DockedType type) override;
+			void minimise() override;
 			void restore() override;
 
 			void set_title(const char *set) override {
@@ -126,10 +127,21 @@ namespace driver {
 				return title;
 			}
 
+			// raise the current window, restoring it if minimised
 			void raise() override {
-				graphicsDisplay->raise();
+				switch(state){
+					case State::docked:
+					case State::floating:
+						graphicsDisplay->raise();
+					break;
+					case State::minimised:
+						graphicsDisplay->raise();
+						restore();
+					break;
+				}
 			}
 
+			// raise and focus the current widnow, restoring it if minimised
 			void focus() override {
 				if(focusedWindow==this) return;
 				focusedWindow = this;
@@ -303,6 +315,10 @@ namespace driver {
 				case State::floating:
 					defaultFloatingRect = {get_x(), get_y(), get_x()+get_width(), get_y()+get_height()};
 				break;
+				case State::minimised:
+					graphicsDisplay->show();
+					defaultFloatingRect = {get_x(), get_y(), get_x()+get_width(), get_y()+get_height()};
+				break;
 			}
 
 			state = State::docked;
@@ -348,6 +364,33 @@ namespace driver {
 			_enable_docked_window(*this);
 		}
 
+		void Window::minimise() {
+			switch(state){
+				case State::docked:
+					_disable_docked_window(*this);
+
+					graphicsDisplay->hide();
+					move_and_resize_to(
+						defaultFloatingRect.x1, defaultFloatingRect.y1,
+						defaultFloatingRect.width(), defaultFloatingRect.height()
+					);
+					state = State::minimised;
+				break;
+				case State::floating:
+					graphicsDisplay->hide();
+					state = State::minimised;
+				break;
+				case State::minimised:
+					return;
+				break;
+			}
+
+			if(focusedWindow==this){
+				focusedWindow = nullptr;
+				update_focused_window();
+			}
+		}
+
 		void Window::restore() {
 			switch(state){
 				case State::docked: {
@@ -360,6 +403,11 @@ namespace driver {
 					);
 				}break;
 				case State::floating:
+					return;
+				break;
+				case State::minimised:
+					state = State::floating;
+					graphicsDisplay->show();
 					return;
 				break;
 			}
@@ -407,7 +455,17 @@ namespace driver {
 
 			ui2d::control::ColouredButton closeButton;
 			ui2d::control::ColouredButton maximiseButton;
-			ui2d::control::ColouredButton minimiseButton;
+			struct MinimiseButton: ui2d::control::ColouredButton {
+				/**/ MinimiseButton(): ui2d::control::ColouredButton(window().gui, {0,0,0,0}, 0xffff00, "") {
+					icon = &ui2d::image::widgets::minimise;
+				}
+
+				void on_clicked() override {
+					window().minimise();
+				};
+
+				auto window() -> StandardWindow& { return parent(*this, &StandardWindow::minimiseButton); }
+			} minimiseButton;
 
 			static const auto widgetSpacing = 4;
 
@@ -430,8 +488,7 @@ namespace driver {
 			/**/ StandardWindow(U32 x, U32 y, U32 width, U32 height, const char *title):
 				Super(x-leftShadow, y-topShadow, width+leftShadow+rightShadow, height+topShadow+bottomShadow, title),
 				closeButton(gui, {0,0,0,0}, 0xff0000, ""),
-				maximiseButton(gui, {0,0,0,0}, 0xff8800, ""),
-				minimiseButton(gui, {0,0,0,0}, 0xffff00, "")
+				maximiseButton(gui, {0,0,0,0}, 0xff8800, "")
 			{
 				leftMargin = leftShadow;
 				topMargin = topShadow;
@@ -440,7 +497,6 @@ namespace driver {
 
 				closeButton.icon = &ui2d::image::widgets::close;
 				maximiseButton.icon = &ui2d::image::widgets::maximise;
-				minimiseButton.icon = &ui2d::image::widgets::minimise;
 
 				if(graphicsDisplay){
 					clientArea = graphicsDisplay->buffer.cropped(leftMargin, topMargin, rightMargin, bottomMargin);
@@ -1105,6 +1161,7 @@ namespace driver {
 						}
 					break;
 					case DesktopManager::Window::State::floating:
+					case DesktopManager::Window::State::minimised:
 					break;
 				}
 			}
@@ -1112,6 +1169,7 @@ namespace driver {
 			_update_window_area(&dockedWindow);
 		}
 
+		// update the window area when floats have changed, moving windows as neccasary to fit in the space
 		void _update_window_area(Window *exclude){
 			windowArea = {0, 0, (I32)displayManager->get_width(), (I32)displayManager->get_height()};
 			for(auto window=windows.head; window; window=window->next){
@@ -1178,6 +1236,8 @@ namespace driver {
 						window->move_and_resize_to(area.x1, area.y1, area.width(), area.height());
 					} break;
 					case Window::State::docked:
+					break;
+					case Window::State::minimised:
 					break;
 				}
 			}

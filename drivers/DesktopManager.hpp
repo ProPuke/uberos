@@ -57,7 +57,8 @@ namespace driver {
 		struct Window {
 			enum struct State {
 				floating,
-				docked
+				docked,
+				minimised
 			};
 
 			enum struct DockedType {
@@ -163,6 +164,7 @@ namespace driver {
 			virtual void show() = 0;
 			virtual void hide() = 0;
 			virtual void dock(DockedType) = 0;
+			virtual void minimise() = 0;
 			virtual void restore() = 0;
 			virtual void move_to(I32 x, I32 y) = 0;
 			virtual void resize_to(U32 width, U32 height) = 0;
