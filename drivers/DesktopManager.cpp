@@ -917,116 +917,6 @@ namespace driver {
 			}
 		}
 
-		//TODO: move all of this into on_mouse_event instead (since ity has an instance param)
-		// trigger raising, grabbing and focusing windows BEFORE firing window events, so that events can do their own thing and override afterwards
-		void _on_cursor_mouse_event(const Mouse::Event &event, void *_mouse) {
-			auto cursor = _find_cursor(*(Mouse*)_mouse);
-			if(!cursor) return;
-
-			auto window = get_window_at(cursor->x, cursor->y, cursor->display);
-
-			switch(event.type){
-				case Mouse::Event::Type::pressed:
-					if(window) {
-						window->raise();
-						focusedWindow = window;
-						update_focused_window();
-					}else{
-						focusedWindow = nullptr;
-						update_focused_window();
-					}
-
-					if(event.pressed.button==0){
-						{
-							auto &cursorImage = ui2d::image::cursors::_default_left;
-							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-							cursor->display->update();
-						}
-						if(!cursor->dragWindow.window){
-							if(window&&window->titlebarArea.contains(cursor->x-window->get_x(), cursor->y-window->get_y())){
-								cursor->grab_window(*window);
-							}
-						}
-
-					}else if(event.pressed.button==1){
-						{
-							auto &cursorImage = ui2d::image::cursors::_default_right;
-							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-							cursor->display->update();
-						}
-					}
-				break;
-				case Mouse::Event::Type::released:
-					if(event.released.button==0||event.released.button==1){
-						auto &cursorImage = ui2d::image::cursors::_default;
-						cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-							cursor->display->update();
-					}
-
-					if(event.released.button==0){
-						if(cursor->dragWindow.window){
-							cursor->release_window();
-						}
-					}
-				case Mouse::Event::Type::scrolled:
-				break;
-				case Mouse::Event::Type::moved:
-					cursor->x = maths::clamp(cursor->x+event.moved.x, 0, (I32)displayManager->get_width()-1);
-					cursor->y = maths::clamp(cursor->y+event.moved.y, 0, (I32)displayManager->get_height()-1);
-					cursor->display->move_to(cursor->x, cursor->y);
-
-					if(cursor->dragWindow.window){
-						auto windowArea = DesktopManager::instance.get_window_area();
-
-						if(cursor->x<(windowArea.x1+windowArea.x2)/2&&cursor->x<windowArea.x1+(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::left);
-						}else if(cursor->x>=windowArea.x2-(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::right);
-						}else if(cursor->y<(windowArea.y1+windowArea.y2)/2&&cursor->y<windowArea.y1+(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::top);
-						}else if(cursor->y>=windowArea.y2-(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::bottom);
-
-						}else{
-							if(cursor->dragWindow.window->state!=DesktopManager::Window::State::floating){
-								cursor->dragWindow.window->restore();
-								cursor->regrab_window();
-								// we've regrabbed from new position, so there's no move to apply yet here
-
-							}else{
-								cursor->dragWindow.window->move_to(cursor->x+cursor->dragWindow.dragOffsetX, cursor->y+cursor->dragWindow.dragOffsetY);
-							}
-						}
-
-						// if(cursor->dragWindow.window->state==DesktopManager::Window::State::docked){
-						// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, cursor->display);
-						// 	if(hoveredWindow!=cursor->dragWindow.window){
-						// 		auto other_x = hoveredWindow->get_x();
-						// 		auto other_y = hoveredWindow->get_y();
-						// 		auto other_width = hoveredWindow->get_width();
-						// 		auto other_height = hoveredWindow->get_height();
-
-						// 		hoveredWindow->move_and_resize_to(
-						// 			cursor->dragWindow.window->get_x(), cursor->dragWindow.window->get_y(),
-						// 			cursor->dragWindow.window->get_width(), cursor->dragWindow.window->get_height()
-						// 		);
-
-						// 		cursor->dragWindow.window->move_and_resize_to(
-						// 			other_x, other_y,
-						// 			other_width, other_height
-						// 		);
-						// 	}
-						// }
-					}
-
-					if(!cursor->isVisible){
-						cursor->isVisible = true;
-						cursor->display->show();
-					}
-				break;
-			}
-		}
-
 		void _add_mouse(Mouse &mouse) {
 			if(!displayManager) return;
 
@@ -1045,8 +935,6 @@ namespace driver {
 			cursorDisplay->hide();
 
 			cursors.push({&mouse, cursorDisplay, x, y, false});
-
-			mouse.events.subscribe(_on_cursor_mouse_event, &mouse);
 		}
 
 		void _remove_mouse(Mouse &mouse) {
@@ -1057,7 +945,6 @@ namespace driver {
 				if(cursor.mouse==&mouse){
 					log.print_info("mouse removed");
 					delete cursor.display;
-					cursor.mouse->events.unsubscribe(_on_cursor_mouse_event, &mouse);
 					cursors.remove(i);
 					return;
 				}
@@ -1310,39 +1197,138 @@ namespace driver {
 			auto cursor = _find_cursor(*event.instance);
 			if(!cursor) return;
 
-			if(focusedWindow){
+			auto window = get_window_at(cursor->x, cursor->y, cursor->display);
+
+			// update cursor
+			switch(event.type){
+				case Mouse::Event::Type::pressed:
+					if(window) {
+						window->raise();
+						focusedWindow = window;
+						update_focused_window();
+					}else{
+						focusedWindow = nullptr;
+						update_focused_window();
+					}
+
+					if(event.pressed.button==0){
+						{
+							auto &cursorImage = ui2d::image::cursors::_default_left;
+							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+							cursor->display->update();
+						}
+						if(!cursor->dragWindow.window){
+							if(window&&window->titlebarArea.contains(cursor->x-window->get_x(), cursor->y-window->get_y())){
+								cursor->grab_window(*window);
+							}
+						}
+
+					}else if(event.pressed.button==1){
+						{
+							auto &cursorImage = ui2d::image::cursors::_default_right;
+							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+							cursor->display->update();
+						}
+					}
+				break;
+				case Mouse::Event::Type::released:
+					if(event.released.button==0||event.released.button==1){
+						auto &cursorImage = ui2d::image::cursors::_default;
+						cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
+						cursor->display->update();
+					}
+
+					if(event.released.button==0){
+						if(cursor->dragWindow.window){
+							cursor->release_window();
+						}
+					}
+				case Mouse::Event::Type::scrolled:
+				break;
+				case Mouse::Event::Type::moved:
+					cursor->x = maths::clamp(cursor->x+event.moved.x, 0, (I32)displayManager->get_width()-1);
+					cursor->y = maths::clamp(cursor->y+event.moved.y, 0, (I32)displayManager->get_height()-1);
+					cursor->display->move_to(cursor->x, cursor->y);
+
+					if(cursor->dragWindow.window){
+						auto windowArea = DesktopManager::instance.get_window_area();
+
+						if(cursor->x<(windowArea.x1+windowArea.x2)/2&&cursor->x<windowArea.x1+(I32)edgeSnapDistance){
+							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::left);
+						}else if(cursor->x>=windowArea.x2-(I32)edgeSnapDistance){
+							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::right);
+						}else if(cursor->y<(windowArea.y1+windowArea.y2)/2&&cursor->y<windowArea.y1+(I32)edgeSnapDistance){
+							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::top);
+						}else if(cursor->y>=windowArea.y2-(I32)edgeSnapDistance){
+							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::bottom);
+
+						}else{
+							if(cursor->dragWindow.window->state!=DesktopManager::Window::State::floating){
+								cursor->dragWindow.window->restore();
+								cursor->regrab_window();
+								// we've regrabbed from new position, so there's no move to apply yet here
+
+							}else{
+								cursor->dragWindow.window->move_to(cursor->x+cursor->dragWindow.dragOffsetX, cursor->y+cursor->dragWindow.dragOffsetY);
+							}
+						}
+
+						// if(cursor->dragWindow.window->state==DesktopManager::Window::State::docked){
+						// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, cursor->display);
+						// 	if(hoveredWindow!=cursor->dragWindow.window){
+						// 		auto other_x = hoveredWindow->get_x();
+						// 		auto other_y = hoveredWindow->get_y();
+						// 		auto other_width = hoveredWindow->get_width();
+						// 		auto other_height = hoveredWindow->get_height();
+
+						// 		hoveredWindow->move_and_resize_to(
+						// 			cursor->dragWindow.window->get_x(), cursor->dragWindow.window->get_y(),
+						// 			cursor->dragWindow.window->get_width(), cursor->dragWindow.window->get_height()
+						// 		);
+
+						// 		cursor->dragWindow.window->move_and_resize_to(
+						// 			other_x, other_y,
+						// 			other_width, other_height
+						// 		);
+						// 	}
+						// }
+					}
+
+					if(!cursor->isVisible){
+						cursor->isVisible = true;
+						cursor->display->show();
+					}
+				break;
+			}
+
+			// update window under cursor
+			if(window){
 				switch(event.type){
 					case driver::Mouse::Event::Type::moved: {
-						auto window = get_window_at(cursor->x, cursor->y, cursor->display);
-						if(!window) break;
-
-						window->_on_mouse_moved(cursor->x-focusedWindow->graphicsDisplay->x, cursor->y-focusedWindow->graphicsDisplay->y);
+						window->_on_mouse_moved(cursor->x-window->graphicsDisplay->x, cursor->y-window->graphicsDisplay->y);
 						window->events.trigger({
 							type: Window::Event::Type::mouseMoved,
 							mouseMoved: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.moved.x, event.moved.y }
 						});
 					} break;
 					case driver::Mouse::Event::Type::pressed:
-						focusedWindow->_on_mouse_pressed(cursor->x-focusedWindow->graphicsDisplay->x, cursor->y-focusedWindow->graphicsDisplay->y, event.pressed.button);
-						focusedWindow->events.trigger({
+						window->_on_mouse_pressed(cursor->x-window->graphicsDisplay->x, cursor->y-window->graphicsDisplay->y, event.pressed.button);
+						window->events.trigger({
 							type: StandardWindow::Event::Type::mousePressed,
-							mousePressed: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.pressed.button }
+							mousePressed: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.pressed.button }
 						});
 					break;
 					case driver::Mouse::Event::Type::released:
-						focusedWindow->_on_mouse_released(cursor->x-focusedWindow->graphicsDisplay->x, cursor->y-focusedWindow->graphicsDisplay->y, event.released.button);
-						focusedWindow->events.trigger({
+						window->_on_mouse_released(cursor->x-window->graphicsDisplay->x, cursor->y-window->graphicsDisplay->y, event.released.button);
+						window->events.trigger({
 							type: StandardWindow::Event::Type::mouseReleased,
-							mouseReleased: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.released.button }
+							mouseReleased: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.released.button }
 						});
 					break;
 					case driver::Mouse::Event::Type::scrolled: {
-						auto window = get_window_at(cursor->x, cursor->y, cursor->display);
-						if(!window) break;
-
 						window->events.trigger({
 							type: Window::Event::Type::mouseScrolled,
-							mouseScrolled: { event.instance, cursor->x-focusedWindow->get_x(), cursor->y-focusedWindow->get_y(), event.scrolled.distance }
+							mouseScrolled: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.scrolled.distance }
 						});
 					} break;
 				}
