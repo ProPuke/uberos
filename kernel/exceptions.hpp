@@ -28,12 +28,9 @@ namespace exceptions {
 
 	void init();
 
-	struct Guard {
+	struct Guard: NonCopyable<Guard> {
 		/**/ Guard() { lock(); }
 		/**/~Guard() { unlock(); }
-
-		/**/ Guard(const Guard&) = delete;
-		Guard& operator=(const Guard&) = delete;
 	};
 
 	void _on_irq(U8);

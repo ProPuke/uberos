@@ -32,14 +32,10 @@ private:
 };
 
 template <>
-struct Lock<LockType::flat> {
+struct Lock<LockType::flat>: NonCopyable<Lock<LockType::flat>> {
 	constexpr /**/ Lock(const char *name = "unnamed"):
 		name(name)
 	{}
-
-	//no accidentally copying
-	/**/ Lock(const Lock&) = delete;
-	Lock& operator=(const Lock&) = delete;
 
 	void lock();
 	void unlock();
@@ -52,14 +48,10 @@ protected:
 };
 
 template <>
-struct Lock<LockType::recursive> {
+struct Lock<LockType::recursive>: NonCopyable<Lock<LockType::recursive>> {
 	constexpr /**/ Lock(const char *name = "unnamed"):
 		name(name)
 	{}
-
-	//no accidentally copying
-	/**/ Lock(const Lock&) = delete;
-	Lock& operator=(const Lock&) = delete;
 
 	void lock();
 	void unlock();

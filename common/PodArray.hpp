@@ -6,16 +6,26 @@
 #include <common/stdlib.hpp>
 
 template <typename Type>
-struct PodArray:Array<Type> {
-	using Array<Type>::length;
-	using Array<Type>::allocated;
-	using Array<Type>::data;
+struct PodArray: Array<Type> {
+	typedef Array<Type> Super;
+
+	using Super::length;
+	using Super::allocated;
+	using Super::data;
 
 	/**/ PodArray(U32 reserveSize=0):
-		Array<Type>(reserveSize)
+		Super(reserveSize)
+	{}
+
+	/**/ PodArray(PodArray &&other):
+		Super(other)
 	{}
 
 	/**/~PodArray(){}
+
+	auto operator=(PodArray &&other) -> PodArray& {
+		return Super::operator=(other);
+	}
 
 	void resize(U32 newSize){
 		newSize = max(max(length, (U32)1), newSize);

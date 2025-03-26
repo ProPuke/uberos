@@ -3,7 +3,7 @@
 #include "Pointer.hpp"
 
 template <typename Type>
-struct Box {
+struct Box: NonCopyable<Box<Type>> {
 	/**/ Box() {}
 
 	/**/ Box(Type *data):
@@ -14,14 +14,21 @@ struct Box {
 		delete data;
 	}
 
-	/**/ Box(Box &&copy):
-		data(copy.data)
+	/**/ Box(Box &&other):
+		data(other.data)
 	{
-		copy.data = nullptr;
+		other.data = nullptr;
 	}
 	
-	/**/ Box(const Box&) = delete;
-	Box& operator=(const Box&) = delete;
+	auto operator=(Box &&other) -> Box& {
+		if(this==&other) return *this;
+
+		delete data;
+		data = other.data;
+		other.data = nullptr;
+
+		return *this;
+	}
 
 	auto operator->() { return data; }
 	auto operator->() const { return data; }
@@ -42,7 +49,7 @@ private:
 };
 
 template <typename PointerType, typename Type>
-struct BoxT {
+struct BoxT: NonCopyable<BoxT<PointerType, Type>> {
 	/**/ BoxT() {}
 
 	/**/ BoxT(Type *data):
@@ -53,14 +60,21 @@ struct BoxT {
 		delete data.get();
 	}
 
-	/**/ BoxT(BoxT &&copy):
-		data(copy.data)
+	/**/ BoxT(BoxT &&other):
+		data(other.data)
 	{
-		copy.data = nullptr;
+		other.data = nullptr;
 	}
 	
-	/**/ BoxT(const BoxT&) = delete;
-	BoxT& operator=(const BoxT&) = delete;
+	auto operator=(BoxT &&other) -> BoxT& {
+		if(this==&other) return *this;
+
+		delete data;
+		data = other.data;
+		other.data = nullptr;
+
+		return *this;
+	}
 
 	auto operator->() { return data; }
 	auto operator->() const { return data; }

@@ -56,4 +56,5 @@ struct [[nodiscard]] Try<void, Error> {
 #define TRY_IGNORE(ACTION) ((void)(ACTION))
 #define TRY_RESULT(ACTION) ({ auto action = (ACTION); if(!action) return action.as_error_only(); action.result; })
 #define TRY_RESULT_CAST(TYPE, ACTION) ({ auto action = (ACTION); if(!action) return action.as_error_only_cast<TYPE>(); (TYPE)action.result; })
-#define TRY_RESULT_OR(ACTION, OR) ({ auto action = (ACTION); if(!action) return OR; action.result; })
+#define TRY_RESULT_OR(ACTION, OR) ({ auto action = (ACTION); action?action.result:(OR); })
+#define TRY_RESULT_OR_RETURN(ACTION, OR) ({ auto action = (ACTION); if(!action) return (OR); action.result; })

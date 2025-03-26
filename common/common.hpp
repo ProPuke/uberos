@@ -6,19 +6,28 @@
 #define _CONCAT(X, Y) X##Y
 #define CONCAT(X, Y) _CONCAT(X, Y)
 
+template <class Type>
+struct NonCopyable {
+	/**/ NonCopyable(const NonCopyable&) = delete;
+	auto operator=(const NonCopyable&) -> NonCopyable& = delete;
+
+	protected:
+		/**/ NonCopyable () = default;
+		/**/ ~NonCopyable () = default;
+};
+
 template <typename Type>
-struct Defer {
+struct Defer: NonCopyable<Defer<Type>> {
 	Type callback;
 
 	/**/ Defer(Type callback): callback(callback) { };
-	/**/ Defer(const Defer&) = delete;
 	/**/~Defer() { callback(); }
 };
 
 #define defer Defer CONCAT(_defer, __COUNTER__) = [&]()
 
 template <typename To, typename From>
-inline auto reinterpret_value(From value) -> To {
+inline constexpr auto reinterpret_value(From value) -> To {
 	union {
 		From from;
 		To to;

@@ -7,6 +7,9 @@
 
 namespace debug {
 	void assert(bool);
+	template<typename Type>
+	inline auto assert_return(Type value) -> Type { assert(value); return value; }
+
 	void halt();
 }
 

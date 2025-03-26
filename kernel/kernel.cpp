@@ -241,7 +241,7 @@ namespace kernel {
 			// });
 			while(true) {}
 
-			auto process = process::create_kernel("lightshow");
+			auto &process = process::create_kernel("lightshow");
 
 			// for(auto i=0;i<2;i++)process.create_kernel_thread([]() {
 			// 	auto &log = scheduler->get_current_thread()->process.log;

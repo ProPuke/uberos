@@ -42,3 +42,6 @@
 		}
 	#endif
 #endif
+
+template<typename Type, typename ...Params>
+inline auto assert_return(Type value, Params ...messageParams) -> Type { assert(value, messageParams...); return value; }

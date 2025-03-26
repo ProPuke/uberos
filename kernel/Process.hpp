@@ -21,7 +21,7 @@ namespace memory {
 
 struct Thread;
 
-struct Process: LListItem<Process> {
+struct Process: LListItem<Process>, NonCopyable<Process> {
 	typedef void(*Entrypoint)(ipc::Id, void *ipcPacket);
 
 	/**/ Process(const char *name, Entrypoint entrypoint = nullptr);

@@ -8,14 +8,10 @@ namespace arch {
 	namespace arm32 {
 		//TODO:allow nested use on the same processor core
 
-		struct Spinlock {
+		struct Spinlock: NonCopyable<Spinlock> {
 			/**/ Spinlock(const char *name):
 				name(name)
 			{}
-
-			//no accidentally copying
-			/**/ Spinlock(const Spinlock&) = delete;
-			Spinlock& operator=(const Spinlock&) = delete;
 
 			void lock(const char *context = "") {
 				CriticalSection::lock();
