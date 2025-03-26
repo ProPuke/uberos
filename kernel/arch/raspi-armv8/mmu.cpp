@@ -17,7 +17,7 @@ extern U8 __text_start;
 extern U8 __text_end;
 
 namespace mmu {
-	extern MemoryMapping kernelMapping;
+	extern Mapping kernelMapping;
 
 	// namespace {
 	// 	void* round_address_down(void *address) {

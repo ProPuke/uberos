@@ -9,8 +9,13 @@ namespace driver::processor {
 		DRIVER_INSTANCE(Raspi_bcm2835, 0x8e926484, "bcm2835", "BCM2835 AArch32 Processor", Raspi)
 
 		auto _on_start() -> Try<> override {
+			if(::processor::driver&&::processor::driver!=this) return {"A CPU driver is already active"};
+
 			processor_arch = "AArch32";
 			processor_cores = 1;
+
+			::processor::driver = this;
+
 			return {};
 		}
 	};

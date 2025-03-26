@@ -5,26 +5,107 @@
 #include <kernel/memory.hpp>
 
 namespace mmu {
+	Mapping kernelMapping __attribute__((aligned(4096))); //NOTE:HACK: This assumes `directory` is the first member. Really that member should have this alignment enforcement?
+
+	namespace {
+		Physical<Mapping::Table> tablesPhysical;
+		Mapping::Table *tables = 0;
+		auto nextTableIndex = 0u;
+		UPtr tablesCount = 0;
+
+		auto to_virtual(Physical<Mapping::Table> table) -> Mapping::Table& {
+			debug::assert(table.address>=tablesPhysical.address); // is within bounds
+			auto offset = table.address-tablesPhysical.address;
+			debug::assert(offset%sizeof(Mapping::Table) == 0); // is aligned
+
+			auto index = offset/sizeof(Mapping::Table);
+			debug::assert(index<tablesCount); // is within bounds
+
+			return tables[index];
+		}
+
+		auto to_physical(Mapping::Table &table) -> Physical<Mapping::Table> {
+			debug::assert((UPtr)&table>=(UPtr)tables); // is within bounds
+			debug::assert((UPtr)&table<(UPtr)&tables[tablesCount]); // is within bounds
+
+			auto offset = (UPtr)&table-(UPtr)tables;
+			debug::assert(offset%sizeof(Mapping::Table) == 0); // is aligned
+
+			return tablesPhysical+offset;
+		}
+
+		auto create_table() -> Mapping::Table& {
+			assert(nextTableIndex<tablesCount);
+			//TODO: fail gracefully if out of tables
+			return tables[nextTableIndex++];
+		}
+	}
+
 	void init() {
 		assert(::arch::x86::cpuInfo::get_features().pat, "PAT not supported by cpu");
 
-		// we'll identity map the stack as low. This is fine - we won't need the stack while running from other mappings
-		kernel::map_physical_low((void*)0x00, (UPtr)memory::stack+memory::stackSize, {.caching = Caching::uncached});
-		kernel::set_virtual_options(memory::stack, memory::stackSize, {.caching = Caching::writeBack});
+		{
+			// allocate enough to address all heap (plus 1/8th for shared memory overlap)
+			auto pages = (((memory::heapSize+memory::pageSize-1)/memory::pageSize)*9/8 / 1024 * sizeof(Mapping::Table) + memory::pageSize-1) / memory::pageSize;
+			auto tablesSize = pages * memory::pageSize;
+
+			assert(memory::heapSize>=tablesSize);
+			tablesPhysical = memory::heap.as_type<mmu::Mapping::Table>();
+			memory::heap += tablesSize;
+			memory::heapSize -= tablesSize;
+
+			tablesCount = tablesSize / sizeof(Mapping::Table);
+
+			tables = (Mapping::Table*)tablesPhysical.address; // tables are 1:1 mapped initially, until activated
+		}
+
+		static Mapping::Table initialTable;
+
+		kernelMapping.nextFreeHighTable = &initialTable;
+
+		{
+			auto kernelTransaction = kernel::transaction();
+
+			// we'll identity map the stack as low. This is fine - we won't need the stack while running from other mappings
+			kernelTransaction.map_physical_low(Physical<void>{0x00}, memory::stack.address+memory::stackSize, {.caching = Caching::uncached});
+
+			// kernelTransaction.map_physical_low(Physical<void>{0x00}, 1024*4096, {.caching = Caching::uncached});
+			
+			kernelTransaction.set_virtual_options((void*)memory::code.address, memory::codeSize, {.isWritable = false});
+
+			// identity mapped, so using memory::stack.address direct is safe
+			kernelTransaction.set_virtual_options((void*)memory::stack.address, memory::stackSize, {});
+
+			// ensure tables are accessible once active..
+			tables = (Mapping::Table*) kernelTransaction.map_physical_high(tablesPhysical, tablesCount*sizeof(Mapping::Table), {});
+		}
+
+		// ..and finally turn it on!
+		activate(kernelMapping);
 	}
 
 	void activate(Mapping &mapping) {
 		asm volatile(R"(
 			// set directory
-			mov cr3, %0
+			mov cr3, eax
 
 			// activate
-			mov eax, cr0
-			or eax, 0x80000000
-			mov cr0, eax
+			// mov eax, cr0
+			// or eax, 0x80000000
+			// mov cr0, eax
+
+			mov cr0, ebx
 		)"
 			:
-			: "r"(&mapping.directory)
+			:
+				// "r"(mapping.get_physical(&mapping.directory).address)
+				"a"(&mapping.directory), // identity mapped
+				"b"(0
+					|1<<0  // PE - protected mode enable
+					|1<<5  // NE - numeric error
+					|1<<16 // WP - write protect
+					|1<<31 // PG - paging enable
+				)
 			: "memory"
 		);
 	}
@@ -41,79 +122,151 @@ namespace mmu {
 		);
 	}
 
-	Mapping kernelMapping;
-
 	namespace kernel {
-		auto map_physical_low(void *address, MapOptions options) -> void* {
-			return kernelMapping.map_physical_low(address, options);
+		void _lock() { return kernelMapping._lock(); }
+		void _unlock() { return kernelMapping._unlock(); }
+
+		auto _map_physical_low(Physical<void> physical, MapOptions options) -> void* {
+			#ifdef KERNEL_MMU
+				return kernelMapping._map_physical_low(physical, options);
+			#else
+				return (void*)physical.address;
+			#endif
 		}
-		auto map_physical_low(void *address, UPtr size, MapOptions options) -> void* {
-			return kernelMapping.map_physical_low(address, size, options);
+		auto _map_physical_low(Physical<void> physical, UPtr size, MapOptions options) -> void* {
+			#ifdef KERNEL_MMU
+				return kernelMapping._map_physical_low(physical, size, options);
+			#else
+				return (void*)physical.address;
+			#endif
 		}
-		auto map_physical_high(void *address, MapOptions options) -> void* {
-			return kernelMapping.map_physical_high(address, options);
+		auto _map_physical_high(Physical<void> physical, MapOptions options) -> void* {
+			#ifdef KERNEL_MMU
+				return kernelMapping._map_physical_high(physical, options);
+			#else
+				return (void*)physical.address;
+			#endif
 		}
-		auto map_physical_high(void *address, UPtr size, MapOptions options) -> void* {
-			return kernelMapping.map_physical_high(address, size, options);
+		auto _map_physical_high(Physical<void> physical, UPtr size, MapOptions options) -> void* {
+			#ifdef KERNEL_MMU
+				return kernelMapping._map_physical_high(physical, size, options);
+			#else
+				return (void*)physical.address;
+			#endif
 		}
 
-		void set_virtual_options(void *address, MapOptions options) {
-			kernelMapping.set_virtual_options(address, options);
+		void _set_virtual_target(void *address, Physical<void> physicalAddress, UPtr size) {
+			#ifdef KERNEL_MMU
+				kernelMapping._set_virtual_target(address, physicalAddress, size);
+			#else
+				assert(false); // virtual addresses cannot be pointed elsewhere without mmu
+			#endif
 		}
-		void set_virtual_options(void *address, UPtr size, MapOptions options) {
-			kernelMapping.set_virtual_options(address, size, options);
+
+		void _set_virtual_options(void *address, MapOptions options) {
+			#ifdef KERNEL_MMU
+				kernelMapping._set_virtual_options(address, options);
+			#endif
+		}
+		void _set_virtual_options(void *address, UPtr size, MapOptions options) {
+			#ifdef KERNEL_MMU
+				kernelMapping._set_virtual_options(address, size, options);
+			#endif
+		}
+		auto _get_virtual_options(void *address) -> Try<MapOptions> {
+			#ifdef KERNEL_MMU
+				return kernelMapping._get_virtual_options(address);
+			#endif
+
+			return "Virtual memory not enabled";
+		}
+
+		auto _get_physical(void *virtualAddress) -> Physical<void> {
+			#ifdef KERNEL_MMU
+				return kernelMapping._get_physical(virtualAddress);
+			#else
+				return Physical<void>{(UPtr)virtualAddress};
+			#endif
 		}
 	}
 
-	/**/ Mapping:: Mapping(){}
+	/**/ Mapping:: Mapping() {
+		for(auto i=0u;i<1024;i++){
+			directory.entry[i].isPresent = false;
+		}
+	}
 
 	/**/ Mapping::~Mapping() {
-		clear();
+		// clear();
 	}
 
-	void Mapping::clear() {
-		for(auto directoryIndex=0;directoryIndex<=nextLowDirectoryIndex;directoryIndex++){
-			auto &directoryEntry = directory.entry[directoryIndex];
-			if(directoryEntry.isPresent){
-				memory::Transaction().free_page_with_address(directoryEntry.get_table());
-				directoryEntry.isPresent = false;
-			}
-		}
+	// void Mapping::clear() {
+	// 	// for(auto directoryIndex=0;directoryIndex<=nextLowDirectoryIndex;directoryIndex++){
+	// 	// 	auto &directoryEntry = directory.entry[directoryIndex];
+	// 	// 	if(directoryEntry.isPresent){
+	// 	// 		memory::Transaction().free_page_with_address(directoryEntry.get_table());
+	// 	// 		directoryEntry.isPresent = false;
+	// 	// 	}
+	// 	// }
 
-		nextLowDirectoryIndex = 0;
+	// 	// nextLowDirectoryIndex = 0;
+	// }
+
+	void Mapping::_lock() {
+		lock.lock();
 	}
 
-	auto Mapping::map_physical_low(void *physicalAddress, MapOptions options) -> void* {
+	void Mapping::_unlock() {
+		lock.unlock();
+	}
+
+	auto Mapping::_map_physical_low(Physical<void> _physical, MapOptions options) -> void* {
+		debug::assert(_physical.address<=0xffffffff);
+		auto physical = Physical32<void>{_physical.address};
+
 		// align physicalAddress and store remainder in offset
-		auto physicalOffset = (UPtr)physicalAddress&0b111111111111;
-		physicalAddress = (void*)((UPtr)physicalAddress&~0b111111111111);
+		auto physicalOffset = physical.address&0b111111111111;
+		physical.address = physical.address&~0b111111111111;
 
 		const auto directoryIndex = nextLowDirectoryIndex;
 		const auto tableIndex = nextLowTableIndex;
+
+		auto virtualAddress = (void*)(directoryIndex<<22 | tableIndex<<12 | physicalOffset);
 
 		auto &directoryEntry = directory.entry[directoryIndex];
 
 		auto directoryChanged = false;
 
+		const auto isFirstTable = tableIndex==0;
+
 		// initialising the first table in this directory?
-		if(tableIndex==0){
+		if(isFirstTable){
+			debug::assert(!directoryEntry.isPresent);
 			directoryEntry.isPresent = true;
+			debug::assert(directoryEntry.isPresent);
 			directoryEntry.isWritable = false;
 			directoryEntry.isUserspaceAccessible = false;
+			directoryEntry.pat_writeThroughCaching = false;
+			directoryEntry.pat_disableCache = false;
+			directoryEntry.isAccessed = false;
+			directoryEntry.isDirty = false;
+			directoryEntry.is4Mb = false;
 
-			auto table = (Table*)memory::Transaction().allocate_page(); //4k alignment needed, so allocate direct as a page
+			auto &nextTable = create_table();
 			for(auto i=0;i<1024;i++){
-				table->entry[i].isPresent = false;
+				nextTable.entry[i].isPresent = false;
 			}
-			directoryEntry.set_table(table);
+			directoryEntry.set_table(to_physical(nextTable));
 
 			directoryChanged = true;
 		}
 
-		auto &table = *directoryEntry.get_table();
+		auto &table = to_virtual(directoryEntry.get_table());
 		auto &tableEntry = table.entry[tableIndex];
+		debug::assert(!tableEntry.isPresent);
 
 		tableEntry.isPresent = true;
+		debug::assert(tableEntry.isPresent);
 		tableEntry.isWritable = options.isWritable;
 		tableEntry.isUserspaceAccessible = options.isUserspace;
 		tableEntry.pat_writeThroughCaching = options.caching==Caching::writeThrough||options.caching==Caching::writeCombining;
@@ -122,7 +275,7 @@ namespace mmu {
 		tableEntry.isDirty = true;
 		tableEntry.pat = false;
 		tableEntry.isGlobal = false;
-		tableEntry.set_address(physicalAddress);
+		tableEntry.set_address(physical);
 
 		if(tableEntry.isWritable&&!directoryEntry.isWritable){
 			directoryEntry.isWritable = true;
@@ -138,16 +291,16 @@ namespace mmu {
 		{ // invalidates any translation lookaside buffer (TLB) entries for this address
 
 			//NOTE: this only flushes for the current cpu/core
+			//TODO: CHECK: Do we need to do this if this mapping isn't active? if not, do we need to do something special when we do switch to it?
 			asm volatile(
-				"invlpg [%0]"
+				"invlpg %0"
 				:
-				:"m" (physicalAddress)
+				:"m" (*(UPtr*)virtualAddress)
 				:"memory"
 			);
 		}
 
-		nextLowTableIndex++;
-		if(nextLowTableIndex>=1024){
+		if(nextLowTableIndex==1023){
 			nextLowTableIndex=0;
 			nextLowDirectoryIndex++;
 
@@ -163,46 +316,64 @@ namespace mmu {
 
 				directoryChanged = true;
 			}
+		}else{
+			nextLowTableIndex++;
 		}
 
 		if(directoryChanged){
 			//TODO: flush the entire cache with WBINVD (?)
 		}
 
-		return (void*)(directoryIndex<<22 | tableIndex<<12 | physicalOffset);
+		return virtualAddress;
 	}
 
-	auto Mapping::map_physical_high(void *physicalAddress, MapOptions options) -> void* {
+	auto Mapping::_map_physical_high(Physical<void> _physical, MapOptions options) -> void* {
+		debug::assert(_physical.address<=0xffffffff);
+		auto physical = Physical32<void>{_physical.address};
+
 		// align physicalAddress and store remainder in offset
-		auto physicalOffset = (UPtr)physicalAddress&0b111111111111;
-		physicalAddress = (void*)((UPtr)physicalAddress&~0b111111111111);
+		auto physicalOffset = physical.address&0b111111111111;
+		physical.address = physical.address&~0b111111111111;
 
 		const auto directoryIndex = nextHighDirectoryIndex;
 		const auto tableIndex = nextHighTableIndex;
+
+		auto virtualAddress = (void*)(directoryIndex<<22 | tableIndex<<12 | physicalOffset);
 
 		auto &directoryEntry = directory.entry[directoryIndex];
 
 		auto directoryChanged = false;
 
+		const auto isFirstTable = tableIndex==1023||directoryIndex==1023&&tableIndex==1022; // we skip the final table when initialising the last directory
+
 		// initialising the first table in this directory?
-		if(tableIndex==1023){
+		if(isFirstTable){
+			debug::assert(!directoryEntry.isPresent);
 			directoryEntry.isPresent = true;
+			debug::assert(directoryEntry.isPresent);
 			directoryEntry.isWritable = false;
 			directoryEntry.isUserspaceAccessible = false;
+			directoryEntry.pat_writeThroughCaching = false;
+			directoryEntry.pat_disableCache = false;
+			directoryEntry.isAccessed = false;
+			directoryEntry.isDirty = false;
+			directoryEntry.is4Mb = false;
 
-			auto table = (Table*)memory::Transaction().allocate_page(); //4k alignment needed, so allocate direct as a page
+			auto &nextTable = create_table();
+
 			for(auto i=0;i<1024;i++){
-				table->entry[i].isPresent = false;
+				nextTable.entry[i].isPresent = false;
 			}
-			directoryEntry.set_table(table);
+			directoryEntry.set_table(to_physical(nextTable));
 
 			directoryChanged = true;
 		}
 
-		auto &table = *directoryEntry.get_table();
+		auto &table = to_virtual(directoryEntry.get_table());
 		auto &tableEntry = table.entry[tableIndex];
 
 		tableEntry.isPresent = true;
+		debug::assert(tableEntry.isPresent);
 		tableEntry.isWritable = options.isWritable;
 		tableEntry.isUserspaceAccessible = options.isUserspace;
 		tableEntry.pat_writeThroughCaching = options.caching==Caching::writeThrough||options.caching==Caching::writeCombining;
@@ -211,7 +382,7 @@ namespace mmu {
 		tableEntry.isDirty = true;
 		tableEntry.pat = false;
 		tableEntry.isGlobal = false;
-		tableEntry.set_address(physicalAddress);
+		tableEntry.set_address(physical);
 
 		if(tableEntry.isWritable&&!directoryEntry.isWritable){
 			directoryEntry.isWritable = true;
@@ -227,20 +398,21 @@ namespace mmu {
 		{ // invalidates any translation lookaside buffer (TLB) entries for this address
 
 			//NOTE: this only flushes for the current cpu/core
+			//TODO: CHECK: Do we need to do this if this mapping isn't active? if not, do we need to do something special when we do switch to it?
 			asm volatile(
-				"invlpg [%0]"
+				"invlpg %0"
 				:
-				:"m" (physicalAddress)
+				:"m" (*(UPtr*)virtualAddress)
 				:"memory"
 			);
 		}
 
-		if(nextLowTableIndex==0){
-			nextLowTableIndex = 1023;
-			nextLowDirectoryIndex--;
+		if(nextHighTableIndex==0){
+			nextHighTableIndex = 1023;
+			nextHighDirectoryIndex--;
 
 			{ // prep the next directory entry
-				auto &directoryEntry = directory.entry[nextLowDirectoryIndex];
+				auto &directoryEntry = directory.entry[nextHighDirectoryIndex];
 				directoryEntry.isPresent = false;
 				directoryEntry.isWritable = false;
 				directoryEntry.isUserspaceAccessible = false;
@@ -252,51 +424,78 @@ namespace mmu {
 				directoryChanged = true;
 			}
 		}else{
-			nextLowTableIndex--;
+			nextHighTableIndex--;
 		}
 
 		if(directoryChanged){
 			//TODO: flush the entire cache with WBINVD (?)
 		}
 
-		return (void*)(directoryIndex<<22 | tableIndex<<12 | physicalOffset);
+		return virtualAddress;
 	}
 
-	auto Mapping::map_physical_low(void *_address, UPtr size, MapOptions options) -> void* {
-		auto address = (U8*)_address;
-		auto virtualAddress = map_physical_low(address, options);
+	auto Mapping::_map_physical_low(Physical<void> physical, UPtr size, MapOptions options) -> void* {
+		auto virtualAddress = _map_physical_low(physical, options);
 
 		while(size>4096){
-			address += 4096;
+			physical += 4096;
 			size -= 4096;
-			map_physical_low(address, options);
+			_map_physical_low(physical, options);
 		}
 
 		return virtualAddress;
 	}
 
-	auto Mapping::map_physical_high(void *_address, UPtr size, MapOptions options) -> void* {
-		auto address = (U8*)_address;
-		void *virtualAddress;
+	auto Mapping::_map_physical_high(Physical<void> physical, UPtr size, MapOptions options) -> void* {
+		if(size<1) size = 1;
 
-		address += 4096 * (size/4096);
+		auto pages = ((size+4095)/4096);
+		physical += (pages-1) * 4096;
 
-		while(true) {
-			virtualAddress = map_physical_high(address, options);
-			if(size<=4096) break;
-			address -= 4096;
-			size -= 4096;
+		void *virtualAddress = nullptr;
+		for(;pages>0;pages--){
+			virtualAddress = _map_physical_high(physical, options);
+			physical.address -= 4096;
 		}
 
 		return virtualAddress;
 	}
 
-	void Mapping::set_virtual_options(void *address, MapOptions options) {
-		auto directoryIndex = (UPtr)address>>22;
-		auto pageIndex = (UPtr)address>>12 & 0b1111111111;
+	// auto Mapping::unmap_virtual_high(void *virtualAddress, UPtr size) -> void* {
+	// 	auto directoryIndex = (UPtr)virtualAddress>>22 & 0x3ff;
+	// 	auto tableIndex = (UPtr)virtualAddress>>12 & 0x3ff;
+	// 	auto physicalOffset = (UPtr)virtualAddress&0xfff;
 
+	// 	auto &directoryEntry = directory.entry[directoryIndex];
+	// 	auto &table = to_virtual(directoryEntry.get_table());
+	// 	auto &tableEntry = table.entry[tableIndex];
 
-		auto &tableEntry = directory.entry[directoryIndex].get_table()->entry[pageIndex];
+	// 	table
+	// }
+
+	void Mapping::_set_virtual_target(void *address, Physical<void> physicalAddress, UPtr size) {
+		for(auto virtualAddress = (UPtr)address&~0b111111111111; virtualAddress < (UPtr)address+size; virtualAddress += 4096, physicalAddress += 4096){
+			auto directoryIndex = (UPtr)virtualAddress>>22 & 0x3ff;
+			auto pageIndex = (UPtr)virtualAddress>>12 & 0x3ff;
+
+			auto &tableEntry = to_virtual(directory.entry[directoryIndex].get_table()).entry[pageIndex];
+
+			tableEntry.set_address(physicalAddress.as_size<U32>());
+
+			asm volatile(
+				"invlpg %0"
+				:
+				:"m" (*(UPtr*)virtualAddress)
+				:"memory"
+			);
+		}
+	}
+
+	void Mapping::_set_virtual_options(void *virtualAddress, MapOptions options) {
+		auto directoryIndex = (UPtr)virtualAddress>>22 & 0x3ff;
+		auto pageIndex = (UPtr)virtualAddress>>12 & 0x3ff;
+
+		auto &tableEntry = to_virtual(directory.entry[directoryIndex].get_table()).entry[pageIndex];
 
 		tableEntry.isUserspaceAccessible = options.isUserspace;
 		tableEntry.isWritable = options.isWritable;
@@ -308,18 +507,62 @@ namespace mmu {
 		{ // invalidates any translation lookaside buffer (TLB) entries for this address
 
 			//NOTE: this only flushes for the current cpu/core
+			//TODO: CHECK: Do we need to do this if this mapping isn't active? if not, do we need to do something special when we do switch to it?
 			asm volatile(
-				"invlpg [%0]"
+				"invlpg %0"
 				:
-				:"m" (*(U8*)tableEntry.get_address())
+				:"m" (*(UPtr*)virtualAddress)
 				:"memory"
 			);
 		}
 	}
 
-	void Mapping::set_virtual_options(void *address, UPtr size, MapOptions options) {
-		for(auto physicalAddress = (UPtr)address&~0b111111111111; physicalAddress < (UPtr)address+size; physicalAddress += 4096){
-			set_virtual_options((void*)physicalAddress, options);
+	void Mapping::_set_virtual_options(void *address, UPtr size, MapOptions options) {
+		for(auto virtualAddress = (UPtr)address&~0b111111111111; virtualAddress < (UPtr)address+size; virtualAddress += 4096){
+			_set_virtual_options((void*)virtualAddress, options);
 		}
+	}
+
+	auto Mapping::_get_virtual_options(void *virtualAddress) -> Try<MapOptions> {
+		auto directoryIndex = (UPtr)virtualAddress>>22 & 0x3ff;
+		auto pageIndex = (UPtr)virtualAddress>>12 & 0x3ff;
+
+		auto table = directory.entry[directoryIndex].get_table();
+		if(!table) return {"Page does not exist"};
+
+		auto &tableEntry = to_virtual(table).entry[pageIndex];
+
+		MapOptions options;
+		options.isUserspace = tableEntry.isUserspaceAccessible;
+		options.isWritable = tableEntry.isWritable;
+		options.isExecutable = true;
+
+		if(tableEntry.pat_writeThroughCaching){
+			if(tableEntry.pat_disableCache){
+				options.caching = Caching::writeCombining;
+			}else{
+				options.caching = Caching::writeThrough;
+			}
+		}else{
+			if(tableEntry.pat_disableCache){
+				options.caching = Caching::uncached;
+			}else{
+				options.caching = Caching::writeBack;
+			}
+		}
+
+		return options;
+	}
+
+	auto Mapping::_get_physical(void *virtualAddress) -> Physical<void> {
+		auto directoryIndex = (UPtr)virtualAddress>>22 & 0x3ff;
+		auto tableIndex = (UPtr)virtualAddress>>12 & 0x3ff;
+		auto physicalOffset = (UPtr)virtualAddress&0xfff;
+
+		auto &directoryEntry = directory.entry[directoryIndex];
+		auto &table = to_virtual(directoryEntry.get_table());
+		auto &tableEntry = table.entry[tableIndex];
+
+		return tableEntry.get_address().as_native() + physicalOffset;
 	}
 }

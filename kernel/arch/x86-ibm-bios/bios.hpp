@@ -1,4 +1,5 @@
 #include <kernel/arch/x86/ioPort.hpp>
+#include <kernel/IdentityMappedPointer.hpp>
 
 namespace arch {
 	namespace x86_ibm_bios {
@@ -24,7 +25,7 @@ namespace arch {
 
 			auto get_io(IoPort) -> arch::x86::IoPort;
 			auto get_video_type() -> VideoType;
-			auto get_possible_ebda() -> void*;
+			auto get_possible_ebda() -> IdentityMapped<void>;
 
 			void set_mode(U32);
 		}

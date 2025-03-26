@@ -173,7 +173,7 @@ namespace drivers {
 		return nullptr;
 	}
 
-	auto is_memory_in_use(void *address, size_t size) -> bool {
+	auto is_memory_in_use(Physical<void> address, size_t size) -> bool {
 		for(auto &driver:iterate<Driver>()){
 			if(!driver.api.is_active()) continue;
 
@@ -250,9 +250,9 @@ namespace drivers {
 		// log.print_info("   State: ", driver.state);
 		for(auto &subscription:driver.api.subscribedMemory){
 			#ifdef _64BIT
-				log.print_info(indent, "   Memory: ", format::Hex64{subscription.start}, " - ", format::Hex64{subscription.end});
+				log.print_info(indent, "   Memory: ", format::Hex64{subscription.start.address}, " - ", format::Hex64{subscription.end.address});
 			#else
-				log.print_info(indent, "   Memory: ", format::Hex32{subscription.start}, " - ", format::Hex32{subscription.end});
+				log.print_info(indent, "   Memory: ", format::Hex32{subscription.start.address}, " - ", format::Hex32{subscription.end.address});
 			#endif
 		}
 		if(driver.api.subscribedIoPorts.length>0){

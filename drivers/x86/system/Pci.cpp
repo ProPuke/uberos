@@ -223,7 +223,7 @@ namespace driver::system {
 			});
 
 			for(auto i=0;i<6;i++){
-				instance.baseAddress[i] = instance.readConfig32(0x10+i*4) & 0xfffffff0;
+				instance.baseAddress[i].address = instance.readConfig32(0x10+i*4) & 0xfffffff0;
 				// if(instance.baseAddress[i]){
 				// 	Pci::instance.log.print_info("base address ", i, " = ", (void*)instance.baseAddress[i]);
 				// }

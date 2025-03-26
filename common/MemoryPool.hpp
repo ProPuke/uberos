@@ -139,19 +139,19 @@ struct MemoryPool {
 				}
 
 			}else{
-				MemoryPoolBlock *block;
-				for(block=availableBlocks.tail; block; block=block->prev){
+				for(auto block=availableBlocks.tail; block; block=block->prev){
 					if(block->size<=reclaim.size){
 						#ifdef MEMORY_CHECKS
 							logging::print_info("insert_after ", &reclaim);
 						#endif
 						availableBlocks.insert_after(*block, reclaim);
-						break;
+						goto inserted;
 					}
 				}
-				if(!block){
-					availableBlocks.push_front(reclaim);
-				}
+
+				availableBlocks.push_front(reclaim);
+
+				inserted:;
 			}
 		}
 

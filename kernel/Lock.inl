@@ -26,7 +26,7 @@ inline void Lock<LockType::flat>::unlock() {
 inline void Lock<LockType::recursive>::lock() {
 	CriticalSection::lock();
 
-	auto processor = processor::get_current_id();
+	auto processor = processor::get_active_id();
 
 	while(true){
 		auto expected = (U32)~0;

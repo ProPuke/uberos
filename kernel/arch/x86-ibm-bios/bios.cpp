@@ -27,6 +27,10 @@ namespace arch {
 
 				U16 ebdaShiftedAddress; // (_USUALLY_ true) must be left-shifted by 4
 
+				auto get_ebdaAddress() -> IdentityMapped<void> {
+					return IdentityMapped<void>{(UPtr)ebdaShiftedAddress<<4};
+				}
+
 				struct __attribute__((packed)) {
 					bool iplDiskette:1;
 					bool mathCoprocessor:1;
@@ -36,16 +40,16 @@ namespace arch {
 				} equipmentFlags;
 			};
 
-			const auto &data = *(DataArea*)x86_ibm::memory::biosDataArea;
-			void *ebda = nullptr;
+			auto &data = *(DataArea*)x86_ibm::memory::biosDataArea.address;
+			IdentityMapped<void> ebda{0x00};
 
 			#pragma GCC diagnostic push
 			#pragma GCC diagnostic ignored "-Warray-bounds"
 			void init() {
-				ebda = (void*)((size_t)data.ebdaShiftedAddress<<4);
+				ebda = data.get_ebdaAddress();
 
-				if((size_t)ebda+0x400 > 0xA0000) {
-					log.print_warning("EBDA address is invalid (", ebda ,')');
+				if(ebda.address+0x400 > 0xA0000) {
+					log.print_warning("EBDA address is invalid (", (void*)ebda.address ,')');
 					ebda = nullptr;
 				}
 
@@ -76,7 +80,7 @@ namespace arch {
 			}
 			#pragma GCC diagnostic pop
 
-			auto get_possible_ebda() -> void* {
+			auto get_possible_ebda() -> IdentityMapped<void> {
 				return ebda;
 			}
 

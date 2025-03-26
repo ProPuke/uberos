@@ -1,9 +1,12 @@
 #pragma once
 
+#include <kernel/PhysicalPointer.hpp>
+
+#include <common/Try.hpp>
 #include <common/types.hpp>
 
 namespace mmu {
-	struct MemoryMapping;
+	struct Mapping;
 
 	enum struct Caching {
 		uncached, // no read or write caching (for general mmio)
@@ -13,25 +16,58 @@ namespace mmu {
 	};
 
 	struct MapOptions {
-		bool isUserspace = true;
+		bool isUserspace = false;
 		bool isWritable = true;
+		bool isExecutable = false; // TODO: implement on x64 and other archs
 		Caching caching = Caching::writeBack;
 	};
+
+	//TODO: function to indicate if isExecutable is supported, or if it will simply be true everywhere
 
 	void init();
 
 	namespace kernel {
-		// in 32bit mode mapping high will start from the very top of the map and work backwards, but in 64bit or in other configs it may instead start halfway (with the first bit set) and then count up
-		// this is implementation dependent
+		void _lock();
+		void _unlock();
 
-		auto map_physical_low(void*, MapOptions) -> void*;
-		auto map_physical_low(void*, UPtr size, MapOptions) -> void*;
-		auto map_physical_high(void*, MapOptions) -> void*;
-		auto map_physical_high(void*, UPtr size, MapOptions) -> void*;
+		// note that low mappings should ALWAYS return sequential addresses when called repeatedly within the same transaction
+		// high mappings should also ALWAYS return reverse sequential address when called repeatedly within the same transaction
+		// (that way you map differing physical pages as sequential by calling multiple within a transaction)
 
-		void set_virtual_options(void*, MapOptions);
-		void set_virtual_options(void*, UPtr size, MapOptions);
+		auto _map_physical_low(Physical<void>, MapOptions) -> void*;
+		auto _map_physical_low(Physical<void>, UPtr size, MapOptions) -> void*;
+		auto _map_physical_high(Physical<void>, MapOptions) -> void*;
+		auto _map_physical_high(Physical<void>, UPtr size, MapOptions) -> void*;
+
+		// auto unmap_virtual_high(void *virtualAddress, UPtr size) -> void*;
+
+		void _set_virtual_target(void*, Physical<void>, UPtr size);
+		void _set_virtual_options(void*, MapOptions);
+		void _set_virtual_options(void*, UPtr size, MapOptions);
+		auto _get_virtual_options(void*) -> Try<MapOptions>;
+
+		auto _get_physical(void*) -> Physical<void>;
+
+		struct Transaction: NonCopyable<Transaction> {
+			/**/ Transaction() { _lock(); }
+			/**/~Transaction() { _unlock(); }
+	
+			auto map_physical_low(Physical<void> physical, MapOptions options) -> void* { return _map_physical_low(physical, options); }
+			auto map_physical_low(Physical<void> physical, UPtr size, MapOptions options) -> void* { return _map_physical_low(physical, size, options); }
+			auto map_physical_high(Physical<void> physical, MapOptions options) -> void* { return _map_physical_high(physical, options); }
+			auto map_physical_high(Physical<void> physical, UPtr size, MapOptions options) -> void* { return _map_physical_high(physical, size, options); }
+	
+			void set_virtual_target(void *address, Physical<void> physical, UPtr size) { return _set_virtual_target(address, physical, size); }
+			void set_virtual_options(void *address, MapOptions options) { return _set_virtual_options(address, options); }
+			void set_virtual_options(void *address, UPtr size, MapOptions options) { return _set_virtual_options(address, size, options); }
+			auto get_virtual_options(void *address) -> Try<MapOptions> { return _get_virtual_options(address); }
+	
+			auto get_physical(void *physical) -> Physical<void> { return _get_physical(physical); }
+		};
+
+		inline auto transaction() -> Transaction { return {}; }
 	}
+
 }
 
 #if defined(ARCH_ARM64)

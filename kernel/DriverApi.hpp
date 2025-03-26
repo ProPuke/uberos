@@ -54,8 +54,8 @@ class DriverApi {
 		State state = State::inactive;
 
 		struct MemoryRange {
-			void *start;
-			void *end;
+			Physical<void> start;
+			Physical<void> end;
 		};
 
 		Bitmask256 subscribedIrqs;
@@ -86,12 +86,12 @@ class DriverApi {
 		void unsubscribe_irq(U8);
 		void unsubscribe_all_irqs();
 
-		auto subscribe_memory(void*, size_t, mmu::Caching) -> Try<void*>;
+		auto subscribe_memory(Physical<void>, size_t, mmu::Caching) -> Try<void*>;
 		template <typename Type>
-		auto subscribe_memory(void *address, size_t size, mmu::Caching caching) -> Try<Type*> { return subscribe_memory(address, size, caching).cast<Type*>(); }
-		void unsubscribe_memory(void*, size_t);
+		auto subscribe_memory(Physical<void> address, size_t size, mmu::Caching caching) -> Try<Type*> { return subscribe_memory(address, size, caching).cast<Type*>(); }
+		void unsubscribe_memory(Physical<void>, size_t);
 		void unsubscribe_all_memory();
-		auto is_subscribed_to_memory(void*, size_t) -> bool;
+		auto is_subscribed_to_memory(Physical<void>, size_t) -> bool;
 
 		auto subscribe_pci(PciDevice&) -> Try<>;
 		void unsubscribe_pci(PciDevice&);

@@ -6,10 +6,10 @@
 
 namespace memory {
 	inline void Page::clear() {
-		bzero(this, pageSize);
+		bzero(this, count*pageSize);
 	}
 
-	inline auto Page::get_offset_page(U32 ahead) -> Page& {
-		return *(Page*)((UPtr)this+memory::pageSize*ahead);
+	inline auto Page::get_offset_page_physical(U32 ahead) -> Physical<Page> {
+		return Physical<Page>{physical.address+memory::pageSize*ahead};
 	}
 }

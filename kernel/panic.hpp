@@ -1,5 +1,7 @@
 #pragma once
 
+#include <kernel/PhysicalPointer.hpp>
+
 #include <common/graphics2d/Buffer.hpp>
 
 namespace graphics2d {
@@ -14,12 +16,9 @@ namespace panic {
 	auto panic() -> Panic;
 	auto panic(const char *title, const char *subtitle) -> Panic;
 
-	struct Panic {
+	struct Panic: NonCopyable<Panic> {
 		/**/~Panic();
 		
-		/**/ Panic(const Panic&) = delete;
-		auto operator=(const Panic&) -> Panic& = delete;
-
 		template<typename Type>
 		auto _print_details_inline(Type) -> Panic&;
 		auto _print_details_inline(const char*) -> Panic&;
@@ -37,12 +36,12 @@ namespace panic {
 		auto print_stacktrace(UPtr stackframe) -> Panic&;
 
 	protected:
-		/**/ Panic(graphics2d::Buffer *framebuffer, const char *title, const char *subtitle);
+		/**/ Panic(Physical<graphics2d::Buffer>, const char *title, const char *subtitle);
 
 		friend auto panic() -> Panic;
 		friend auto panic(const char *title, const char *subtitle) -> Panic;
 
-		graphics2d::Buffer *framebuffer = nullptr;
+		graphics2d::Buffer *framebuffer = nullptr; // physical address
 		U32 x, y;
 		U32 width;
 		I32 cursorX;

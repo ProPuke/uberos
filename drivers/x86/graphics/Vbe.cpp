@@ -253,7 +253,7 @@ namespace driver::graphics {
 
 				// ((long)info.get()&0xff0000)>>16
 
-				auto info = (ControllerInfo*)memory::lowMemory;
+				auto info = (ControllerInfo*)memory::lowMemory.address;
 
 				U16 result;
 				asm volatile(
@@ -422,7 +422,7 @@ namespace driver::graphics {
 	}
 
 	auto Vbe::_on_start() -> Try<> {
-		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>((void*)0x4f00, 0x123, mmu::Caching::writeCombining));
+		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>(Physical<void>{0x4f00}, 0x123, mmu::Caching::writeCombining));
 
 		modes.clear();
 

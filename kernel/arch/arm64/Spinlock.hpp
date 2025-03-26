@@ -13,14 +13,10 @@ namespace arch {
 		//NOTE: We might want to handle the case on aarch64 whereby a non-primary core encounters a spinlock without the mmu active. Something has gone very wrong if this happens.
 		//If it does, this core should likely just get frozen at this point until the mmu is started and it can correctly enter into the lock.
 
-		struct Spinlock {
+		struct Spinlock: NonCopyable<Spinlock> {
 			/**/ Spinlock(const char *name):
 				name(name)
 			{}
-
-			//no accidentally copying
-			/**/ Spinlock(const Spinlock&) = delete;
-			Spinlock& operator=(const Spinlock&) = delete;
 
 			void lock(const char *context = "") {
 				CriticalSection::lock();

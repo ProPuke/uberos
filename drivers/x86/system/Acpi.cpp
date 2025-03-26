@@ -15,38 +15,48 @@ namespace driver::system {
 			U8 checksum; // should be set to ensure all bytes in this struct checksum to (U8)0
 			char oemId[6];
 			U8 revision; // 0 == 1.0, 2 == 2.0 .. 6.1
-			U32 rsdtAddress; //deprecated in v2
+			Physical32<void> rsdtAddress; //deprecated in v2
 		};
 
 		struct __attribute__((packed)) RsdpDescriptor_v2 {
 			RsdpDescriptor descriptor;
 			U32 length;
-			U64 xsdtAddress;
+			Physical64<void> xsdtAddress;
 			U8 extendedChecksum; // should be set to ensure all bytes in this struct checksum to (U8)0
 			U8 _reserved[3];
 		};
 
 		struct __attribute__((packed)) Rsdt: Acpi::TableHeader {
-			U32 sdts[];
+			Physical32<void> sdts[];
 
 			auto get_sdt_count() -> unsigned {
 				return (length - sizeof(Acpi::TableHeader)) / sizeof(sdts[0]);
 			}
-			auto get_sdt(unsigned i) -> Try<Acpi::Sdt*> {
-				auto sdt = TRY_RESULT(Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sizeof(Acpi::Sdt), mmu::Caching::writeThrough));
-				return Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sdt->length, mmu::Caching::writeThrough);
+			auto get_sdt(unsigned i) -> Box<Acpi::Sdt> {
+				U32 length;
+				{
+					auto headerRead = memory::read_physical(sdts[i].as_native(), sizeof(Acpi::Sdt));
+					length = ((Acpi::Sdt*)headerRead.get())->length;
+				}
+
+				return Box<Acpi::Sdt>{(Acpi::Sdt*)memory::read_physical(sdts[i].as_native(), length).release()};
 			}
 		};
 
 		struct __attribute__((packed)) Xsdt: Acpi::TableHeader {
-			U64 sdts[];
+			Physical64<void> sdts[];
 
 			auto get_sdt_count() -> unsigned {
 				return (length - sizeof(Acpi::TableHeader)) / sizeof(sdts[0]);
 			}
-			auto get_sdt(unsigned i) -> Try<Acpi::Sdt*> {
-				auto sdt = TRY_RESULT(Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sizeof(Acpi::Sdt), mmu::Caching::writeThrough));
-				return Acpi::instance.api.subscribe_memory<Acpi::Sdt>((void*)sdts[i], sdt->length, mmu::Caching::writeThrough);
+			auto get_sdt(unsigned i) -> Box<Acpi::Sdt> {
+				U32 length;
+				{
+					auto headerRead = memory::read_physical(sdts[i].as_native(), sizeof(Acpi::Sdt));
+					length = ((Acpi::Sdt*)headerRead.get())->length;
+				}
+
+				return Box<Acpi::Sdt>{(Acpi::Sdt*)memory::read_physical(sdts[i].as_native(), length).release()};
 			}
 		};
 
@@ -147,7 +157,8 @@ namespace driver::system {
 		log.print_info("OEM: ", rsdp->oemId[0], rsdp->oemId[1], rsdp->oemId[2], rsdp->oemId[3], rsdp->oemId[4], rsdp->oemId[5]);
 
 		if(rsdp->revision>=2){
-			rootTableHeader = xsdt = (Xsdt*)((RsdpDescriptor_v2*)rsdp)->xsdtAddress;
+			auto rsdp2 = (RsdpDescriptor_v2*)rsdp;
+			rootTableHeader = xsdt = (Xsdt*)TRY_RESULT_OR(api.subscribe_memory(rsdp2->xsdtAddress.as_native(), sizeof(Xsdt), mmu::Caching::uncached), nullptr);
 		}
 		// // if(xsdt&&xsdt>=(void*)0xffffffff){
 		// // 	log.print_warning("XSDT not 32bit, falling back to RSDT...");
@@ -155,7 +166,7 @@ namespace driver::system {
 		// // }
 
 		if(!rootTableHeader){
-			rootTableHeader = rsdt = (Rsdt*)rsdp->rsdtAddress;
+			rootTableHeader = rsdt = (Rsdt*)TRY_RESULT_OR(api.subscribe_memory(rsdp->rsdtAddress.as_native(), sizeof(Rsdt), mmu::Caching::uncached), nullptr);
 		}
 		// if(rsdt){
 		// 	log.print_info("RSDT acquired");
@@ -191,7 +202,7 @@ namespace driver::system {
 				" (", entry->oemId[0], entry->oemId[1], entry->oemId[2], entry->oemId[3], entry->oemId[4], entry->oemId[5],')'
 			);
 			if(!memcmp(entry->signature, "FACP", 4)){
-				auto fadt = (Fadt*)entry;
+				auto fadt = (Fadt*)entry.get();
 
 				if(rsdp->revision>=2){
 					hasLpcIsaDevices = fadt->bootArchitectureFlags.legacyDevices?Maybe::maybe:Maybe::no;
@@ -234,17 +245,17 @@ namespace driver::system {
 		}
 	}
 
-	auto Acpi::get_entry(unsigned i) -> Sdt* {
+	auto Acpi::get_entry(unsigned i) -> Box<Sdt> {
 		if(xsdt){
-			return TRY_RESULT_OR(xsdt->get_sdt(i), nullptr);
+			return xsdt->get_sdt(i);
 		}else if(rsdt){
-			return TRY_RESULT_OR(rsdt->get_sdt(i), nullptr);
+			return rsdt->get_sdt(i);
 		}else{
 			return nullptr;
 		}
 	}
 
-	auto Acpi::find_entry_with_signature(const char signature[4]) -> Sdt* {
+	auto Acpi::find_entry_with_signature(const char signature[4]) -> Box<Sdt> {
 		for(auto i=0u, count=get_entry_count();i<count;i++){
 			auto entry = get_entry(i);
 			if(entry&&*(U32*)entry->signature==*(U32*)signature){

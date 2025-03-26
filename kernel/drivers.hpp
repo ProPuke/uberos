@@ -48,7 +48,7 @@ namespace drivers {
 	void print_driver_summary(const char *indent, Driver&);
 	bool print_driver_details(const char *indent, Driver&, const char *beforeName="", const char *afterName="");
 
-	auto is_memory_in_use(void*, size_t) -> bool;
+	auto is_memory_in_use(Physical<void>, size_t) -> bool;
 
 	auto _on_interrupt(U8, const void *cpuState) -> const void*;
 	void _on_irq(U8);

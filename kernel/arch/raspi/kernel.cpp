@@ -9,7 +9,9 @@
 #include <kernel/arch/raspi/usb.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/logging.hpp>
-#include <kernel/mmu.hpp>
+#ifdef KERNEL_MMU
+	#include <kernel/mmu.hpp>
+#endif
 
 #include <common/stdlib.hpp>
 #include <common/types.hpp>

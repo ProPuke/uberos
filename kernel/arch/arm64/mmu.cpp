@@ -214,7 +214,7 @@ namespace mmu {
 
 	// struct TableDescriptor:Stage1TableDescriptor{};
 
-	// MemoryMapping kernelMapping(false);
+	// Mapping kernelMapping(false);
 
 	// void init_kernelMap();
 
@@ -433,7 +433,7 @@ namespace mmu {
 	// 	_is_enabled = false;
 	// }
 
-	// void set_kernelspace_mapping(MemoryMapping &memoryMapping) {
+	// void set_kernelspace_mapping(Mapping &memoryMapping) {
 	// 	return;
 	// 	Ttbr ttbr1_el1;
 	// 	ttbr1_el1.load_br1el1();
@@ -457,7 +457,7 @@ namespace mmu {
 	// 	ttbr1_el1.save_br1el1();
 	// }
 
-	// void set_userspace_mapping(MemoryMapping &memoryMapping) {
+	// void set_userspace_mapping(Mapping &memoryMapping) {
 	// 	return;
 	// 	Ttbr ttbr0_el1;
 	// 	ttbr0_el1.load_br0el1();
@@ -481,26 +481,26 @@ namespace mmu {
 	// 	ttbr0_el1.save_br0el1();
 	// }
 
-	/**/ MemoryMapping::MemoryMapping(bool allocate){
+	/**/ Mapping::Mapping(bool allocate){
 		// if(allocate){
 		// 	this->allocate();
 		// }
 	}
 
-	/**/ MemoryMapping::~MemoryMapping(){
+	/**/ Mapping::~Mapping(){
 		// if(initialTable){
 		// 	clear();
 		// 	memory::Transaction().free_page_with_address(initialTable);
 		// }
 	}
 
-	void MemoryMapping::allocate() {
+	void Mapping::allocate() {
 		// if(initialTable) return;
 		
 		// const auto requiredSize = levelSize[startLevel]*sizeof(TableDescriptor);
 		// const auto requiredPages = (requiredSize+memory::pageSize-1)/memory::pageSize;
 		// assert(requiredPages==1, "mmu table does not sit in a single page"); // we only free a single page, so make sure we only allocate 1, too
-		// auto page = memory::Transaction().allocate_pages(requiredPages);
+		// auto page = assert_return(memory::Transaction().allocate_pages(requiredPages));
 		// auto address = page->physicalAddress;
 		// initialTable = (TableDescriptor*)address;
 		// bzero(initialTable, requiredSize);
@@ -605,7 +605,7 @@ namespace mmu {
 	// 					const auto requiredSize = levelSize[level+1]*sizeof(TableDescriptor);
 	// 					const auto requiredPages = (requiredSize+memory::pageSize-1)/memory::pageSize;
 	// 					assert(requiredPages==1, "mmu table does not sit in a single page"); // we only free a single page, so make sure we only allocate 1, too
-	// 					auto subtable = (Stage1TableDescriptor*)transaction.allocate_pages(requiredPages)->physicalAddress;
+	// 					auto subtable = (Stage1TableDescriptor*)assert_return(transaction.allocate_pages(requiredPages))->physicalAddress;
 	// 					bzero(subtable, requiredSize);
 	// 					entry.set_table(subtable);
 	// 				}
@@ -645,7 +645,7 @@ namespace mmu {
 	// 	}
 	// }
 
-	// void MemoryMapping::clear() {
+	// void Mapping::clear() {
 	// 	const auto initialTable = this->initialTable;
 
 	// 	memory::Transaction memoryTransaction;
@@ -654,7 +654,7 @@ namespace mmu {
 	// 	pageCount = 0;
 	// }
 
-	// void* MemoryMapping::add_pages(U32 count, RegionType regionType) {
+	// void* Mapping::add_pages(U32 count, RegionType regionType) {
 	// 	if(count<1) return nullptr;
 
 	// 	memory::Transaction memoryTransaction;
@@ -699,7 +699,7 @@ namespace mmu {
 	// 	return virtualBase;
 	// }
 
-	// void* MemoryMapping::add_mapping(void *address, U32 pages, RegionType regionType) {
+	// void* Mapping::add_mapping(void *address, U32 pages, RegionType regionType) {
 	// 	if(pages<1) return nullptr;
 
 	// 	memory::Transaction memoryTransaction;
@@ -708,7 +708,7 @@ namespace mmu {
 	// 	return _insert(initialTable, startLevel, address, pages, regionType, memoryTransaction);
 	// }
 
-	// void* MemoryMapping::add_mapping(void *addressStart, void *addressEnd, RegionType regionType) {
+	// void* Mapping::add_mapping(void *addressStart, void *addressEnd, RegionType regionType) {
 	// 	log.print_debug("map ", addressStart, " -> ", addressEnd, " as ", regionType_to_string(regionType));
 
 	// 	const auto pageCount = ((U64)addressEnd-(U64)addressStart+memory::pageSize-1)/memory::pageSize;

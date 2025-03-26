@@ -10,6 +10,9 @@
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
 #include <kernel/memory/PagedPool.hpp>
+#ifdef KERNEL_MMU
+	#include <kernel/mmu.hpp>
+#endif
 #include <kernel/panic.hpp>
 #include <kernel/Process.hpp>
 #include <kernel/tests.hpp>
@@ -62,9 +65,14 @@ namespace kernel {
 
 	[[noreturn]] void run() {
 		libc::init();
+		#ifdef KERNEL_MMU
+			mmu::init();
+		#endif
 		memory::init();
 		logging::init();
 		panic::init();
+
+		drivers::find_and_activate<driver::Processor>();
 
 		{ auto section = log.section("init");
 			time::init();
@@ -265,7 +273,8 @@ namespace kernel {
 
 						auto width = 640u/(rand()%3+1);
 						auto height = 480u/(rand()%3+1);
-						auto scale = rand()%3+1;
+						// auto scale = rand()%3+1;
+						auto scale = 1;
 						auto life = 300;
 
 						log.print_debug("got view ", width, "x", height, " @ ", scale);

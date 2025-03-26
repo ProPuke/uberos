@@ -4,13 +4,13 @@
 #include <common/types.hpp>
 
 struct __attribute__((packed)) ThreadCpuState {
-	U32 ebp;
-	U32 ebx;
-	U32 esi;
-	U32 edi;
-
-	U32 esp;
 	U32 eip;
+	U32 esp;
+	U32 edi;
+	U32 esi;
+	U32 ebx;
+	U32 ebp;
+
 
 	void init(void(*entrypoint)(ipc::Id, void*), U8* stackEnd, ipc::Id ipc, void *ipcPacket) {
 		eip = (U64)entrypoint;

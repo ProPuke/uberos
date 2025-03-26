@@ -28,11 +28,11 @@ namespace panic {
 			auto stackframe = (Stackframe*)stackframeAddr;
 			DriverType *driverType = nullptr;
 			for(U32 depth=0;stackframe&&depth<64;depth++){
-				const auto stackBottom = (U8*)memory::stack+memory::stackSize;
-				const auto stackTop = (U8*)memory::stack;
+				const auto stackBottom = memory::stack+memory::stackSize;
+				const auto stackTop = memory::stack;
 
-				if((void*)stackframe<stackTop||(void*)stackframe>=stackBottom){
-					print_details("  - Connection lost (at ", to_string_hex((unsigned)(size_t)stackframe), ')');
+				if((UPtr)stackframe<stackTop.address||(UPtr)stackframe>=stackBottom.address){
+					print_details("  - Connection lost (at ", to_string_hex((U32)(UPtr)stackframe), ')');
 					break;
 				}
 

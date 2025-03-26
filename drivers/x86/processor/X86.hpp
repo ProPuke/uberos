@@ -11,5 +11,7 @@ namespace driver::processor {
 		char vendorStringData[13] = "UNKNOWN";
 
 		auto _on_start() -> Try<> override;
+
+		auto get_active_id() -> U32 override;
 	};
 }

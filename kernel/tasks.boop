@@ -7,7 +7,8 @@ set asmflags = -fno-pie
 set cflags   = -nostartfiles -ffreestanding -nostdlib -Werror -Wall -Wswitch-enum
 set cxxflags = -include common/common.hpp -include common/debug.hpp -include kernel/common.hpp -include kernel/debug.hpp -nostartfiles -ffreestanding -nostdlib -Werror -Wall -Wswitch-enum -fno-rtti -std=c++20 -Wno-invalid-offsetof -Wno-parentheses -Wno-unused-function -fno-exceptions
 set lflags   = -nostdlib
-set directives = -fpic -D KERNEL
+set directives = -fpic -D KERNEL -D KERNEL_MMU
+# set directives = -fpic -D KERNEL
 
 # set kernel_srcs    = {**/*.S exclude arch/**/*/*} {**/*.cpp exclude arch/**/*/*} {**/*.c exclude arch/**/*/*}
 set kernel_asm     = {*.S} {../drivers/*.S} {../drivers/common/**/*.S} {fonts/**/*.S} {graphics2d/**/*.S} {memory/**/*.S} {mmu/**/*.S}
@@ -36,7 +37,8 @@ flag uart1
 	set raspi_uart = 1
 
 flag debug
-	set directives = {directives} -Og -g -D DEBUG
+	# set directives = {directives} -Og -g -D DEBUG
+	set directives = {directives} -g -D DEBUG
 
 flag debug-memory
 	set directives = {directives} -D MEMORY_CHECKS
@@ -403,13 +405,15 @@ flag x86-ibm-bios
 	set arch_flags = -m32 -march=i586
 	# set arch_flags = -march=i386
 	# set ld_arch_flags = -melf_i386
-	set directives = {directives} -D ARCH_X86_IBM_BIOS -D ARCH_X86
+	set directives = {directives} -D ARCH_X86_IBM_BIOS -D ARCH_X86_32 -D ARCH_X86
 	# set qemu = qemu-system-x86_64
 	set target = i686-elf
 	#  -usb -device usb-kbd -device usb-mouse -device i8042
 	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -device usb-kbd,bus=ehci.0 -device usb-mouse,bus=ehci.0
 	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d guest_errors,trace,int
-	set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d int,cpu_reset -D qemu.log
+	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -no-reboot -d int,cpu_reset -D /dev/stdout
+	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d int,cpu_reset -D /dev/stdout
+	set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d int,cpu_reset
 	# set target = i386-elf
 	set kernel_filename = boot.img
 
@@ -474,7 +478,7 @@ flag x86-ibm-bios
 		requires task build
 
 		# run {qemu} -d int,cpu_reset -no-reboot -kernel {outputdir}/{kernel_filename}
-		run {qemu} -d int,cpu_reset -kernel {outputdir}/{kernel_filename}
+		run {qemu} -kernel {outputdir}/{kernel_filename}
 		# run {qemu} -kernel {outputdir}/boot/{kernel_filename}
 
 	task test-iso
@@ -485,7 +489,12 @@ flag x86-ibm-bios
 	task debug
 		requires task build
 
-		run {qemu} -s -S -kernel {outputdir}/{kernel_filename} -append "safemode"
+		run {qemu} -s -S -kernel {outputdir}/{kernel_filename} -D qemu.log -append "safemode"
+
+	task debug-iso
+		requires task build-iso
+
+		run {qemu} -s -S -cdrom {outputdir}/image.iso
 
 flag x86-64-ibm-bios
 	set outputdir = {outputdir}/x86-ibm-bios
@@ -549,7 +558,7 @@ flag x86-64-ibm-bios
 		requires task build
 
 		# run {qemu} -d int,cpu_reset -no-reboot -kernel {outputdir}/{kernel_filename}
-		run {qemu} -d int,cpu_reset -kernel {outputdir}/{kernel_filename}
+		run {qemu} -no-reboot -d int,cpu_reset -kernel {outputdir}/{kernel_filename}
 		# run {qemu} -kernel {outputdir}/boot/{kernel_filename}
 
 	task test-iso
@@ -561,6 +570,11 @@ flag x86-64-ibm-bios
 		requires task build
 
 		run {qemu} -s -S -kernel {outputdir}/{kernel_filename} -append "safemode"
+
+	task debug-iso
+		requires task build-iso
+
+		run {qemu} -s -S -cdrom {outputdir}/image.iso -append "safemode"
 
 flag hosted-linux
 	set outputdir = {outputdir}/hosted-linux
@@ -688,11 +702,11 @@ task build-images
 		rm {image}.cpp
 
 task build-fonts
-	run {msdf_atlas_gen} -size 32 -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
-	run {msdf_atlas_gen} -size 32 -font fonts/Open_Sans/OpenSans-Bold.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans_bold.msdf.txt -json ../common/graphics2d/font/OpenSans_bold.msdf.json
-	run {msdf_atlas_gen} -size 32 -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
-	run {msdf_atlas_gen} -size 32 -font fonts/Manrope/Manrope-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Manrope.msdf.txt -json ../common/graphics2d/font/Manrope.msdf.json
-	run {msdf_atlas_gen} -size 32 -varfont fonts/Manrope/Manrope-VariableFont_wght.ttf?Weight=800 -format text -type msdf -imageout ../common/graphics2d/font/Manrope_extraBold.msdf.txt -json ../common/graphics2d/font/Manrope_extraBold.msdf.json
+	run {msdf_atlas_gen} -size 32 -errorcorrection auto-full -scanline -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json
+	run {msdf_atlas_gen} -size 32 -errorcorrection auto-full -scanline -font fonts/Open_Sans/OpenSans-Bold.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans_bold.msdf.txt -json ../common/graphics2d/font/OpenSans_bold.msdf.json
+	run {msdf_atlas_gen} -size 32 -errorcorrection auto-full -scanline -font fonts/Roboto_Mono/RobotoMono-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Roboto_Mono.msdf.txt -json ../common/graphics2d/font/Roboto_Mono.msdf.json
+	run {msdf_atlas_gen} -size 32 -errorcorrection auto-full -scanline -font fonts/Manrope/Manrope-VariableFont_wght.ttf -format text -type msdf -imageout ../common/graphics2d/font/Manrope.msdf.txt -json ../common/graphics2d/font/Manrope.msdf.json
+	run {msdf_atlas_gen} -size 32 -errorcorrection auto-full -scanline -varfont fonts/Manrope/Manrope-VariableFont_wght.ttf?Weight=800 -format text -type msdf -imageout ../common/graphics2d/font/Manrope_extraBold.msdf.txt -json ../common/graphics2d/font/Manrope_extraBold.msdf.json
 	cd ../common/graphics2d/font
 	run ./build.sh
 

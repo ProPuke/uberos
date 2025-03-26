@@ -3,6 +3,7 @@
 #include <drivers/x86/system/Acpi.hpp>
 
 #include <kernel/drivers.hpp>
+#include <kernel/PhysicalPointer.hpp>
 
 namespace driver {
 	namespace timer {
@@ -12,7 +13,7 @@ namespace driver {
 				U8 registerBitWidth;
 				U8 registerBitOffset;
 				U8 :8;
-				U64 address;
+				Physical64<void> address;
 			};
 
 			struct __attribute__((packed)) DescriptionTable: system::Acpi::Sdt {
@@ -199,13 +200,13 @@ namespace driver {
 			acpi = drivers::find_and_activate<system::Acpi>(this);
 			if(!acpi) return {"ACPI unavailable"};
 
-			auto table = (DescriptionTable*)acpi->find_entry_with_signature("HPET");
+			auto entry = acpi->find_entry_with_signature("HPET");
+			auto table = (DescriptionTable*)entry.get();
 			if(!table) return {"HPET not present"};
 
 			memset(irqToClockId, -1, sizeof(irqToClockId));
 
-			// TRY(api.subscribe_memory((void*)table->address.address, 0x137));
-			registers = TRY_RESULT(api.subscribe_memory<Registers>((void*)table->address.address, sizeof(Registers), mmu::Caching::uncached));
+			registers = TRY_RESULT(api.subscribe_memory<Registers>(table->address.address.as_native(), sizeof(Registers), mmu::Caching::uncached));
 
 			// log.print_info("HPET present at ", (void*)table->address.address);
 

@@ -20,6 +20,14 @@ namespace driver::graphics {
 		U32 defaultWidth = 0;
 		U32 defaultHeight = 0;
 		graphics2d::BufferFormat defaultFormat;
+
+		auto realmode_to_physical(U16 segment, U16 offset) -> void* {
+			return (void*)((segment<<4)+offset);
+		}
+
+		auto realmode_to_physical(U32 realmodeAddress) -> void* {
+			return realmode_to_physical(realmodeAddress>>16, realmodeAddress&0xffff);
+		}
 	}
 
 	auto MultibootFramebuffer::_on_start() -> Try<> {
@@ -133,7 +141,7 @@ namespace driver::graphics {
 			break;
 		}
 
-		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>((void*)multiboot->framebuffer_addr, multiboot->framebuffer_pitch*multiboot->framebuffer_width, mmu::Caching::writeCombining));
+		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>(Physical<void>{(UPtr)multiboot->framebuffer_addr}, multiboot->framebuffer_pitch*multiboot->framebuffer_width, mmu::Caching::writeCombining));
 		framebuffer.format = format;
 		framebuffer.order = formatOrder;
 		framebuffer.stride = multiboot->framebuffer_pitch;

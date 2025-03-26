@@ -2,6 +2,8 @@
 
 #include <drivers/Hardware.hpp>
 
+#include <kernel/processor.hpp>
+
 #include <common/Rpc.hpp>
 #include <common/Try.hpp>
 
@@ -15,7 +17,19 @@ namespace driver {
 		auto can_stop_driver() -> bool override { return false; }
 		auto can_restart_driver() -> bool override { return false; }
 
-		auto _on_stop() -> Try<> override { return {"CPU drivers cannot be stopped"}; };
+		auto _on_start() -> Try<> override {
+			if(::processor::driver&&::processor::driver!=this) return {"A CPU driver is already active"};
+
+			::processor::driver = this;
+
+			return {};
+		};
+
+		auto _on_stop() -> Try<> override {
+			return {"CPU drivers cannot be stopped"};
+		};
+
+		virtual auto get_active_id() -> U32 { return 0; } //currently active unique processor/core id
 
 		//temps in K
 		virtual auto get_temperature_count() -> U32 { return 0; }

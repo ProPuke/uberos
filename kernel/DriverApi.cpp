@@ -102,10 +102,10 @@ void DriverApi::unsubscribe_all_irqs() {
 	}
 }
 
-auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching) -> Try<void*> {
+auto DriverApi::subscribe_memory(Physical<void> start, size_t size, mmu::Caching caching) -> Try<void*> {
 	auto &driver = this->driver();
 
-	if(start<(U8*)memory::heap+memory::heapSize&&(U8*)start+size>(U8*)memory::heap){
+	if(start<memory::heap+memory::heapSize&&start+size>memory::heap){
 		return {"Memory not available - Overlaps heap"};
 	}
 
@@ -117,14 +117,14 @@ auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching)
 	}
 
 	// grow existing subscriptions if it overlaps or comes before an entry
-	void *end = (U8*)start+size;
+	auto end = start+size;
 	for(auto i=0u;i<subscribedMemory.length;i++){
 		auto &subscribed = subscribedMemory[i];
 
 		if(subscribed.start>end){ // this region is after, so insert a new record before
 			subscribedMemory.insert(i, MemoryRange{start, end});
-			//TODO: return virtual address
-			return {start};
+			//FIXME: return virtual address
+			return {(void*)start.address};
 		}
 
 		if(subscribed.end<start) continue; // this is before, continue
@@ -143,26 +143,22 @@ auto DriverApi::subscribe_memory(void *start, size_t size, mmu::Caching caching)
 			}
 		}
 
-		//TODO: return virtual address
-		return {start};
+		return mmu::kernel::transaction().map_physical_high(start, size, {.caching = caching});
 	}
 
 	// insert at the very end if it wasn't merged in prior
 	subscribedMemory.push_back(MemoryRange{start, end});
 
-	//TODO: use from an existing recycle pool of mappings instead, if available there
-	auto virtualAddress = mmu::kernel::map_physical_high(start, size, {.caching = caching});
+	//TODO: use from an existing recycle pool of mappings instead, if available there (we say recycled as we may want to change options, and thus don't want it in use by anything else)
+	auto virtualAddress = mmu::kernel::transaction().map_physical_high(start, size, {.caching = caching});
 
-	//TODO: return this address, and make it a [[nodiscard]]
-	(void)virtualAddress;
-
-	return {start};
+	return virtualAddress;
 }
 
-void DriverApi::unsubscribe_memory(void *start, size_t _size) {
+void DriverApi::unsubscribe_memory(Physical<void> start, size_t _size) {
 	//TODO: move these virtual mappings into a recycle pool, so they can be claimed again by other drivers when needed
 
-	void *end = (U8*)start+_size;
+	auto end = start+_size;
 	for(auto i=0u;i<subscribedMemory.length;i++){
 		auto &subscribed = subscribedMemory[i];
 
@@ -195,8 +191,8 @@ void DriverApi::unsubscribe_all_memory() {
 	subscribedMemory.clear();
 }
 
-auto DriverApi::is_subscribed_to_memory(void *start, size_t _size) -> bool {
-	void *end = (U8*)start+_size;
+auto DriverApi::is_subscribed_to_memory(Physical<void> start, size_t _size) -> bool {
+	auto end = start+_size;
 	for(auto i=0u;i<subscribedMemory.length;i++){
 		auto &subscribed = subscribedMemory[i];
 

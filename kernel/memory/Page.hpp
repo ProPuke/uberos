@@ -3,15 +3,18 @@
 #include <common/types.hpp>
 #include <common/LList.hpp>
 
+#include <kernel/PhysicalPointer.hpp>
+
 // template <unsigned alignment>
 // struct MemoryPool;
 
 namespace memory {
 	struct Page: LListItem<Page> {
-		U32 count = 0; // how many consecutive free pages are there starting from here
+		Physical<Page> physical;
+		U32 count; // how many consecutive free pages are there starting from here
 
 		void clear();
-		auto get_offset_page(U32 ahead=1) -> Page&;
+		auto get_offset_page_physical(U32 ahead=1) -> Physical<Page>;
 	};
 }
 

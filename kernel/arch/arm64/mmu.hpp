@@ -8,12 +8,12 @@
 namespace mmu {
 	struct TableDescriptor;
 	
-	struct MemoryMapping {
+	struct Mapping {
 		TableDescriptor *initialTable = nullptr;
 		U32 pageCount = 0;
 
-		/**/ MemoryMapping(bool allocate = true);
-		/**/~MemoryMapping();
+		/**/ Mapping(bool allocate = true);
+		/**/~Mapping();
 
 		public:
 

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <kernel/IdentityMappedPointer.hpp>
+#include <kernel/PhysicalPointer.hpp>
+
+#include <common/Box.hpp>
 #include <common/LList.hpp>
 #include <common/types.hpp>
 
@@ -11,28 +15,28 @@
 namespace memory {
 	struct Page;
 	
-	extern U64 totalMemory;
+	extern constinit U64 totalMemory;
 
-	extern size_t lowMemorySize;
-	extern void *lowMemory;
+	extern constinit IdentityMapped<void> lowMemory;
+	extern constinit size_t lowMemorySize;
 
-	extern size_t stackSize;
-	extern void *stack;
+	extern constinit IdentityMapped<void> code;
+	extern /*constinit*/ size_t codeSize;
 
-	extern size_t heapSize;
-	extern void *heap;
+	extern constinit IdentityMapped<void> stack;
+	extern constinit size_t stackSize;
 
-	extern Page *pageData;
-	extern size_t pageDatasize;
+	extern constinit Physical<void> heap;
+	extern constinit size_t heapSize;
 
 	#if defined(ARCH_ARM32)
 		static inline const size_t pageSize = 4*1024; //4KB
 	#elif defined(ARCH_ARM64)
 		static inline const size_t pageSize = 16*1024; //16KB
 	#elif defined(ARCH_X86)
-		static inline const size_t pageSize = 16*1024; //16KB
+		static inline const size_t pageSize = 4*1024; //4KB
 	#elif defined(ARCH_HOSTED)
-		static inline const size_t pageSize = 16*1024; //16KB
+		static inline const size_t pageSize = 4*1024; //4KB
 	#else
 		#error Unsupported architecture
 	#endif
@@ -44,22 +48,26 @@ namespace memory {
 	auto get_available_heap() -> size_t;
 
 	// not thread-safe thread safe
-	auto _kmalloc(size_t size) -> void*;
-	void _kfree(void *address);
+	auto _allocate(size_t size) -> void*;
+	void _free(void *address);
 
 	auto _allocate_pages(U32 count) -> Page*;
-	void _free_pages(Page &page, U32 count);
-	auto _get_memory_page(void *address) -> Page&;
+	void _free_pages(Page&, U32 count);
+	// void _free_pages(Physical<Page>, U32 count);
+	// auto _get_physical_memory_page(Physical<void>) -> Physical<Page>;
 
 	void _check_dangerous_address(void *from, void *to);
 
 	void _compact();
 
+	auto read_physical(Physical<void>, UPtr size) -> Box<U8>;
+	void write_physical(Physical<void>, U8 *data, UPtr size);
+
 	// inline void memset(U8 *address, U8 value, U32 size) {
 	// 	while(--size) *address++ = value;
 	// }
 
-	struct Transaction {
+	struct Transaction: NonCopyable<Transaction> {
 		/**/ Transaction() { lock(); }
 		/**/~Transaction() { unlock(); }
 
@@ -78,22 +86,26 @@ namespace memory {
 		void free_pages(Page &page, U32 count) {
 			return _free_pages(page, count);
 		}
-		void free_page_with_address(void *address, UPtr size = 1) {
-			const auto &from = get_memory_page(address);
-			const auto &to = get_memory_page((U8*)address+size);
-			return free_pages(get_memory_page(address), ((UPtr)&to-(UPtr)&from+pageSize-1)/pageSize);
-		}
-		auto get_memory_page(void *address) -> Page& {
-			return _get_memory_page(address);
-		}
+		// void free_pages(Physical<Page> page, U32 count) {
+		// 	return _free_pages(page, count);
+		// }
+		// void free_page_with_physical_address(Physical<void> physical, UPtr size = 1) {
+		// 	auto from = get_physical_memory_page(physical);
+		// 	auto to = get_physical_memory_page(physical+size);
+		// 	//TODO: get the real/virtual address of this page
+		// 	return free_pages(from, (to.address-from.address+pageSize-1)/pageSize);
+		// }
+		// auto get_physical_memory_page(Physical<void> physical) -> Physical<Page> {
+		// 	return _get_physical_memory_page(physical);
+		// }
 
-		auto kmalloc(size_t size) -> void* {
-			auto allocation = _kmalloc(size);
+		auto allocate(size_t size) -> void* {
+			auto allocation = _allocate(size);
 			debug::assert(allocation);
 			return allocation;
 		}
-		void kfree(void *address) {
-			return _kfree(address);
+		void free(void *address) {
+			return _free(address);
 		}
 
 		void check_dangerous_address(void *from, void *to) {
@@ -104,6 +116,8 @@ namespace memory {
 			return _compact();
 		}
 	};
+
+	void debug();
 }
 
 // void* operator new(size_t size) noexcept;
@@ -114,13 +128,13 @@ inline void* operator new[](size_t size, size_t align) = delete;
 // void operator delete(void *p) noexcept;
 // void operator delete(void *p, size_t) noexcept;
 
-inline void* operator new(size_t size) noexcept { memory::Transaction transaction; return transaction.kmalloc(size); }
-inline void* operator new[](size_t size) noexcept { memory::Transaction transaction; return transaction.kmalloc(size); }
+inline void* operator new(size_t size) noexcept { memory::Transaction transaction; return transaction.allocate(size); }
+inline void* operator new[](size_t size) noexcept { memory::Transaction transaction; return transaction.allocate(size); }
 
-inline void operator delete(void *p) noexcept { if(!p) return; memory::Transaction transaction; transaction.kfree(p); }
-inline void operator delete(void *p, size_t) noexcept { if(!p) return; memory::Transaction transaction; transaction.kfree(p); }
+inline void operator delete(void *p) noexcept { if(!p) return; memory::Transaction transaction; transaction.free(p); }
+inline void operator delete(void *p, size_t) noexcept { if(!p) return; memory::Transaction transaction; transaction.free(p); }
 
-inline void* kmalloc(size_t size) noexcept { if(!size) return nullptr; memory::Transaction transaction; return transaction.kmalloc(size); }
-inline void  kfree(void *p) noexcept { if(!p) return; memory::Transaction transaction; return transaction.kfree(p); }
+inline void* allocate(size_t size) noexcept { if(!size) return nullptr; memory::Transaction transaction; return transaction.allocate(size); }
+inline void  free(void *p) noexcept { if(!p) return; memory::Transaction transaction; return transaction.free(p); }
 
 #include "memory.inl"

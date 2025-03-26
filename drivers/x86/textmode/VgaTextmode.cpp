@@ -26,7 +26,7 @@ namespace driver::textmode {
 			0xffffff, // white
 		};
 
-		const auto physicalAddress = (void*)0xb8000;
+		const auto physicalAddress = Physical<void>{0xb8000};
 
 		VgaTextmode::Entry *buffer = nullptr;
 	}

@@ -9,15 +9,16 @@
 #include <kernel/exceptions.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/logging.hpp>
-#include <kernel/mmu.hpp>
+#ifdef KERNEL_MMU
+	#include <kernel/mmu.hpp>
+#endif
 #include <kernel/multiboot.hpp>
 
 #include <common/format.hpp>
 
 #include <lib/multiboot/multiboot.h>
 
-extern U8 __start;
-extern U8 __end;
+extern U8 __start, __end;
 
 namespace {
 	void init_multiboot(unsigned long magic, multiboot_info *multiboot) {
@@ -51,7 +52,7 @@ namespace {
 				if(mmap->type!=MULTIBOOT_MEMORY_AVAILABLE) continue;
 
 				if(mmap->addr<=(U64)&__start && mmap->addr+mmap->len>=(U64)&__end){
-					memory::heapSize = (U8*)(mmap->addr+mmap->len) - (U8*)memory::heap;
+					memory::heapSize = (UPtr)(mmap->addr+mmap->len) - memory::heap.address;
 					break;
 				}
 			}
@@ -83,9 +84,9 @@ namespace kernel {
 			arch::x86_ibm::stdout::init();
 		}
 		exceptions::init();
-		#ifdef KERNEL_MMU
-			mmu::init();
-		#endif
+		// #ifdef KERNEL_MMU
+		// 	mmu::init();
+		// #endif
 	}
 
 	void _postInit() {

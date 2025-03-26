@@ -26,8 +26,6 @@ extern U8 __bss_end;
 extern U8 __end;
 
 namespace memory {
-	extern Page *pageData;
-	extern U32 pageDataSize;
 	extern LList<Page> freePages;
 	// extern MemoryPool<32> *heap;
 }
@@ -36,9 +34,10 @@ namespace memory {
 namespace arch {
 	namespace raspi {			
 		namespace memory {
+			Page *pageData;
+			U32 pageDataSize;
+
 			using ::memory::freePages;
-			using ::memory::pageData;
-			using ::memory::pageDataSize;
 			using ::memory::pageSize;
 			using ::memory::totalMemory;
 			using ::memory::Page;

@@ -2,6 +2,7 @@
 
 #include "tests/fontTest.hpp"
 #include "tests/keyboardTest.hpp"
+#include "tests/memoryTest.hpp"
 #include "tests/taskbar.hpp"
 
 namespace tests {
@@ -9,5 +10,6 @@ namespace tests {
 		taskbar::run();
 		fontTest::run();
 		keyboardTest::run();
+		memoryTest::run();
 	}
 }

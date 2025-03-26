@@ -3,7 +3,13 @@
 #include <kernel/arch/x86/cpuInfo.hpp>
 
 namespace driver::processor {
+	namespace {
+		volatile void *localApic = nullptr;
+	}
+
 	auto X86::_on_start() -> Try<> {
+		if(::processor::driver&&::processor::driver!=this) return {"A CPU driver is already active"};
+
 		arch::x86::cpuInfo::get_vendor_string(vendorStringData);
 
 		#ifdef ARCH_X86_64
@@ -82,6 +88,15 @@ namespace driver::processor {
 
 		log.print_end();
 
+		localApic = TRY_RESULT(api.subscribe_memory(Physical<void>{0xfee00000}, memory::pageSize, mmu::Caching::uncached));
+
+		::processor::driver = this;
+
 		return {};
+	}
+
+	auto X86::get_active_id() -> U32 {
+		const auto lapic_id = 0x20;
+		return *(volatile U32*)((U8*)localApic+lapic_id) >> 24;
 	}
 }

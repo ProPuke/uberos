@@ -25,13 +25,13 @@ struct DynamicArray:Array<Type> {
 		newSize = max(max(length, (U32)1), newSize);
 		if(newSize==allocated) return;
 
-		auto newData = (Type*)kmalloc(allocated=newSize);
+		auto newData = (Type*)allocate(allocated=newSize);
 		for(auto i=0u;i<length;i++){
 			new ((void*)&newData[i]) Type(data[i]);
 			data[i].~Type();
 		}
 
-		kfree(data);
+		free(data);
 		data = newData;
 	}
 
@@ -94,7 +94,7 @@ struct DynamicArray:Array<Type> {
 	template <typename ...Params>
 	void insert(U32 index, Params ...params) {
 		if(length+1>=allocated){
-			auto newData = (Type*)kmalloc(allocated=length+1+length/2+1);
+			auto newData = (Type*)allocate(allocated=length+1+length/2+1);
 			for(auto i=0u;i<index;i++){
 				new ((void*)&newData[i]) Type(data[i]);
 				data[i].~Type();
@@ -105,7 +105,7 @@ struct DynamicArray:Array<Type> {
 				data[i].~Type();
 			}
 
-			kfree(data);
+			free(data);
 			data = newData;
 
 		}else{

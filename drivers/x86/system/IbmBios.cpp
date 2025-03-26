@@ -30,7 +30,7 @@ namespace driver::system {
 			} equipmentFlags;
 		};
 
-		const auto &data = *(DataArea*)arch::x86_ibm::memory::biosDataArea;
+		const auto &data = *(DataArea*)arch::x86_ibm::memory::biosDataArea.address;
 		void *ebda = nullptr;
 	}
 
@@ -72,6 +72,8 @@ namespace driver::system {
 			case 0b10: return VideoType::colour80;
 			case 0b11: return VideoType::monochrome80;
 		}
+
+		return VideoType::none; //unknown
 	}
 
 	auto IbmBios::get_possible_ebda() -> void* {

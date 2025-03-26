@@ -8,7 +8,9 @@
 #include <kernel/drivers.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/kernel.hpp>
-#include <kernel/mmu.hpp>
+#ifdef KERNEL_MMU
+	#include <kernel/mmu.hpp>
+#endif
 
 namespace arch::x86_ibm_uefi::kernel {
 	__attribute__((stdcall)) uefi::Status entrypoint(uefi::Handle imageHandle, uefi::SystemTable *systemTable) {

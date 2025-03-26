@@ -2,6 +2,7 @@
 
 #include <drivers/Hardware.hpp>
 
+#include <common/Box.hpp>
 #include <common/Maybe.hpp>
 
 namespace driver::system {
@@ -114,8 +115,9 @@ namespace driver::system {
 		};
 
 		auto get_entry_count() -> unsigned;
-		auto get_entry(unsigned) -> Sdt*;
-		auto find_entry_with_signature(const char signature[4]) -> Sdt*;
+		auto get_entry(unsigned) -> Box<Sdt>;
+		auto get_entry_signature(unsigned) -> U32;
+		auto find_entry_with_signature(const char signature[4]) -> Box<Sdt>;
 
 		auto has_lpc_isa_devices() -> Maybe;
 		auto has_ps2() -> Maybe;

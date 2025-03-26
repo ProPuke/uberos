@@ -11,8 +11,13 @@
                 "-include common/common.hpp",
                 "-include common/debug.hpp",
                 "-include kernel/common.hpp",
-                "-include kernel/debug.hpp",
-                "-D ARCH_X86"
+                "-include kernel/debug.hpp"
+            ],
+            "defines": [
+                "ARCH_X86",
+                "ARCH_X86_32",
+                "ARCH_X86_IBM_BIOS",
+                "KERNEL_MMU"
             ]
         }
     ],

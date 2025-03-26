@@ -25,7 +25,7 @@ struct PciDevice {
 	U8 device;
 	U8 function;
 
-	U32 baseAddress[6];
+	Physical32<void> baseAddress[6];
 
 	auto readConfig8(UPtr offset) -> U8;
 	auto readConfig16(UPtr offset) -> U16;

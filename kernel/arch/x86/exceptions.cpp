@@ -70,6 +70,47 @@ namespace arch {
 					// if(reg.esr) panic.print_details_inline(" with esr ", to_string_hex(reg.esr));
 				panic.print_details_end();
 
+				if(state.interrupt==0x0e){
+					panic.print_details_start();
+						if(state.interruptFrame.error&1<<0){
+							panic.print_details_inline("  Page-protection violation");
+						}else{
+							panic.print_details_inline("  Page not present");
+						}
+						if(state.interruptFrame.error&1<<1){
+							panic.print_details_inline(" when writing ");
+						}else{
+							panic.print_details_inline(" when reading ");
+						}
+						{
+							U32 cr2;
+							asm volatile("mov %0, cr2" : "=r"(cr2));
+							panic.print_details_inline((void*)cr2);
+						}
+						if(state.interruptFrame.error&1<<2){
+							panic.print_details_inline(" in userspace");
+						}else{
+							panic.print_details_inline(" in kernelspace");
+						}
+					panic.print_details_end();
+
+					if(state.interruptFrame.error&1<<3){
+						//TODO: reserved write (when PSE/PAE is set in CR4?)
+					}
+					if(state.interruptFrame.error&1<<4){
+						panic.print_details_inline("  Instruction fetch");
+					}
+					if(state.interruptFrame.error&1<<5){
+						panic.print_details_inline("  Protection-key violation");
+					}
+					if(state.interruptFrame.error&1<<6){
+						panic.print_details_inline("  Shadow stack access");
+					}
+					if(state.interruptFrame.error&1<<15){
+						panic.print_details_inline("  SGX violation");
+					}
+				}
+
 					// U32 ebp;
 					// U32 eax;
 					// U32 ecx;

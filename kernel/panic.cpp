@@ -11,12 +11,14 @@
 namespace panic {
 	driver::DisplayManager *displayManager = nullptr;
 	graphics2d::Buffer *framebuffer = nullptr;
+	Physical<graphics2d::Buffer> framebufferPhysical{0x00};
 
 	namespace {
 		void on_displayManager_event(const driver::DisplayManager::Event &event) {
 			switch(event.type){
 				case driver::DisplayManager::Event::Type::framebuffersChanged:
 					framebuffer = displayManager->get_screen_count()>0?displayManager->get_screen_buffer(0):nullptr;
+					framebufferPhysical.address = mmu::kernel::transaction().get_physical(framebuffer).address;
 				break;
 			}
 		}
@@ -35,6 +37,8 @@ namespace panic {
 			}else{
 				framebuffer = nullptr;
 			}
+
+			framebufferPhysical.address = mmu::kernel::transaction().get_physical(framebuffer).address;
 		}
 
 		void on_drivers_event(const drivers::Event &event){
@@ -62,11 +66,11 @@ namespace panic {
 	}
 
 	auto panic(const char *title, const char *subtitle) -> Panic {
-		return {framebuffer, title, subtitle};
+		return {framebufferPhysical, title, subtitle};
 	}
 
-	/**/ Panic:: Panic(graphics2d::Buffer *framebuffer, const char *title, const char *subtitle):
-		framebuffer(framebuffer)
+	/**/ Panic:: Panic(Physical<graphics2d::Buffer> framebufferPhysical, const char *title, const char *subtitle):
+		framebuffer((graphics2d::Buffer*)framebufferPhysical.address)
 	{
 		exceptions::disable();
 

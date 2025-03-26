@@ -7,7 +7,7 @@
 #include <common/types.hpp>
 
 namespace memory {
-	inline auto _get_memory_page(void *address) -> Page& {
-		return *(Page*)((UPtr)address/memory::pageSize*memory::pageSize);
+	inline auto _get_physical_memory_page(Physical<void> physical) -> Physical<Page> {
+		return Physical<Page>{physical.address/memory::pageSize*memory::pageSize};
 	}
 }

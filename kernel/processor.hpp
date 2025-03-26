@@ -1,7 +1,13 @@
 #pragma once
 
+namespace driver {
+	struct Processor;
+}
+
 namespace processor {
-	auto get_current_id() -> U32;
+	extern driver::Processor *driver;
+
+	auto get_active_id() -> U32;
 
 	void pause();
 }

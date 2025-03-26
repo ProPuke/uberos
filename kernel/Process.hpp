@@ -1,7 +1,9 @@
 #pragma once
 
 #include <kernel/ProcessLog.hpp>
-#include <kernel/mmu.hpp>
+#ifdef KERNEL_MMU
+	#include <kernel/mmu.hpp>
+#endif
 
 #include <common/ipc.hpp>
 #include <common/LList.hpp>
@@ -32,7 +34,7 @@ struct Process: LListItem<Process>, NonCopyable<Process> {
 	ProcessLog log;
 
 	#ifdef KERNEL_MMU
-		mmu::MemoryMapping memoryMapping;
+		mmu::Mapping memoryMapping;
 	#endif
 
 	ListUnordered<Thread*> threads;

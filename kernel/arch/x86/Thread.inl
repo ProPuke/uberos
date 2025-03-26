@@ -14,27 +14,27 @@ inline void __attribute__((flatten)) Thread::swap_state(Thread &from, Thread &to
 	#endif
 
 	asm volatile(R"(
-		push offset 1f // eip
-		push esp
-		push edi
-		push esi
-		push ebx
 		push ebp
-		mov esp, %0
+		push ebx
+		push esi
+		push edi
+		push esp
+		push offset 1f // eip
+		mov [%0], esp
 
 		1:
 
-		mov esp, %1
-		pop ebp
-		pop ebx
-		pop esi
-		pop edi
+		mov esp, [%1]
+		pop eax // eip
 		pop esp
-		pop eax
+		pop edi
+		pop esi
+		pop ebx
+		pop ebp
 		jmp eax
 	)"
 		:
-		: "r" (from.storedState),
-		  "r" (to.storedState)
+		: "r" (&from.storedState),
+		  "r" (&to.storedState)
 	);
 }

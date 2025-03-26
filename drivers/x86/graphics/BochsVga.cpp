@@ -20,7 +20,7 @@ namespace driver::graphics {
 		U16 maxBpp = 32;
 
 		graphics2d::Buffer framebuffer;
-		U8 *physicalFramebufferAddress;
+		Physical<U8> physicalFramebufferAddress;
 
 		Graphics::Mode modes[] = {
 			#define COMMON_MODES(WIDTH, HEIGHT) /**/\
@@ -181,8 +181,8 @@ namespace driver::graphics {
 		}
 
 		// check framebuffer address first before enabling, so we don't trample other drivers
-		physicalFramebufferAddress = (U8*)pciDevice->baseAddress[0];
-		auto virtualAddresss = TRY_RESULT(api.subscribe_memory<U8>((void*)physicalFramebufferAddress, 1024*768*3, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
+		physicalFramebufferAddress = pciDevice->baseAddress[0].as_native_type<U8>();
+		auto virtualAddresss = TRY_RESULT(api.subscribe_memory<U8>(physicalFramebufferAddress, 1024*768*3, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
 		(void)virtualAddresss;
 
 		auto vramSize = get_vram();
@@ -195,8 +195,8 @@ namespace driver::graphics {
 
 		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp");
 
-		// TRY(api.subscribe_memory((void*)0x4f00, 0x123));
-		auto vram = TRY_RESULT(api.subscribe_memory((void*)0xe0000000, vramSize, mmu::Caching::uncached));
+		// TRY(api.subscribe_memory(Physical<void>{0x4f00}, 0x123));
+		auto vram = TRY_RESULT(api.subscribe_memory(Physical<void>{0xe0000000}, vramSize, mmu::Caching::writeCombining));
 		(void)vram;
 
 		framebuffer.address = nullptr;
