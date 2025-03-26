@@ -71,7 +71,7 @@ namespace mmu {
 
 			// kernelTransaction.map_physical_low(Physical<void>{0x00}, 1024*4096, {.caching = Caching::uncached});
 			
-			kernelTransaction.set_virtual_options((void*)memory::code.address, memory::codeSize, {.isWritable = false});
+			kernelTransaction.set_virtual_options((void*)memory::code.address, memory::codeSize, {.isWritable = false, .isExecutable = true});
 
 			// identity mapped, so using memory::stack.address direct is safe
 			kernelTransaction.set_virtual_options((void*)memory::stack.address, memory::stackSize, {});
