@@ -32,12 +32,12 @@ namespace tests::fontTest {
 			};
 
 			for(auto y=scale;y<(U32)window->get_height();y++){
-				if(fontSettings.size>24){
-					clientArea.draw_text(fontSettings, "Abc", 10+1, y+1, 320, 0x222222);
-					clientArea.draw_text(fontSettings, "Abc", 10, y, 320, 0xaaaaaa);
-				}else{
-					clientArea.draw_text(fontSettings, "Abc", 10, y, 320, 0x222222);
-				}
+				// if(fontSettings.size>24){
+				// 	clientArea.draw_text(fontSettings, "Abc", 10+1, y+1, 320, 0x222222);
+				// 	clientArea.draw_text(fontSettings, "Abc", 10, y, 320, 0xaaaaaa);
+				// }else{
+					clientArea.draw_text(fontSettings, "Abc", 10, y, 320, 0x444444);
+				// }
 
 				fontSettings.size += scale;
 				y += fontSettings.size * 4 / 5;
