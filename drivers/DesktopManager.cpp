@@ -230,6 +230,8 @@ namespace driver {
 			Cursor *draggingCursor = nullptr;
 			State state = State::floating;
 
+			bool isAutomaticPlacement = true;
+
 			DockedType dockedType = DockedType::full;
 			graphics2d::Rect defaultFloatingRect;
 
@@ -246,11 +248,15 @@ namespace driver {
 
 		void _enable_docked_window(Window&);
 		void _disable_docked_window(Window&);
+		void _autoposition_window(Window&);
+		void _autoreposition_windows();
 
 		void Window::move_to(I32 x, I32 y) {
 			const auto margin = 10;
 			x = maths::clamp(x, -(I32)graphicsDisplay->buffer.width+margin, (I32)displayManager->get_width()-margin);
 			y = maths::clamp(y, 0, (I32)displayManager->get_height()-margin);
+
+			isAutomaticPlacement = false;
 
 			graphicsDisplay->move_to(x-leftMargin, y-topMargin, DeferWindowMove::depth<1);
 		}
@@ -296,13 +302,23 @@ namespace driver {
 		}
 
 		void Window::show() {
+			if(graphicsDisplay->isVisible) return;
+
+			if(isAutomaticPlacement){
+				_autoposition_window(*this);
+			}
+
 			graphicsDisplay->show();
 			if(state==State::docked){
 				_enable_docked_window(*this);
 			}
+
+			// _autoreposition_windows();
 		}
 		
 		void Window::hide() {
+			if(!graphicsDisplay->isVisible) return;
+
 			graphicsDisplay->hide();
 			if(state==State::docked){
 				_disable_docked_window(*this);
@@ -963,6 +979,97 @@ namespace driver {
 		}
 
 		void _update_window_area(Window *exclude = nullptr);
+
+		void _autoposition_window(Window &window) {
+			// find a previous window this can lean against
+			auto previous = window.prev;
+			for(; previous; previous=previous->prev){
+				// skip non-floating windows such as minimised and docked
+				if(previous->state!=Window::State::floating) continue;
+
+				// if we hit a tall window, then abort as there's nothing decent to rest against
+				if(previous->get_height()>=windowArea.height()*8/10){
+					previous = nullptr;
+					break;
+				}
+
+				// take this candidate
+				break;
+			}
+
+			auto x = max(8, windowArea.width()/2-window.get_width()/2);
+			auto y = windowArea.height()*1/5;
+
+			if(previous){
+				const auto newY = previous->get_y()-windowArea.y1+StandardWindow::titlebarHeight;
+				if(newY<windowArea.height()*3/4){
+					y = newY;
+				}
+			}
+
+			window.move_to(windowArea.x1+x, windowArea.y1+y);
+			window.isAutomaticPlacement = true;
+		}
+
+		void _autoreposition_windows() {
+			const auto now = time::now();
+			const auto repositionDuration = 1000000; // windows created within the last second
+
+			{
+				auto repositionIndex = 0u;
+
+				for(auto window=windows.head; window; window=window->next){
+					if(!window->isAutomaticPlacement) continue;
+					if(window->timeCreated+repositionDuration<now) continue;
+
+					const auto isWide = window->get_width()>=windowArea.width()*7/10;
+					const auto isTall = window->get_height()>=windowArea.height()*7/10;
+
+					if(isWide&&isTall) continue; // don't move big windows (that are both tall and wide)
+
+					const auto margin = max(8, min(windowArea.width(), windowArea.height())/30);
+
+					auto left = margin;
+					auto right = windowArea.width()-window->get_width()-margin;
+					auto centreX = (left+right)/2;
+
+					auto top = margin;
+					auto bottom = max(0, windowArea.height()-window->get_height()-margin);
+					auto centreY = (top+bottom)/2;
+
+					// // move toward centre by 20%
+					// left = left*4/5 + centreX*1/5;
+					// right = right*4/5 + centreX*1/5;
+					// top = top*4/5 + centreY*1/5;
+					// bottom = bottom*4/5 + centreY*1/5;
+
+					if(isTall){
+						window->move_to(windowArea.x1+(repositionIndex%2?right:left), centreY);
+
+					}else if(isWide){
+						window->move_to(centreX, windowArea.y1+(repositionIndex%2?bottom:top));
+
+					}else{
+						window->move_to(
+							windowArea.x1+(repositionIndex%2?
+								right
+							:
+								left
+							),
+							windowArea.y1+((repositionIndex/2)%2?
+								bottom
+							:
+								top
+							)
+						);
+					}
+
+					window->isAutomaticPlacement = true; // in case we need to move it again
+
+					repositionIndex++;
+				}
+			}
+		}
 
 		void _enable_docked_window(Window &window){
 			_update_window_area();
