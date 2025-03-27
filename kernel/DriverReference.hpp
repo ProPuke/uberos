@@ -14,7 +14,8 @@ struct DriverReference<Driver>: LListItem<DriverReference<Driver>> {
 	Driver *driver = nullptr;
 	Callback onTerminated = nullptr;
 	void *onTerminatedData = nullptr;
-	/**/ DriverReference();
+
+	constexpr /**/ DriverReference(){}
 	/**/ DriverReference(Driver*, Callback onTerminated, void *onTerminatedData);
 	/**/ DriverReference(const DriverReference&);
 	/**/~DriverReference();
@@ -33,7 +34,7 @@ template <typename Type>
 struct DriverReference: DriverReference<Driver> {
 	typedef DriverReference<Driver> Super;
 
-	/**/ DriverReference(): Super() {}
+	constexpr /**/ DriverReference(): Super() {}
 	/**/ DriverReference(const DriverReference &copy):Super(copy) {}
 	/**/ DriverReference(Type *type, Callback onTerminated, void *onTerminatedData):
 		Super(type, onTerminated, onTerminatedData)

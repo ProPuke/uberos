@@ -2,12 +2,6 @@
 
 #include <kernel/Driver.hpp>
 
-/**/ DriverReference<Driver>:: DriverReference():
-	driver(nullptr),
-	onTerminated(nullptr),
-	onTerminatedData(nullptr)
-{}
-
 /**/ DriverReference<Driver>:: DriverReference(const DriverReference &copy):
 	driver(copy.driver),
 	onTerminated(copy.onTerminated),

@@ -5,7 +5,7 @@
 #include <drivers/Timer.hpp>
 
 namespace time {
-	AutomaticDriverReference<driver::Timer> timer;
+	constinit AutomaticDriverReference<driver::Timer> timer;
 
 	void init() {
 		timer = drivers::find_and_activate<driver::Timer>();

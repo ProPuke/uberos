@@ -6,7 +6,8 @@ extern "C" void _init();
 
 extern "C" int raise(int signal) {
 	log.print_info("RAISE SIGNAL ", signal);
-	while(true);
+
+	halt();
 }
 
 namespace libc {
