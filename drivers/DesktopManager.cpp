@@ -294,14 +294,14 @@ namespace driver {
 		void Window::show() {
 			graphicsDisplay->show();
 			if(state==State::docked){
-				_disable_docked_window(*this);
+				_enable_docked_window(*this);
 			}
 		}
 		
 		void Window::hide() {
 			graphicsDisplay->hide();
 			if(state==State::docked){
-				_enable_docked_window(*this);
+				_disable_docked_window(*this);
 			}
 		}
 
