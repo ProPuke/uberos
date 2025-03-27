@@ -23,6 +23,15 @@ namespace memory {
 	extern constinit IdentityMapped<void> code;
 	extern /*constinit*/ size_t codeSize;
 
+	extern constinit IdentityMapped<void> constants;
+	extern /*constinit*/ size_t constantsSize;
+
+	extern constinit IdentityMapped<void> initialisedData;
+	extern /*constinit*/ size_t initialisedDataSize;
+
+	extern constinit IdentityMapped<void> uninitialisedData;
+	extern /*constinit*/ size_t uninitialisedDataSize;
+
 	extern constinit IdentityMapped<void> stack;
 	extern constinit size_t stackSize;
 

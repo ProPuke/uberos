@@ -32,6 +32,9 @@ static Log log("mem");
 
 extern U8 __start, __end;
 extern U8 __text_start, __text_end;
+extern U8 __rodata_start, __rodata_end;
+extern U8 __data_start, __data_end;
+extern U8 __bss_start, __bss_end;
 
 namespace memory {
 	constinit U64 totalMemory = 0;
@@ -41,6 +44,15 @@ namespace memory {
 
 	constinit IdentityMapped<void> code{(UPtr)&__text_start};
 	/*constinit*/ size_t codeSize = (UPtr)&__text_end-(UPtr)&__text_start;
+
+	constinit IdentityMapped<void> constants{(UPtr)&__rodata_start};
+	/*constinit*/ size_t constantsSize = (UPtr)&__rodata_end-(UPtr)&__rodata_start;
+
+	constinit IdentityMapped<void> initialisedData{(UPtr)&__data_start};
+	/*constinit*/ size_t initialisedDataSize = (UPtr)&__data_end-(UPtr)&__data_start;
+
+	constinit IdentityMapped<void> uninitialisedData{(UPtr)&__bss_start};
+	/*constinit*/ size_t uninitialisedDataSize = (UPtr)&__bss_end-(UPtr)&__bss_start;
 
 	constinit IdentityMapped<void> stack{(UPtr)&__end};
 	constinit size_t stackSize = KERNEL_STACK_SIZE;
