@@ -201,8 +201,8 @@ namespace driver {
 			auto as_standardWindow() -> StandardWindow* override { return this; }
 		};
 
-		auto create_standard_window(const char *title, I32 width, I32 height, I32 x = 1<<31, I32 y = 1<<31) -> StandardWindow&;
-		auto create_custom_window(const char *title, I32 width, I32 height, I32 x = 1<<31, I32 y = 1<<31) -> CustomWindow&;
+		auto create_standard_window(const char *title, I32 width, I32 height) -> StandardWindow&;
+		auto create_custom_window(const char *title, I32 width, I32 height) -> CustomWindow&;
 		auto get_window_from_display(DisplayManager::Display&) -> Window*;
 		auto get_total_area() -> graphics2d::Rect;
 		auto get_window_area() -> graphics2d::Rect;

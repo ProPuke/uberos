@@ -49,10 +49,8 @@ namespace driver {
 		};
 
 		struct Display: LListItem<Display> {
-			/**/ Display(Thread *thread, U8 *address, DisplayLayer layer, graphics2d::BufferFormat format, graphics2d::BufferFormatOrder order, U32 x, U32 y, U32 width, U32 height, U8 scale = 1, DisplayMode mode = DisplayMode::solid):
+			/**/ Display(Thread *thread, U8 *address, DisplayLayer layer, graphics2d::BufferFormat format, graphics2d::BufferFormatOrder order, U32 width, U32 height, U8 scale = 1, DisplayMode mode = DisplayMode::solid):
 				thread(thread),
-				x(x),
-				y(y),
 				layer(layer),
 				scale(scale),
 				buffer(address, width*graphics2d::bufferFormat::size[(U32)format], width, height, format, order),
@@ -65,14 +63,14 @@ namespace driver {
 
 			Thread *thread;
 
-			I32 x, y;
+			I32 x=0, y=0;
 			DisplayLayer layer;
 			U8 scale;
 			graphics2d::Buffer buffer;
 			graphics2d::Rect solidArea;
 			graphics2d::Rect interactArea;
 			DisplayMode mode;
-			bool isVisible = true;
+			bool isVisible = false;
 
 			U32 topLeftCorner[16] = {};
 			U32 topRightCorner[16] = {};
@@ -121,7 +119,7 @@ namespace driver {
 
 		void set_background_colour(U32 colour);
 
-		auto create_display(Thread *thread, DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> Display*;
+		auto create_display(Thread *thread, DisplayLayer layer, U32 width, U32 height, U8 scale=1) -> Display*;
 		void update_background();
 		void update_background_area(graphics2d::Rect rect);
 		void update_area(graphics2d::Rect rect, Display *below = nullptr);

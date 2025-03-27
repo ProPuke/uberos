@@ -43,7 +43,7 @@ namespace driver {
 
 		void _set_background_colour(U32 colour);
 
-		auto _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale=1) -> DisplayManager::Display*;
+		auto _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 width, U32 height, U8 scale=1) -> DisplayManager::Display*;
 		void _move_display_to(DisplayManager::Display&, I32 x, I32 y, bool update);
 		void _resize_display_to(DisplayManager::Display&, U32 width, U32 height, bool update);
 		void _place_above(DisplayManager::Display&, DisplayManager::Display &other);
@@ -82,9 +82,9 @@ namespace driver {
 			}
 		}
 
-		DisplayManager::Display* _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) {
+		DisplayManager::Display* _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 width, U32 height, U8 scale) {
 			#ifdef DEBUG_MEMORY
-				logging::Section section("create_view ", x, ", ", y, " ", width, "x", height);
+				logging::Section section("create_view ", width, "x", height);
 			#endif
 
 			if(framebuffers.length<1) return nullptr; //TODO: handle this more elegantly? Make this function a Try?
@@ -106,7 +106,9 @@ namespace driver {
 
 			bzero(buffer, width*height*bpp);
 
-			auto display = new DisplayManager::Display(thread, buffer, layer, framebuffer.buffer->format, framebuffer.buffer->order, x, y, width, height, scale);
+			auto display = new DisplayManager::Display(thread, buffer, layer, framebuffer.buffer->format, framebuffer.buffer->order, width, height, scale);
+			display->x = ((I32)framebuffer.buffer->width-(I32)width)/2;
+			display->y = max(0, ((I32)framebuffer.buffer->height-(I32)height)/2);
 			if(!display) return nullptr;
 
 			if(displays.size<1){
@@ -980,10 +982,10 @@ namespace driver {
 		return _set_background_colour(colour);
 	}
 
-	auto DisplayManager::create_display(Thread *thread, DisplayLayer layer, U32 x, U32 y, U32 width, U32 height, U8 scale) -> Display* {
+	auto DisplayManager::create_display(Thread *thread, DisplayLayer layer, U32 width, U32 height, U8 scale) -> Display* {
 		Lock_Guard guard(lock, "create_view");
 
-		return _create_view(thread, layer, x, y, width, height, scale);
+		return _create_view(thread, layer, width, height, scale);
 	}
 
 	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below) -> Display* {
@@ -1107,6 +1109,8 @@ namespace driver {
 
 	void DisplayManager::Display::update() {
 		Lock_Guard guard(lock);
+
+		if(!isVisible) return;
 
 		_update_display_solid(*this);
 		_update_area_transparency(graphics2d::Rect{x, y, x+(I32)get_width(), y+(I32)get_height()});

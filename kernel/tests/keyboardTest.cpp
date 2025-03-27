@@ -185,6 +185,7 @@ namespace tests::keyboardTest {
 		};
 
 		redraw();
+		window->show();
 
 		window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
 			if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){

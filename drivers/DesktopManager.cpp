@@ -85,8 +85,8 @@ namespace driver {
 				}
 			} gui;
 
-			/**/ Window(U32 x, U32 y, U32 width, U32 height, const char *title):
-				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, x, y, width, height)),
+			/**/ Window(const char *title, U32 width, U32 height):
+				graphicsDisplay(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, width, height)),
 				title(title)
 			{}
 
@@ -485,8 +485,8 @@ namespace driver {
 
 			const char *status = "";
 
-			/**/ StandardWindow(U32 x, U32 y, U32 width, U32 height, const char *title):
-				Super(x-leftShadow, y-topShadow, width+leftShadow+rightShadow, height+topShadow+bottomShadow, title),
+			/**/ StandardWindow(const char *title, U32 width, U32 height):
+				Super(title, width+leftShadow+rightShadow, height+topShadow+bottomShadow),
 				closeButton(gui, {0,0,0,0}, 0xff0000, ""),
 				maximiseButton(gui, {0,0,0,0}, 0xff8800, "")
 			{
@@ -797,8 +797,8 @@ namespace driver {
 		struct CustomWindow: Window, DesktopManager::CustomWindow {
 			typedef Window Super;
 
-			/**/ CustomWindow(U32 x, U32 y, U32 width, U32 height, const char *title):
-				Super(x, y, width, height, title)
+			/**/ CustomWindow(const char *title, U32 width, U32 height):
+				Super(title, width, height)
 			{
 				if(graphicsDisplay){
 					clientArea = graphicsDisplay->buffer;
@@ -928,11 +928,11 @@ namespace driver {
 			auto y = (I32)displayManager->get_height()/2;
 			auto &cursorImage = ui2d::image::cursors::_default;
 
-			auto cursorDisplay = displayManager->create_display(nullptr, DisplayManager::DisplayLayer::cursor, x, y, cursorImage.width, cursorImage.height);
+			auto cursorDisplay = displayManager->create_display(nullptr, DisplayManager::DisplayLayer::cursor, cursorImage.width, cursorImage.height);
 			// cursorDisplay->mode = DisplayManager::DisplayMode::transparent; // TODO: add some kind of api for specifically marking displays as transparent
+			cursorDisplay->move_to(x, y);
 			cursorDisplay->solidArea.clear();
 			cursorDisplay->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-			cursorDisplay->hide();
 
 			cursors.push({&mouse, cursorDisplay, x, y, false});
 		}
@@ -1421,49 +1421,38 @@ namespace driver {
 		graphicsDisplay->update_area(client_to_graphics_area(*this, rect));
 	}
 
-	auto DesktopManager::create_standard_window(const char *title, I32 width, I32 height, I32 x, I32 y) -> StandardWindow& {
-		// centre by default
-		{
-			if(x==(I32)1<<31){
-				x = ((I32)displayManager->get_width()-width)/2;
-			}
-
-			if(y==(I32)1<<31){
-				y = max(0, ((I32)displayManager->get_height()-height)/2);
-			}
-		}
-
-		auto &window = *new driver::StandardWindow(x, y, width, height, title);
+	auto DesktopManager::create_standard_window(const char *title, I32 width, I32 height) -> StandardWindow& {
+		auto &window = *new driver::StandardWindow(title, width, height);
+		window.move_to(
+			((I32)displayManager->get_width()-width)/2,
+			max(0, ((I32)displayManager->get_height()-height)/2)
+		);
+		window.isAutomaticPlacement = true; // cos move_to disables this
 
 		window.draw_frame();
 
 		windows.push_back(window);
 		focusedWindow = &window;
-		update_focused_window();
 
 		events.trigger({
 			type: Event::Type::windowAdded,
 			windowAdded: { window: &window }
 		});
 
+		update_focused_window();
+
 		return window;
 	}
 
 	// TODO: mutex these functions
 
-	auto DesktopManager::create_custom_window(const char *title, I32 width, I32 height, I32 x, I32 y) -> CustomWindow& {
-		// centre by default
-		{
-			if(x==(I32)1<<31){
-				x = ((I32)displayManager->get_width()-width)/2;
-			}
-
-			if(y==(I32)1<<31){
-				y = max(0, ((I32)displayManager->get_height()-height)/2);
-			}
-		}
-
-		auto &window = *new driver::CustomWindow(x, y, width, height, title);
+	auto DesktopManager::create_custom_window(const char *title, I32 width, I32 height) -> CustomWindow& {
+		auto &window = *new driver::CustomWindow(title, width, height);
+		window.move_to(
+			((I32)displayManager->get_width()-width)/2,
+			max(0, ((I32)displayManager->get_height()-height)/2)
+		);
+		window.isAutomaticPlacement = true; // cos move_to disables this
 
 		windows.push_back(window);
 		focusedWindow = &window;

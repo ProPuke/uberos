@@ -285,11 +285,14 @@ namespace kernel {
 						(void) width;
 						(void) height;
 
-						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::DisplayManager::DisplayLayer::regular, rand()%(displayManager->get_width()-width), rand()%(displayManager->get_height()-height), width, height, scale);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::DisplayManager::DisplayLayer::regular, width, height, scale);
 						if(!view) {
 							log.print_error("Error: didn't get a view");
 							return;
 						}
+
+						view->move_to(rand()%(displayManager->get_width()-width), rand()%(displayManager->get_height()-height));
+						view->show();
 
 						log.print_debug("got view");
 
@@ -373,7 +376,9 @@ namespace kernel {
 						I32 y = rand()%500;
 						I32 speed = rand()%6+1;
 
-						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::DisplayManager::DisplayLayer::regular, x, y, width, height, 1.0);
+						auto view = displayManager->create_display(scheduler->get_current_thread(), driver::DisplayManager::DisplayLayer::regular, width, height, 1.0);
+						view->move_to(x, y);
+
 
 						auto &buffer = view->buffer;
 
@@ -386,7 +391,7 @@ namespace kernel {
 						buffer.draw_text({.font=*graphics2d::font::default_sans, .size=(U32)(128*scale)}, "Lots of test text!", 10*scale, (128-20)*scale, 9999, 0xdddddd);
 						log.print_debug("blitted in ", time::now()-startTime);
 
-						view->update();
+						view->show();
 
 						// float scale = 1.0;
 						// float scaleDelta = 0.1;

@@ -3,6 +3,7 @@
 #include <drivers/DesktopManager.hpp>
 
 #include <kernel/console.hpp>
+#include <kernel/DriverReference.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/logging.hpp>
 #include <kernel/memory.hpp>
@@ -157,6 +158,7 @@ namespace utils {
 			// window->set_status("Booting...");
 
 			redraw();
+			window->show();
 
 			logHandler = new logging::Handler(
 				[](U32 indent, logging::PrintType type) {

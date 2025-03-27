@@ -119,6 +119,7 @@ namespace tests::taskbar {
 		window->set_max_docked_size(150, 61);
 		window->dock(driver::DesktopManager::Window::DockedType::top);
 		window->set_layer(driver::DesktopManager::Window::Layer::topmost);
+		window->show();
 
 		static DesktopGui gui{*window};
 		gui.backgroundColour = transparentBackgroundColour;

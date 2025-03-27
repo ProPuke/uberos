@@ -118,6 +118,7 @@ namespace tests::memoryTest {
 		};
 
 		redraw();
+		window->show();
 
 		window->events.subscribe([](const driver::DesktopManager::Window::Event &event, void*){
 			if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
