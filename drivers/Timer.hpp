@@ -2,6 +2,8 @@
 
 #include <drivers/Hardware.hpp>
 
+#include <kernel/DriverReference.hpp>
+
 #include <common/Bitmask.hpp>
 
 namespace driver {

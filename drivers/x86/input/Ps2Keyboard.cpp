@@ -2,6 +2,7 @@
 
 #include <drivers/x86/system/Ps2.hpp>
 
+#include <kernel/DriverReference.hpp>
 #include <kernel/panic.hpp>
 #include <kernel/keyboard.hpp>
 

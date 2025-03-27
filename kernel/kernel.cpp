@@ -3,6 +3,7 @@
 #include <drivers/Scheduler.hpp>
 
 #include <kernel/Cli.hpp>
+#include <kernel/DriverReference.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/info.hpp>

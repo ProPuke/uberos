@@ -2,6 +2,7 @@
 
 #include <drivers/Scheduler.hpp>
 
+#include <kernel/DriverReference.hpp>
 #include <kernel/Process.hpp>
 
 #include <common/EventEmitter.hpp>

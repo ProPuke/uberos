@@ -2,6 +2,7 @@
 
 #include <drivers/x86/system/Acpi.hpp>
 
+#include <kernel/DriverReference.hpp>
 #include <kernel/drivers.hpp>
 #include <kernel/PhysicalPointer.hpp>
 

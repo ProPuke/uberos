@@ -5,12 +5,11 @@
 #include <kernel/memory.hpp>
 
 #include <common/Bitmask.hpp>
+#include <common/DriverTypeId.hpp>
 #include <common/LList.hpp>
 #include <common/Try.hpp>
 
 #include <algorithm>
-
-typedef U32 DriverTypeId;
 
 struct DriverType {
 	DriverTypeId id; // unique. must be cycled whenever this driver interface changes
@@ -38,7 +37,7 @@ struct DriverType {
 #define DRIVER_DECLARE_TYPE(ID, NAME, DESCRIPTION) static inline DriverType typeInstance{ID, NAME, DESCRIPTION};
 #define DRIVER_DECLARE_INIT() do { typeInstance.parentType = type; type = &typeInstance; } while(false)
 
-template <typename Type = Driver>
+template <typename Type>
 struct DriverReference;
 
 namespace drivers {
@@ -85,46 +84,6 @@ protected:
 	virtual auto _on_stop() -> Try<> = 0;
 
 	virtual auto _on_interrupt(U8, const void *cpuState) -> const void* { return nullptr; }
-};
-
-template <>
-struct DriverReference<Driver>: LListItem<DriverReference<Driver>> {
-	typedef void(*Callback)(void*);
-
-	Driver *driver = nullptr;
-	Callback onTerminated = nullptr;
-	void *onTerminatedData = nullptr;
-	/**/ DriverReference();
-	/**/ DriverReference(Driver*, Callback onTerminated, void *onTerminatedData);
-	/**/ DriverReference(const DriverReference&);
-	/**/~DriverReference();
-
-	auto operator=(const DriverReference&) -> DriverReference&;
-	auto operator=(Driver*) -> DriverReference&;
-
-	explicit operator bool() { return !!driver; }
-
-	void set_on_terminated(Callback callback, void *data) { onTerminated = callback; onTerminatedData = data; }
-
-	void terminate();
-};
-
-template <typename Type>
-struct DriverReference: DriverReference<Driver> {
-	typedef DriverReference<Driver> Super;
-
-	auto operator->() -> Type* { return (Type*)driver; }
-
-	/**/ DriverReference(): Super() {}
-	/**/ DriverReference(const DriverReference &copy):Super(copy) {}
-	/**/ DriverReference(Type *type, Callback onTerminated, void *onTerminatedData):
-		Super(type, onTerminated, onTerminatedData)
-	{}
-
-	auto operator=(const DriverReference &copy) -> DriverReference& { Super::operator=(copy); return *this; }
-	auto operator=(Driver *driver) -> DriverReference& { Super::operator=(driver); return *this; }
-
-	explicit operator bool() { return Super::operator bool(); }
 };
 
 // template<size_t length>

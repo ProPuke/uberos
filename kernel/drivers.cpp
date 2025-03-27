@@ -505,14 +505,14 @@ namespace drivers {
 		}
 	}
 
-	auto find_and_activate(DriverType &type, Driver *onBehalf) -> Driver* {
+	auto find_and_activate(DriverTypeId typeId, Driver *onBehalf) -> Driver* {
 		// try to find an active first
-		if(auto active = find_active(type, onBehalf)){
+		if(auto active = find_active(typeId, onBehalf)){
 			return active;
 		}
 
 		// failing that, try to activate a candidate
-		for(auto &driver:Iterate<Driver>(type)){
+		for(auto &driver:Iterate<Driver>(typeId)){
 			if(driver.api.is_enabled()){
 				if(onBehalf){
 					log.print_info("REQUEST ", onBehalf->type->name, " -> ", driver.type->name);
@@ -525,8 +525,8 @@ namespace drivers {
 		return nullptr;
 	}
 
-	auto find_active(DriverType &type, Driver *onBehalf) -> Driver* {
-		for(auto &driver:Iterate<Driver>(type)){
+	auto find_active(DriverTypeId typeId, Driver *onBehalf) -> Driver* {
+		for(auto &driver:Iterate<Driver>(typeId)){
 			if(driver.api.is_active()) return &driver;
 		}
 

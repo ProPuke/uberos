@@ -1,10 +1,13 @@
 #pragma once
 
-#include <kernel/Driver.hpp>
+#include <common/DriverTypeId.hpp>
 
 #include <common/EventEmitter.hpp>
 #include <common/LList.hpp>
 #include <common/Try.hpp>
+
+struct Driver;
+struct DriverType;
 
 namespace drivers {
 	struct Event {
@@ -37,11 +40,11 @@ namespace drivers {
 	auto find_next(Driver &after, DriverTypeId) -> Driver*;
 
 	template <typename T>
-	auto find_first(DriverType &type) -> T* { return (T*)find_first(type.id); }
+	auto find_first(DriverTypeId typeId) -> T* { return (T*)find_first(typeId); }
 	template <typename T>
-	auto find_first() -> T* { return find_first<T>(T::typeInstance); }
+	auto find_first() -> T* { return find_first<T>(T::typeInstance.id); }
 	template <typename T>
-	auto find_next(Driver &after, DriverType &type) -> T* { return (T*)find_next(after, type.id); }
+	auto find_next(Driver &after, DriverTypeId typeId) -> T* { return (T*)find_next(after, typeId); }
 	template <typename T>
 	auto find_next(Driver &after) -> T* { return find_next<T>(after, T::typeInstance.id); }
 
@@ -59,41 +62,41 @@ namespace drivers {
 	template <typename Type>
 	struct Iterator {
 		Type *item;
-		DriverType &type;
+		DriverTypeId typeId;
 
-		/**/ Iterator(Type *item, DriverType &type):item(item),type(type){}
+		/**/ Iterator(Type *item, DriverTypeId typeId):item(item),typeId(typeId){}
 
 		auto operator*() -> Type& { return *item; }
 		auto operator->() -> Type* { return item; }
-		auto operator++() -> Iterator& { item = find_next<Type>(*item, type); return *this; }
-		auto operator++(int x) -> Iterator& { while(item&&x>0) item = find_next(*item, type); return *this; }
+		auto operator++() -> Iterator& { item = find_next<Type>(*item, typeId); return *this; }
+		auto operator++(int x) -> Iterator& { while(item&&x>0) item = find_next(*item, typeId); return *this; }
 		auto operator==(const Iterator &other) -> bool { return item==other.item; }
 		auto operator!=(const Iterator &other) -> bool { return item!=other.item; }
 	};
 
 	template <typename Type>
 	struct Iterate {
-		DriverType &type;
+		DriverTypeId typeId;
 
-		/**/ Iterate(DriverType &type):type(type){}
+		/**/ Iterate(DriverTypeId typeId):typeId(typeId){}
 
-		auto begin() -> Iterator<Type> { return {find_first<Type>(type), type}; }
-		auto end() -> Iterator<Type> { return {nullptr, type}; }
+		auto begin() -> Iterator<Type> { return {find_first<Type>(typeId), typeId}; }
+		auto end() -> Iterator<Type> { return {nullptr, typeId}; }
 	};
 
 	template <typename Type = Driver>
-	inline auto iterate() -> Iterate<Type> { return Iterate<Type>(Type::typeInstance); }
+	inline auto iterate() -> Iterate<Type> { return Iterate<Type>(Type::typeInstance.id); }
 
-	auto find_and_activate(DriverType&, Driver *onBehalf = nullptr) -> Driver*;
-	auto find_active(DriverType&, Driver *onBehalf = nullptr) -> Driver*;
+	auto find_and_activate(DriverTypeId, Driver *onBehalf = nullptr) -> Driver*;
+	auto find_active(DriverTypeId, Driver *onBehalf = nullptr) -> Driver*;
 
 	template <typename Type>
 	auto find_and_activate(Driver *onBehalf = nullptr) -> Type* {
-		return (Type*)find_and_activate(Type::typeInstance, onBehalf);
+		return (Type*)find_and_activate(Type::typeInstance.id, onBehalf);
 	}
 
 	template <typename Type>
 	auto find_active(Driver *onBehalf = nullptr) -> Type* {
-		return (Type*)find_active(Type::typeInstance, onBehalf);
+		return (Type*)find_active(Type::typeInstance.id, onBehalf);
 	}
 }

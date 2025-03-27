@@ -2,6 +2,7 @@
 
 #include <drivers/x86/system/Ps2.hpp>
 
+#include <kernel/DriverReference.hpp>
 #include <kernel/drivers.hpp>
 
 namespace driver::input {

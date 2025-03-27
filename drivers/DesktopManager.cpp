@@ -4,6 +4,8 @@
 #include <drivers/Mouse.hpp>
 
 #include <kernel/drivers.hpp>
+#include <kernel/DriverReference.hpp>
+#include <kernel/time.hpp>
 
 #include <common/graphics2d.hpp>
 #include <common/graphics2d/font.hpp>
@@ -66,6 +68,8 @@ namespace driver {
 		};
 
 		struct Window: LListItem<Window>, virtual DesktopManager::Window {
+			U64 timeCreated = time::now();
+
 			struct Gui: ui2d::Gui {
 				typedef ui2d::Gui Super;
 
