@@ -95,6 +95,9 @@ namespace driver::processor {
 		return {};
 	}
 
+	//FIXME: I don't super like that instructional queries like this are polymorphic
+	// Instruction sets should (?) be fixed per kernel build, so perhaps cpu drivers should be referenced as static instances rather than virtual pointers?
+
 	auto X86::get_active_id() -> U32 {
 		const auto lapic_id = 0x20;
 		return *(volatile U32*)((U8*)localApic+lapic_id) >> 24;
