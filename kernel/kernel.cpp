@@ -73,9 +73,8 @@ namespace kernel {
 		logging::init();
 		panic::init();
 
-		drivers::find_and_activate<driver::Processor>();
-
 		{ auto section = log.section("init");
+			drivers::find_and_activate<driver::Processor>();
 			time::init();
 
 			_preInit();
