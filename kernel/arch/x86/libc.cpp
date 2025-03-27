@@ -11,8 +11,6 @@ extern "C" int raise(int signal) {
 
 namespace libc {
 	void init() {
-		auto section = log.section("init...");
-
 		_init();
 	}
 }
