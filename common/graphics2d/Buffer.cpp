@@ -34,6 +34,14 @@ namespace graphics2d {
 						continue;
 					}
 	
+					const auto xAdvancement = character->advance*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
+
+					if(x+xAdvancement>=right){
+						//TODO: proper wordwrapping
+						x = FixedI32::whole(startX);
+						y += lineheight;
+					}
+
 					if(character->atlasWidth&&character->atlasHeight){
 						auto x1 = x+character->offsetX*(I32)fontSettings.size;
 						auto y1 = y-character->offsetY*(I32)fontSettings.size;
@@ -62,13 +70,8 @@ namespace graphics2d {
 	
 						updatedArea = updatedArea.include({displayX1, displayY1, displayX2, displayY2});
 					}
-	
-					x += character->advance*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
-					if(x>=right){
-						//TODO: proper wordwrapping
-						x = FixedI32::whole(startX);
-						y += lineheight;
-					}
+
+					x += xAdvancement;
 				}
 			}
 	
