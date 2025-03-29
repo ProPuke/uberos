@@ -42,7 +42,7 @@ struct MemoryPool {
 		#ifdef MEMORY_CHECKS
 			logging::Section section("malloc ", size);
 
-			debug_llist(availableBlocks, "availableBlocks in malloc 0");
+			memory::debug();
 		#endif
 
 		//TODO:align properly. This only aligns the chunk position, not the data inside it
@@ -110,7 +110,7 @@ struct MemoryPool {
 	void claim_block(MemoryPoolBlock &reclaim){
 		#ifdef MEMORY_CHECKS
 			logging::Section section("claim block ", &reclaim, " of size ", reclaim.size);
-			debug_llist(availableBlocks, "availableBlocks before");
+			memory::debug();
 		#endif
 
 		available += reclaim.size;
@@ -166,7 +166,7 @@ struct MemoryPool {
 
 				if(!found){
 					logging::print_error("Error: NOT FOUND");
-					debug_llist(availableBlocks, "availableBlocks after");
+					memory::debug();
 				}
 			}
 		#endif
