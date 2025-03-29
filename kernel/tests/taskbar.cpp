@@ -33,7 +33,8 @@ namespace tests::taskbar {
 		const auto opaqueBackgroundColour = graphics2d::premultiply_colour(desktopManager->get_default_window_colour()|0x44<<24);
 		// const auto borderColour = desktopManager->get_default_window_border_colour();
 		const auto borderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0x88)<<24);
-		const auto opaqueBorderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0xdd)<<24);
+		// const auto opaqueBorderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0xdd)<<24);
+		const auto opaqueBorderColour = desktopManager->get_default_window_border_colour();
 
 		struct DesktopGui: ui2d::Gui {
 			typedef ui2d::Gui Super;
@@ -135,15 +136,16 @@ namespace tests::taskbar {
 			auto &clientArea = window->get_client_area();
 
 			if(clientArea.width>=clientArea.height){
-				const auto margin = 69; // big enough for the clock
-				const auto innerWidth = (I32)clientArea.width-margin*2;
+				const auto leftMargin = padding+(I32)cleanTheme.get_minimum_button_width()+padding;
+				const auto rightMargin = 160; // big enough for the button and clock
+				const auto innerWidth = (I32)clientArea.width-leftMargin-rightMargin;
 
 				const auto maxButtonWidth = 150;
 
 				const auto buttonSpacing = padding;
 				const auto buttonsWidth = min(innerWidth, (I32)windowButtons.length*(maxButtonWidth+buttonSpacing)-buttonSpacing);
 
-				const auto left = margin+innerWidth/2-buttonsWidth/2;
+				const auto left = leftMargin+innerWidth/2-buttonsWidth/2;
 
 				for(auto i=0u;i<windowButtons.length;i++){
 					auto &windowButton = *windowButtons[i];
@@ -183,6 +185,8 @@ namespace tests::taskbar {
 			clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xff000000);
 
 			if(window->get_state()==driver::DesktopManager::Window::State::docked){
+				launcherButton.colour = 0xff000000;
+
 				window->set_solid_area({0,0,0,0});
 				window->set_titlebar_area({0, 0, width, height});
 
@@ -226,6 +230,8 @@ namespace tests::taskbar {
 				}
 
 			}else{
+				launcherButton.colour = graphics2d::premultiply_colour(0x55eeeeee);
+
 				// window->set_solid_area({shadowLength, shadowLength, shadowLength+width, shadowLength+height});
 				// clientArea.draw_rect(1, 1, width-1, height-1, solidBackgroundColour);
 
