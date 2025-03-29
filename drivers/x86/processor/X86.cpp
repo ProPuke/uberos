@@ -4,7 +4,123 @@
 
 namespace driver::processor {
 	namespace {
-		volatile void *localApic = nullptr;
+		//TODO: check all the bit alignment and flags on these
+
+		struct __attribute__((packed)) LocalApic {
+			U32:32; // reserved;
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32:32; // reserved;
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 id; // readwrite
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 version; // read
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32:32; // reserved;
+			U32:32;
+			U32:32;
+			U32:32;
+			U32:32; // reserved;
+			U32:32;
+			U32:32;
+			U32:32;
+			U32:32; // reserved;
+			U32:32;
+			U32:32;
+			U32:32;
+			U32:32; // reserved;
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 taskPriority; // readwrite
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 arbitrationPriority; // read
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 eoi; // write
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 remoteDead; // read
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 logicalDestination; // readwrite
+			U32:32;
+			U32:32;
+			U32:32;
+
+			enum struct DestinationFormat: U32 {
+				cluster = 0b0000,
+				flat = 0b1111
+			};
+
+			U32:28;
+			DestinationFormat destinationFormat:4; // readwrite
+			U32:32;
+			U32:32;
+			U32:32;
+
+			U32 spuriousInterruptVector; // readwrite
+			U32:32;
+			U32:32;
+			U32:32;
+
+			struct __attribute__((packed)) InService {
+				U32 inService; // read
+				U32:32;
+				U32:32;
+				U32:32;
+			};
+
+			InService inService[8];
+
+			struct __attribute__((packed)) TriggerMode {
+				U32 triggerMode; // read
+				U32:32;
+				U32:32;
+				U32:32;
+			};
+
+			TriggerMode triggerMode[8];
+
+			struct __attribute__((packed)) InterruptRequest {
+				U32 interruptRequest; // read
+				U32:32;
+				U32:32;
+				U32:32;
+			};
+
+			InterruptRequest interruptRequest[8];
+
+			U32 errorStatus; // read
+			U32:32;
+			U32:32;
+			U32:32;
+
+			//TODO: there is more...
+		};
+
+		volatile LocalApic *localApic = nullptr;
 	}
 
 	auto X86::_on_start() -> Try<> {
@@ -88,7 +204,7 @@ namespace driver::processor {
 
 		log.print_end();
 
-		localApic = TRY_RESULT(api.subscribe_memory(Physical<void>{0xfee00000}, memory::pageSize, mmu::Caching::uncached));
+		localApic = (LocalApic*)TRY_RESULT(api.subscribe_memory(Physical<void>{0xfee00000}, memory::pageSize, mmu::Caching::uncached));
 
 		::processor::driver = this;
 
@@ -99,7 +215,6 @@ namespace driver::processor {
 	// Instruction sets should (?) be fixed per kernel build, so perhaps cpu drivers should be referenced as static instances rather than virtual pointers?
 
 	auto X86::get_active_id() -> U32 {
-		const auto lapic_id = 0x20;
-		return *(volatile U32*)((U8*)localApic+lapic_id) >> 24;
+		return localApic->id>>24;
 	}
 }
