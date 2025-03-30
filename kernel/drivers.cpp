@@ -292,7 +292,7 @@ namespace drivers {
 			log.print_info_start();
 			log.print_inline(indent, "   PCI Devices:");
 			for(auto pciDevice:driver.api.subscribedPciDevices) {
-				log.print_inline(' ', pciDevice->bus, '/', pciDevice->device, '/', pciDevice->function);
+				log.print_inline(' ', format::Hex8{pciDevice->bus, false}, ':', format::Hex8{pciDevice->device, false}, '.', pciDevice->function);
 			}
 			log.print_end();
 		}

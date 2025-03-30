@@ -209,9 +209,9 @@ namespace driver::system {
 			auto classCodeString = classCode_to_string(classCode, subclassCode);
 
 			if(classCodeString){
-				Pci::instance.log.print_info("detected ", bus, '/', device, '/', function, " : ", classCodeString, " (", format::Hex32{_class}, ") ", format::Hex32{id});
+				Pci::instance.log.print_info("detected ", format::Hex8{bus, false}, ':', format::Hex8{device, false}, '.', function, ' ', classCodeString, " (", format::Hex32{_class}, ") ", format::Hex32{id});
 			}else{
-				Pci::instance.log.print_info("detected ", bus, '/', device, '/', function, " : unknown device (", format::Hex32{_class}, ") ", format::Hex32{id});
+				Pci::instance.log.print_info("detected ", format::Hex8{bus, false}, ':', format::Hex8{device, false}, '.', function, " unknown device (", format::Hex32{_class}, ") ", format::Hex32{id});
 			}
 
 			auto &instance = devices.push_back((PciDevice){
