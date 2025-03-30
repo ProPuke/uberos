@@ -532,6 +532,7 @@ namespace mmu {
 		if(!table) return {"Page does not exist"};
 
 		auto &tableEntry = to_virtual(table).entry[pageIndex];
+		if(!tableEntry.isPresent) return {"Page does not exist"};
 
 		MapOptions options;
 		options.isUserspace = tableEntry.isUserspaceAccessible;
