@@ -4,7 +4,7 @@
 
 namespace driver::clock {
 	struct CmosRtc: Clock {
-		DRIVER_INSTANCE(CmosRtc, 0x80110f10, "CmosRtc", "CMOS Real-Time Clock", Clock)
+		DRIVER_INSTANCE(CmosRtc, 0x80110f10, "cmosRtc", "CMOS Real-Time Clock", Clock)
 
 		auto _on_start() -> Try<> override;
 		auto _on_stop() -> Try<> override;
