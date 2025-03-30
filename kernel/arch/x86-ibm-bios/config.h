@@ -1,7 +1,8 @@
 #pragma once
 
-#include <lib/multiboot/multiboot.h>
+#include <lib/multiboot/multiboot1.h>
+#include <lib/multiboot/multiboot2.h>
 
 // provide memory map
-#define MULTIBOOT_FLAGS    (MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE)
-#define MULTIBOOT_CHECKSUM -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_FLAGS)
+#define MULTIBOOT1_FLAGS    (MULTIBOOT1_PAGE_ALIGN | MULTIBOOT1_MEMORY_INFO | MULTIBOOT1_VIDEO_MODE)
+#define MULTIBOOT1_CHECKSUM -(MULTIBOOT1_HEADER_MAGIC + MULTIBOOT1_FLAGS)
