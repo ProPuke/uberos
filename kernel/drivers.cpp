@@ -65,6 +65,11 @@ namespace drivers {
 		// }else{
 		// 	drivers.push_back(driver);
 		// }
+
+		events.trigger({
+			type: Event::Type::driverInstalled,
+			driverInstalled: { &driver }
+		});
 	}
 
 	auto start_driver(Driver &driver) -> Try<> {

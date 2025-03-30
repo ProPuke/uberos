@@ -43,6 +43,8 @@ namespace panic {
 
 		void on_drivers_event(const drivers::Event &event){
 			switch(event.type){
+				case drivers::Event::Type::driverInstalled:
+				break;
 				case drivers::Event::Type::driverStarted:
 					if(auto displayManager = event.driverStarted.driver->as_type<driver::DisplayManager>()){
 						set_displayManager(displayManager);

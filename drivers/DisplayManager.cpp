@@ -842,6 +842,14 @@ namespace driver {
 
 		void _on_driver_event(const drivers::Event &event) {
 			switch(event.type){
+				case drivers::Event::Type::driverInstalled: {
+					// autostart graphics drivers so we can add them
+					if(auto graphics = event.driverInstalled.driver->as_type<Graphics>()){
+						if(graphics->api.is_enabled()){
+							TRY_IGNORE(drivers::start_driver(*graphics));
+						}
+					}
+				} break;
 				case drivers::Event::Type::driverStarted: {
 					auto graphics = event.driverStarted.driver->as_type<driver::Graphics>();
 					if(!graphics) break;

@@ -924,6 +924,14 @@ namespace driver {
 
 		void _on_drivers_event(const drivers::Event &event) {
 			switch(event.type){
+				case drivers::Event::Type::driverInstalled:
+					// turn on any new mouse drivers as they come in, so we can capture them on start
+					if(auto mouse = event.driverInstalled.driver->as_type<Mouse>()){
+						if(mouse->api.is_enabled()){
+							TRY_IGNORE(drivers::start_driver(*mouse));
+						}
+					}
+				break;
 				case drivers::Event::Type::driverStarted:
 					if(auto mouse = event.driverStarted.driver->as_type<Mouse>()){
 						_add_mouse(*mouse);

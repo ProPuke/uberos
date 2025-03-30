@@ -12,6 +12,7 @@ struct DriverType;
 namespace drivers {
 	struct Event {
 		enum struct Type {
+			driverInstalled,
 			driverStarted,
 			driverStopped
 		} type;
@@ -19,7 +20,11 @@ namespace drivers {
 		union {
 			struct {
 				Driver *driver;
-			} driverStarted;
+			} driverInstalled;
+
+			struct {
+				Driver *driver;
+			} driverStarted;	
 
 			struct {
 				Driver *driver;
