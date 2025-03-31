@@ -93,7 +93,14 @@ class DriverApi {
 		void unsubscribe_all_memory();
 		auto is_subscribed_to_memory(Physical<void>, size_t) -> bool;
 
-		auto subscribe_pci(PciDevice&) -> Try<>;
+		struct PciOptions {
+			bool ioSpace = false;
+			bool memorySpace = false;
+			bool busMastering = false;
+			bool interrupts = false;
+		};
+
+		auto subscribe_pci(PciDevice&, PciOptions) -> Try<>;
 		void unsubscribe_pci(PciDevice&);
 		void unsubscribe_all_pci();
 		auto is_subscribed_to_pci(PciDevice&) -> bool;

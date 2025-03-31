@@ -170,8 +170,7 @@ namespace driver::graphics {
 
 		TRY(api.subscribe_ioPort(ioIndex));
 		TRY(api.subscribe_ioPort(ioData));
-
-		TRY(api.subscribe_pci(*pciDevice));
+		TRY(api.subscribe_pci(*pciDevice, {.ioSpace=true, .memorySpace=true}));
 
 		auto id = get16(Register::id);
 
@@ -181,8 +180,8 @@ namespace driver::graphics {
 		}
 
 		// check framebuffer address first before enabling, so we don't trample other drivers
-		physicalFramebufferAddress = pciDevice->baseAddress[0].as_native_type<U8>();
-		auto virtualAddresss = TRY_RESULT(api.subscribe_memory<U8>(physicalFramebufferAddress, 1024*768*3, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
+		physicalFramebufferAddress = pciDevice->bar[0].memoryAddress.as_native_type<U8>();
+		auto virtualAddresss = TRY_RESULT(api.subscribe_memory<U8>(physicalFramebufferAddress, 1024*768*4, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
 		(void)virtualAddresss;
 
 		auto vramSize = get_vram();

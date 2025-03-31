@@ -222,10 +222,14 @@ namespace driver::system {
 				.function = function
 			});
 
+			//TODO: set initial pci device options?
+
 			for(auto i=0;i<6;i++){
-				instance.baseAddress[i].address = instance.readConfig32(0x10+i*4) & 0xfffffff0;
-				// if(instance.baseAddress[i]){
-				// 	Pci::instance.log.print_info("base address ", i, " = ", (void*)instance.baseAddress[i]);
+				auto &bar = instance.bar[i];
+				bar.memoryAddress.address = instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffff0;
+				bar.ioAddress = instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffffc;
+				// if(bar.memoryAddress){
+				// 	Pci::instance.log.print_info("base address ", i, " = ", (void*)bar.memoryAddress.address);
 				// }
 			}
 		}

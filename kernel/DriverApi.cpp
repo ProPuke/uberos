@@ -208,7 +208,7 @@ auto DriverApi::is_subscribed_to_memory(Physical<void> start, size_t _size) -> b
 	return false;
 }
 
-auto DriverApi::subscribe_pci(PciDevice &pciDevice) -> Try<> {
+auto DriverApi::subscribe_pci(PciDevice &pciDevice, PciOptions pciOptions) -> Try<> {
 	if(is_subscribed_to_pci(pciDevice)) return {};
 
 	for(auto &driver:drivers::iterate<Driver>()){
@@ -216,6 +216,13 @@ auto DriverApi::subscribe_pci(PciDevice &pciDevice) -> Try<> {
 	}
 
 	subscribedPciDevices.push_back(&pciDevice);
+	if(pciOptions.ioSpace) pciDevice.enable_io_space();
+	if(pciOptions.memorySpace) pciDevice.enable_memory_space();
+	if(pciOptions.busMastering) pciDevice.enable_bus_mastering();
+	if(pciOptions.interrupts) pciDevice.enable_interrupts();
+
+	//TODO: should we be unsetting these when we let go? do we need to also disable options we don't want?
+
 	return {};
 }
 
