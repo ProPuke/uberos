@@ -21,6 +21,7 @@ namespace driver::graphics {
 
 		graphics2d::Buffer framebuffer;
 		Physical<U8> physicalFramebufferAddress;
+		U32 physicalFramebufferSize;
 
 		Graphics::Mode modes[] = {
 			#define COMMON_MODES(WIDTH, HEIGHT) /**/\
@@ -100,7 +101,9 @@ namespace driver::graphics {
 
 		auto assign_framebuffer(U32 width, U32 height, U8 bpp) -> Try<> {
 			//FIXME: there is a race condition between nulling the framebuffer, and broadcasting the invalid event. The framebuffer access should likely be wrapped with a spinlock to avoid this
+			auto framebufferAddress = framebuffer.address;
 			framebuffer.address = nullptr;
+
 			BochsVga::instance.events.trigger({
 				instance: &BochsVga::instance,
 				type: driver::Graphics::Event::Type::framebufferChanging,
@@ -143,8 +146,7 @@ namespace driver::graphics {
 			framebuffer.format = format;
 			framebuffer.order = order;
 
-			BochsVga::instance.api.unsubscribe_all_memory();
-			framebuffer.address = TRY_RESULT(BochsVga::instance.api.subscribe_memory<U8>(physicalFramebufferAddress, framebuffer.height*framebuffer.stride, mmu::Caching::writeCombining));
+			framebuffer.address = framebufferAddress;
 
 			BochsVga::instance.events.trigger({
 				instance: &BochsVga::instance,
@@ -181,8 +183,8 @@ namespace driver::graphics {
 
 		// check framebuffer address first before enabling, so we don't trample other drivers
 		physicalFramebufferAddress = pciDevice->bar[0].memoryAddress.as_native_type<U8>();
-		auto virtualAddresss = TRY_RESULT(api.subscribe_memory<U8>(physicalFramebufferAddress, 1024*768*4, mmu::Caching::writeCombining)); // a reasonable minimal size, so we can ensure we're not overlapping over drivers
-		(void)virtualAddresss;
+		physicalFramebufferSize = pciDevice->bar[0].memorySize;
+		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>(physicalFramebufferAddress, physicalFramebufferSize, mmu::Caching::writeCombining));
 
 		auto vramSize = get_vram();
 
@@ -192,13 +194,11 @@ namespace driver::graphics {
 		maxBpp = get16(Register::bpp);
 		set16(Register::enable, (U16)Enable::noClearMem);
 
-		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp");
+		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp (within ", physicalFramebufferSize/1024, "KB)");
 
 		// TRY(api.subscribe_memory(Physical<void>{0x4f00}, 0x123));
 		auto vram = TRY_RESULT(api.subscribe_memory(Physical<void>{0xe0000000}, vramSize, mmu::Caching::writeCombining));
 		(void)vram;
-
-		framebuffer.address = nullptr;
 
 		// note that bochs ISN'T set as enabled at this point, so set mode is guarentted to apply a modechange, as the current enable mode will not match target
 		// return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
@@ -227,12 +227,9 @@ namespace driver::graphics {
 		if(framebufferId>0) return {"Invalid framebuffer id"};
 		if(index>=sizeof(modes)/(sizeof(modes[0]))) return {"Invalid mode id"};
 
-		// auto &mode = modes[index];
+		auto &mode = modes[index];
 
-		//TODO: unsub previous mmeory and then try to subscribe to this new region. If that fails, attempt a rollback, or die
-
-		// return vbe::set_mode({mode.vbeModeIndex, true, true});
-		return {"Unable to change mode"};
+		return set_mode(framebufferId, mode.width, mode.height, mode.format, false);
 	}
 
 	auto BochsVga::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> Try<> {
@@ -258,13 +255,23 @@ namespace driver::graphics {
 
 		if(enables==initialEnables&&width==initialWidth&&height==initialHeight&&bpp==initialBpp) return {}; // we're good fam
 
-		if(!acceptSuggestion&&(width>maxWidth||height>maxHeight||bpp>maxBpp)) return {"Mode not supported"};
+		const auto maxMemory = physicalFramebufferSize;
+
+		const auto requestBpp = min(bpp, maxBpp);
+		auto requestWidth = min<U32>(width, maxWidth) & ~7;
+		auto requestHeight = min<U32>(height, maxHeight) & ~7;
+
+		if(!acceptSuggestion&&(requestWidth!=width||requestHeight!=height||requestBpp!=bpp||width*height*(bpp/8)>maxMemory)) return {"Mode not supported"};
+		if(width*height*(bpp/8)>maxMemory){
+			const auto totalPixels = maxMemory/(requestBpp/8);
+			requestHeight = maths::sqrt(totalPixels/width*height) & ~7;
+			requestWidth = (requestHeight*width/height) & ~7;
+		}
 
 		set16(Register::enable, 0);
-
-		set16(Register::xRes, min<U32>(width, maxWidth));
-		set16(Register::yRes, min<U32>(height, maxHeight));
-		set16(Register::bpp, min(bpp, maxBpp));
+		set16(Register::xRes, requestWidth);
+		set16(Register::yRes, requestHeight);
+		set16(Register::bpp, requestBpp);
 
 		auto appliedWidth = get16(Register::xRes);
 		auto appliedHeight = get16(Register::yRes);
