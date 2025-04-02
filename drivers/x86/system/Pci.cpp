@@ -226,11 +226,70 @@ namespace driver::system {
 
 			for(auto i=0;i<6;i++){
 				auto &bar = instance.bar[i];
-				bar.memoryAddress.address = instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffff0;
-				bar.ioAddress = instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffffc;
-				// if(bar.memoryAddress){
-				// 	Pci::instance.log.print_info("base address ", i, " = ", (void*)bar.memoryAddress.address);
-				// }
+
+				// disable these initially (also these need to be off when querying size, as some can respond to that)
+				instance.enable_memory_space(false);
+				instance.enable_io_space(false);
+
+				const auto address = instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4);
+				const auto isIoPort = address&0b1;
+
+				if(isIoPort){
+					bar.memoryAddress.address = 0;
+					bar.memorySize = 0;
+					bar.ioAddress = address & 0xfffffffc;
+
+				}else{
+					bar.ioAddress = 0;
+					const auto addressType = (address&0b110)>>1;
+
+					switch(addressType){
+						case 0b00: // a 32bit address
+						case 0b11: // unknown? also treat as 32bit for now?
+							bar.size = PciDevice::Bar::BarSize::_32bit;
+							bar.memoryAddress.address = address & 0xfffffff0;
+
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, 0xffffffff);
+							bar.memorySize = ~(instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffff0 | 0xffffffff00000000) + 1;
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, address);
+						break;
+						case 0b10: { // a 64bit address
+							const auto address2 = instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+(i+1)*4);
+
+							bar.size = PciDevice::Bar::BarSize::_64bit;
+							bar.memoryAddress.address = address & 0xfffffff0 | (U64)address2<<32;
+
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, 0xffffffff);
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+(i+1)*4, 0xffffffff);
+							bar.memorySize = ~(instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffff0 | (U64)address2<<32) + 1;
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, address);
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+(i+1)*4, address2);
+						} break;
+						case 0b01: // reserved/16bit address?
+							bar.size = PciDevice::Bar::BarSize::_16bit;
+							bar.memoryAddress.address = address & 0xfff0;
+
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, 0xffffffff);
+							bar.memorySize = ~(instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfff0 | 0xffffffffffff0000) + 1;
+							instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, address);
+						break;
+					}
+
+					if(bar.memorySize>0 && bar.memoryAddress){
+						switch(bar.size){
+							case PciDevice::Bar::BarSize::_16bit:
+								Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex16{(U16)bar.memoryAddress.address}, " - ", format::Hex16{(U16)(bar.memoryAddress.address + bar.memorySize - 1)});
+							break;
+							case PciDevice::Bar::BarSize::_32bit:
+								Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex32{(U32)bar.memoryAddress.address}, " - ", format::Hex32{(U32)(bar.memoryAddress.address + bar.memorySize - 1)});
+							break;
+							case PciDevice::Bar::BarSize::_64bit:
+								Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex64{(U64)bar.memoryAddress.address}, " - ", format::Hex64{(U64)(bar.memoryAddress.address + bar.memorySize - 1)});
+							break;
+						}
+					}
+				}
+
 			}
 		}
 	}

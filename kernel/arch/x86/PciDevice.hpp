@@ -26,7 +26,14 @@ struct PciDevice {
 	U8 function;
 
 	struct Bar {
-		Physical32<void> memoryAddress;
+		enum struct BarSize:U8 {
+			_16bit,
+			_32bit,
+			_64bit
+		};
+		BarSize size;
+		Physical64<void> memoryAddress;
+		U64 memorySize;
 		U32 ioAddress;
 	};
 
@@ -74,12 +81,8 @@ struct PciDevice {
 	void writeConfig16(UPtr offset, U16 value);
 	void writeConfig32(UPtr offset, U32 value);
 
-	void enable_io_space();
-	void disable_io_space();
-	void enable_memory_space();
-	void disable_memory_space();
-	void enable_bus_mastering();
-	void disable_bus_mastering();
-	void enable_interrupts();
-	void disable_interrupts();
+	void enable_io_space(bool);
+	void enable_memory_space(bool);
+	void enable_bus_mastering(bool);
+	void enable_interrupts(bool);
 };
