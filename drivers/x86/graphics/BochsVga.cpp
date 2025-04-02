@@ -64,8 +64,7 @@ namespace driver::graphics {
 			virtWidth = 0x6,
 			virtHeight = 0x7,
 			xOffset = 0x8,
-			yOffset = 0x9,
-			videoRam64kChunksCount = 0xa,
+			yOffset = 0x9
 		};
 
 		enum struct Enable: U16 {
@@ -85,18 +84,6 @@ namespace driver::graphics {
 		void set16(Register index, U16 value) {
 			arch::x86::ioPort::write16(ioIndex, (U16)index);
 			arch::x86::ioPort::write16(ioData, value);
-		}
-
-		auto get_vram() -> U32 {
-			auto chunks = get16(Register::videoRam64kChunksCount);
-
-			if (chunks==0||chunks==0xffff) {
-				BochsVga::instance.log.print_warning("VRAM not specified - guessing 8MB");
-				return 8*1024*1024;
-
-			} else {
-				return chunks*64*1024;
-			}
 		}
 
 		void assign_framebuffer(U32 width, U32 height, U8 bpp) {
@@ -183,8 +170,6 @@ namespace driver::graphics {
 		physicalFramebufferSize = pciDevice->bar[0].memorySize;
 		framebuffer.address = TRY_RESULT(api.subscribe_memory<U8>(physicalFramebufferAddress, physicalFramebufferSize, mmu::Caching::writeCombining));
 
-		auto vramSize = get_vram();
-
 		set16(Register::enable, (U16)Enable::getCaps|(U16)Enable::noClearMem);
 		maxWidth = get16(Register::xRes);
 		maxHeight = get16(Register::yRes);
@@ -192,10 +177,6 @@ namespace driver::graphics {
 		set16(Register::enable, (U16)Enable::noClearMem);
 
 		log.print_info("max supported: ", maxWidth, " x ", maxHeight, " @ ", maxBpp, " bpp (within ", physicalFramebufferSize/1024, "KB)");
-
-		// TRY(api.subscribe_memory(Physical<void>{0x4f00}, 0x123));
-		auto vram = TRY_RESULT(api.subscribe_memory(Physical<void>{0xe0000000}, vramSize, mmu::Caching::writeCombining));
-		(void)vram;
 
 		// note that bochs ISN'T set as enabled at this point, so set mode is guarentted to apply a modechange, as the current enable mode will not match target
 		// return set_mode(0, 1280, 720, graphics2d::BufferFormat::rgba8, true);
