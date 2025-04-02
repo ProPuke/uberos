@@ -237,14 +237,14 @@ namespace driver::graphics {
 
 		const auto requestBpp = min(bpp, maxBpp);
 		auto requestWidth = min<U32>(width, maxWidth) & ~7;
-		auto requestHeight = min<U32>(height, maxHeight) & ~7;
+		auto requestHeight = min<U32>(height, maxHeight);
 
 		if(requestWidth<1||requestHeight<1) return {"Mode not supported"};
 		if(!acceptSuggestion&&(requestWidth!=width||requestHeight!=height||requestBpp!=bpp||width*height*(bpp/8)>maxMemory)) return {"Mode not supported"};
 
 		if(width*height*(bpp/8)>maxMemory){
 			const auto totalPixels = maxMemory/(requestBpp/8);
-			requestHeight = maths::sqrt(totalPixels/width*height) & ~7;
+			requestHeight = maths::sqrt(totalPixels/width*height);
 			requestWidth = (requestHeight*width/height) & ~7;
 		}
 
