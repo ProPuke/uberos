@@ -3,6 +3,7 @@
 #include <drivers/x86/system/Smbios.hpp>
 
 #include <kernel/arch/x86/ioPort.hpp>
+#include <kernel/arch/x86/PciDevice.hpp>
 #include <kernel/assert.hpp>
 #include <kernel/drivers.hpp>
 
@@ -48,112 +49,6 @@ namespace driver::system {
 		PodArray<PciDevice> devices;
 		Bitmask256 scannedBusses;
 
-		auto classCode_to_string(U8 _class) -> const char* {
-			switch(_class){
-				case 0x00: return "unclassified";
-				case 0x01: return "mass storage controller";
-				case 0x02: return "network controller";
-				case 0x03: return "display controller";
-				case 0x04: return "multimedia controller";
-				case 0x05: return "memory controller";
-				case 0x06: return "bridge";
-				case 0x07: return "simple communications controller";
-				case 0x08: return "base system peripheral";
-				case 0x09: return "input device controller";
-				case 0x0a: return "docking station";
-				case 0x0b: return "processor";
-				case 0x0c: return "serial bus controller";
-				case 0x0d: return "wireless controller";
-				case 0x0e: return "intelligent controller";
-				case 0x0f: return "satellite communication controller";
-				case 0x10: return "encryption controller";
-				case 0x11: return "signal processing controller";
-				case 0x12: return "processing accelerator";
-				case 0x13: return "non-essential instrumentation";
-				case 0x14 ... 0x3f: return nullptr; // reserved
-				case 0x40: return "co-processor";
-				case 0x41 ... 0xfe: return nullptr; // reserved
-				case 0xff: return nullptr; // vendor specific
-			}
-		}
-
-		auto classCode_to_string(U8 _class, U8 device) -> const char* {
-			switch(_class){
-				case 0x00: return "unclassified";
-				case 0x01: switch(device) {
-					case 0x00: return "scsi bus controller";
-					case 0x01: return "ide controller";
-					case 0x02: return "floppy disk controller";
-					case 0x03: return "ipi bus controller";
-					case 0x04: return "raid controller";
-					case 0x05: return "ata controller";
-					case 0x06: return "serial ata controller";
-					case 0x07: return "serial attached scsi controller";
-					case 0x08: return "non-volatile memory controller";
-					default: return "mass storage controller"; // unknown
-				}
-				case 0x02: return "network controller";
-				case 0x03: return "display controller";
-				case 0x04: return "multimedia controller";
-				case 0x05: return "memory controller";
-				case 0x06: switch(device) {
-					case 0x00: return "host bridge";
-					case 0x01: return "isa bridge";
-					case 0x02: return "eisa bridge";
-					case 0x03: return "mca bridge";
-					case 0x04: return "pci-to-pci bridge";
-					case 0x05: return "pcmcia bridge";
-					case 0x06: return "nubus bridge";
-					case 0x07: return "cardbus bridge";
-					case 0x08: return "raceway bridge";
-					case 0x09: return "pci-to-pci bridge";
-					case 0x0a: return "infiniband-to-pci bridge";
-					default: return "bridge"; // unknown
-				}
-				case 0x07: switch(device) {
-					case 0x00: return "serial controller";
-					case 0x01: return "parallel controller";
-					case 0x02: return "multiport serial controller";
-					case 0x03: return "modem";
-					case 0x04: return "ieee 488.1/2 (gpib) controller";
-					case 0x05: return "smart card controller";
-					default: return "simple communications controller"; // unknown
-				}
-				case 0x08: switch(device) {
-					case 0x00: return "interrupt controller";
-					case 0x01: return "dma controller";
-					case 0x02: return "timer";
-					case 0x03: return "rtc controller";
-					case 0x04: return "pci hot-plug controller";
-					case 0x05: return "sd host controller";
-					case 0x06: return "iommu";
-					default: return "base system peripheral"; // unknown
-				}
-				case 0x09: switch(device) {
-					case 0x00: return "keyboard controller";
-					case 0x01: return "digitiser pen controller";
-					case 0x02: return "mouse controller";
-					case 0x03: return "scanner controller";
-					case 0x04: return "gameport controller";
-					default: return "input device controller";
-				}
-				case 0x0a: return "docking station";
-				case 0x0b: return "processor";
-				case 0x0c: return "serial bus controller";
-				case 0x0d: return "wireless controller";
-				case 0x0e: return "intelligent controller";
-				case 0x0f: return "satellite communication controller";
-				case 0x10: return "encryption controller";
-				case 0x11: return "signal processing controller";
-				case 0x12: return "processing accelerator";
-				case 0x13: return "non-essential instrumentation";
-				case 0x14 ... 0x3f: return nullptr; // reserved
-				case 0x40: return "co-processor";
-				case 0x41 ... 0xfe: return nullptr; // reserved
-				case 0xff: return nullptr; // vendor specific
-			}
-		}
-
 		void scan_function(U8 bus, U8 device, U8 function);
 
 		void scan_bus(unsigned bus) {
@@ -189,11 +84,9 @@ namespace driver::system {
 			auto _class = readConfig32(bus, device, function, 0x08);
 			// auto interruptInformation = readConfig32(bus, device, function, 0x3C);
 
-			U8 classCode = (_class >> 24) & 0xff;
-			U8 subclassCode = (_class >> 16) & 0xff;
-			// U8 progIF = (_class >> 8) & 0xff;
+			auto subclass = (Pci::Subclass)(_class>>16);
 
-			if(classCode==0x06&&subclassCode==0x04) { // pci-to-pci bridge
+			if(subclass==Pci::Subclass::pciToPciBridge) {
 				U8 secondaryBus = readConfig32(bus, device, 0, 0x18)>>8 & 0xff;
 				if(!scannedBusses.get(secondaryBus)){
 					scan_bus(secondaryBus);
@@ -206,17 +99,15 @@ namespace driver::system {
 			// auto deviceID = readConfig32(bus, device, function, 0x00);
 			// auto subsystemID = readConfig32(bus, device, function, 0x2C);
 
-			auto classCodeString = classCode_to_string(classCode, subclassCode);
-
-			if(classCodeString){
+			if(auto classCodeString = to_string(subclass)){
 				Pci::instance.log.print_info("detected ", format::Hex8{bus, false}, ':', format::Hex8{device, false}, '.', function, ' ', classCodeString, " (", format::Hex32{_class}, ") ", format::Hex32{id});
 			}else{
 				Pci::instance.log.print_info("detected ", format::Hex8{bus, false}, ':', format::Hex8{device, false}, '.', function, " unknown device (", format::Hex32{_class}, ") ", format::Hex32{id});
 			}
 
-			auto &instance = devices.push_back((PciDevice){
+			auto &instance = devices.push_back(PciDevice{
 				.id = id,
-				._class = _class,
+				.fullClass = _class,
 				.bus = bus,
 				.device = device,
 				.function = function
@@ -352,6 +243,64 @@ namespace driver::system {
 	auto Pci::find_device_by_id(U32 id) -> PciDevice* {
 		for(auto &device:devices) {
 			if(device.id==id) return &device;
+		}
+
+		return nullptr;
+	}
+
+	auto Pci::find_device_by_class(Class _class) -> PciDevice* {
+		for(auto &device:devices) {
+			if(device._class==_class) return &device;
+		}
+
+		return nullptr;
+	}
+
+	auto Pci::find_device_by_subclass(Subclass subclass) -> PciDevice* {
+		for(auto &device:devices) {
+			if(device.subclass==subclass) return &device;
+		}
+
+		return nullptr;
+	}
+
+	auto Pci::find_next_device_by_id(PciDevice *from, U32 id) -> PciDevice* {
+		auto isAfter = false;
+		for(auto &device:devices) {
+			if(isAfter){
+				if(device.id==id) return &device;
+
+			}else if(&device==from) {
+				isAfter = true;
+			}
+		}
+
+		return nullptr;
+	}
+
+	auto Pci::find_next_device_by_class(PciDevice *from, Class _class) -> PciDevice* {
+		auto isAfter = false;
+		for(auto &device:devices) {
+			if(isAfter){
+				if(device._class==_class) return &device;
+
+			}else if(&device==from) {
+				isAfter = true;
+			}
+		}
+
+		return nullptr;
+	}
+
+	auto Pci::find_next_device_by_subclass(PciDevice *from, Subclass subclass) -> PciDevice* {
+		auto isAfter = false;
+		for(auto &device:devices) {
+			if(isAfter){
+				if(device.subclass==subclass) return &device;
+
+			}else if(&device==from) {
+				isAfter = true;
+			}
 		}
 
 		return nullptr;

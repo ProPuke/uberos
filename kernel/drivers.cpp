@@ -5,6 +5,7 @@
 #include <drivers/Processor.hpp>
 #include <drivers/Serial.hpp>
 
+#include <kernel/arch/x86/PciDevice.hpp>
 #include <kernel/Driver.hpp>
 #include <kernel/exceptions.hpp>
 #include <kernel/Log.hpp>

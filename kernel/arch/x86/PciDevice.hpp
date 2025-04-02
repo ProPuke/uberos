@@ -1,5 +1,7 @@
 #pragma once
 
+#include <drivers/x86/system/Pci.hpp>
+
 #include <common/types.hpp>
 
 struct PciDevice {
@@ -15,10 +17,15 @@ struct PciDevice {
 		struct __attribute__((packed)) {
 			U8 revision;
 			U8 progIf;
-			U8 subclassCode;
-			U8 classCode;
+			union __attribute__((packed)) {
+				driver::system::Pci::Subclass subclass;
+				struct __attribute__((packed)){
+					U8:8;
+					driver::system::Pci::Class _class;
+				};
+			};
 		};
-		U32 _class;
+		U32 fullClass;
 	};
 
 	U8 bus;

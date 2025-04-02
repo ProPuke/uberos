@@ -2,6 +2,7 @@
 
 #include <drivers/Interrupt.hpp>
 
+#include <kernel/arch/x86/PciDevice.hpp>
 #include <kernel/Driver.hpp>
 #include <kernel/DriverReference.hpp>
 #include <kernel/drivers.hpp>

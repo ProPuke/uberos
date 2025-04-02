@@ -3,6 +3,7 @@
 #include <drivers/x86/system/Pci.hpp>
 
 #include <kernel/arch/x86/ioPort.hpp>
+#include <kernel/arch/x86/PciDevice.hpp>
 // #include <kernel/arch/x86/vm86.hpp>
 #include <kernel/drivers.hpp>
 

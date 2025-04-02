@@ -1,6 +1,5 @@
 #pragma once
 
-#include <kernel/arch/x86/PciDevice.hpp>
 #include <kernel/mmu.hpp>
 #ifdef ARCH_X86
 	#include <kernel/arch/x86/ioPort.hpp>
@@ -12,6 +11,7 @@
 #include <common/types.hpp>
 
 struct Driver;
+struct PciDevice;
 
 namespace drivers{
 	void print_driver_summary(const char *indent, Driver&);
