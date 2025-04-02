@@ -99,7 +99,7 @@ namespace driver::graphics {
 			}
 		}
 
-		auto assign_framebuffer(U32 width, U32 height, U8 bpp) -> Try<> {
+		void assign_framebuffer(U32 width, U32 height, U8 bpp) {
 			//FIXME: there is a race condition between nulling the framebuffer, and broadcasting the invalid event. The framebuffer access should likely be wrapped with a spinlock to avoid this
 			auto framebufferAddress = framebuffer.address;
 			framebuffer.address = nullptr;
@@ -142,11 +142,10 @@ namespace driver::graphics {
 
 			// log.print_info("got address ", format::Hex64{tags[0].data.allocate_res.fb_addr});
 
+			framebuffer.address = framebufferAddress;
 			framebuffer.stride = width*(bpp/8);
 			framebuffer.format = format;
 			framebuffer.order = order;
-
-			framebuffer.address = framebufferAddress;
 
 			BochsVga::instance.events.trigger({
 				instance: &BochsVga::instance,
@@ -158,8 +157,6 @@ namespace driver::graphics {
 				type: driver::Graphics::Event::Type::framebufferChanged,
 				framebufferChanged: { index: 0 }
 			});
-
-			return {};
 		}
 	}
 
@@ -261,7 +258,9 @@ namespace driver::graphics {
 		auto requestWidth = min<U32>(width, maxWidth) & ~7;
 		auto requestHeight = min<U32>(height, maxHeight) & ~7;
 
+		if(requestWidth<1||requestHeight<1) return {"Mode not supported"};
 		if(!acceptSuggestion&&(requestWidth!=width||requestHeight!=height||requestBpp!=bpp||width*height*(bpp/8)>maxMemory)) return {"Mode not supported"};
+
 		if(width*height*(bpp/8)>maxMemory){
 			const auto totalPixels = maxMemory/(requestBpp/8);
 			requestHeight = maths::sqrt(totalPixels/width*height) & ~7;
@@ -284,20 +283,12 @@ namespace driver::graphics {
 			set16(Register::bpp, initialBpp);
 			set16(Register::enable, enables);
 
-			if(auto result=assign_framebuffer(initialWidth, initialHeight, initialBpp); !result) {
-				log.print_error("framebuffer memory not accessible");
-				api.fail_driver("framebuffer memory not accessible");
-				return result;
-			}
+			assign_framebuffer(initialWidth, initialHeight, initialBpp);
 
 			return {"Mode not supported"};
 		}
 
-		if(auto result=assign_framebuffer(appliedWidth, appliedHeight, appliedBpp); !result) {
-			log.print_error("framebuffer memory not accessible");
-			api.fail_driver("framebuffer memory not accessible");
-			return result;
-		}
+		assign_framebuffer(appliedWidth, appliedHeight, appliedBpp);
 
 		set16(Register::enable, enables);
 
