@@ -288,6 +288,22 @@ namespace driver::system {
 							break;
 						}
 					}
+
+					switch(bar.size){
+						case PciDevice::Bar::BarSize::_16bit:
+						case PciDevice::Bar::BarSize::_32bit:
+						break;
+						case PciDevice::Bar::BarSize::_64bit: {
+							// clear the next bar and skip it
+							auto &nextBar = instance.bar[i+1];
+							nextBar.size = bar.size;
+							nextBar.memoryAddress.address = 0;
+							nextBar.memorySize = 0;
+							nextBar.ioAddress = 0;
+							i += 1;
+							continue;
+						} break;
+					}
 				}
 
 			}
