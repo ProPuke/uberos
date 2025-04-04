@@ -178,7 +178,9 @@ struct MemoryPool {
 
 	void free(void *address){
 		auto block = get_block(address);
+		const auto size = block->size;
 		claim_block(*block);
+		used -= size;
 		needsCompacting = true;
 	}
 
