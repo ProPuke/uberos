@@ -131,12 +131,11 @@ struct MemoryPool {
 							logging::print_info("insert_before ", &reclaim);
 						#endif
 						availableBlocks.insert_before(*block, reclaim);
-						break;
+						goto inserted;
 					}
 				}
-				if(!block){
-					availableBlocks.push_back(reclaim);
-				}
+
+				availableBlocks.push_back(reclaim);
 
 			}else{
 				for(auto block=availableBlocks.tail; block; block=block->prev){
@@ -150,10 +149,11 @@ struct MemoryPool {
 				}
 
 				availableBlocks.push_front(reclaim);
-
-				inserted:;
 			}
 		}
+
+		inserted:
+		;
 
 		#ifdef MEMORY_CHECKS
 			{
