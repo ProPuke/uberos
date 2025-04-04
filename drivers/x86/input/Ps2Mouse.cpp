@@ -248,6 +248,11 @@ namespace driver::input {
 
 		I32 rescale = 0;
 
+		// consolidate all mousemoves to a single event (to avoid multiple updates occuring during fast mousemoves slowing things down)
+		// this does mean that queued moves AND clicks will click at the wrong earlier position
+		// TODO: improve this by applying and flushing pendingMotion early when click events are encountered in this loop
+		I32 pendingMotion[2] = {0, 0};
+
 		while(Ps2::instance.has_data()){
 			auto status = ps2->read_status();
 			if(!((U8)status&(U8)Ps2::Status::mouse_byte)) break;
@@ -349,13 +354,8 @@ namespace driver::input {
 			// auto yMotion = -((U8)packet.yChange - (packet.data[0]<<3 & 0x100));
 
 			if(xMotion||yMotion){
-				trigger_event({
-					type: Event::Type::moved,
-					moved: {
-						x: xMotion,
-						y: yMotion
-					}
-				});
+				pendingMotion[0] += xMotion;
+				pendingMotion[1] += yMotion;
 
 				if(false){ // auto-rescale on high movements
 					if(scale==1&&(maths::abs(xMotion)>=127||maths::abs(yMotion)>=127)){
@@ -392,6 +392,16 @@ namespace driver::input {
 			packet.data[1] = 0;
 			packet.data[2] = 0;
 			packet.data[3] = 0;
+		}
+
+		if(pendingMotion[0]||pendingMotion[1]){
+			trigger_event({
+				type: Event::Type::moved,
+				moved: {
+					x: pendingMotion[0],
+					y: pendingMotion[1]
+				}
+			});
 		}
 
 		if(rescale==1){
