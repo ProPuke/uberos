@@ -524,7 +524,6 @@ namespace driver {
 
 			if(newRect!=oldRect) {
 				changed = true;
-				displayManager->update_area(oldRect, window.graphicsDisplay);
 			}
 
 			if(window.graphicsDisplay->buffer.address!=oldBuffer||window.graphicsDisplay->buffer.width!=oldBufferWidth||window.graphicsDisplay->buffer.height!=oldBufferHeight){
@@ -538,6 +537,10 @@ namespace driver {
 			}
 
 			if(changed){
+				if(newRect!=oldRect) {
+					displayManager->update_area(oldRect, window.graphicsDisplay);
+				}
+
 				window.graphicsDisplay->update();
 				_update_window_area();
 			}

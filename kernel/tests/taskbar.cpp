@@ -296,7 +296,7 @@ namespace tests::taskbar {
 			}
 
 			layoutWindowButtons();
-			gui.redraw();
+			gui.redraw(false);
 		};
 
 		{
@@ -343,7 +343,6 @@ namespace tests::taskbar {
 		window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
 			if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 				redraw();
-				window->redraw();
 
 			}else if(event.type==driver::DesktopManager::Window::Event::Type::mouseMoved){
 				gui.on_mouse_moved(event.mouseMoved.x, event.mouseMoved.y);
