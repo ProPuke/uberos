@@ -23,6 +23,8 @@ struct [[nodiscard]] Try<void, void> {
 	const char *errorMessage = nullptr;
 
 	explicit operator bool() { return errorMessage==nullptr; }
+
+	auto as_error_only() -> Try<void, void> { return *this; }
 };
 
 template <typename Result>
@@ -51,7 +53,7 @@ struct [[nodiscard]] Try<void, Error> {
 };
 
 #define TRY(ACTION) do{\
-	if(auto action = (ACTION); !action) return action;\
+	if(auto action = (ACTION); !action) return action.as_error_only();\
 }while(false)
 #define TRY_IGNORE(ACTION) ((void)(ACTION))
 #define TRY_RESULT(ACTION) ({ auto action = (ACTION); if(!action) return action.as_error_only(); action.result; })
