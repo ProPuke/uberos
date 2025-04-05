@@ -128,10 +128,17 @@ namespace driver::system {
 				if(isIoPort){
 					bar.memoryAddress.address = 0;
 					bar.memorySize = 0;
-					bar.ioAddress = address & 0xfffffffc;
+					bar.ioPort = address & 0xfffc;
+
+					instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, 0xffffffff);
+					bar.ioSize = ~(instance.readConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4) & 0xfffffffc | 0xffffffff00000000) + 1;
+					instance.writeConfig32((UPtr)PciDevice::RegisterOffset::bar0+i*4, address);
+
+					Pci::instance.log.print_info("  BAR ", i, ": IO ", format::Hex16{(U16)bar.ioPort}, " - ", format::Hex16{(U16)(bar.ioPort + bar.ioSize - 1)});
 
 				}else{
-					bar.ioAddress = 0;
+					bar.ioPort = 0;
+					bar.ioSize = 0;
 					const auto addressType = (address&0b110)>>1;
 
 					switch(addressType){
@@ -166,17 +173,32 @@ namespace driver::system {
 						break;
 					}
 
-					if(bar.memorySize>0 && bar.memoryAddress){
-						switch(bar.size){
-							case PciDevice::Bar::BarSize::_16bit:
-								Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex16{(U16)bar.memoryAddress.address}, " - ", format::Hex16{(U16)(bar.memoryAddress.address + bar.memorySize - 1)});
-							break;
-							case PciDevice::Bar::BarSize::_32bit:
-								Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex32{(U32)bar.memoryAddress.address}, " - ", format::Hex32{(U32)(bar.memoryAddress.address + bar.memorySize - 1)});
-							break;
-							case PciDevice::Bar::BarSize::_64bit:
-								Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex64{(U64)bar.memoryAddress.address}, " - ", format::Hex64{(U64)(bar.memoryAddress.address + bar.memorySize - 1)});
-							break;
+					if(bar.memoryAddress){
+						if(bar.memorySize>0){
+							switch(bar.size){
+								case PciDevice::Bar::BarSize::_16bit:
+									Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex16{(U16)bar.memoryAddress.address}, " - ", format::Hex16{(U16)(bar.memoryAddress.address + bar.memorySize - 1)});
+								break;
+								case PciDevice::Bar::BarSize::_32bit:
+									Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex32{(U32)bar.memoryAddress.address}, " - ", format::Hex32{(U32)(bar.memoryAddress.address + bar.memorySize - 1)});
+								break;
+								case PciDevice::Bar::BarSize::_64bit:
+									Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex64{(U64)bar.memoryAddress.address}, " - ", format::Hex64{(U64)(bar.memoryAddress.address + bar.memorySize - 1)});
+								break;
+							}
+
+						}else{
+							switch(bar.size){
+								case PciDevice::Bar::BarSize::_16bit:
+									Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex16{(U16)bar.memoryAddress.address});
+								break;
+								case PciDevice::Bar::BarSize::_32bit:
+									Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex32{(U32)bar.memoryAddress.address});
+								break;
+								case PciDevice::Bar::BarSize::_64bit:
+									Pci::instance.log.print_info("  BAR ", i, ": ", format::Hex64{(U64)bar.memoryAddress.address});
+								break;
+							}
 						}
 					}
 
@@ -190,7 +212,8 @@ namespace driver::system {
 							nextBar.size = bar.size;
 							nextBar.memoryAddress.address = 0;
 							nextBar.memorySize = 0;
-							nextBar.ioAddress = 0;
+							nextBar.ioPort = 0;
+							nextBar.ioSize = 0;
 							i += 1;
 							continue;
 						} break;

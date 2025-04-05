@@ -2,6 +2,8 @@
 
 #include <drivers/x86/system/Pci.hpp>
 
+#include <kernel/arch/x86/ioPort.hpp>
+
 #include <common/types.hpp>
 
 struct PciDevice {
@@ -41,7 +43,8 @@ struct PciDevice {
 		BarSize size;
 		Physical64<void> memoryAddress;
 		U64 memorySize;
-		U32 ioAddress;
+		arch::x86::IoPort ioPort;
+		arch::x86::IoPort ioSize;
 	};
 
 	Bar bar[6];
