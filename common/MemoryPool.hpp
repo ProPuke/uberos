@@ -185,7 +185,40 @@ struct MemoryPool {
 	}
 
 	bool compact() {
-		//TODO: walk through availableBlocks in order of memory address, and merge if adjacent, before sorting by size again
+		//TODO: write something faster
+
+		{ // brute search and merge adjacent memory blocks
+			for(auto block=availableBlocks.head;block;block=block->next){
+				searchForNext:
+				for(auto other=availableBlocks.head;other;other=other->next){
+					if(other==block) continue;
+					if((U8*)other==&block->_data+block->size){
+						block->size += offsetof(MemoryPoolBlock, MemoryPoolBlock::_data) + other->size;
+						availableBlocks.pop(*other);
+						goto searchForNext;
+					}
+				}
+			}
+		}
+
+		{ // sort blocks by size
+			LList<MemoryPoolBlock> sortedBlocks;
+			while(auto block = availableBlocks.pop_front()){
+				for(auto other=sortedBlocks.head;other;other=other->next){
+					if(other->size>=block->size){
+						sortedBlocks.insert_before(*other, *block);
+						goto sortedBlockInserted;
+					}
+				}
+
+				sortedBlocks.push_back(*block);
+
+				sortedBlockInserted:;
+			}
+
+			availableBlocks = sortedBlocks;
+		}
+
 		needsCompacting = false;
 
 		return false; //return if successful

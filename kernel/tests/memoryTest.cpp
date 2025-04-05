@@ -39,21 +39,25 @@ namespace tests::memoryTest {
 				auto leftPos = clientArea.draw_text(fontSettings, "Total memory: ", x, y, width, 0x222222);
 				leftPos = clientArea.draw_text(fontSettings, to_string(memory::totalMemory/1024/1024), x, leftPos.y, width, 0x222222, leftPos.x);
 				leftPos = clientArea.draw_text(fontSettings, "MiB\n", x, leftPos.y, width, 0x222222, leftPos.x);
-				leftPos = clientArea.draw_text(fontSettings, "Total kernel size: ", x, leftPos.y, width, 0x222222, leftPos.x);
-				leftPos = clientArea.draw_text(fontSettings, to_string((UPtr)(memory::heap.address-memory::code.address)/1024), x, leftPos.y, width, 0x222222, leftPos.x);
+				leftPos = clientArea.draw_text(fontSettings, "Reserved heap: ", x, leftPos.y, width, 0x222222, leftPos.x);
+				leftPos = clientArea.draw_text(fontSettings, to_string((UPtr)(memory::get_available_heap()+memory::get_used_heap())/1024), x, leftPos.y, width, 0x222222, leftPos.x);
 				leftPos = clientArea.draw_text(fontSettings, "KiB\n", x, leftPos.y, width, 0x222222, leftPos.x);
 				leftPos = clientArea.draw_text(fontSettings, "Heap in use: ", x, leftPos.y, width, 0x222222, leftPos.x);
 				leftPos = clientArea.draw_text(fontSettings, to_string((UPtr)memory::get_used_heap()/1024), x, leftPos.y, width, 0x222222, leftPos.x);
-				leftPos = clientArea.draw_text(fontSettings, "KiB\n", x, leftPos.y, width, 0x222222, leftPos.x);
+				leftPos = clientArea.draw_text(fontSettings, "KiB (", x, leftPos.y, width, 0x222222, leftPos.x);
+				leftPos = clientArea.draw_text(fontSettings, to_string(memory::get_heap_block_count()), x, leftPos.y, width, 0x222222, leftPos.x);
+				leftPos = clientArea.draw_text(fontSettings, " blocks free)\n", x, leftPos.y, width, 0x222222, leftPos.x);
 
 				x = clientArea.width/2+margin;
 				auto rightPos = clientArea.draw_text(fontSettings, "Reserved low memory: ", x, y, width, 0x222222);
 				rightPos = clientArea.draw_text(fontSettings, to_string((UPtr)(memory::code.address)/1024), x, rightPos.y, width, 0x222222, rightPos.x);
 				rightPos = clientArea.draw_text(fontSettings, "KiB\n", x, rightPos.y, width, 0x222222, rightPos.x);
-				rightPos = clientArea.draw_text(fontSettings, "Kernel code size: ", x, rightPos.y, width, 0x222222, rightPos.x);
-				rightPos = clientArea.draw_text(fontSettings, to_string((UPtr)memory::codeSize/1024), x, rightPos.y, width, 0x222222, rightPos.x);
+				rightPos = clientArea.draw_text(fontSettings, "Total kernel size: ", x, rightPos.y, width, 0x222222, rightPos.x);
+				rightPos = clientArea.draw_text(fontSettings, to_string((UPtr)(memory::heap.address-memory::code.address)/1024), x, rightPos.y, width, 0x222222, rightPos.x);
 				rightPos = clientArea.draw_text(fontSettings, "KiB\n", x, rightPos.y, width, 0x222222, rightPos.x);
-				rightPos = clientArea.draw_text(fontSettings, "Kernel data size: ", x, rightPos.y, width, 0x222222, rightPos.x);
+				rightPos = clientArea.draw_text(fontSettings, "Code: ", x, rightPos.y, width, 0x222222, rightPos.x);
+				rightPos = clientArea.draw_text(fontSettings, to_string((UPtr)memory::codeSize/1024), x, rightPos.y, width, 0x222222, rightPos.x);
+				rightPos = clientArea.draw_text(fontSettings, "KiB Data: ", x, rightPos.y, width, 0x222222, rightPos.x);
 				rightPos = clientArea.draw_text(fontSettings, to_string((UPtr)(memory::constantsSize+memory::initialisedDataSize+memory::uninitialisedDataSize)/1024), x, rightPos.y, width, 0x222222, rightPos.x);
 				rightPos = clientArea.draw_text(fontSettings, "KiB\n", x, rightPos.y, width, 0x222222, rightPos.x);
 
