@@ -51,7 +51,7 @@ namespace driver {
 		void _raise_display(DisplayManager::Display&);
 		void _set_display_layer(DisplayManager::Display&, DisplayManager::DisplayLayer);
 		auto _is_display_top(DisplayManager::Display&) -> bool;
-		void _show_display(DisplayManager::Display&);
+		void _show_display(DisplayManager::Display&, bool update);
 		void _hide_display(DisplayManager::Display&);
 		auto _find_display_section_in_row(I32 &x, I32 y, I32 x2, bool &isTransparent, DisplayManager::Display *current = nullptr) -> DisplayManager::Display*;
 		void _update_framebuffer_positions();
@@ -690,15 +690,17 @@ namespace driver {
 			return !display.next || display.next->layer>display.layer;
 		}
 
-		void _show_display(DisplayManager::Display &display) {
+		void _show_display(DisplayManager::Display &display, bool update) {
 			if(display.isVisible) return;
 
 			display.isVisible = true;
 
 			const auto rect = (graphics2d::Rect){display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
 
-			_update_display_solid(display);
-			_update_area_transparency(rect);
+			if(update){
+				_update_display_solid(display);
+				_update_area_transparency(rect);
+			}
 		}
 
 		void _hide_display(DisplayManager::Display &display) {
@@ -996,7 +998,7 @@ namespace driver {
 		return _create_view(thread, layer, width, height, scale);
 	}
 
-	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below) -> Display* {
+	auto DisplayManager::get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below, I32 margin) -> Display* {
 		for(auto display=below?below->prev:displays.tail; display; display=display->prev){
 			if(!display->isVisible) continue;
 
@@ -1006,7 +1008,7 @@ namespace driver {
 				x<display->x+(I32)display->get_width()&&
 				y<display->y+(I32)display->get_height()
 			){
-				if(!(includeNonInteractive?graphics2d::Rect{0, 0, (I32)display->buffer.width, (I32)display->buffer.height}:display->interactArea).contains(x-display->x, y-display->y)) continue;
+				if(!(includeNonInteractive?graphics2d::Rect{0, 0, (I32)display->buffer.width, (I32)display->buffer.height}:display->interactArea.cropped(-margin, -margin, -margin, -margin)).contains(x-display->x, y-display->y)) continue;
 
 				return display;
 			}
@@ -1103,10 +1105,10 @@ namespace driver {
 		return _is_display_top(*this);
 	}
 
-	void DisplayManager::Display::show() {
+	void DisplayManager::Display::show(bool update) {
 		Lock_Guard guard(lock);
 
-		return _show_display(*this);
+		return _show_display(*this, update);
 	}
 
 	void DisplayManager::Display::hide() {

@@ -19,6 +19,10 @@ namespace ui2d::image {
 		extern graphics2d::Buffer _default;
 		extern graphics2d::Buffer _default_left;
 		extern graphics2d::Buffer _default_right;
+		extern graphics2d::Buffer size_x;
+		extern graphics2d::Buffer size_y;
+		extern graphics2d::Buffer size_nesw;
+		extern graphics2d::Buffer size_nwse;
 	}
 
 	namespace widgets {
@@ -70,6 +74,22 @@ namespace driver {
 		struct Window: LListItem<Window>, virtual DesktopManager::Window {
 			U64 timeCreated = time::now();
 
+			static const auto resizeMargin = 4;
+
+			enum struct CursorArea {
+				none,
+				body,
+				titlebar,
+				sizeN,
+				sizeNW,
+				sizeNE,
+				sizeS,
+				sizeSW,
+				sizeSE,
+				sizeW,
+				sizeE
+			};
+
 			struct Gui: ui2d::Gui {
 				typedef ui2d::Gui Super;
 
@@ -112,6 +132,57 @@ namespace driver {
 
 			auto get_client_area() -> graphics2d::Buffer& override {
 				return clientArea;
+			}
+
+			virtual auto get_cursor_area_at(I32 x, I32 y) -> CursorArea {
+				// in case the window is tiny, so we can cut off at halfway
+				const auto isTop = y<=get_height()/2;
+				const auto isLeft = x<=get_width()/2;
+
+				const auto cornerWrap = 4;
+
+				if(isTop&&maths::abs(y)<(I32)resizeMargin&&(state==State::floating||state==State::docked&&dockedType==DockedType::bottom)){
+					if(state!=State::docked&&isLeft&&maths::abs(x)<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeNW;
+					}else if(state!=State::docked&&maths::abs(x-(I32)get_width())<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeNE;
+					}else{
+						return CursorArea::sizeN;
+					}
+
+				}else if(maths::abs(y-(I32)get_height())<(I32)resizeMargin&&(state==State::floating||state==State::docked&&dockedType==DockedType::top)){
+					if(state!=State::docked&&isLeft&&maths::abs(x)<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeSW;
+					}else if(state!=State::docked&&maths::abs(x-(I32)get_width())<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeSE;
+					}else{
+						return CursorArea::sizeS;
+					}
+
+				}else if(isLeft&&maths::abs(x)<(I32)resizeMargin&&(state==State::floating||state==State::docked&&dockedType==DockedType::right)){
+					if(state!=State::docked&&isTop&&maths::abs(y)<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeNW;
+					}else if(state!=State::docked&&maths::abs(y-(I32)get_height())<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeSW;
+					}else{
+						return CursorArea::sizeW;
+					}
+
+				}else if(maths::abs(x-(I32)get_width())<(I32)resizeMargin&&(state==State::floating||state==State::docked&&dockedType==DockedType::left)){
+					if(state!=State::docked&&isTop&&maths::abs(y)<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeNE;
+					}else if(state!=State::docked&&maths::abs(y-(I32)get_height())<(I32)resizeMargin*cornerWrap){
+						return CursorArea::sizeSE;
+					}else{
+						return CursorArea::sizeE;
+					}
+				}
+
+				if(x<0||y<0||x>=get_width()||y>=get_height()) return CursorArea::none;
+
+				if(titlebarArea.contains(leftMargin+x, topMargin+y)) return CursorArea::titlebar;
+				
+				return CursorArea::body;
 			}
 
 			void move_to(I32 x, I32 y) override;
@@ -250,6 +321,7 @@ namespace driver {
 		void _disable_docked_window(Window&);
 		void _autoposition_window(Window&);
 		void _autoreposition_windows();
+		void _update_window_area(Window *exclude = nullptr);
 
 		void Window::move_to(I32 x, I32 y) {
 			const auto margin = 10;
@@ -284,6 +356,8 @@ namespace driver {
 			titlebarArea.y2 += max(-(I32)titlebarArea.height(), deltaY);
 
 			if(DeferWindowMove::depth<1){
+				_update_window_area();
+
 				redraw_decorations();
 
 				events.trigger({
@@ -465,6 +539,7 @@ namespace driver {
 
 			if(changed){
 				window.graphicsDisplay->update();
+				_update_window_area();
 			}
 
 			depth--;
@@ -548,6 +623,10 @@ namespace driver {
 
 			auto get_border_rect() -> graphics2d::Rect {
 				return graphics2d::Rect{(I32)leftMargin, (I32)topMargin, (I32)leftMargin+get_width(), (I32)topMargin+get_height()};
+			}
+
+			auto get_cursor_area_at(I32 x, I32 y) -> CursorArea override {
+				return Super::get_cursor_area_at(x, y);
 			}
 
 			void set_status(const char*) override;
@@ -833,7 +912,7 @@ namespace driver {
 			}
 
 			void set_titlebar_area(graphics2d::Rect set) override {
-				titlebarArea = set;
+				_set_titlebar_area(set);
 			}
 
 			void set_solid_area(graphics2d::Rect set) override {
@@ -859,8 +938,8 @@ namespace driver {
 			}
 		};
 
-		auto get_window_at(I32 x, I32 y, DisplayManager::Display *below = nullptr) -> Window* {
-			auto display = displayManager->get_display_at(x, y, false, below);
+		auto get_window_at(I32 x, I32 y, bool includeMargin = false, DisplayManager::Display *below = nullptr) -> Window* {
+			auto display = displayManager->get_display_at(x, y, false, below, includeMargin?Window::resizeMargin:0);
 			auto windowInterface = display?DesktopManager::instance.get_window_from_display(*display):nullptr;
 			auto window = windowInterface?(Window*)(StandardWindow*)windowInterface->as_standardWindow()?:(Window*)(CustomWindow*)windowInterface->as_customWindow():nullptr;
 
@@ -868,25 +947,80 @@ namespace driver {
 		}
 
 		struct Cursor {
+			/**/ Cursor(){}
+
+			/**/ Cursor(Mouse &mouse, I32 x, I32 y):
+				mouse(&mouse),
+				display(displayManager->create_display(nullptr, DisplayManager::DisplayLayer::cursor, ui2d::image::cursors::_default.width, ui2d::image::cursors::_default.height)),
+				x(x),
+				y(y)
+			{
+				display->move_to(x, y);
+				display->solidArea.clear();
+				set_cursor(&ui2d::image::cursors::_default, 0, 0);
+			}
+
 			Mouse *mouse = nullptr;
 			DisplayManager::Display *display;
-			I32 x, y;
+			graphics2d::Buffer *currentCursor = nullptr;
+			I32 x = 0, y = 0;
+			I32 offset[2] = {0,0};
 			bool isVisible = false;
 
-			struct {
-				Window *window;
-				I32 dragOffsetX;
-				I32 dragOffsetY;
-			} dragWindow;
+			struct Vec {
+				I32 x;
+				I32 y;
+			};
 
-			void grab_window(Window &window) {
+			struct GrabbedWindow {
+				enum struct GrabType {
+					move,
+					size_n,
+					size_nw,
+					size_ne,
+					size_s,
+					size_sw,
+					size_se,
+					size_w,
+					size_e
+				};
+
+				GrabType grabType;
+				Window *window = nullptr;
+				I32 grabOffsetX;
+				I32 grabOffsetY;
+			} grabbedWindow;
+
+			void grab_window(Window &window, GrabbedWindow::GrabType grabType) {
 				if(window.draggingCursor&&window.draggingCursor!=this){
 					window.draggingCursor->release_window();
 				}
 
-				dragWindow.window = &window;
-				dragWindow.dragOffsetX = window.get_x()-x;
-				dragWindow.dragOffsetY = window.get_y()-y;
+				grabbedWindow.grabType = grabType;
+				grabbedWindow.window = &window;
+
+				switch(grabType){
+					case GrabbedWindow::GrabType::size_n:
+					case GrabbedWindow::GrabType::size_nw:
+					case GrabbedWindow::GrabType::size_ne:
+					case GrabbedWindow::GrabType::size_s:
+					case GrabbedWindow::GrabType::size_sw:
+					case GrabbedWindow::GrabType::size_se:
+					case GrabbedWindow::GrabType::size_w:
+					case GrabbedWindow::GrabType::size_e: {
+						const auto isLeft = grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabType==Cursor::GrabbedWindow::GrabType::size_w||grabType==Cursor::GrabbedWindow::GrabType::size_sw;
+						const auto isRight = grabType==Cursor::GrabbedWindow::GrabType::size_ne||grabType==Cursor::GrabbedWindow::GrabType::size_e||grabType==Cursor::GrabbedWindow::GrabType::size_se;
+						const auto isTop = grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabType==Cursor::GrabbedWindow::GrabType::size_n||grabType==Cursor::GrabbedWindow::GrabType::size_ne;
+						const auto isBottom = grabType==Cursor::GrabbedWindow::GrabType::size_sw||grabType==Cursor::GrabbedWindow::GrabType::size_s||grabType==Cursor::GrabbedWindow::GrabType::size_se;
+
+						grabbedWindow.grabOffsetX = window.get_width()-x*(isLeft?-1:isRight?+1:0);
+						grabbedWindow.grabOffsetY = window.get_height()-y*(isTop?-1:isBottom?+1:0);
+					} break;
+					case GrabbedWindow::GrabType::move:
+						grabbedWindow.grabOffsetX = window.get_x()-x;
+						grabbedWindow.grabOffsetY = window.get_y()-y;
+					break;
+				}
 
 				window.draggingCursor = this;
 				if(window.is_top()){
@@ -900,23 +1034,73 @@ namespace driver {
 				}
 			}
 
-			void release_window() {
-				if(!dragWindow.window||dragWindow.window->draggingCursor!=this) return;
-
-				dragWindow.window->draggingCursor = nullptr;
-				dragWindow.window->redraw_decorations();
-				dragWindow.window = nullptr;
+			void show() {
+				if(isVisible) return;
+				isVisible = true;
+				display->show();
 			}
 
-			void regrab_window() {
-				dragWindow.dragOffsetX = maths::clamp(dragWindow.dragOffsetX, -(I32)dragWindow.window->titlebarArea.x2+8, -(I32)dragWindow.window->titlebarArea.x1-8);
-				dragWindow.dragOffsetY = maths::clamp(dragWindow.dragOffsetY, -(I32)dragWindow.window->titlebarArea.y2+8, -(I32)dragWindow.window->titlebarArea.y1-8);
+			void hide() {
+				if(!isVisible) return;
+				isVisible = false;
+				display->hide();
+			}
+
+			void release_window() {
+				if(!grabbedWindow.window||grabbedWindow.window->draggingCursor!=this) return;
+
+				grabbedWindow.window->draggingCursor = nullptr;
+				grabbedWindow.window->redraw_decorations();
+				grabbedWindow.window = nullptr;
+			}
+
+			// only valid if the window was already in a move grab
+			void regrab_window_move() {
+				grabbedWindow.grabOffsetX = maths::clamp(grabbedWindow.grabOffsetX, -(I32)grabbedWindow.window->titlebarArea.x2+8, -(I32)grabbedWindow.window->titlebarArea.x1-8);
+				grabbedWindow.grabOffsetY = maths::clamp(grabbedWindow.grabOffsetY, -(I32)grabbedWindow.window->titlebarArea.y2+8, -(I32)grabbedWindow.window->titlebarArea.y1-8);
+			}
+
+			void set_cursor(graphics2d::Buffer *newCursor, I32 originX, I32 originY){
+				if(currentCursor==newCursor) return;
+
+				currentCursor = newCursor;
+
+				if(currentCursor){
+					if(display->buffer.width!=currentCursor->width||display->buffer.height!=currentCursor->height){
+						if(isVisible){
+							display->hide();
+						}
+						display->resize_to(currentCursor->width, currentCursor->height, false);
+						display->buffer.draw_buffer(0, 0, 0, 0, currentCursor->width, currentCursor->height, *currentCursor);
+						if(isVisible){
+							display->show(false);
+						}
+					}else{
+						display->buffer.draw_buffer(0, 0, 0, 0, currentCursor->width, currentCursor->height, *currentCursor);
+					}
+				}else{
+					display->buffer.draw_rect(graphics2d::Rect{0, 0, (I32)display->buffer.width, (I32)display->buffer.height}, 0xff000000);
+				}
+
+				if(offset[0]!=originX||offset[1]!=originY){
+					offset[0] = originX;
+					offset[1] = originY;
+					set_position(x, y);
+				}else{
+					display->update();
+				}
+			}
+
+			void set_position(U32 x, U32 y){
+				this->x = x;
+				this->y = y;
+				display->move_to(x-offset[0], y-offset[1]);
 			}
 		};
 
 		LList<Window> windows;
 		Window *focusedWindow = nullptr;
-		ListUnordered<Cursor> cursors(0); // do not preallocate any (dynamic allocations on boot fail before memory is setup)
+		ListUnordered<Cursor> cursors; // do not preallocate any (dynamic allocations on boot fail before memory is setup)
 
 		void _add_mouse(Mouse &mouse);
 		void _remove_mouse(Mouse &mouse);
@@ -954,15 +1138,7 @@ namespace driver {
 
 			auto x = (I32)displayManager->get_width()/2;
 			auto y = (I32)displayManager->get_height()/2;
-			auto &cursorImage = ui2d::image::cursors::_default;
-
-			auto cursorDisplay = displayManager->create_display(nullptr, DisplayManager::DisplayLayer::cursor, cursorImage.width, cursorImage.height);
-			// cursorDisplay->mode = DisplayManager::DisplayMode::transparent; // TODO: add some kind of api for specifically marking displays as transparent
-			cursorDisplay->move_to(x, y);
-			cursorDisplay->solidArea.clear();
-			cursorDisplay->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-
-			cursors.push({&mouse, cursorDisplay, x, y, false});
+			cursors.push({mouse, x, y});
 		}
 
 		void _remove_mouse(Mouse &mouse) {
@@ -985,8 +1161,6 @@ namespace driver {
 			}
 			return nullptr;
 		}
-
-		void _update_window_area(Window *exclude = nullptr);
 
 		void _autoposition_window(Window &window) {
 			// find a previous window this can lean against
@@ -1316,14 +1490,32 @@ namespace driver {
 			auto cursor = _find_cursor(*event.instance);
 			if(!cursor) return;
 
-			auto window = get_window_at(cursor->x, cursor->y, cursor->display);
+			if(event.type==Mouse::Event::Type::moved){
+				cursor->set_position(
+					maths::clamp(cursor->x+event.moved.x, 0, (I32)displayManager->get_width()-1),
+					maths::clamp(cursor->y+event.moved.y, 0, (I32)displayManager->get_height()-1)
+				);
+			}
+
+			auto window = get_window_at(cursor->x, cursor->y, false, cursor->display);
+			auto marginedWindow = get_window_at(cursor->x, cursor->y, true, cursor->display);
+
+			auto cursorWindow = marginedWindow;
+			auto cursorWindowArea = cursorWindow?cursorWindow->get_cursor_area_at(cursor->x-cursorWindow->get_x(), cursor->y-cursorWindow->get_y()):Window::CursorArea::none;
+
+			if(cursorWindowArea==Window::CursorArea::none&&window){
+				cursorWindow = window;
+				cursorWindowArea = cursorWindow->get_cursor_area_at(cursor->x-cursorWindow->get_x(), cursor->y-cursorWindow->get_y());
+			}
+
+			const auto cursorWasDefault = cursor->currentCursor==&ui2d::image::cursors::_default||cursor->currentCursor==&ui2d::image::cursors::_default_left||cursor->currentCursor==&ui2d::image::cursors::_default_right;
 
 			// update cursor
 			switch(event.type){
-				case Mouse::Event::Type::pressed:
-					if(window) {
-						window->raise();
-						focusedWindow = window;
+				case Mouse::Event::Type::pressed: {
+					if(cursorWindow) {
+						cursorWindow->raise();
+						focusedWindow = cursorWindow;
 						update_focused_window();
 					}else{
 						focusedWindow = nullptr;
@@ -1331,69 +1523,114 @@ namespace driver {
 					}
 
 					if(event.pressed.button==0){
-						{
-							auto &cursorImage = ui2d::image::cursors::_default_left;
-							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-							cursor->display->update();
-						}
-						if(!cursor->dragWindow.window){
-							if(window&&window->titlebarArea.contains(cursor->x-window->get_x(), cursor->y-window->get_y())){
-								cursor->grab_window(*window);
+						if(cursorWasDefault) cursor->set_cursor(&ui2d::image::cursors::_default_left, 0, 0);
+						if(!cursor->grabbedWindow.window){
+							auto grabType = Cursor::GrabbedWindow::GrabType::move;
+
+							switch(cursorWindowArea){
+								case Window::CursorArea::sizeN:
+									grabType = Cursor::GrabbedWindow::GrabType::size_n;
+								break;
+								case Window::CursorArea::sizeNW:
+									grabType = Cursor::GrabbedWindow::GrabType::size_nw;
+								break;
+								case Window::CursorArea::sizeNE:
+									grabType = Cursor::GrabbedWindow::GrabType::size_ne;
+								break;
+								case Window::CursorArea::sizeS:
+									grabType = Cursor::GrabbedWindow::GrabType::size_s;
+								break;
+								case Window::CursorArea::sizeSW:
+									grabType = Cursor::GrabbedWindow::GrabType::size_sw;
+								break;
+								case Window::CursorArea::sizeSE:
+									grabType = Cursor::GrabbedWindow::GrabType::size_se;
+								break;
+								case Window::CursorArea::sizeE:
+									grabType = Cursor::GrabbedWindow::GrabType::size_e;
+								break;
+								case Window::CursorArea::sizeW:
+									grabType = Cursor::GrabbedWindow::GrabType::size_w;
+								break;
+								case Window::CursorArea::none: // TODO: ignore this?
+								case Window::CursorArea::titlebar:
+								case Window::CursorArea::body:
+									grabType = Cursor::GrabbedWindow::GrabType::move;
+								break;
 							}
+
+							cursor->grab_window(*cursorWindow, grabType);
 						}
 
 					}else if(event.pressed.button==1){
-						{
-							auto &cursorImage = ui2d::image::cursors::_default_right;
-							cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-							cursor->display->update();
-						}
+						if(cursorWasDefault) cursor->set_cursor(&ui2d::image::cursors::_default_right, 0, 0);
 					}
-				break;
+				} break;
 				case Mouse::Event::Type::released:
 					if(event.released.button==0||event.released.button==1){
-						auto &cursorImage = ui2d::image::cursors::_default;
-						cursor->display->buffer.draw_buffer(0, 0, 0, 0, cursorImage.width, cursorImage.height, cursorImage);
-						cursor->display->update();
+						if(cursorWasDefault) cursor->set_cursor(&ui2d::image::cursors::_default, 0, 0);
 					}
 
 					if(event.released.button==0){
-						if(cursor->dragWindow.window){
+						if(cursor->grabbedWindow.window){
 							cursor->release_window();
 						}
 					}
 				case Mouse::Event::Type::scrolled:
 				break;
 				case Mouse::Event::Type::moved:
-					cursor->x = maths::clamp(cursor->x+event.moved.x, 0, (I32)displayManager->get_width()-1);
-					cursor->y = maths::clamp(cursor->y+event.moved.y, 0, (I32)displayManager->get_height()-1);
-					cursor->display->move_to(cursor->x, cursor->y);
-
-					if(cursor->dragWindow.window){
+					if(cursor->grabbedWindow.window){
+						auto &grabbedWindow = cursor->grabbedWindow;
 						auto windowArea = DesktopManager::instance.get_window_area();
 
-						if(cursor->x<(windowArea.x1+windowArea.x2)/2&&cursor->x<windowArea.x1+(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::left);
-						}else if(cursor->x>=windowArea.x2-(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::right);
-						}else if(cursor->y<(windowArea.y1+windowArea.y2)/2&&cursor->y<windowArea.y1+(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::top);
-						}else if(cursor->y>=windowArea.y2-(I32)edgeSnapDistance){
-							cursor->dragWindow.window->dock(DesktopManager::Window::DockedType::bottom);
+						switch(grabbedWindow.grabType){
+							case Cursor::GrabbedWindow::GrabType::move:
+								if(cursor->x<(windowArea.x1+windowArea.x2)/2&&cursor->x<windowArea.x1+(I32)edgeSnapDistance){
+									grabbedWindow.window->dock(DesktopManager::Window::DockedType::left);
+								}else if(cursor->x>=windowArea.x2-(I32)edgeSnapDistance){
+									grabbedWindow.window->dock(DesktopManager::Window::DockedType::right);
+								}else if(cursor->y<(windowArea.y1+windowArea.y2)/2&&cursor->y<windowArea.y1+(I32)edgeSnapDistance){
+									grabbedWindow.window->dock(DesktopManager::Window::DockedType::top);
+								}else if(cursor->y>=windowArea.y2-(I32)edgeSnapDistance){
+									grabbedWindow.window->dock(DesktopManager::Window::DockedType::bottom);
+		
+								}else{
+									if(grabbedWindow.window->state!=DesktopManager::Window::State::floating){
+										grabbedWindow.window->restore();
+										cursor->regrab_window_move();
+										// we've regrabbed from new position, so there's no move to apply yet here
+		
+									}else{
+										grabbedWindow.window->move_to(cursor->x+grabbedWindow.grabOffsetX, cursor->y+grabbedWindow.grabOffsetY);
+									}
+								}
+							break;
+							case Cursor::GrabbedWindow::GrabType::size_n:
+							case Cursor::GrabbedWindow::GrabType::size_nw:
+							case Cursor::GrabbedWindow::GrabType::size_ne:
+							case Cursor::GrabbedWindow::GrabType::size_s:
+							case Cursor::GrabbedWindow::GrabType::size_sw:
+							case Cursor::GrabbedWindow::GrabType::size_se:
+							case Cursor::GrabbedWindow::GrabType::size_w:
+							case Cursor::GrabbedWindow::GrabType::size_e: {
+								const auto isLeft = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_w||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw;
+								const auto isRight = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_e||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
+								const auto isTop = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_n||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne;
+								const auto isBottom = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_s||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
 
-						}else{
-							if(cursor->dragWindow.window->state!=DesktopManager::Window::State::floating){
-								cursor->dragWindow.window->restore();
-								cursor->regrab_window();
-								// we've regrabbed from new position, so there's no move to apply yet here
+								const auto newWidth = grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0);
+								const auto newHeight = grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0);
 
-							}else{
-								cursor->dragWindow.window->move_to(cursor->x+cursor->dragWindow.dragOffsetX, cursor->y+cursor->dragWindow.dragOffsetY);
-							}
+								grabbedWindow.window->move_and_resize_to(
+									grabbedWindow.window->get_x()-(isLeft?newWidth-grabbedWindow.window->get_width():0),
+									grabbedWindow.window->get_y()-(isTop?newHeight-grabbedWindow.window->get_height():0),
+									newWidth, newHeight
+								);
+							} break;
 						}
 
 						// if(cursor->dragWindow.window->state==DesktopManager::Window::State::docked){
-						// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, cursor->display);
+						// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, false, cursor->display);
 						// 	if(hoveredWindow!=cursor->dragWindow.window){
 						// 		auto other_x = hoveredWindow->get_x();
 						// 		auto other_y = hoveredWindow->get_y();
@@ -1411,11 +1648,35 @@ namespace driver {
 						// 		);
 						// 	}
 						// }
+
+					}else{
+						switch(cursorWindowArea){
+							case Window::CursorArea::none:
+							case Window::CursorArea::body:
+							case Window::CursorArea::titlebar:
+								cursor->set_cursor(&ui2d::image::cursors::_default, 0, 0);
+							break;
+							case Window::CursorArea::sizeW:
+							case Window::CursorArea::sizeE:
+								cursor->set_cursor(&ui2d::image::cursors::size_x, 12, 12);
+							break;
+							case Window::CursorArea::sizeN:
+							case Window::CursorArea::sizeS:
+								cursor->set_cursor(&ui2d::image::cursors::size_y, 12, 12);
+							break;
+							case Window::CursorArea::sizeNE:
+							case Window::CursorArea::sizeSW:
+								cursor->set_cursor(&ui2d::image::cursors::size_nesw, 12, 12);
+							break;
+							case Window::CursorArea::sizeNW:
+							case Window::CursorArea::sizeSE:
+								cursor->set_cursor(&ui2d::image::cursors::size_nwse, 12, 12);
+							break;
+						}
 					}
 
 					if(!cursor->isVisible){
-						cursor->isVisible = true;
-						cursor->display->show();
+						cursor->show();
 					}
 				break;
 			}
@@ -1524,6 +1785,8 @@ namespace driver {
 		_set_titlebar_area({(I32)leftMargin, (I32)topMargin, (I32)leftMargin+(I32)width, (I32)topMargin+titlebarHeight});
 
 		if(DeferWindowMove::depth<1){
+			_update_window_area();
+
 			events.trigger({
 				type: DesktopManager::Window::Event::Type::clientAreaChanged
 			});

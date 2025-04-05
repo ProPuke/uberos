@@ -84,7 +84,7 @@ namespace driver {
 			void raise();
 			void set_layer(DisplayLayer);
 			auto is_top() -> bool; // if true, top of its layer and not raisable
-			void show();
+			void show(bool update=true);
 			void hide();
 			void update();
 			void update_area(graphics2d::Rect rect);
@@ -124,7 +124,7 @@ namespace driver {
 		void update_background_area(graphics2d::Rect rect);
 		void update_area(graphics2d::Rect rect, Display *below = nullptr);
 
-		auto get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below = nullptr) -> Display*;
+		auto get_display_at(I32 x, I32 y, bool includeNonInteractive, Display *below = nullptr, I32 margin = 0) -> Display*;
 		auto get_screen_count() -> U32;
 		auto get_screen_buffer(U32 framebuffer) -> graphics2d::Buffer*; // this may be missing while the framebuffer is changing
 		auto get_screen_buffer(U32 framebuffer, graphics2d::Rect rect) -> Optional<graphics2d::Buffer>; // this may be missing while the framebuffer is changing
