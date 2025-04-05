@@ -39,6 +39,15 @@ namespace maths {
 	template <typename Type>
 	constexpr auto sign(Type x) -> I8Fast { return x>0?+1:x<0?-1:0; }
 
+	template <typename Type>
+	auto sqrt(Type x) -> Type {
+		Type result = x;
+		for(Type y = (result+1)/2; y<result; y=(result+x/result)/2) {
+			result = y;
+		}
+		return result;
+	}
+
 	template <typename InputType, typename OutputType>
 	constexpr auto clamp(InputType x, OutputType a, OutputType b) -> OutputType { return min<InputType>(max<InputType>(x, a), b); }
 
