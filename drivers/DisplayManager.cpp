@@ -612,6 +612,7 @@ namespace driver {
 			display.buffer.stride = width*bpp;
 
 			if(display.isVisible&&update){
+				_update_display_solid(display);
 				_update_area_solid({display.x, display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}, &display);
 				_update_area_transparency(
 					graphics2d::Rect{display.x, display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}
