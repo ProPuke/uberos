@@ -55,6 +55,7 @@ namespace memory {
 
 	auto get_used_heap() -> size_t;
 	auto get_available_heap() -> size_t;
+	auto get_heap_block_count() -> U32;
 
 	// not thread-safe thread safe
 	auto _allocate(size_t size) -> void*;

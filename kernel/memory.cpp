@@ -86,6 +86,10 @@ namespace memory {
 		return kernelHeap.available;
 	}
 
+	auto get_heap_block_count() -> U32 {
+		return kernelHeap.availableBlocks.length();
+	}
+
 	namespace {
 		auto physical_to_index(Physical<void> physical) -> UPtr {
 			return (physical.address - heap.address) / pageSize;
