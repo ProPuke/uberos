@@ -77,7 +77,7 @@ namespace panic {
 		exceptions::disable();
 
 		if(framebuffer){
-			width = maths::clamp(700u*framebuffer->height/1080u, 450u, framebuffer->width);
+			width = maths::clamp(750u*framebuffer->height/1080u, 450u, framebuffer->width);
 			x = (framebuffer->width-width)/2;
 			y = 10u;
 			cursorX = x;
