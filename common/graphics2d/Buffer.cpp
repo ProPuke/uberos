@@ -36,7 +36,7 @@ namespace graphics2d {
 	
 					const auto xAdvancement = character->advance*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
 
-					if(x+xAdvancement>=right){
+					if(c!=text && x+xAdvancement>=right){
 						//TODO: proper wordwrapping
 						x = FixedI32::whole(startX);
 						y += lineheight;
