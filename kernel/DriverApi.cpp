@@ -255,8 +255,8 @@ auto DriverApi::is_subscribed_to_pci(PciDevice &pciDevice) -> bool {
 }
 
 #ifdef ARCH_X86
-	auto DriverApi::subscribe_ioPort(arch::x86::IoPort ioPort) -> Try<> {
-		if(is_subscribed_to_ioPort(ioPort)) return {};
+	auto DriverApi::subscribe_ioPort(arch::x86::IoPort ioPort) -> Try<arch::x86::IoPort> {
+		if(is_subscribed_to_ioPort(ioPort)) return ioPort;
 
 		for(auto &other:drivers::iterate<Driver>()){
 			if(other.api.is_subscribed_to_ioPort(ioPort)) return {"I/O port not available - already in use"};
@@ -265,7 +265,7 @@ auto DriverApi::is_subscribed_to_pci(PciDevice &pciDevice) -> bool {
 		//TODO: insert ordered
 		subscribedIoPorts.push_back(ioPort);
 
-		return {};
+		return ioPort;
 	}
 
 	void DriverApi::unsubscribe_ioPort(arch::x86::IoPort ioPort) {

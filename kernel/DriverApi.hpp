@@ -106,7 +106,7 @@ class DriverApi {
 		auto is_subscribed_to_pci(PciDevice&) -> bool;
 
 		#ifdef ARCH_X86
-			auto subscribe_ioPort(arch::x86::IoPort) -> Try<>;
+			auto subscribe_ioPort(arch::x86::IoPort) -> Try<arch::x86::IoPort>;
 			void unsubscribe_ioPort(arch::x86::IoPort);
 			void unsubscribe_all_ioPort();
 			auto is_subscribed_to_ioPort(arch::x86::IoPort) -> bool;

@@ -207,8 +207,8 @@ namespace driver::system {
 			if(smbios->is_pci_supported()==Maybe::no) return {"PCI not supported"};
 		}
 
-		TRY(api.subscribe_ioPort(ioConfig));
-		TRY(api.subscribe_ioPort(ioData));
+		TRY_RESULT(api.subscribe_ioPort(ioConfig));
+		TRY_RESULT(api.subscribe_ioPort(ioData));
 
 		devices.clear();
 		scannedBusses.clear();
