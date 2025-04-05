@@ -109,7 +109,7 @@ namespace ui2d {
 					.lineSpacing=-4
 				};
 
-				auto textSize = buffer.measure_text(fontSettings, text);
+				auto textSize = buffer.measure_text(fontSettings, text, innerRect.width()-padding-padding);
 				auto textWidth = min(textSize.blockWidth, innerRect.width()-padding-padding);
 				auto textHeight = min(textSize.blockHeight, innerRect.height()-padding-padding);
 
