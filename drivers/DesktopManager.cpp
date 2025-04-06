@@ -992,6 +992,11 @@ namespace driver {
 				Window *window = nullptr;
 				I32 grabOffsetX;
 				I32 grabOffsetY;
+
+				I32 startX;
+				I32 startY;
+				bool active; // on move, set to false until the mouse moves activationDistance from startX/Y
+				static const auto activationDistance = 10;
 			} grabbedWindow;
 
 			void grab_window(Window &window, GrabbedWindow::GrabType grabType) {
@@ -999,6 +1004,25 @@ namespace driver {
 					window.draggingCursor->release_window();
 				}
 
+				grabbedWindow.startX = x;
+				grabbedWindow.startY = y;
+				switch(grabType){
+					case GrabbedWindow::GrabType::move:
+						// moves require an activation distance to begin the drag
+						grabbedWindow.active = false;
+					break;
+					case GrabbedWindow::GrabType::size_n:
+					case GrabbedWindow::GrabType::size_nw:
+					case GrabbedWindow::GrabType::size_ne:
+					case GrabbedWindow::GrabType::size_s:
+					case GrabbedWindow::GrabType::size_sw:
+					case GrabbedWindow::GrabType::size_se:
+					case GrabbedWindow::GrabType::size_w:
+					case GrabbedWindow::GrabType::size_e:
+						// edge sizings begin drag immediately
+						grabbedWindow.active = true;
+					break;
+				}
 				grabbedWindow.grabType = grabType;
 				grabbedWindow.window = &window;
 
@@ -1059,6 +1083,8 @@ namespace driver {
 
 			// only valid if the window was already in a move grab
 			void regrab_window_move() {
+				grabbedWindow.startX = x;
+				grabbedWindow.startY = y;
 				grabbedWindow.grabOffsetX = maths::clamp(grabbedWindow.grabOffsetX, -(I32)grabbedWindow.window->titlebarArea.x2+8, -(I32)grabbedWindow.window->titlebarArea.x1-8);
 				grabbedWindow.grabOffsetY = maths::clamp(grabbedWindow.grabOffsetY, -(I32)grabbedWindow.window->titlebarArea.y2+8, -(I32)grabbedWindow.window->titlebarArea.y1-8);
 			}
@@ -1583,74 +1609,116 @@ namespace driver {
 				break;
 				case Mouse::Event::Type::moved:
 					if(cursor->grabbedWindow.window){
-						auto &grabbedWindow = cursor->grabbedWindow;
-						auto windowArea = DesktopManager::instance.get_window_area();
-
-						switch(grabbedWindow.grabType){
-							case Cursor::GrabbedWindow::GrabType::move:
-								if(cursor->x<(windowArea.x1+windowArea.x2)/2&&cursor->x<windowArea.x1+(I32)edgeSnapDistance){
-									grabbedWindow.window->dock(DesktopManager::Window::DockedType::left);
-								}else if(cursor->x>=windowArea.x2-(I32)edgeSnapDistance){
-									grabbedWindow.window->dock(DesktopManager::Window::DockedType::right);
-								}else if(cursor->y<(windowArea.y1+windowArea.y2)/2&&cursor->y<windowArea.y1+(I32)edgeSnapDistance){
-									grabbedWindow.window->dock(DesktopManager::Window::DockedType::top);
-								}else if(cursor->y>=windowArea.y2-(I32)edgeSnapDistance){
-									grabbedWindow.window->dock(DesktopManager::Window::DockedType::bottom);
-		
-								}else{
-									if(grabbedWindow.window->state!=DesktopManager::Window::State::floating){
-										grabbedWindow.window->restore();
-										cursor->regrab_window_move();
-										// we've regrabbed from new position, so there's no move to apply yet here
-		
-									}else{
-										grabbedWindow.window->move_to(cursor->x+grabbedWindow.grabOffsetX, cursor->y+grabbedWindow.grabOffsetY);
-									}
-								}
-							break;
-							case Cursor::GrabbedWindow::GrabType::size_n:
-							case Cursor::GrabbedWindow::GrabType::size_nw:
-							case Cursor::GrabbedWindow::GrabType::size_ne:
-							case Cursor::GrabbedWindow::GrabType::size_s:
-							case Cursor::GrabbedWindow::GrabType::size_sw:
-							case Cursor::GrabbedWindow::GrabType::size_se:
-							case Cursor::GrabbedWindow::GrabType::size_w:
-							case Cursor::GrabbedWindow::GrabType::size_e: {
-								const auto isLeft = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_w||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw;
-								const auto isRight = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_e||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
-								const auto isTop = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_n||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne;
-								const auto isBottom = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_s||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
-
-								const auto newWidth = grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0);
-								const auto newHeight = grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0);
-
-								grabbedWindow.window->move_and_resize_to(
-									grabbedWindow.window->get_x()-(isLeft?newWidth-grabbedWindow.window->get_width():0),
-									grabbedWindow.window->get_y()-(isTop?newHeight-grabbedWindow.window->get_height():0),
-									newWidth, newHeight
-								);
-							} break;
+						if(!cursor->grabbedWindow.active&&maths::abs(cursor->x-cursor->grabbedWindow.startX)+maths::abs(cursor->y-cursor->grabbedWindow.startY)>=Cursor::GrabbedWindow::activationDistance){
+							cursor->grabbedWindow.active = true;
 						}
 
-						// if(cursor->dragWindow.window->state==DesktopManager::Window::State::docked){
-						// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, false, cursor->display);
-						// 	if(hoveredWindow!=cursor->dragWindow.window){
-						// 		auto other_x = hoveredWindow->get_x();
-						// 		auto other_y = hoveredWindow->get_y();
-						// 		auto other_width = hoveredWindow->get_width();
-						// 		auto other_height = hoveredWindow->get_height();
+						if(cursor->grabbedWindow.active){
+							auto &grabbedWindow = cursor->grabbedWindow;
+							auto windowArea = DesktopManager::instance.get_window_area();
 
-						// 		hoveredWindow->move_and_resize_to(
-						// 			cursor->dragWindow.window->get_x(), cursor->dragWindow.window->get_y(),
-						// 			cursor->dragWindow.window->get_width(), cursor->dragWindow.window->get_height()
-						// 		);
+							switch(grabbedWindow.grabType){
+								case Cursor::GrabbedWindow::GrabType::move:
+									switch(grabbedWindow.window->state){
+										case Window::State::minimised:
+										break;
+										case Window::State::docked:
+											switch(grabbedWindow.window->dockedType){
+												case Window::DockedType::top:
+													if(cursor->y>=grabbedWindow.startY+(I32)edgeSnapDistance){
+														grabbedWindow.window->restore();
+														cursor->regrab_window_move();
+													}
+												break;
+												case Window::DockedType::bottom:
+													if(cursor->y<=grabbedWindow.startY-(I32)edgeSnapDistance){
+														grabbedWindow.window->restore();
+														cursor->regrab_window_move();
+													}
+												break;
+												case Window::DockedType::left:
+													if(cursor->x>=grabbedWindow.startX+(I32)edgeSnapDistance){
+														grabbedWindow.window->restore();
+														cursor->regrab_window_move();
+													}
+												break;
+												case Window::DockedType::right:
+													if(cursor->x<=grabbedWindow.startX-(I32)edgeSnapDistance){
+														grabbedWindow.window->restore();
+														cursor->regrab_window_move();
+													}
+												break;
+												case Window::DockedType::full:
+													if(cursor->y>=windowArea.y1+(I32)edgeSnapDistance){
+														grabbedWindow.window->restore();
+														cursor->regrab_window_move();
+													}
+												break;
+											}
+										break;
+										case Window::State::floating:
+											if(cursor->x<(windowArea.x1+windowArea.x2)/2&&cursor->x<windowArea.x1+(I32)edgeSnapDistance){
+												grabbedWindow.window->dock(DesktopManager::Window::DockedType::left);
+												cursor->regrab_window_move();
+											}else if(cursor->x>=windowArea.x2-(I32)edgeSnapDistance){
+												grabbedWindow.window->dock(DesktopManager::Window::DockedType::right);
+												cursor->regrab_window_move();
+											}else if(cursor->y<(windowArea.y1+windowArea.y2)/2&&cursor->y<windowArea.y1+(I32)edgeSnapDistance){
+												grabbedWindow.window->dock(DesktopManager::Window::DockedType::top);
+												cursor->regrab_window_move();
+											}else if(cursor->y>=windowArea.y2-(I32)edgeSnapDistance){
+												grabbedWindow.window->dock(DesktopManager::Window::DockedType::bottom);
+												cursor->regrab_window_move();
+											}else{
+												grabbedWindow.window->move_to(cursor->x+grabbedWindow.grabOffsetX, cursor->y+grabbedWindow.grabOffsetY);
+											}
+										break;
+									}
+								break;
+								case Cursor::GrabbedWindow::GrabType::size_n:
+								case Cursor::GrabbedWindow::GrabType::size_nw:
+								case Cursor::GrabbedWindow::GrabType::size_ne:
+								case Cursor::GrabbedWindow::GrabType::size_s:
+								case Cursor::GrabbedWindow::GrabType::size_sw:
+								case Cursor::GrabbedWindow::GrabType::size_se:
+								case Cursor::GrabbedWindow::GrabType::size_w:
+								case Cursor::GrabbedWindow::GrabType::size_e: {
+									const auto isLeft = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_w||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw;
+									const auto isRight = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_e||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
+									const auto isTop = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_n||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne;
+									const auto isBottom = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_s||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
 
-						// 		cursor->dragWindow.window->move_and_resize_to(
-						// 			other_x, other_y,
-						// 			other_width, other_height
-						// 		);
-						// 	}
-						// }
+									const auto newWidth = grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0);
+									const auto newHeight = grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0);
+
+									grabbedWindow.window->move_and_resize_to(
+										grabbedWindow.window->get_x()-(isLeft?newWidth-grabbedWindow.window->get_width():0),
+										grabbedWindow.window->get_y()-(isTop?newHeight-grabbedWindow.window->get_height():0),
+										newWidth, newHeight
+									);
+								} break;
+							}
+
+							// if(cursor->dragWindow.window->state==DesktopManager::Window::State::docked){
+							// 	auto hoveredWindow = get_window_at(cursor->x, cursor->y, false, cursor->display);
+							// 	if(hoveredWindow!=cursor->dragWindow.window){
+							// 		auto other_x = hoveredWindow->get_x();
+							// 		auto other_y = hoveredWindow->get_y();
+							// 		auto other_width = hoveredWindow->get_width();
+							// 		auto other_height = hoveredWindow->get_height();
+
+							// 		hoveredWindow->move_and_resize_to(
+							// 			cursor->dragWindow.window->get_x(), cursor->dragWindow.window->get_y(),
+							// 			cursor->dragWindow.window->get_width(), cursor->dragWindow.window->get_height()
+							// 		);
+
+							// 		cursor->dragWindow.window->move_and_resize_to(
+							// 			other_x, other_y,
+							// 			other_width, other_height
+							// 		);
+							// 	}
+							// }
+						}
 
 					}else{
 						switch(cursorWindowArea){
