@@ -32,7 +32,7 @@ namespace drivers {
 
 			const char empty[] = "..............................";
 			const char full[]  = "||||||||||||||||||||||||||||||";
-			const U32 bars = clamp(phase, 0.0, 1.0)*(sizeof(empty)-1)+0.5;
+			const U32 bars = clamp(phase, 0.0f, 1.0f)*(sizeof(empty)-1)+0.5;
 
 			if(temp>=0&&temp>=safetyMax){
 				log.print_warning_start();

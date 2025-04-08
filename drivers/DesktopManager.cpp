@@ -1688,8 +1688,8 @@ namespace driver {
 									const auto isTop = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_n||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne;
 									const auto isBottom = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_s||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
 
-									const auto newWidth = grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0);
-									const auto newHeight = grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0);
+									const auto newWidth = (U32)maths::max(0, grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0));
+									const auto newHeight = (U32)maths::max(0, grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0));
 
 									grabbedWindow.window->move_and_resize_to(
 										grabbedWindow.window->get_x()-(isLeft?newWidth-grabbedWindow.window->get_width():0),

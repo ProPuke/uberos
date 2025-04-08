@@ -59,7 +59,7 @@ namespace tests::fontTest {
 				redraw();
 
 			}else if(event.type==driver::DesktopManager::Window::Event::Type::mouseScrolled){
-				scale = maths::clamp(scale - event.mouseScrolled.distance*(scale>20?3:scale>16?2:1), 1, 60);
+				scale = maths::clamp(scale - event.mouseScrolled.distance*(scale>20?3:scale>16?2:1), 1u, 60u);
 				redraw();
 			}
 

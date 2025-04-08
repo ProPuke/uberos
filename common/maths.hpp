@@ -48,8 +48,8 @@ namespace maths {
 		return result;
 	}
 
-	template <typename InputType, typename OutputType>
-	constexpr auto clamp(InputType x, OutputType a, OutputType b) -> OutputType { return min<InputType>(max<InputType>(x, a), b); }
+	template <typename Type>
+	constexpr auto clamp(Type x, Type a, Type b) -> Type { return min(max(x, a), b); }
 
 	template <typename T>
 	constexpr auto celcius_to_kelvin(T x) -> T { return x+273.15; }
