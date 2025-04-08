@@ -113,10 +113,11 @@ struct MemoryPool {
 			memory::debug();
 		#endif
 
+		debug::assert(!availableBlocks.contains(reclaim));
+
 		available += reclaim.size;
 
 		auto isLarge = reclaim.size>=memory::pageSize; //TODO:compare to adaptive median size
-
 
 		if(!availableBlocks.head){
 			availableBlocks.push_back(reclaim);
