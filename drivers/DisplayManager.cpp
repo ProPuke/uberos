@@ -62,7 +62,8 @@ namespace driver {
 		void _update_area_solid(graphics2d::Rect, DisplayManager::Display *below = nullptr);
 		void _update_display_solid(DisplayManager::Display&);
 		void _update_display_area_solid(DisplayManager::Display&, graphics2d::Rect);
-		void _calculate_blending_at(Framebuffer&, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
+		auto _sample_at(Framebuffer &framebuffer, I32 x, I32 y, DisplayManager::Display *topDisplay) -> U32;
+		auto _calculate_blending_at(Framebuffer&, I32 x, I32 y, DisplayManager::Display *topDisplay) -> U32;
 		auto _get_screen_buffer(U32 framebuffer, graphics2d::Rect) -> Optional<graphics2d::Buffer>;
 
 		void _set_background_colour(U32 colour) {
@@ -140,21 +141,6 @@ namespace driver {
 			auto _sample_background_strip_at(U32 y) -> U32;
 		#endif
 
-		template <graphics2d::BufferFormatOrder>
-		void __calculate_blending_at(U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay);
-
-		void _calculate_blending_at(Framebuffer &framebuffer, U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
-			switch(framebuffer.buffer->order){
-				case graphics2d::BufferFormatOrder::argb:
-					__calculate_blending_at<graphics2d::BufferFormatOrder::argb>(buffer, x, y, topDisplay);
-				break;
-				case graphics2d::BufferFormatOrder::bgra:
-				default:
-					__calculate_blending_at<graphics2d::BufferFormatOrder::bgra>(buffer, x, y, topDisplay);
-				break;
-			}
-		}
-
 		template <graphics2d::BufferFormatOrder order>
 		union __attribute__((packed)) PackedPixel;
 
@@ -180,9 +166,58 @@ namespace driver {
 			U32 value;
 		};
 
+		template <graphics2d::BufferFormatOrder formatOrder>
+		auto __sample_at(I32 x, I32 y, DisplayManager::Display *display) -> PackedPixel<formatOrder>;
+
+		auto _sample_at(Framebuffer &framebuffer, I32 x, I32 y, DisplayManager::Display *topDisplay) -> U32 {
+			switch(framebuffer.buffer->order){
+				case graphics2d::BufferFormatOrder::argb:
+					return __sample_at<graphics2d::BufferFormatOrder::argb>(x, y, topDisplay).value;
+				break;
+				case graphics2d::BufferFormatOrder::bgra:
+				default:
+					return __sample_at<graphics2d::BufferFormatOrder::bgra>(x, y, topDisplay).value;
+				break;
+			}
+		}
+
+		template <graphics2d::BufferFormatOrder formatOrder>
+		auto __calculate_blending_at(I32 x, I32 y, DisplayManager::Display *topDisplay) -> PackedPixel<formatOrder>;
+
+		auto _calculate_blending_at(Framebuffer &framebuffer, I32 x, I32 y, DisplayManager::Display *topDisplay) -> U32 {
+			switch(framebuffer.buffer->order){
+				case graphics2d::BufferFormatOrder::argb:
+					return __calculate_blending_at<graphics2d::BufferFormatOrder::argb>(x, y, topDisplay).value;
+				break;
+				case graphics2d::BufferFormatOrder::bgra:
+				default:
+					return __calculate_blending_at<graphics2d::BufferFormatOrder::bgra>(x, y, topDisplay).value;
+				break;
+			}
+		}
+
+		template <graphics2d::BufferFormatOrder formatOrder>
+		auto __sample_at(I32 x, I32 y, DisplayManager::Display *display) -> PackedPixel<formatOrder> {
+			if(!display->isVisible) return {0,0,0,0};
+
+			// check just y
+			if(display->y>y||display->y+(I32)display->get_height()<=y) return {0,0,0,0};
+
+			// check x (+ corners)
+			const auto displayY = y-display->y;
+			if(
+				display->x+(I32)display->get_left_margin(displayY)>x||
+				display->x+(I32)display->get_width()-(I32)display->get_right_margin(displayY)<=x
+			) return {0,0,0,0};
+
+			const auto displayX = x-display->x;
+
+			return *(PackedPixel<formatOrder>*)&display->buffer.address[(displayY/display->scale)*display->buffer.stride+(displayX/display->scale)*4];
+		}
+
 		//TODO: implement alpha testing instead on non rgba modes (palette index 0 or 0xff00ff perhaps?)
 		template <graphics2d::BufferFormatOrder formatOrder>
-		void __calculate_blending_at(U32 *&buffer, I32 x, I32 y, DisplayManager::Display *topDisplay) {
+		auto __calculate_blending_at(I32 x, I32 y, DisplayManager::Display *topDisplay) -> PackedPixel<formatOrder> {
 			PackedPixel<formatOrder> result{0,0,0,0};
 			U8 visibility = 255;
 
@@ -230,7 +265,7 @@ namespace driver {
 
 			done:
 
-			*buffer++ = result.value;
+			return result;
 		}
 
 		auto _find_display_section_in_row(I32 &x, I32 y, I32 x2, bool &isTransparent, DisplayManager::Display *current) -> DisplayManager::Display* {
@@ -364,7 +399,38 @@ namespace driver {
 								auto bufferPosition = buffer;
 
 								for(auto x=scanX; x<nextScanX; x++){
-									_calculate_blending_at(framebuffer, bufferPosition, x, y, display);
+									{
+										auto top = _sample_at(framebuffer, x, y, display);
+
+										if(top>>24==0){
+											*bufferPosition++ = top;
+
+										}else if(top>>24==255||true){
+											auto below = _calculate_blending_at(framebuffer, x, y, display->prev);
+											*bufferPosition++ = graphics2d::blend_colours(below, top);
+
+										// }else{
+										// 	// auto radius = (I32)(255-(top>>24)+42)/85;
+										// 	auto radius = 1;
+
+										// 	U32 samples[5] = {
+										// 		_calculate_blending_at(framebuffer, maths::clamp(x-radius, 0, (I32)framebuffer.buffer->width), maths::clamp(y-radius, 0, (I32)framebuffer.buffer->height), display->prev),
+										// 		_calculate_blending_at(framebuffer, maths::clamp(x+radius, 0, (I32)framebuffer.buffer->width), maths::clamp(y-radius, 0, (I32)framebuffer.buffer->height), display->prev),
+										// 		_calculate_blending_at(framebuffer, maths::clamp(x-radius, 0, (I32)framebuffer.buffer->width), maths::clamp(y+radius, 0, (I32)framebuffer.buffer->height), display->prev),
+										// 		_calculate_blending_at(framebuffer, maths::clamp(x+radius, 0, (I32)framebuffer.buffer->width), maths::clamp(y+radius, 0, (I32)framebuffer.buffer->height), display->prev),
+										// 		_calculate_blending_at(framebuffer, x, y, display->prev),
+										// 	};
+										// 	auto below = 0
+										// 		|(U32)(((U32)((samples[0]>> 0)&0xff) + ((samples[1]>> 0)&0xff) + ((samples[2]>> 0)&0xff) + ((samples[3]>> 0)&0xff) + ((samples[4]>> 0)&0xff))/5) << 0
+										// 		|(U32)(((U32)((samples[0]>> 8)&0xff) + ((samples[1]>> 8)&0xff) + ((samples[2]>> 8)&0xff) + ((samples[3]>> 8)&0xff) + ((samples[4]>> 8)&0xff))/5) << 8
+										// 		|(U32)(((U32)((samples[0]>>16)&0xff) + ((samples[1]>>16)&0xff) + ((samples[2]>>16)&0xff) + ((samples[3]>>16)&0xff) + ((samples[4]>>16)&0xff))/5) <<16
+										// 		|(U32)(((U32)((samples[0]>>24)&0xff) + ((samples[1]>>24)&0xff) + ((samples[2]>>24)&0xff) + ((samples[3]>>24)&0xff) + ((samples[4]>>24)&0xff))/5) <<24
+										// 	;
+
+										// 	*bufferPosition++ = graphics2d::blend_colours(below, top);
+										}
+									}
+									// *bufferPosition++ = _calculate_blending_at(framebuffer, x, y, display);
 
 									if(bufferPosition>=&buffer[sizeof(buffer)/sizeof(buffer[0])]){
 										memcpy(framebufferAddress, buffer, (U8*)bufferPosition-(U8*)buffer);
@@ -611,13 +677,20 @@ namespace driver {
 			display.buffer.height = height;
 			display.buffer.stride = width*bpp;
 
+			// redraw any old area revealed (but don't draw new content yet, as the buffer has only just been new'd and thus is garbage)
 			if(display.isVisible&&update){
-				_update_display_solid(display);
-				_update_area_solid({display.x, display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}, &display);
-				_update_area_transparency(
-					graphics2d::Rect{display.x, display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}
-					.include({display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()})
-				);
+				if(width<oldWidth){
+					// clear area to the right
+					const auto area = graphics2d::Rect{display.x+(I32)width, display.y, display.x+(I32)oldWidth, display.y+(I32)maths::max(height, oldHeight)};
+					_update_area_solid(area);
+					_update_area_transparency(area);
+				}
+				if(height<oldHeight){
+					// clear area to the bottom
+					const auto area = graphics2d::Rect{display.x, display.y+(I32)height, display.x+(I32)maths::max(width, oldWidth), display.y+(I32)oldHeight};
+					_update_area_solid(area);
+					_update_area_transparency(area);
+				}
 			}
 		}
 

@@ -19,11 +19,11 @@ namespace ui2d {
 			return 28;
 		}
 
-		void Clean::draw_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, graphics2d::Buffer *icon, bool isHover, bool isDown) {
-			return draw_coloured_button(buffer, rect, windowBackgroundColour, 0xdddddd, 0xff, text, icon, isHover, isDown);
+		void Clean::draw_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
+			return draw_coloured_button(buffer, rect, windowBackgroundColour, 0xdddddd, 0xff, text, smallFont, icon, isHover, isDown);
 		}
 
-		void Clean::draw_coloured_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, graphics2d::Buffer *icon, bool isHover, bool isDown) {
+		void Clean::draw_coloured_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
 			if(rect.width()<6||rect.height()<6) return;
 
 			// const auto trans = colour>>24;
@@ -49,7 +49,7 @@ namespace ui2d {
 
 			auto fontSettings = graphics2d::Buffer::FontSettings{
 				.font=*graphics2d::font::default_sans,
-				.size=14,
+				.size=smallFont?12u:14u,
 				.lineSpacing=-4
 			};
 
@@ -66,7 +66,7 @@ namespace ui2d {
 			buffer.draw_text(fontSettings, text, innerRect.x1+innerRect.width()/2-textWidth/2, innerRect.y1+innerRect.height()/2+textSize.capHeight-textHeight/2+(isDown?1:0), textWidth, textColour);
 		}
 
-		void Clean::draw_coloured_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
+		void Clean::draw_coloured_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
 			if(true){
 				if(rect.width()<6||rect.height()<6) return;
 
@@ -105,7 +105,7 @@ namespace ui2d {
 
 				auto fontSettings = graphics2d::Buffer::FontSettings{
 					.font=*graphics2d::font::default_sans,
-					.size=14,
+					.size=smallFont?12u:14u,
 					.lineSpacing=-4
 				};
 
@@ -158,7 +158,7 @@ namespace ui2d {
 
 				auto fontSettings = graphics2d::Buffer::FontSettings{
 					.font=*graphics2d::font::default_sans,
-					.size=14,
+					.size=smallFont?12u:14u,
 					.lineSpacing=-4
 				};
 
@@ -173,8 +173,8 @@ namespace ui2d {
 			}
 		}
 
-		void Clean::draw_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
-			return draw_coloured_toggle_button(buffer, rect, windowBackgroundColour, 0xdddddd, 0xff, text, icon, toggleState, isHover, isDown);
+		void Clean::draw_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
+			return draw_coloured_toggle_button(buffer, rect, windowBackgroundColour, 0xdddddd, 0xff, text, smallFont, icon, toggleState, isHover, isDown);
 		}
 	}
 }

@@ -12,9 +12,9 @@ namespace ui2d {
 
 		virtual auto get_minimum_button_width() -> U32 = 0;
 		virtual auto get_minimum_button_height() -> U32 = 0;
-		virtual void draw_button(graphics2d::Buffer&, graphics2d::Rect, const char *text, graphics2d::Buffer *icon = nullptr, bool isHover = false, bool isDown = false) = 0;
-		virtual void draw_coloured_button(graphics2d::Buffer&, graphics2d::Rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, graphics2d::Buffer *icon = nullptr, bool isHover = false, bool isDown = false) = 0;
-		virtual void draw_toggle_button(graphics2d::Buffer&, graphics2d::Rect, const char *text, graphics2d::Buffer *icon, bool toggleState, bool isHover = false, bool isDown = false) = 0;
-		virtual void draw_coloured_toggle_button(graphics2d::Buffer&, graphics2d::Rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, graphics2d::Buffer *icon, bool toggleState, bool isHover = false, bool isDown = false) = 0;
+		virtual void draw_button(graphics2d::Buffer&, graphics2d::Rect, const char *text, bool smallFont, graphics2d::Buffer *icon = nullptr, bool isHover = false, bool isDown = false) = 0;
+		virtual void draw_coloured_button(graphics2d::Buffer&, graphics2d::Rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon = nullptr, bool isHover = false, bool isDown = false) = 0;
+		virtual void draw_toggle_button(graphics2d::Buffer&, graphics2d::Rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover = false, bool isDown = false) = 0;
+		virtual void draw_coloured_toggle_button(graphics2d::Buffer&, graphics2d::Rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover = false, bool isDown = false) = 0;
 	};
 }

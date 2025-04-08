@@ -19,6 +19,17 @@ struct ListOrdered {
 		data(reserveSize?new Type[reserveSize]:nullptr)
 	{}
 
+	/**/ ListOrdered(const ListOrdered &copy):
+		length(copy.length),
+		allocated(copy.length),
+		data(nullptr)
+	{
+		if(allocated>0){
+			data = new Type[allocated];
+			memcpy(data, copy.data, allocated*sizeof(Type));
+		}
+	}
+
 	/**/~ListOrdered(){
 		delete data;
 	}
@@ -108,4 +119,21 @@ struct ListOrdered {
 
 	auto operator[](U32 index) -> Type& { return data[index]; }
 	auto operator[](U32 index) const -> const Type& { return data[index]; }
+
+	auto operator=(const ListOrdered &copy) -> ListOrdered& {
+		if(&copy==this) return *this;
+
+		delete data;
+
+		length = copy.length;
+		allocated = copy.length;
+		data = nullptr;
+
+		if(allocated>0){
+			data = new Type[allocated];
+			memcpy(data, copy.data, allocated*sizeof(Type));
+		}
+
+		return *this;
+	}
 };

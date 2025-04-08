@@ -78,6 +78,7 @@ namespace driver {
 
 			struct Event {
 				enum struct Type {
+					resizeRequested,
 					clientAreaChanged,
 
 					keyPressed,
@@ -92,6 +93,11 @@ namespace driver {
 				} type;
 
 				union {
+					struct {
+						U32 width;
+						U32 height;
+					} resizeRequested;
+
 					struct {
 					} clientAreaChanged;
 
@@ -166,11 +172,13 @@ namespace driver {
 			virtual void dock(DockedType) = 0;
 			virtual void minimise() = 0;
 			virtual void restore() = 0;
-			virtual void move_to(I32 x, I32 y) = 0;
-			virtual void resize_to(U32 width, U32 height) = 0;
+			virtual void move_to(I32 x, I32 y, bool redraw=true) = 0;
+			virtual void resize_to(U32 width, U32 height, bool redraw=true) = 0;
+			virtual void set_min_size(U32 width, U32 height, bool redraw=true) = 0;
+			virtual void set_max_size(U32 width, U32 height, bool redraw=true) = 0;
 			virtual void set_layer(Layer) = 0;
 			virtual void set_max_docked_size(U32 width, U32 height) = 0;
-			virtual void move_and_resize_to(I32 x, I32 y, U32 width, U32 height) = 0;
+			virtual void move_and_resize_to(I32 x, I32 y, U32 width, U32 height, bool draw=true) = 0;
 
 			virtual void redraw() = 0;
 			virtual void redraw_area(graphics2d::Rect) = 0;

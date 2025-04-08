@@ -15,15 +15,30 @@ namespace ui2d {
 		Theme &theme;
 		U32 backgroundColour;
 		PodArray<Control*> controls;
-		bool isFrozen = false;
+		U32 isFrozen = 0;
 
 		virtual void on_mouse_moved(I32 x, I32 y);
 		virtual void on_mouse_pressed(I32 x, I32 y, U32 button);
 		virtual void on_mouse_released(I32 x, I32 y, U32 button);
 
 		virtual void redraw(bool flush = true);
-		virtual void freeze(bool set) { isFrozen = set; }
+		virtual void _freeze() { isFrozen++; }
+		virtual void _unfreeze() { isFrozen--; }
 
 		virtual void update_area(graphics2d::Rect) = 0;
+
+		struct Freeze: NonCopyable<Freeze> {
+			Gui &gui;
+			/**/ Freeze(Gui &gui):
+				gui(gui)
+			{
+				gui._freeze();
+			}
+			/**/~Freeze(){
+				gui._unfreeze();
+			}
+		};
+
+		auto freeze() -> Freeze { return {*this}; }
 	};
 }

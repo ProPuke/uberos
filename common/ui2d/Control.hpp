@@ -1,19 +1,19 @@
 #pragma once
 
-#include "Gui.hpp"
-
 #include <common/graphics2d/Rect.hpp>
+#include <common/ui2d/Gui.hpp>
+#include <common/ui2d/Vec2.hpp>
 
 namespace ui2d {
 	struct Control {
-		/**/ Control(Gui &gui, graphics2d::Rect rect):
+		/*   */ /**/ Control(Gui &gui, graphics2d::Rect rect):
 			gui(gui),
 			rect(rect)
 		{
 			gui.controls.push_back(this);
 		}
 
-		virtual /**/~Control(){
+		virtual /**/ ~Control(){
 			for(auto i=0u;i<gui.controls.length;i++){
 				if(gui.controls[i]==this){
 					gui.controls.remove(i);
@@ -24,6 +24,7 @@ namespace ui2d {
 
 		Gui &gui;
 		graphics2d::Rect rect;
+		bool isVisible = false;
 		bool isHover = false;
 		bool isPressed = false;
 
@@ -48,6 +49,8 @@ namespace ui2d {
 		}
 
 		virtual void on_mouse_released(I32 x, I32 y, U32 button) {
+			if(!isVisible) return;
+
 			if(button==0){
 				auto pressed = false;
 
@@ -58,6 +61,8 @@ namespace ui2d {
 			}
 		}
 
-		virtual void redraw(bool flush = true) = 0;
+		virtual auto get_min_size() -> UVec2 { return {0,0}; }
+
+		virtual void redraw(bool flush = true) {}
 	};
 }

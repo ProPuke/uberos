@@ -7,11 +7,15 @@
 
 #include <kernel/drivers.hpp>
 
+#include <common/ui2d/control/Area.hpp>
 #include <common/ui2d/control/Button.hpp>
 #include <common/ui2d/control/ColouredButton.hpp>
 #include <common/ui2d/theme/Clean.hpp>
+#include <common/ui2d/controlContainer/Box.hpp>
 #include <common/graphics2d.hpp>
 #include <common/graphics2d/font.hpp>
+
+#include <functional>
 
 namespace ui2d::image {
 	namespace icons {
@@ -24,7 +28,7 @@ namespace tests::taskbar {
 		struct WindowButton;
 
 		driver::DesktopManager *desktopManager = nullptr;
-		PodArray<WindowButton*> windowButtons;
+		PodArray<ui2d::LayoutControl<WindowButton>*> windowButtons;
 		driver::DesktopManager::Window *lastFocusedWindow = nullptr;
 
 		const auto width = 600;
@@ -35,6 +39,12 @@ namespace tests::taskbar {
 		const auto borderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0x88)<<24);
 		// const auto opaqueBorderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0xdd)<<24);
 		const auto opaqueBorderColour = desktopManager->get_default_window_border_colour();
+
+		static ui2d::theme::Clean cleanTheme;
+
+		const auto maxButtonWidth = 200;
+		const auto maxButtonHeight = 50;
+		const auto minButtonHeight = cleanTheme.get_minimum_button_height()*2/3;
 
 		struct DesktopGui: ui2d::Gui {
 			typedef ui2d::Gui Super;
@@ -127,175 +137,195 @@ namespace tests::taskbar {
 
 		const auto padding = 5;
 
-		static ui2d::theme::Clean cleanTheme;
+		static ui2d::controlContainer::Box box{gui};
+		static auto &launcherButton = box.add_control<ui2d::control::ColouredButton>(0xff000000, "");
+		static auto &buttonContainer = box.add_container_control<ui2d::controlContainer::Box>();
+		buttonContainer.set_alignment(0.5f);
 
-		static ui2d::control::ColouredButton launcherButton{gui, {padding, padding, padding, padding}, 0xff000000, ""};
+		static auto &clockArea = box.add_control<ui2d::control::Area>();
+
 		launcherButton.icon = &ui2d::image::icons::super;
+		launcherButton.set_min_size(cleanTheme.get_minimum_button_width()/2, minButtonHeight);
 
-		static auto layoutWindowButtons = [](){
-			auto &clientArea = window->get_client_area();
+		static auto _set_orientation = [](bool vertical) {
+			static auto active = false;
+			if(active) return; // prevent recursion (_set_orientation -> set_*_size -> redraw -> _set_orientation)
+			active = true;
 
-			if(clientArea.width>=clientArea.height){
-				const auto leftMargin = padding+(I32)cleanTheme.get_minimum_button_width()+padding;
-				const auto rightMargin = 160; // big enough for the button and clock
-				const auto innerWidth = (I32)clientArea.width-leftMargin-rightMargin;
-
-				const auto maxButtonWidth = 150;
-
-				const auto buttonSpacing = padding;
-				const auto buttonsWidth = min(innerWidth, (I32)windowButtons.length*(maxButtonWidth+buttonSpacing)-buttonSpacing);
-
-				const auto left = leftMargin+innerWidth/2-buttonsWidth/2;
-
-				for(auto i=0u;i<windowButtons.length;i++){
-					auto &windowButton = *windowButtons[i];
-					windowButton.rect = {
-						left+(I32)((buttonsWidth+buttonSpacing)*(i/(float)windowButtons.length)), padding,
-						left+(I32)((buttonsWidth+buttonSpacing)*((i+1)/(float)windowButtons.length)-buttonSpacing), (I32)clientArea.height-padding
-					};
-				}
-
+			if(vertical){
+				box.set_direction(ui2d::controlContainer::Box::Direction::vertical);
+				box.set_expand(0.0, 1.0);
+				buttonContainer.set_direction(ui2d::controlContainer::Box::Direction::vertical);
+				buttonContainer.set_expand(0.0, 1.0);
 			}else{
-				const auto margin = 63; // big enough for the clock
-				const auto innerHeight = (I32)clientArea.height-margin*2;
-
-				const auto maxButtonHeight = 40;
-
-				const auto buttonSpacing = padding;
-				const auto buttonsHeight = min(innerHeight, (I32)windowButtons.length*(maxButtonHeight+buttonSpacing)-buttonSpacing);
-
-				const auto top = margin+innerHeight/2-buttonsHeight/2;
-
-				for(auto i=0u;i<windowButtons.length;i++){
-					auto &windowButton = *windowButtons[i];
-					windowButton.rect = {
-						padding, top+(I32)((buttonsHeight+buttonSpacing)*(i/(float)windowButtons.length)),
-						(I32)clientArea.width-padding, top+(I32)((buttonsHeight+buttonSpacing)*((i+1)/(float)windowButtons.length)-buttonSpacing)
-					};
-				}
-			}
-		};
-
-		static auto redraw = [](){
-			auto width = window->get_width();
-			auto height = window->get_height();
-			auto &clientArea = window->get_client_area();
-			auto &windowArea = window->get_window_area();
-
-			clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xff000000);
-
-			if(window->get_state()==driver::DesktopManager::Window::State::docked){
-				launcherButton.colour = 0xff000000;
-
-				window->set_solid_area({0,0,0,0});
-				window->set_titlebar_area({0, 0, width, height});
-
-				clientArea.draw_rect(0, 0, width, height, transparentBackgroundColour);
-
-				switch(window->get_docked_type()){
-					case driver::DesktopManager::Window::DockedType::top:
-						windowArea.set(shadowLength, shadowLength+height-1, borderColour, width);
-						for(auto i=0;i<shadowLength;i++){
-							windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
-						}
-					break;
-					case driver::DesktopManager::Window::DockedType::bottom:
-						windowArea.set(shadowLength, shadowLength, borderColour, width);
-						for(auto i=0;i<shadowLength;i++){
-							windowArea.set(0, i, 0x000000|(255-20*i/(shadowLength-1))<<24, width);
-						}
-					break;
-					case driver::DesktopManager::Window::DockedType::left:
-						windowArea.draw_line(shadowLength+width-1, shadowLength, shadowLength+width-1, shadowLength+height-1, borderColour);
-						for(auto i=0;i<shadowLength;i++){
-							windowArea.draw_line(
-								shadowLength+width+i, shadowLength+0,
-								shadowLength+width+i, shadowLength+height-1,
-								0x000000|(255-20+20*i/(shadowLength-1))<<24
-							);
-						}
-					break;
-					case driver::DesktopManager::Window::DockedType::right:
-						windowArea.draw_line(shadowLength, shadowLength, shadowLength, shadowLength+height-1, borderColour);
-						for(auto i=0;i<shadowLength;i++){
-							windowArea.draw_line(
-								i, shadowLength+0,
-								i, shadowLength+height-1,
-								0x000000|(255-20*i/(shadowLength-1))<<24
-							);
-						}
-					break;
-					case driver::DesktopManager::Window::DockedType::full:
-					break;
-				}
-
-			}else{
-				launcherButton.colour = graphics2d::premultiply_colour(0x55eeeeee);
-
-				// window->set_solid_area({shadowLength, shadowLength, shadowLength+width, shadowLength+height});
-				// clientArea.draw_rect(1, 1, width-1, height-1, solidBackgroundColour);
-
-				window->set_solid_area({0,0,0,0});
-				window->set_titlebar_area({0, 0, width, height});
-				clientArea.draw_rect(0, 0, width, height, opaqueBackgroundColour);
-
-				clientArea.draw_rect_outline(0, 0, width, height, opaqueBorderColour);
-
-				for(auto i=0;i<shadowLength;i++){
-					windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
-				}
+				box.set_direction(ui2d::controlContainer::Box::Direction::horizontal);
+				box.set_expand(1.0, 0.0);
+				buttonContainer.set_direction(ui2d::controlContainer::Box::Direction::horizontal);
+				buttonContainer.set_expand(1.0, 0.0);
 			}
 
 			{
-				char time[] = "00:00";
+				auto minSize = box.get_min_size();
+				auto maxSize = box.get_max_size();
+				window->set_min_size(maths::add_safe(minSize.x, (U32)padding*2u), maths::add_safe(minSize.y, (U32)padding*2u), false);
+				window->set_max_size(maths::add_safe(maxSize.x, (U32)padding*2u), maths::add_safe(maxSize.y, (U32)padding*2u), false);
+			}
 
-				auto clock = drivers::find_and_activate<driver::Clock>();
-				if(clock){
-					auto clockTime = clock->get_time();
-					auto clockDate = clock->get_date();
-					(void)clockDate;
-					
-					auto str = utoa((U16)clockTime.hours);
-					if(str[1]=='\0'){
-						time[1] = str[0];
-					}else{
-						time[0] = str[0];
-						time[1] = str[1];
+			active = false;
+		};
+
+		static auto redraw = [](){
+			{ auto guiFreeze = gui.freeze();
+				auto width = window->get_width();
+				auto height = window->get_height();
+				auto &clientArea = window->get_client_area();
+				auto &windowArea = window->get_window_area();
+
+				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xff000000);
+
+				if(window->get_state()==driver::DesktopManager::Window::State::docked){
+					launcherButton.colour = 0xff000000;
+
+					window->set_solid_area({0,0,0,0});
+					window->set_titlebar_area({0, 0, width, height});
+
+					clientArea.draw_rect(0, 0, width, height, transparentBackgroundColour);
+
+					switch(window->get_docked_type()){
+						case driver::DesktopManager::Window::DockedType::top:
+							windowArea.set(shadowLength, shadowLength+height-1, borderColour, width);
+							for(auto i=0;i<shadowLength;i++){
+								windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
+							}
+						break;
+						case driver::DesktopManager::Window::DockedType::bottom:
+							windowArea.set(shadowLength, shadowLength, borderColour, width);
+							for(auto i=0;i<shadowLength;i++){
+								windowArea.set(0, i, 0x000000|(255-20*i/(shadowLength-1))<<24, width);
+							}
+						break;
+						case driver::DesktopManager::Window::DockedType::left:
+							windowArea.draw_line(shadowLength+width-1, shadowLength, shadowLength+width-1, shadowLength+height-1, borderColour);
+							for(auto i=0;i<shadowLength;i++){
+								windowArea.draw_line(
+									shadowLength+width+i, shadowLength+0,
+									shadowLength+width+i, shadowLength+height-1,
+									0x000000|(255-20+20*i/(shadowLength-1))<<24
+								);
+							}
+						break;
+						case driver::DesktopManager::Window::DockedType::right:
+							windowArea.draw_line(shadowLength, shadowLength, shadowLength, shadowLength+height-1, borderColour);
+							for(auto i=0;i<shadowLength;i++){
+								windowArea.draw_line(
+									i, shadowLength+0,
+									i, shadowLength+height-1,
+									0x000000|(255-20*i/(shadowLength-1))<<24
+								);
+							}
+						break;
+						case driver::DesktopManager::Window::DockedType::full:
+						break;
 					}
 
-					str = utoa((U16)clockTime.minutes);
-					if(str[1]=='\0'){
-						time[4] = str[0];
-					}else{
-						time[3] = str[0];
-						time[4] = str[1];
-					}
-				}
-
-				auto fontSettings = graphics2d::Buffer::FontSettings{
-					.font = graphics2d::font::manrope_extraBold,
-					.size = 48
-				};
-
-				auto fontMeasurements = clientArea.measure_text(fontSettings, time, clientArea.width);
-
-				if(clientArea.width>=clientArea.height){
-					clientArea.draw_text(fontSettings, time, width-fontMeasurements.blockWidth-12+1, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2, fontMeasurements.blockWidth, 0x000000);
-					clientArea.draw_text(fontSettings, time, width-fontMeasurements.blockWidth-12, height-fontMeasurements.updatedArea.y2-(height-fontMeasurements.updatedArea.y2+fontMeasurements.updatedArea.y1)/2-1, fontMeasurements.blockWidth, 0xffffff);
 				}else{
-					clientArea.draw_text(fontSettings, time, (width-fontMeasurements.blockWidth)/2+1, height-fontMeasurements.updatedArea.y2-fontMeasurements.updatedArea.y2-12+1, fontMeasurements.blockWidth, 0x000000);
-					clientArea.draw_text(fontSettings, time, (width-fontMeasurements.blockWidth)/2, height-fontMeasurements.updatedArea.y2-fontMeasurements.updatedArea.y2-12, fontMeasurements.blockWidth, 0xffffff);
+					launcherButton.colour = graphics2d::premultiply_colour(0x55eeeeee);
+
+					// window->set_solid_area({shadowLength, shadowLength, shadowLength+width, shadowLength+height});
+					// clientArea.draw_rect(1, 1, width-1, height-1, solidBackgroundColour);
+
+					window->set_solid_area({0,0,0,0});
+					window->set_titlebar_area({0, 0, width, height});
+					clientArea.draw_rect(0, 0, width, height, opaqueBackgroundColour);
+
+					clientArea.draw_rect_outline(0, 0, width, height, opaqueBorderColour);
+
+					for(auto i=0;i<shadowLength;i++){
+						windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
+					}
+				}
+
+				{
+					char time[] = "00:00";
+
+					auto clock = drivers::find_and_activate<driver::Clock>();
+					if(clock){
+						auto clockTime = clock->get_time();
+						auto clockDate = clock->get_date();
+						(void)clockDate;
+						
+						auto str = utoa((U16)clockTime.hours);
+						if(str[1]=='\0'){
+							time[1] = str[0];
+						}else{
+							time[0] = str[0];
+							time[1] = str[1];
+						}
+
+						str = utoa((U16)clockTime.minutes);
+						if(str[1]=='\0'){
+							time[4] = str[0];
+						}else{
+							time[3] = str[0];
+							time[4] = str[1];
+						}
+					}
+
+					auto smallFontSettings = graphics2d::Buffer::FontSettings{
+						.font = graphics2d::font::manrope_extraBold,
+						.size = 36
+					};
+					auto largeFontSettings = graphics2d::Buffer::FontSettings{
+						.font = graphics2d::font::manrope_extraBold,
+						.size = 48
+					};
+
+					box.set_rect({padding, padding, (I32)clientArea.width-padding, (I32)clientArea.height-padding});
+
+					auto smallFontMeasurements = clientArea.measure_text(smallFontSettings, time);
+					auto largeFontMeasurements = clientArea.measure_text(largeFontSettings, time);
+
+					auto smallWidth = (U32)smallFontMeasurements.blockWidth+1;
+					auto largeWidth = (U32)largeFontMeasurements.blockWidth+1;
+					auto smallHeight = (U32)smallFontMeasurements.capHeight+3;
+					auto largeHeight = (U32)largeFontMeasurements.capHeight+3;
+					
+					clockArea.set_min_size(smallWidth, smallHeight);
+					clockArea.set_max_size(largeWidth, largeHeight);
+
+					_set_orientation(clientArea.height>clientArea.width);
+
+					if(clientArea.width>=clientArea.height){
+						if(clockArea.rect.width()>=(I32)largeWidth&&clockArea.rect.height()>=(I32)largeHeight){
+							clientArea.draw_text(largeFontSettings, time, clockArea.rect.x1+1, clockArea.rect.y2-3+1, largeWidth, 0x000000);
+							clientArea.draw_text(largeFontSettings, time, clockArea.rect.x1, clockArea.rect.y2-3, largeWidth, 0xffffff);
+						}else{
+							clientArea.draw_text(smallFontSettings, time, clockArea.rect.x2-smallWidth+1, clockArea.rect.y2/2+smallHeight/2+1, smallWidth, 0x000000);
+							clientArea.draw_text(smallFontSettings, time, clockArea.rect.x2-smallWidth, clockArea.rect.y2/2+smallHeight/2, smallWidth, 0xffffff);
+						}
+					}else{
+						if(clockArea.rect.width()>=(I32)largeWidth&&clockArea.rect.height()>=(I32)largeHeight){
+							clientArea.draw_text(largeFontSettings, time, clockArea.rect.x1+1, clockArea.rect.y2-3+1, largeWidth, 0x000000);
+							clientArea.draw_text(largeFontSettings, time, clockArea.rect.x1, clockArea.rect.y2-3, largeWidth, 0xffffff);
+						}else{
+							clientArea.draw_text(smallFontSettings, time, (clockArea.rect.x1+(clockArea.rect.x2-smallWidth))/2+1, clockArea.rect.y2-3+1, smallWidth, 0x000000);
+							clientArea.draw_text(smallFontSettings, time, (clockArea.rect.x1+(clockArea.rect.x2-smallWidth))/2, clockArea.rect.y2-3, smallWidth, 0xffffff);
+						}
+					}
+				}
+
+				for(auto button:windowButtons){
+					button->set_small_font(button->rect.width()<(I32)cleanTheme.get_minimum_button_width()*4/3);
+				}
+
+				gui.buffer = clientArea;
+				if(clientArea.width>=clientArea.height){
+					launcherButton.set_max_size((I32)cleanTheme.get_minimum_button_width(), maths::min(maxButtonHeight, padding+(I32)clientArea.height-padding-padding));
+				}else{
+					launcherButton.set_max_size(maths::min(maxButtonWidth, (I32)clientArea.width-padding-padding), padding+(I32)(cleanTheme.get_minimum_button_width()*1/3+minButtonHeight));
 				}
 			}
 
-			gui.buffer = clientArea;
-			if(clientArea.width>=clientArea.height){
-				launcherButton.rect = {padding, padding, padding+(I32)cleanTheme.get_minimum_button_width(), padding+(I32)clientArea.height-padding-padding};
-			}else{
-				launcherButton.rect = {padding, padding, padding+(I32)clientArea.width-padding-padding, padding+(I32)(cleanTheme.get_minimum_button_width()*1/3+cleanTheme.get_minimum_button_height()*2/3)};
-			}
-
-			layoutWindowButtons();
 			gui.redraw(false);
 		};
 
@@ -303,7 +333,9 @@ namespace tests::taskbar {
 			auto i=0u;
 			for(auto desktopWindow=desktopManager->get_window(i); desktopWindow; desktopWindow=desktopManager->get_window(++i)){
 				if(desktopWindow==window) continue;
-				windowButtons.push_back(new WindowButton(gui, {0,0,0,0}, *desktopWindow));
+				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*desktopWindow)));
+				control->set_min_size(cleanTheme.get_minimum_button_width()*7/12, minButtonHeight);
+				control->set_max_size(maxButtonWidth, maxButtonHeight);
 			}
 		}
 
@@ -314,7 +346,9 @@ namespace tests::taskbar {
 
 		desktopManager->events.subscribe([](const driver::DesktopManager::Event &event){
 			if(event.type==driver::DesktopManager::Event::Type::windowAdded){
-				windowButtons.push_back(new WindowButton(gui, {0,0,0,0}, *event.windowAdded.window));
+				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*event.windowAdded.window)));
+				control->set_min_size(cleanTheme.get_minimum_button_width()*7/12, minButtonHeight);
+				control->set_max_size(maxButtonWidth, maxButtonHeight);
 				redraw();
 				window->redraw();
 
@@ -325,6 +359,7 @@ namespace tests::taskbar {
 
 				for(auto i=0u;i<windowButtons.length;i++){
 					if(&windowButtons[i]->window==event.windowRemoved.window){
+						buttonContainer.remove_control(*windowButtons[i]);
 						windowButtons.remove(i);
 						redraw();
 						window->redraw();
@@ -341,7 +376,10 @@ namespace tests::taskbar {
 		});
 
 		window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
-			if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
+			if(event.type==driver::DesktopManager::Window::Event::Type::resizeRequested){
+				_set_orientation(event.resizeRequested.width<event.resizeRequested.height);
+
+			}else if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 				redraw();
 
 			}else if(event.type==driver::DesktopManager::Window::Event::Type::mouseMoved){

@@ -90,6 +90,9 @@ namespace driver {
 				sizeE
 			};
 
+			UVec2 minSize{32,32};
+			UVec2 maxSize{(U32)~0, (U32)~0};
+
 			struct Gui: ui2d::Gui {
 				typedef ui2d::Gui Super;
 
@@ -185,9 +188,9 @@ namespace driver {
 				return CursorArea::body;
 			}
 
-			void move_to(I32 x, I32 y) override;
-			void resize_to(U32 width, U32 height) override;
-			void move_and_resize_to(I32 x, I32 y, U32 width, U32 height) override;
+			void move_to(I32 x, I32 y, bool redraw=true) override;
+			void resize_to(U32 width, U32 height, bool redraw=true) override;
+			void move_and_resize_to(I32 x, I32 y, U32 width, U32 height, bool redraw=true) override;
 
 			void dock(DockedType type) override;
 			void minimise() override;
@@ -250,6 +253,40 @@ namespace driver {
 				//TODO: resize if already docked
 			}
 			
+			void set_min_size(U32 width, U32 height, bool redraw) override {
+				if(minSize.x==width&&minSize.y==height) return;
+
+				minSize.x = width;
+				minSize.y = height;
+
+				const auto currentWidth = (U32)get_width();
+				const auto currentHeight = (U32)get_height();
+
+				const auto newWidth = maths::clamp(currentWidth, minSize.x, maxSize.x);
+				const auto newHeight = maths::clamp(currentHeight, minSize.y, maxSize.y);
+
+				if(newWidth!=currentWidth||newHeight!=currentHeight){
+					resize_to(newWidth, newHeight, redraw);
+				}
+			}
+
+			void set_max_size(U32 width, U32 height, bool redraw) override {
+				if(maxSize.x==width&&maxSize.y==height) return;
+
+				maxSize.x = width;
+				maxSize.y = height;
+
+				const auto currentWidth = (U32)get_width();
+				const auto currentHeight = (U32)get_height();
+
+				const auto newWidth = maths::clamp(currentWidth, minSize.x, maxSize.x);
+				const auto newHeight = maths::clamp(currentHeight, minSize.y, maxSize.y);
+
+				if(newWidth!=currentWidth||newHeight!=currentHeight){
+					resize_to(newWidth, newHeight, redraw);
+				}
+			}
+
 			auto is_top() -> bool {
 				return graphicsDisplay->is_top();
 			}
@@ -323,20 +360,23 @@ namespace driver {
 		void _autoreposition_windows();
 		void _update_window_area(Window *exclude = nullptr);
 
-		void Window::move_to(I32 x, I32 y) {
+		void Window::move_to(I32 x, I32 y, bool redraw) {
 			const auto margin = 10;
 			x = maths::clamp(x, -(I32)graphicsDisplay->buffer.width+margin, (I32)displayManager->get_width()-margin);
 			y = maths::clamp(y, 0, (I32)displayManager->get_height()-margin);
 
 			isAutomaticPlacement = false;
 
-			graphicsDisplay->move_to(x-leftMargin, y-topMargin, DeferWindowMove::depth<1);
+			graphicsDisplay->move_to(x-leftMargin, y-topMargin, redraw&&DeferWindowMove::depth<1);
 		}
 
-		void Window::resize_to(U32 width, U32 height) {
+		void Window::resize_to(U32 width, U32 height, bool redraw) {
+			width = maths::clamp(width, minSize.x, maxSize.x);
+			height = maths::clamp(height, minSize.y, maxSize.y);
+
 			auto oldWidth = get_width();
 			auto oldHeight = get_height();
-			graphicsDisplay->resize_to(leftMargin+width+rightMargin, topMargin+height+bottomMargin, DeferWindowMove::depth<1);
+			graphicsDisplay->resize_to(leftMargin+width+rightMargin, topMargin+height+bottomMargin);
 			clientArea = graphicsDisplay->buffer.cropped(leftMargin, topMargin, rightMargin, bottomMargin);
 
 			auto deltaX = (I32)get_width()-(I32)oldWidth;
@@ -364,15 +404,21 @@ namespace driver {
 					type: DesktopManager::Window::Event::Type::clientAreaChanged
 				});
 
-				redraw();
+				if(redraw)this->redraw();
 			}
 		}
 
-		void Window::move_and_resize_to(I32 x, I32 y, U32 width, U32 height) {
-			DeferWindowMove deferMove(*this);
+		void Window::move_and_resize_to(I32 x, I32 y, U32 width, U32 height, bool redraw) {
+			if(redraw){
+				DeferWindowMove deferMove(*this);
 
-			move_to(x, y);
-			resize_to(width, height);
+				move_to(x, y);
+				resize_to(width, height);
+
+			}else{
+				move_to(x, y, false);
+				resize_to(width, height, false);
+			}
 		}
 
 		void Window::show() {
@@ -422,12 +468,14 @@ namespace driver {
 
 			switch(dockedType){
 				case DockedType::top:
+					maxSize.x = (U32)~0;
 					move_and_resize_to(
 						windowArea.x1, windowArea.y1,
 						windowArea.width(), max(16, min(windowArea.height()/2-4, (I32)maxDockedHeight))
 					);
 				break;
 				case DockedType::bottom: {
+					maxSize.x = (U32)~0;
 					const auto height = max(16, min(windowArea.height()/2-4, (I32)maxDockedHeight));
 					move_and_resize_to(
 						windowArea.x1, windowArea.y2-height,
@@ -435,12 +483,14 @@ namespace driver {
 					);
 				} break;
 				case DockedType::left:
+					maxSize.y = (U32)~0;
 					move_and_resize_to(
 						windowArea.x1, windowArea.y1,
 						max(16, min(windowArea.width()/2-4, (I32)maxDockedWidth)), windowArea.height()
 					);
 				break;
 				case DockedType::right: {
+					maxSize.y = (U32)~0;
 					const auto width = max(16, min(windowArea.width()/2-4, (I32)maxDockedWidth));
 					move_and_resize_to(
 						windowArea.x2-width, windowArea.y1,
@@ -448,6 +498,8 @@ namespace driver {
 					);
 				} break;
 				case DockedType::full:
+					maxSize.x = (U32)~0;
+					maxSize.y = (U32)~0;
 					move_and_resize_to(
 						windowArea.x1, windowArea.y1,
 						windowArea.width(), windowArea.height()
@@ -518,6 +570,8 @@ namespace driver {
 		}
 
 		/**/ DeferWindowMove::~DeferWindowMove(){
+			depth--;
+
 			auto newRect = (graphics2d::Rect){window.graphicsDisplay->x, window.graphicsDisplay->y, window.graphicsDisplay->x+(I32)window.graphicsDisplay->get_width(), window.graphicsDisplay->y+(I32)window.graphicsDisplay->get_height()};
 
 			auto changed = false;
@@ -544,8 +598,6 @@ namespace driver {
 				window.graphicsDisplay->update();
 				_update_window_area();
 			}
-
-			depth--;
 		}
 
 		struct StandardWindow: Window, DesktopManager::StandardWindow {
@@ -634,7 +686,7 @@ namespace driver {
 
 			void set_status(const char*) override;
 
-			void resize_to(U32 width, U32 height) override;
+			void resize_to(U32 width, U32 height, bool redraw=true) override;
 
 			void redraw() override;
 			void redraw_area(graphics2d::Rect) override;
@@ -1099,7 +1151,7 @@ namespace driver {
 						if(isVisible){
 							display->hide();
 						}
-						display->resize_to(currentCursor->width, currentCursor->height, false);
+						display->resize_to(currentCursor->width, currentCursor->height);
 						display->buffer.draw_buffer(0, 0, 0, 0, currentCursor->width, currentCursor->height, *currentCursor);
 						if(isVisible){
 							display->show(false);
@@ -1688,8 +1740,16 @@ namespace driver {
 									const auto isTop = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_nw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_n||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_ne;
 									const auto isBottom = grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_sw||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_s||grabbedWindow.grabType==Cursor::GrabbedWindow::GrabType::size_se;
 
-									const auto newWidth = (U32)maths::max(0, grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0));
-									const auto newHeight = (U32)maths::max(0, grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0));
+									const auto requestedWidth = (U32)maths::max(0, grabbedWindow.grabOffsetX+cursor->x*(isLeft?-1:isRight?+1:0));
+									const auto requestedHeight = (U32)maths::max(0, grabbedWindow.grabOffsetY+cursor->y*(isTop?-1:isBottom?+1:0));
+
+									grabbedWindow.window->events.trigger({
+										type: Window::Event::Type::resizeRequested,
+										resizeRequested: { requestedWidth, requestedHeight }
+									});
+
+									const auto newWidth = maths::clamp(requestedWidth, grabbedWindow.window->minSize.x, grabbedWindow.window->maxSize.x);
+									const auto newHeight = maths::clamp(requestedHeight, grabbedWindow.window->minSize.y, grabbedWindow.window->maxSize.y);
 
 									grabbedWindow.window->move_and_resize_to(
 										grabbedWindow.window->get_x()-(isLeft?newWidth-grabbedWindow.window->get_width():0),
@@ -1831,10 +1891,13 @@ namespace driver {
 		redraw_decorations(); //TODO: only update the text itself, not the full frame?
 	}
 
-	void StandardWindow::resize_to(U32 width, U32 height) {
+	void StandardWindow::resize_to(U32 width, U32 height, bool redraw) {
+		width = maths::clamp(width, minSize.x, maxSize.x);
+		height = maths::clamp(height, minSize.y, maxSize.y);
+
 		auto oldWidth = get_width();
 		auto oldHeight = get_height();
-		graphicsDisplay->resize_to(leftMargin+width+rightMargin, topMargin+height+bottomMargin, DeferWindowMove::depth<1);
+		graphicsDisplay->resize_to(leftMargin+width+rightMargin, topMargin+height+bottomMargin);
 
 		if(get_width()==oldWidth&&get_height()==oldHeight) return;
 
@@ -1862,7 +1925,7 @@ namespace driver {
 				type: DesktopManager::Window::Event::Type::clientAreaChanged
 			});
 
-			redraw();
+			if(redraw) this->redraw();
 		}
 	}
 	

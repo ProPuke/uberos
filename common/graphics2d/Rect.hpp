@@ -8,11 +8,11 @@ namespace graphics2d {
 	struct Rect {
 		I32 x1=0, y1=0, x2=0, y2=0;
 
-		auto offset(I32 x, I32 y) -> Rect {
+		auto offset(I32 x, I32 y) const -> Rect {
 			return {x1+x, y1+y, x2+x, y2+y};
 		}
 
-		auto intersect(Rect rect) -> Rect {
+		auto intersect(Rect rect) const -> Rect {
 			Rect result = {
 				max(x1, rect.x1),
 				max(y1, rect.y1),
@@ -33,7 +33,7 @@ namespace graphics2d {
 			return result;
 		}
 
-		auto cropped(I32 left, I32 top, I32 right, I32 bottom) {
+		auto cropped(I32 left, I32 top, I32 right, I32 bottom) const {
 			Rect result = {
 				x1+left,
 				y1+top,
@@ -54,11 +54,11 @@ namespace graphics2d {
 			return result;
 		}
 
-		auto contains(I32 x, I32 y) -> bool {
+		auto contains(I32 x, I32 y) const -> bool {
 			return x>=x1&&x<x2&&y>=y1&&y<y2;
 		}
 
-		auto include(Rect with) -> Rect {
+		auto include(Rect with) const -> Rect {
 			if(isNonzero()){
 				return {
 					min(x1, with.x1),
@@ -80,8 +80,8 @@ namespace graphics2d {
 			y2 = 0;
 		}
 
-		auto width() -> I32 { return x2-x1; }
-		auto height() -> I32 { return y2-y1; }
+		auto width() const -> I32 { return x2-x1; }
+		auto height() const -> I32 { return y2-y1; }
 
 		bool isNonzero() const { return x1||y1||x2||y2; }
 

@@ -11,6 +11,7 @@ namespace graphics2d {
 	struct DrawTextResult {
 		I32 x, y; // the final x & y
 		I32 capHeight; // how far above is the top of a capital letter
+		U32 lineHeight;
 		I32 blockWidth, blockHeight; // the width and height of the rendered text block, excluding overhangs
 		Rect updatedArea; // the actual area of pixels updated (including overhang)
 	};

@@ -5,10 +5,10 @@ namespace ui2d {
 		void Button::redraw(bool flush) {
 			switch(type){
 				case Type::regular:
-					gui.theme.draw_button(gui.buffer, rect, text, icon, isHover, isHover&&isPressed);
+					gui.theme.draw_button(gui.buffer, rect, text, smallFont, icon, isHover, isHover&&isPressed);
 				break;
 				case Type::toggle:
-					gui.theme.draw_toggle_button(gui.buffer, rect, text, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
+					gui.theme.draw_toggle_button(gui.buffer, rect, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
 				break;
 			}
 

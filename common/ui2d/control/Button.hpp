@@ -25,9 +25,11 @@ namespace ui2d {
 			graphics2d::Buffer *icon = nullptr;
 			Type type = Type::regular;
 			bool toggleActive = false;
+			bool smallFont = false;
 
 			virtual void set_regular() { type = Type::regular; redraw(); }
 			virtual void set_toggle(bool active) { type = Type::toggle; toggleActive = active; redraw(); }
+			virtual void set_small_font(bool set) { if(smallFont==set) return; smallFont = set; redraw(); }
 
 			void on_mouse_pressed(I32 x, I32 y, U32 button) override;
 			void on_mouse_released(I32 x, I32 y, U32 button) override;
