@@ -2,6 +2,8 @@
 
 #include <common/types.hpp>
 
+#include <limits>
+
 namespace maths {
 	auto rand() -> U16;
 
@@ -55,4 +57,15 @@ namespace maths {
 	constexpr auto celcius_to_kelvin(T x) -> T { return x+273.15; }
 	template <typename T>
 	constexpr auto kelvin_to_celcius(T x) -> T { return x-273.15; }
+
+	template <typename Type>
+	auto add_safe(Type a, Type b) -> Type {
+		static_assert(std::is_integral<Type>::value);
+
+		if constexpr (std::is_unsigned<Type>::value) {
+			return a<std::numeric_limits<Type>::max()-b?a+b:std::numeric_limits<Type>::max();
+		}else{
+			return b>0&&a>std::numeric_limits<Type>::max()-b?std::numeric_limits<Type>::max():b<0&&a<std::numeric_limits<Type>::min()-b?std::numeric_limits<Type>::min():a+b;
+		}
+	}
 }
