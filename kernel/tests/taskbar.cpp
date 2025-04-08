@@ -300,8 +300,8 @@ namespace tests::taskbar {
 							clientArea.draw_text(largeFontSettings, time, clockArea.rect.x1+1, clockArea.rect.y2-3+1, largeWidth, 0x000000);
 							clientArea.draw_text(largeFontSettings, time, clockArea.rect.x1, clockArea.rect.y2-3, largeWidth, 0xffffff);
 						}else{
-							clientArea.draw_text(smallFontSettings, time, clockArea.rect.x2-smallWidth+1, clockArea.rect.y2/2+smallHeight/2+1, smallWidth, 0x000000);
-							clientArea.draw_text(smallFontSettings, time, clockArea.rect.x2-smallWidth, clockArea.rect.y2/2+smallHeight/2, smallWidth, 0xffffff);
+							clientArea.draw_text(smallFontSettings, time, clockArea.rect.x2-smallWidth+1, clockArea.rect.y2/2-1+smallHeight/2+1, smallWidth, 0x000000);
+							clientArea.draw_text(smallFontSettings, time, clockArea.rect.x2-smallWidth, clockArea.rect.y2/2-1+smallHeight/2, smallWidth, 0xffffff);
 						}
 					}else{
 						if(clockArea.rect.width()>=(I32)largeWidth&&clockArea.rect.height()>=(I32)largeHeight){
