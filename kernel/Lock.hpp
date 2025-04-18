@@ -44,7 +44,9 @@ struct Lock<LockType::flat>: NonCopyable<Lock<LockType::flat>> {
 
 protected:
 
-	std::atomic<U32> lockActive = 0;
+	#ifdef HAS_SMP
+		std::atomic<U32> lockActive = 0;
+	#endif
 };
 
 template <>
@@ -60,8 +62,10 @@ struct Lock<LockType::recursive>: NonCopyable<Lock<LockType::recursive>> {
 
 protected:
 
-	std::atomic<U32> lockDepth = 0;
-	std::atomic<U32> lockProcessor = ~0;
+	#ifdef HAS_SMP
+		std::atomic<U32> lockDepth = 0;
+		std::atomic<U32> lockProcessor = ~0;
+	#endif
 };
 
 #include "Lock.inl"

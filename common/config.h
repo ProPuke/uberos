@@ -21,3 +21,5 @@
 #ifdef HAS_MMU2
 	#define HAS_UNALIGNED_ACCESS
 #endif
+
+// #define HAS_SMP
