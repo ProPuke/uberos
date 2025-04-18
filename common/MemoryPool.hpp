@@ -12,13 +12,17 @@
 
 //These must always be aligned correctly in memory
 struct MemoryPoolBlock:LListItem<MemoryPoolBlock> {
+	static const size_t headerSize;
+
 	/**/ MemoryPoolBlock(size_t size):
-		size(size - offsetof(MemoryPoolBlock, MemoryPoolBlock::_data))
+		size(size - headerSize)
 	{}
 
 	size_t size;
 	U8 _data; //since we're offsetting by `size_t`, we'll assume this shares `size_t_` alignment and is thus always at a valid alignment
 };
+
+inline const size_t MemoryPoolBlock::headerSize = offsetof(MemoryPoolBlock, MemoryPoolBlock::_data);
 
 //TODO:safely lock this so the kernel can inspect?
 
@@ -59,7 +63,7 @@ struct MemoryPool {
 					available -= block->size; //we subtract the whole block first, as if we reclaim the tail that will add back onto available
 
 					const unsigned remainingSize = block->size-requiredSize;
-					if(remainingSize>32&&remainingSize>=alignment){
+					if(remainingSize>MemoryPoolBlock::headerSize&&remainingSize>=alignment){
 						block->size = requiredSize;
 
 						#pragma GCC diagnostic push
@@ -81,7 +85,7 @@ struct MemoryPool {
 					available -= block->size; //we subtract the whole block first, as if we reclaim the tail that will add back onto available
 
 					const unsigned remainingSize = block->size-requiredSize;
-					if(remainingSize>32&&remainingSize>=alignment){
+					if(remainingSize>MemoryPoolBlock::headerSize&&remainingSize>=alignment){
 						block->size = requiredSize;
 
 						#pragma GCC diagnostic push
@@ -98,6 +102,91 @@ struct MemoryPool {
 		}
 
 		if(needsCompacting&&available>=requiredSize){
+			// if we can't find a chunk this big although we have space, it might be compacting memory will help
+			// give it one final try if we can compact
+			if(compact()){
+				return malloc(size);
+			}
+		}
+
+		return nullptr;
+	}
+
+	template <typename Type>
+	auto malloc_fixed_size() -> FixedSizeAllocation<Type>* {
+		const auto size = align(sizeof(FixedSizeAllocation<Type>), alignment);
+
+		#ifdef MEMORY_CHECKS
+			logging::Section section("malloc ", size);
+
+			memory::debug();
+		#endif
+
+		auto isLarge = size>=memory::pageSize; //TODO:mark is large if it's higher than the median size (do this with a guessed term that adapts on each search when more than half blocks are searched)
+
+		if(!isLarge){ //search forwards
+			for(auto block=availableBlocks.head;block;block=block->next){
+				const auto usableBlockSize = MemoryPoolBlock::headerSize + block->size;
+
+				// exact size OR big enough to house a block for the remaining area
+				if(usableBlockSize==size||usableBlockSize>=size+MemoryPoolBlock::headerSize+alignment){
+					const auto oldBlockSize = block->size;
+
+					auto data = (FixedSizeAllocation<Type>*)availableBlocks.pop(*block);
+					available -= oldBlockSize; //we subtract the whole block first, as if we reclaim the tail that will add back onto available
+
+					if(usableBlockSize>size){
+						const unsigned remainingSize = usableBlockSize-size-MemoryPoolBlock::headerSize;
+
+						#pragma GCC diagnostic push
+						#pragma GCC diagnostic ignored "-Wplacement-new"
+							auto remainingSlot = new ((U8*)&data+size) MemoryPoolBlock(remainingSize);
+						#pragma GCC diagnostic pop
+						claim_block(*remainingSlot);
+					}
+
+					used += oldBlockSize;
+					return data;
+				}
+			}
+
+		}else{ //search backwards
+			MemoryPoolBlock *lastValid = nullptr;
+
+			for(auto block=availableBlocks.tail;block;block=block->prev){
+				const auto usableBlockSize = MemoryPoolBlock::headerSize + block->size;
+
+				if(usableBlockSize==size||usableBlockSize>=size+MemoryPoolBlock::headerSize+alignment) {
+					lastValid = block;
+					continue;
+				}
+
+				if(usableBlockSize<size) break;
+			}
+
+			if(lastValid){
+				const auto oldBlockSize = lastValid->size;
+				const auto usableBlockSize = MemoryPoolBlock::headerSize + oldBlockSize;
+
+				auto data = (FixedSizeAllocation<Type>*)availableBlocks.pop(*lastValid);
+				available -= oldBlockSize; //we subtract the whole block first, as if we reclaim the tail that will add back onto available
+
+				if(usableBlockSize>size){
+					const unsigned remainingSize = usableBlockSize-size-MemoryPoolBlock::headerSize;
+
+					#pragma GCC diagnostic push
+					#pragma GCC diagnostic ignored "-Wplacement-new"
+						auto remainingSlot = new ((U8*)&data+size) MemoryPoolBlock(remainingSize);
+					#pragma GCC diagnostic pop
+					claim_block(*remainingSlot);
+				}
+
+				used += oldBlockSize; //we add just the used final block size, in case the tail gets chopped off
+				return data;
+			}
+		}
+
+		if(needsCompacting&&available>=size){
 			// if we can't find a chunk this big although we have space, it might be compacting memory will help
 			// give it one final try if we can compact
 			if(compact()){
@@ -180,6 +269,16 @@ struct MemoryPool {
 
 	void free(void *address){
 		auto block = get_block(address);
+		const auto size = block->size;
+		claim_block(*block);
+		used -= size;
+		needsCompacting = true;
+	}
+
+	template <typename Type>
+	void free(FixedSizeAllocation<Type> *allocation){
+		auto block = (MemoryPoolBlock*)allocation;
+		block->size = sizeof(FixedSizeAllocation<Type>)-MemoryPoolBlock::headerSize;
 		const auto size = block->size;
 		claim_block(*block);
 		used -= size;
