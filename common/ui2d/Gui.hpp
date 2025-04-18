@@ -17,6 +17,7 @@ namespace ui2d {
 		PodArray<Control*> controls;
 		U32 isFrozen = 0;
 
+		virtual void on_mouse_left();
 		virtual void on_mouse_moved(I32 x, I32 y);
 		virtual void on_mouse_pressed(I32 x, I32 y, U32 button);
 		virtual void on_mouse_released(I32 x, I32 y, U32 button);

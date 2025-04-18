@@ -26,6 +26,8 @@ namespace driver {
 
 			enum struct Type {
 				windowAdded,
+				windowShown,
+				windowHidden,
 				windowRemoved,
 				windowFocused
 			} type;
@@ -34,6 +36,14 @@ namespace driver {
 				struct {
 					Window *window;
 				} windowAdded;
+
+				struct {
+					Window *window;
+				} windowShown;
+
+				struct {
+					Window *window;
+				} windowHidden;
 
 				struct {
 					Window *window;
@@ -87,6 +97,7 @@ namespace driver {
 					characterTyped,
 
 					mouseMoved,
+					mouseLeft,
 					mousePressed,
 					mouseReleased,
 					mouseScrolled,
@@ -132,6 +143,9 @@ namespace driver {
 					} mouseMoved;
 
 					struct {
+					} mouseLeft;
+
+					struct {
 						driver::Mouse *mouse;
 						I32 x;
 						I32 y;
@@ -161,24 +175,29 @@ namespace driver {
 
 			virtual auto get_x() -> I32 = 0;
 			virtual auto get_y() -> I32 = 0;
-			virtual auto get_width() -> I32 = 0;
-			virtual auto get_height() -> I32 = 0;
+			virtual auto get_width() -> U32 = 0;
+			virtual auto get_height() -> U32 = 0;
+			virtual auto get_window_area() -> graphics2d::Buffer& = 0;
 			virtual auto get_client_area() -> graphics2d::Buffer& = 0;
 			virtual void raise() = 0;
 			virtual void focus() = 0;
 			virtual auto is_top() -> bool = 0;
+			virtual auto is_visible() -> bool = 0;
 			virtual void show() = 0;
 			virtual void hide() = 0;
 			virtual void dock(DockedType) = 0;
 			virtual void minimise() = 0;
 			virtual void restore() = 0;
-			virtual void move_to(I32 x, I32 y, bool redraw=true) = 0;
-			virtual void resize_to(U32 width, U32 height, bool redraw=true) = 0;
-			virtual void set_min_size(U32 width, U32 height, bool redraw=true) = 0;
-			virtual void set_max_size(U32 width, U32 height, bool redraw=true) = 0;
+			virtual void move_to(I32 x, I32 y) = 0;
+			virtual void resize_to(U32 width, U32 height) = 0;
+			virtual void set_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) = 0;
 			virtual void set_layer(Layer) = 0;
 			virtual void set_max_docked_size(U32 width, U32 height) = 0;
-			virtual void move_and_resize_to(I32 x, I32 y, U32 width, U32 height, bool draw=true) = 0;
+			virtual void move_and_resize_to(I32 x, I32 y, U32 width, U32 height) = 0;
+			virtual auto get_top_margin() -> U32 = 0;
+			virtual auto get_bottom_margin() -> U32 = 0;
+			virtual auto get_left_margin() -> U32 = 0;
+			virtual auto get_right_margin() -> U32 = 0;
 
 			virtual void redraw() = 0;
 			virtual void redraw_area(graphics2d::Rect) = 0;
@@ -191,12 +210,11 @@ namespace driver {
 		};
 
 		struct CustomWindow: virtual Window {
-			virtual auto get_window_area() -> graphics2d::Buffer& = 0;
-
 			virtual void set_titlebar_area(graphics2d::Rect set) = 0;
 			virtual void set_solid_area(graphics2d::Rect set) = 0;
 			virtual void set_interact_area(graphics2d::Rect set) = 0;
 			virtual void set_margin(U32 left, U32 top, U32 right, U32 bottom) = 0;
+			virtual void set_corner(U32 *topLeft, U32 *topRight, U32 *bottomLeft, U32 *bottomRight) = 0;
 
 			auto as_customWindow() -> CustomWindow* override { return this; }
 		};

@@ -15,6 +15,8 @@ namespace ui2d {
 
 	/**/ Gui::~Gui(){}
 
+	void Gui::on_mouse_left(){
+	}
 	void Gui::on_mouse_moved(I32 x, I32 y){
 		for(auto control:controls) control->on_mouse_moved(x, y);
 	}

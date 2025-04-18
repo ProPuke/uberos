@@ -78,7 +78,8 @@ namespace driver {
 			U32 bottomRightCorner[16] = {};
 
 			void move_to(I32 x, I32 y, bool update=true);
-			void resize_to(U32 width, U32 height, bool update=true);
+			void resize_to(U32 width, U32 height);
+			void move_and_resize_to(graphics2d::Rect);
 			void place_above(Display&);
 			void place_below(Display&);
 			void raise();

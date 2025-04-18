@@ -45,7 +45,8 @@ namespace driver {
 
 		auto _create_view(Thread *thread, DisplayManager::DisplayLayer layer, U32 width, U32 height, U8 scale=1) -> DisplayManager::Display*;
 		void _move_display_to(DisplayManager::Display&, I32 x, I32 y, bool update);
-		void _resize_display_to(DisplayManager::Display&, U32 width, U32 height, bool update);
+		void _move_and_resize_display_to(DisplayManager::Display&, graphics2d::Rect area);
+		void _resize_display_to(DisplayManager::Display&, U32 width, U32 height);
 		void _place_above(DisplayManager::Display&, DisplayManager::Display &other);
 		void _place_below(DisplayManager::Display&, DisplayManager::Display &other);
 		void _raise_display(DisplayManager::Display&);
@@ -460,7 +461,7 @@ namespace driver {
 				if(display==below) break;
 				if(!display->isVisible) continue;
 
-				_update_display_area_solid(*display, rect.offset(-display->x, -display->y));
+				_update_display_area_solid(*display, rect.offset(-display->x, -display->y).intersect(display->solidArea));
 			}
 		}
 
@@ -645,23 +646,72 @@ namespace driver {
 		void _move_display_to(DisplayManager::Display &display, I32 x, I32 y, bool update) {
 			if(display.x==x&&display.y==y) return;
 
-			const auto oldX = display.x;
-			const auto oldY = display.y;
+			const auto oldRect = graphics2d::Rect{display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
 
 			display.x = x;
 			display.y = y;
 
-			if(display.isVisible&&update){
-				_update_display_solid(display);
-				_update_area_solid({oldX, oldY, oldX+(I32)display.get_width(), oldY+(I32)display.get_height()}, &display);
-				_update_area_transparency(
-					graphics2d::Rect{oldX, oldY, oldX+(I32)display.get_width(), oldY+(I32)display.get_height()}
-					.include({display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()})
-				);
+			const auto area = graphics2d::Rect{display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
+
+			if(display.isVisible){
+				// old area above
+				if(area.y1>totalArea.y1) _update_area(oldRect.intersect({totalArea.x1, totalArea.y1, totalArea.x2, area.y1}), &display);
+
+				// old area below
+				if(area.y2<totalArea.y2) _update_area(oldRect.intersect({totalArea.x1, area.y2, totalArea.x2, totalArea.y2}), &display);
+
+				// old area to the left
+				if(area.x1>totalArea.x1) _update_area(oldRect.intersect({totalArea.x1, area.y1, area.x1, area.y2}), &display);
+
+				// old area to the right
+				if(area.x2<totalArea.x2) _update_area(oldRect.intersect({area.x2, area.y1, totalArea.x2, area.y2}), &display);
+
+				auto newRect = graphics2d::Rect{display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
+
+				if(update){
+					_update_area_solid(newRect, &display);
+					_update_display_area_solid(display, newRect.offset(-display.x, -display.y).intersect(display.solidArea));
+					_update_area_transparency(newRect);
+				}
 			}
 		}
 
-		void _resize_display_to(DisplayManager::Display &display, U32 width, U32 height, bool update) {
+		void _move_and_resize_display_to(DisplayManager::Display &display, graphics2d::Rect area) {
+			auto newWidth = (U32)area.width();
+			auto newHeight = (U32)area.height();
+
+			if(newWidth==display.buffer.width&&newHeight==display.buffer.height) return _move_display_to(display, area.x1, area.y1, false);
+			if(area.x1==display.x&&area.y1==display.y) return _resize_display_to(display, newWidth, newHeight);
+
+			auto oldRect = graphics2d::Rect{display.x, display.y, display.x+(I32)display.get_width(), display.y+(I32)display.get_height()};
+
+			auto bpp = graphics2d::bufferFormat::size[(U8)display.buffer.format];
+
+			delete display.buffer.address;
+			display.buffer.address = new U8[newWidth*newHeight*bpp];
+			display.buffer.width = newWidth;
+			display.buffer.height = newHeight;
+			display.buffer.stride = newWidth*bpp;
+
+			display.x = area.x1;
+			display.y = area.y1;
+
+			if(display.isVisible){
+				// old area above
+				if(area.y1>totalArea.y1) _update_area(oldRect.intersect({totalArea.x1, totalArea.y1, totalArea.x2, area.y1}), &display);
+
+				// old area below
+				if(area.y2<totalArea.y2) _update_area(oldRect.intersect({totalArea.x1, area.y2, totalArea.x2, totalArea.y2}), &display);
+
+				// old area to the left
+				if(area.x1>totalArea.x1) _update_area(oldRect.intersect({totalArea.x1, area.y1, area.x1, area.y2}), &display);
+
+				// old area to the right
+				if(area.x2<totalArea.x2) _update_area(oldRect.intersect({area.x2, area.y1, totalArea.x2, area.y2}), &display);
+			}
+		}
+
+		void _resize_display_to(DisplayManager::Display &display, U32 width, U32 height) {
 			width = max(16u, width);
 			height = max(16u, height);
 			if(display.get_width()==width&&display.get_height()==height) return;
@@ -677,20 +727,9 @@ namespace driver {
 			display.buffer.height = height;
 			display.buffer.stride = width*bpp;
 
-			// redraw any old area revealed (but don't draw new content yet, as the buffer has only just been new'd and thus is garbage)
-			if(display.isVisible&&update){
-				if(width<oldWidth){
-					// clear area to the right
-					const auto area = graphics2d::Rect{display.x+(I32)width, display.y, display.x+(I32)oldWidth, display.y+(I32)maths::max(height, oldHeight)};
-					_update_area_solid(area);
-					_update_area_transparency(area);
-				}
-				if(height<oldHeight){
-					// clear area to the bottom
-					const auto area = graphics2d::Rect{display.x, display.y+(I32)height, display.x+(I32)maths::max(width, oldWidth), display.y+(I32)oldHeight};
-					_update_area_solid(area);
-					_update_area_transparency(area);
-				}
+			if(display.isVisible){
+				if(width<oldWidth) _update_area({display.x+(I32)display.get_width(), display.y, display.x+(I32)oldWidth, display.y+(I32)oldHeight}, &display);
+				if(height<oldHeight) _update_area({display.x, display.y+(I32)display.get_height(), display.x+(I32)oldWidth, display.y+(I32)oldHeight}, &display);
 			}
 		}
 
@@ -1143,10 +1182,16 @@ namespace driver {
 		return _move_display_to(*this, x, y, update);
 	}
 
-	void DisplayManager::Display::resize_to(U32 width, U32 height, bool update) {
+	void DisplayManager::Display::move_and_resize_to(graphics2d::Rect area) {
 		Lock_Guard guard(lock);
 
-		return _resize_display_to(*this, width, height, update);
+		return _move_and_resize_display_to(*this, area);
+	}
+
+	void DisplayManager::Display::resize_to(U32 width, U32 height) {
+		Lock_Guard guard(lock);
+
+		return _resize_display_to(*this, width, height);
 	}
 
 	void DisplayManager::Display::place_above(DisplayManager::Display &other) {
@@ -1203,7 +1248,7 @@ namespace driver {
 	void DisplayManager::Display::update_area(graphics2d::Rect rect) {
 		Lock_Guard guard(lock);
 
-		_update_display_area_solid(*this, rect);
+		_update_display_area_solid(*this, rect.intersect(solidArea));
 		_update_area_transparency(rect.offset(x, y)); //TODO: avoid unneccasary redraws here if this area is obscured
 	}
 
