@@ -99,9 +99,12 @@ namespace tests::keyboardTest {
 			auto &clientArea = window->get_client_area();
 
 			keySize = min(
-				(clientArea.width-padding*2)/29,
-				(clientArea.height-padding*2)/8
+				((I32)clientArea.width-padding*2)/29,
+				((I32)clientArea.height-padding*2)/8
 			);
+
+			if(keySize<1) return;
+
 			const auto requiredWidth = 29 * keySize;
 			const auto requiredHeight = 8 * keySize;
 
@@ -109,10 +112,12 @@ namespace tests::keyboardTest {
 			offsetX = (clientArea.width-requiredWidth)/2;
 			offsetY = (clientArea.height-requiredHeight)/2;
 
+			const auto fontSize = keySize<15?8u*keySize/15u:8u;
+
 			#define KEY(NAME,...) \
 				if(i==0)clientArea.draw_rect_outline(colX(row, col)+1, offsetY+(keyboard::Position::maxRows-1-row)*keySize+1, colX(row, col+1)-colX(row, col)-2, keySize-2, 0xbbbbbb, 1, corner, corner, corner, corner);\
 				if(i==1)clientArea.draw_rect(colX(row, col)+2, offsetY+(keyboard::Position::maxRows-1-row)*keySize+2, colX(row, col+1)-colX(row, col)-4, keySize-4, 0xffffff);\
-				if(i==1&&(false,##__VA_ARGS__))clientArea.draw_text({.font=*graphics2d::font::default_sans, .size=8}, ("",##__VA_ARGS__), colX(row, col)+1+3, offsetY+(keyboard::Position::maxRows-1-row)*keySize+3+8, keySize-6, 0x222222);\
+				if(fontSize>=5) if(i==1&&(false,##__VA_ARGS__))clientArea.draw_text({.font=*graphics2d::font::default_sans, .size=fontSize, .maxLines=1}, ("",##__VA_ARGS__), colX(row, col)+1+3, offsetY+(keyboard::Position::maxRows-1-row)*keySize+3+fontSize, keySize-6, 0x222222);\
 				col++;
 			#define EMPTY \
 				if(i==0)clientArea.draw_rect_outline(colX(row, col)+1, offsetY+(keyboard::Position::maxRows-1-row)*keySize+1, colX(row, col+1)-colX(row, col)-2, keySize-2, 0xdddddd, 1, corner, corner, corner, corner);\
@@ -185,7 +190,6 @@ namespace tests::keyboardTest {
 		};
 
 		redraw();
-		window->show();
 
 		window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
 			if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
@@ -276,6 +280,6 @@ namespace tests::keyboardTest {
 
 		#pragma GCC diagnostic pop
 
-		window->redraw();
+		window->show();
 	}
 }
