@@ -14,6 +14,8 @@ namespace graphics2d {
 		U32 lineHeight;
 		I32 blockWidth, blockHeight; // the width and height of the rendered text block, excluding overhangs
 		Rect updatedArea; // the actual area of pixels updated (including overhang)
+		U32 lines;
+		bool clipped; // did not fit within the maxLines limit
 	};
 
 	struct Buffer {
@@ -78,12 +80,19 @@ namespace graphics2d {
 			U32 size = 14;
 			I32 lineSpacing = 0;
 			I32 charSpacing = 0;
+			bool clipped = false;
+			U32 maxLines = (U32)~0;
 		};
 
 		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour) { return draw_text(fontSettings, text, x, y, width, colour, x); }
 		auto draw_text(FontSettings fontSettings, const char *text, I32 x, I32 y, U32 width, U32 colour, I32 cursorX) -> DrawTextResult;
 		auto measure_text(FontSettings fontSettings, const char *text, U32 width = ~0, I32 cursorX = 0) -> DrawTextResult;
 		void draw_buffer(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image);
+		struct DrawScaledBufferOptions {
+			// /**/ DrawScaledBufferOptions(){}
+			bool minFiltered = true;
+		};
+		void draw_scaled_buffer(U32 x, U32 y, U32 width, U32 height, Buffer &image, U32 imageX, U32 imageY, U32 imageWidth, U32 imageHeight, DrawScaledBufferOptions options);
 		void draw_buffer_blended(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image, U8 opacity = 0xff);
 		void draw_4slice(I32 x, I32 y, U32 width, U32 height, Buffer &image);
 

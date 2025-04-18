@@ -6,6 +6,11 @@
 #include <common/maths.hpp>
 
 namespace graphics2d {
+	namespace {
+		inline U16 mix(U32 a, U32 b, U8 phase) {
+			return a*(255-phase)/255 + b*phase/255;
+		}
+	}
 
 	inline void Buffer::set(I32 x, I32 y, U32 colour, U32 length) {
 		if(x<0||y<0) return;
@@ -581,13 +586,26 @@ namespace graphics2d {
 		if(width<1||height<1) return;
 
 		//minify by sampling multiple times (looks best when <= halfsize)
-		if(width<=source_width/2&&height<=source_height/2){
-			const auto samplesX = (source_width+source_width/2-1)/width;
-			const auto samplesY = (source_height+source_height/2-1)/height;
+		if(width<=source_width&&height<=source_height){
+			// // floor: (this is sharp, but a bit too sharp)
+			// // const auto samplesX = source_width/width;
+			// // const auto samplesY = source_height/height;
+
+			// // floor+1/2-2: (this is a bit too soft)
+			// // const auto samplesX = (source_width+source_width/2-1)/width;
+			// // const auto samplesY = (source_height+source_height/2-1)/height;
+
+			// // floor+1/6: (this seems a good mix)
+			// const auto samplesX = (source_width+source_width*1/6)/width;
+			// const auto samplesY = (source_height+source_height*1/6)/height;
 
 			for(I32 y=0; y<(I32)height&&startY+y<(I32)this->height; y++) for(I32 x=0; x<(I32)width&&startX+x<(I32)this->width; x++) {
 				I32 sX = source_x+x*source_width/width;
 				I32 sY = source_y+y*source_height/height;
+
+				// calculcate per pixel instead: (correct mixing)
+				const auto samplesX = (source_x+(x+1)*source_width/width)-sX;
+				const auto samplesY = (source_y+(y+1)*source_height/height)-sY;
 
 				U32 coverage = 0;
 
@@ -610,7 +628,10 @@ namespace graphics2d {
 				// note that we divide by the _expected_ number of samples, not the actual (minus those skipped). We _want_ the edges to fade out there, as they are not full covering those pixels
 				coverage /= samplesX*samplesY;
 
-				U8 alpha = maths::clamp(coverage*3/2, 0u, 255u); // technically this should maybe be *2, but we'll go for a mid of *3/2
+				U8 alphaSmall = maths::clamp(coverage*3/2, 0u, 255u); // technically this should maybe be *2, but we'll go for a mid of *3/2
+				U8 alphaLarge = maths::clamp(((I32)coverage-128)*2 + 128, 0, 255);
+
+				U8 alpha = mix(alphaSmall, alphaLarge, height<source_height/2?0:255*(height-source_height/2)/(source_height/2));
 
 				if(alpha<1) continue;
 
@@ -632,24 +653,24 @@ namespace graphics2d {
 				I32 sY = source_y+(y*256)*source_height/height;
 
 				U32 x1y1 = source.get((sX+  0)/256, (sY+  0)/256);
-				U32 x2y1 = source.get((sX+255)/256, (sY+  0)/256);
-				U32 x1y2 = source.get((sX+  0)/256, (sY+255)/256);
-				U32 x2y2 = source.get((sX+255)/256, (sY+255)/256);
+				U32 x2y1 = source.get((sX+256)/256, (sY+  0)/256);
+				U32 x1y2 = source.get((sX+  0)/256, (sY+256)/256);
+				U32 x2y2 = source.get((sX+256)/256, (sY+256)/256);
 
-				U8 pX = sX-(sX/256*256);
-				U8 pY = sY-(sY/256*256);
+				U8 pX = sX%256;
+				U8 pY = sY%256;
 
 				U32 msdf = blend_rgb(blend_rgb(x1y1, x2y1, pX), blend_rgb(x1y2, x2y2, pX), pY);
-
-				U8 b = (msdf&0xff0000)>>16;
+				U8 r = (msdf&0xff0000)>>16;
 				U8 g = (msdf&0x00ff00)>> 8;
-				U8 r = (msdf&0x0000ff)>> 0;
+				U8 b = (msdf&0x0000ff)>> 0;
 
-				U8 median = max(min(r, g), min(max(r, g), b));
+				auto median = max(min(r, g), min(max(r, g), b));
 
 				I32 screenPxDistance = ((I32)median-128)*sdfPixels;
 
 				U8 alpha = maths::clamp(screenPxDistance*3/2 + 128, 0, 255); // technically this should maybe be *2, but we'll go for a mid of *3/2 
+				// U8 alpha = maths::clamp(screenPxDistance*2 + 128, 0, 255);
 
 				if(alpha<1) continue;
 
@@ -665,6 +686,44 @@ namespace graphics2d {
 		for(U32 y=maths::max((I32)0, -destX); y<maths::min(maths::min(height, image.height-sourceX), height-destX); y++){
 			for(U32 x=maths::max((I32)0, -destX); x<maths::min(maths::min(width, image.width-sourceX), width-destX); x++){
 				set(destX+x, destY+y, image.get(sourceX+x, sourceY+y));
+			}
+		}
+	}
+
+	inline void Buffer::draw_scaled_buffer(U32 x, U32 y, U32 width, U32 height, Buffer &image, U32 imageX, U32 imageY, U32 imageWidth, U32 imageHeight, DrawScaledBufferOptions options) {
+		if(options.minFiltered){
+			const auto samplesX = maths::max(1u, imageWidth/width);
+			const auto samplesY = maths::max(1u, imageHeight/height);
+			const auto samples = samplesX*samplesY;
+
+			for(auto offsetY=0u; offsetY<height; offsetY++)
+			for(auto offsetX=0u; offsetX<width; offsetX++) {
+				auto r = 0;
+				auto g = 0;
+				auto b = 0;
+				auto a = 0;
+
+				for(auto sampleY=0u; sampleY<samplesY; sampleY++)
+				for(auto sampleX=0u; sampleX<samplesX; sampleX++) {
+					const auto sample = image.get(imageWidth*offsetX/width+sampleX, imageHeight*offsetY/height+sampleY);
+					a += sample>>24 & 0xff;
+					r += sample>>16 & 0xff;
+					g += sample>> 8 & 0xff;
+					b += sample>> 0 & 0xff;
+				}
+
+				r /= samples;
+				g /= samples;
+				b /= samples;
+				a /= samples;
+
+				set(x+offsetX, y+offsetY, a<<24 | r<<16 | g<<8 | b<<0);
+			}
+
+		}else{
+			for(auto offsetY=0u; offsetY<height; offsetY++)
+			for(auto offsetX=0u; offsetX<width; offsetX++) {
+				set(x+offsetX, y+offsetY, image.get((imageWidth-1)*offsetX/(width-1), (imageHeight-1)*offsetY/(height-1)));
 			}
 		}
 	}
@@ -770,9 +829,9 @@ namespace graphics2d {
 
 	inline U32 blend_rgb(U32 a, U32 b, U8 phase) {
 		return
-			 (U32)(((a&0xff0000)>>16)*(255-phase)/256 + ((b&0xff0000)>>16)*(0+phase)/256)<<16
-			|(U32)(((a&0x00ff00)>> 8)*(255-phase)/256 + ((b&0x00ff00)>> 8)*(0+phase)/256)<< 8
-			|(U32)(((a&0x0000ff)>> 0)*(255-phase)/256 + ((b&0x0000ff)>> 0)*(0+phase)/256)<< 0
+			 (U32)(((a&0xff0000)>>16)*(255-phase)/255 + ((b&0xff0000)>>16)*(0+phase)/255)<<16
+			|(U32)(((a&0x00ff00)>> 8)*(255-phase)/255 + ((b&0x00ff00)>> 8)*(0+phase)/255)<< 8
+			|(U32)(((a&0x0000ff)>> 0)*(255-phase)/255 + ((b&0x0000ff)>> 0)*(0+phase)/255)<< 0
 		;
 	}
 

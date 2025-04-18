@@ -15,6 +15,9 @@ namespace graphics2d {
 	
 		auto scale = FixedI32::divide(fontSettings.size, fontSettings.font.size);
 	
+		auto lines = 1u;
+		auto clipped = false;
+
 		const auto lineHeight = (U32)(fontSettings.font.lineHeight * fontSettings.size + 0.5) + fontSettings.lineSpacing;
 		const auto capHeight = (I32)(fontSettings.font.capHeight * fontSettings.size + 0.5);
 		// const auto ascend = (I32)(fontSettings.font.ascender * fontSettings.size + 0.5);
@@ -25,6 +28,9 @@ namespace graphics2d {
 		for(const char *c=text;*c;c++){
 			switch(*c){
 				case '\n':
+					lines++;
+					if(lines>fontSettings.maxLines) break;
+
 					x = FixedI32::whole(startX);
 					y += lineHeight;
 				break;
@@ -38,6 +44,10 @@ namespace graphics2d {
 
 					if(c!=text && x+xAdvancement>=right){
 						//TODO: proper wordwrapping
+
+						lines++;
+						if(lines>fontSettings.maxLines) break;
+						
 						x = FixedI32::whole(startX);
 						y += lineHeight;
 					}
@@ -76,6 +86,10 @@ namespace graphics2d {
 			}
 	
 			blockWidth = max(blockWidth, x.round());
+			if(lines>fontSettings.maxLines) {
+				clipped = true;
+				break;
+			}
 		}
 	
 		auto blockHeight = y.round()-startY+capHeight;
@@ -86,18 +100,23 @@ namespace graphics2d {
 			lineHeight,
 			blockWidth, blockHeight,
 			updatedArea,
+			lines,
+			clipped
 		};
 	}
 	auto Buffer::measure_text(FontSettings fontSettings, const char *text, U32 width, I32 cursorX) -> DrawTextResult {
 		auto x = FixedI32::whole(cursorX);
 		auto y = FixedI32::whole(0);
-	
+
 		auto right = FixedI32::whole((I32)min(width, ((1u<<31)-1)/256));
 	
 		auto blockWidth = cursorX;
 	
 		auto scale = FixedI32::divide(fontSettings.size, fontSettings.font.size);
 	
+		auto lines = 1u;
+		auto clipped = false;
+
 		const auto lineHeight = (U32)(fontSettings.font.lineHeight * fontSettings.size + 0.5) + fontSettings.lineSpacing;
 		const auto capHeight = (I32)(fontSettings.font.capHeight * fontSettings.size + 0.5);
 		// const auto ascend = (I32)(fontSettings.font.ascender * fontSettings.size + 0.5);
@@ -108,6 +127,9 @@ namespace graphics2d {
 		for(const char *c=text;*c;c++){
 			switch(*c){
 				case '\n':
+					lines++;
+					if(lines>fontSettings.maxLines) break;
+
 					x = FixedI32::whole(0);
 					y += lineHeight;
 				break;
@@ -115,6 +137,18 @@ namespace graphics2d {
 					auto character = fontSettings.font.get_character(*c);
 					if(!character){
 						continue;
+					}
+
+					const auto xAdvancement = character->advance*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
+
+					if(c!=text && x+xAdvancement>=right){
+						//TODO: proper wordwrapping
+
+						lines++;
+						if(lines>fontSettings.maxLines) break;
+						
+						x = FixedI32::whole(0);
+						y += lineHeight;
 					}
 	
 					if(character->atlasWidth&&character->atlasHeight){
@@ -131,19 +165,18 @@ namespace graphics2d {
 	
 						updatedArea = updatedArea.include({displayX1, displayY1, displayX2, displayY2});
 					}
-	
-					x += character->advance*(I32)fontSettings.font.size*scale + fontSettings.charSpacing;
-					if(x>=right){
-						//TODO: proper wordwrapping
-						x = FixedI32::whole(0);
-						y += lineHeight;
-					}
+
+					x += xAdvancement;
 				}
 			}
 	
 			blockWidth = max(blockWidth, x.round());
+			if(lines>fontSettings.maxLines) {
+				clipped = true;
+				break;
+			}
 		}
-	
+
 		auto blockHeight = y.round()+capHeight;
 	
 		return {
@@ -152,6 +185,8 @@ namespace graphics2d {
 			lineHeight,
 			blockWidth, blockHeight,
 			updatedArea,
+			lines,
+			clipped
 		};
 	}
 }
