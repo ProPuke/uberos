@@ -19,7 +19,7 @@ function convert_image(image:pngs.DecodeResult):pngs.DecodeResult {
 			image.image[y*image.lineSize+x*4+0] = r*a/255;
 			image.image[y*image.lineSize+x*4+1] = g*a/255;
 			image.image[y*image.lineSize+x*4+2] = b*a/255;
-			image.image[y*image.lineSize+x*4+3] = a;
+			image.image[y*image.lineSize+x*4+3] = 255-a;
 		}
 	}
 

@@ -334,7 +334,7 @@ namespace graphics2d {
 			|address[offset+0]<<16
 			|address[offset+1]<< 8
 			|address[offset+2]<< 0
-			|(255-address[offset+3])<<24
+			|address[offset+3]<<24
 		;
 	}
 
@@ -346,7 +346,7 @@ namespace graphics2d {
 			|address[offset+2]<<16
 			|address[offset+1]<< 8
 			|address[offset+0]<< 0
-			|(255-address[offset+3])<<24
+			|address[offset+3]<<24
 		;
 	}
 
