@@ -74,7 +74,6 @@ namespace utils {
 
 				auto textResult = clientArea.draw_text(fontSettings, text, leftMargin + cursorColumn * columnWidth, cursorY, columnWidth, textColour, cursorX);
 				if(max(cursorY, textResult.updatedArea.y2)>=(I32)clientArea.height){
-
 					if(columns==1){
 						// if a single column, scroll
 
@@ -125,7 +124,6 @@ namespace utils {
 
 				print_multiline_text(logging::get_history_part_1());
 				print_multiline_text(logging::get_history_part_2());
-				window->redraw();
 
 				textColour = textColourInfo;
 			}
@@ -158,7 +156,6 @@ namespace utils {
 			// window->set_status("Booting...");
 
 			redraw();
-			window->show();
 
 			logHandler = new logging::Handler(
 				[](U32 indent, logging::PrintType type) {
@@ -193,6 +190,8 @@ namespace utils {
 			);
 
 			logging::install_handler(*logHandler);
+
+			window->show();
 		}
 
 		void show() {
