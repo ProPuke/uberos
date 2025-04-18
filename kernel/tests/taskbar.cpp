@@ -17,6 +17,8 @@
 
 #include <functional>
 
+#define PREVIEW_INCLUDE_BORDER
+
 namespace ui2d::image {
 	namespace icons {
 		extern graphics2d::Buffer super;
@@ -46,6 +48,13 @@ namespace tests::taskbar {
 		const auto maxButtonHeight = 50;
 		const auto minButtonHeight = cleanTheme.get_minimum_button_height()*2/3;
 
+		auto isVertical = false;
+
+		driver::DesktopManager::CustomWindow *taskbarWindow;
+		driver::DesktopManager::CustomWindow *previewWindow;
+
+		void show_button_preview(WindowButton*);
+
 		struct DesktopGui: ui2d::Gui {
 			typedef ui2d::Gui Super;
 	
@@ -55,6 +64,9 @@ namespace tests::taskbar {
 			/**/ DesktopGui(driver::DesktopManager::Window &window);
 	
 			void update_area(graphics2d::Rect area) override;
+
+			void on_mouse_left() override;
+			void on_mouse_moved(I32 x, I32 y) override;
 		};
 
 		struct WindowButton: ui2d::control::ColouredButton {
@@ -76,6 +88,30 @@ namespace tests::taskbar {
 		void DesktopGui::update_area(graphics2d::Rect area) {
 			if(isFrozen) return;
 			window.redraw_area(area);
+		}
+
+		void DesktopGui::on_mouse_left() {
+			Super::on_mouse_left();
+
+			show_button_preview(nullptr);
+		}
+
+		void DesktopGui::on_mouse_moved(I32 x, I32 y) {
+			Super::on_mouse_moved(x, y);
+
+			auto previewShown = false;
+
+			for(auto button:windowButtons){
+				if(button->rect.contains(x, y)){
+					previewShown = true;
+					show_button_preview(button);
+					break;
+				}
+			}
+
+			if(!previewShown){
+				show_button_preview(nullptr);
+			}
 		}
 
 		/**/ WindowButton::WindowButton(ui2d::Gui &gui, graphics2d::Rect rect, driver::DesktopManager::Window &window):
@@ -113,6 +149,109 @@ namespace tests::taskbar {
 				windowButton->set_toggle(&windowButton->window==lastFocusedWindow);
 			}
 		}
+
+		static WindowButton *currentPreview = nullptr;
+
+		void show_button_preview(WindowButton *button) {
+			if(currentPreview==button) return;
+			currentPreview = button;
+
+			if(!previewWindow) return;
+
+			previewWindow->hide();
+
+			if(!button) return;
+
+			#ifdef PREVIEW_INCLUDE_BORDER
+				auto &clientArea = button->window.get_window_area();
+			#else
+				auto &clientArea = button->window.get_client_area();
+			#endif
+
+			#ifdef PREVIEW_INCLUDE_BORDER
+				U32 corner[2];
+			#else
+				U32 corner[3];
+			#endif
+			graphics2d::create_diagonal_corner(sizeof(corner)/sizeof(corner[0])-1, corner);
+			previewWindow->set_corner(corner, corner, corner, corner);
+
+			I32 width;
+			I32 height;
+
+			{
+				const auto x = taskbarWindow->get_x();
+				const auto y = taskbarWindow->get_y();
+				const auto windowArea = desktopManager->get_window_area();
+
+				if(isVertical){
+					width = button->rect.width();
+					height = width*clientArea.height/clientArea.width;
+
+					#ifdef PREVIEW_INCLUDE_BORDER
+						previewWindow->set_margin(
+							button->window.get_left_margin()*width/clientArea.width,
+							button->window.get_top_margin()*height/clientArea.height,
+							button->window.get_right_margin()*width/clientArea.width,
+							button->window.get_bottom_margin()*height/clientArea.height
+						);
+					#endif
+
+					if(x<(windowArea.x1+windowArea.x2)/2){
+						// taskbar at left, preview on right
+						previewWindow->move_and_resize_to(x+button->rect.x2+10, y+button->rect.y1-(height-button->rect.height())/2, width, height);
+						previewWindow->move_and_resize_to(x+button->rect.x2+10, y+button->rect.y1-(height-button->rect.height())/2, width, height);
+					}else{
+						// taskbar at right, preview on left
+						previewWindow->move_and_resize_to(x+button->rect.x1-10-width, y+button->rect.y1-(height-button->rect.height())/2, width, height);
+						previewWindow->move_and_resize_to(x+button->rect.x1-10-width, y+button->rect.y1-(height-button->rect.height())/2, width, height);
+					}
+
+				}else{
+					width = button->rect.width();
+					height = width*clientArea.height/clientArea.width;
+
+					#ifdef PREVIEW_INCLUDE_BORDER
+						previewWindow->set_margin(
+							button->window.get_left_margin()*width/clientArea.width,
+							button->window.get_top_margin()*height/clientArea.height,
+							button->window.get_right_margin()*width/clientArea.width,
+							button->window.get_bottom_margin()*height/clientArea.height
+						);
+					#endif
+
+					if(y<(windowArea.y1+windowArea.y2)/2){
+						// taskbar at top, preview below
+						previewWindow->move_and_resize_to(x+button->rect.x1, y+button->rect.y2+10, width, height);
+						previewWindow->move_and_resize_to(x+button->rect.x1, y+button->rect.y2+10, width, height);
+					}else{
+						// taskbar below, preview above
+						previewWindow->move_and_resize_to(x+button->rect.x1, y+button->rect.y1-10-height, width, height);
+						previewWindow->move_and_resize_to(x+button->rect.x1, y+button->rect.y1-10-height, width, height);
+					}
+				}
+			}
+
+			#ifdef PREVIEW_INCLUDE_BORDER
+				previewWindow->set_solid_area({0,0,0,0});
+			#else
+				previewWindow->set_solid_area({0,0,width,height});
+			#endif
+			previewWindow->set_interact_area({0,0,0,0});
+
+			auto previewWindowArea = previewWindow->get_window_area();
+			#ifndef PREVIEW_INCLUDE_BORDER
+				previewWindowArea.draw_scaled_buffer(0, 0, previewWindowArea.width, previewWindowArea.height, clientArea, 0, 0, clientArea.width, clientArea.height, {});
+				previewWindowArea.draw_rect_outline({0,0,(I32)previewWindowArea.width,(I32)previewWindowArea.height}, 0x888888, 1, corner, corner, corner, corner);
+			#else
+				previewWindowArea.draw_scaled_buffer(0, 0, previewWindowArea.width, previewWindowArea.height, clientArea, 0, 0, clientArea.width, clientArea.height, {});
+				if(previewWindowArea.width<=clientArea.width/2&&previewWindowArea.height<=clientArea.height/2){
+					previewWindowArea.draw_rect_outline({(I32)previewWindow->get_left_margin(),(I32)previewWindow->get_top_margin(),(I32)previewWindowArea.width-(I32)previewWindow->get_right_margin(),(I32)previewWindowArea.height-(I32)previewWindow->get_bottom_margin()}, 0x888888, 1, corner, corner, corner, corner);
+				}
+			#endif
+			previewWindow->redraw();
+			previewWindow->show();
+		}
 	}
 
 	void run() {
@@ -121,18 +260,20 @@ namespace tests::taskbar {
 
 		lastFocusedWindow = desktopManager->get_focused_window();
 
-		const static auto shadowLength = 8;
+		const static auto shadowLength = 8u;
 
-		static auto window = &desktopManager->create_custom_window("Taskbar", width, height+shadowLength);
-		window->set_margin(shadowLength, shadowLength, shadowLength, shadowLength);
-		window->set_interact_area({shadowLength,shadowLength,shadowLength+width,shadowLength+height});
-		window->set_titlebar_area({shadowLength,shadowLength,shadowLength+width,shadowLength+height});
-		window->set_max_docked_size(150, 61);
-		window->dock(driver::DesktopManager::Window::DockedType::top);
-		window->set_layer(driver::DesktopManager::Window::Layer::topmost);
-		window->show();
+		taskbarWindow = &desktopManager->create_custom_window("Taskbar", width, height+shadowLength);
+		taskbarWindow->set_margin(shadowLength, shadowLength, shadowLength, shadowLength);
+		taskbarWindow->set_interact_area({shadowLength,shadowLength,shadowLength+width,shadowLength+height});
+		taskbarWindow->set_titlebar_area({shadowLength,shadowLength,shadowLength+width,shadowLength+height});
+		taskbarWindow->set_max_docked_size(150, 61);
+		taskbarWindow->dock(driver::DesktopManager::Window::DockedType::top);
+		taskbarWindow->set_layer(driver::DesktopManager::Window::Layer::topmost);
 
-		static DesktopGui gui{*window};
+		previewWindow = &desktopManager->create_custom_window("Taskbar preview", 16, 16);
+		previewWindow->set_layer(driver::DesktopManager::Window::Layer::topmost);
+
+		static DesktopGui gui{*taskbarWindow};
 		gui.backgroundColour = transparentBackgroundColour;
 
 		const auto padding = 5;
@@ -148,6 +289,7 @@ namespace tests::taskbar {
 		launcherButton.set_min_size(cleanTheme.get_minimum_button_width()/2, minButtonHeight);
 
 		static auto _set_orientation = [](bool vertical) {
+			isVertical = vertical;
 			static auto active = false;
 			if(active) return; // prevent recursion (_set_orientation -> set_*_size -> redraw -> _set_orientation)
 			active = true;
@@ -167,8 +309,10 @@ namespace tests::taskbar {
 			{
 				auto minSize = box.get_min_size();
 				auto maxSize = box.get_max_size();
-				window->set_min_size(maths::add_safe(minSize.x, (U32)padding*2u), maths::add_safe(minSize.y, (U32)padding*2u), false);
-				window->set_max_size(maths::add_safe(maxSize.x, (U32)padding*2u), maths::add_safe(maxSize.y, (U32)padding*2u), false);
+				taskbarWindow->set_size_limits(
+					maths::add_safe(minSize.x, (U32)padding*2u), maths::add_safe(minSize.y, (U32)padding*2u),
+					maths::add_safe(maxSize.x, (U32)padding*2u), maths::add_safe(maxSize.y, (U32)padding*2u)
+				);
 			}
 
 			active = false;
@@ -176,37 +320,38 @@ namespace tests::taskbar {
 
 		static auto redraw = [](){
 			{ auto guiFreeze = gui.freeze();
-				auto width = window->get_width();
-				auto height = window->get_height();
-				auto &clientArea = window->get_client_area();
-				auto &windowArea = window->get_window_area();
+				auto width = taskbarWindow->get_width();
+				auto height = taskbarWindow->get_height();
+				auto &clientArea = taskbarWindow->get_client_area();
+				auto &windowArea = taskbarWindow->get_window_area();
 
 				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xff000000);
 
-				if(window->get_state()==driver::DesktopManager::Window::State::docked){
+				if(taskbarWindow->get_state()==driver::DesktopManager::Window::State::docked){
 					launcherButton.colour = 0xff000000;
 
-					window->set_solid_area({0,0,0,0});
-					window->set_titlebar_area({0, 0, width, height});
+					taskbarWindow->set_solid_area({0,0,0,0});
+					taskbarWindow->set_titlebar_area({0, 0, (I32)width, (I32)height});
 
+					// windowArea.draw_rect(0, 0, width, height, transparentBackgroundColour);
 					clientArea.draw_rect(0, 0, width, height, transparentBackgroundColour);
 
-					switch(window->get_docked_type()){
+					switch(taskbarWindow->get_docked_type()){
 						case driver::DesktopManager::Window::DockedType::top:
 							windowArea.set(shadowLength, shadowLength+height-1, borderColour, width);
-							for(auto i=0;i<shadowLength;i++){
+							for(auto i=0u;i<shadowLength;i++){
 								windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
 							}
 						break;
 						case driver::DesktopManager::Window::DockedType::bottom:
 							windowArea.set(shadowLength, shadowLength, borderColour, width);
-							for(auto i=0;i<shadowLength;i++){
-								windowArea.set(0, i, 0x000000|(255-20*i/(shadowLength-1))<<24, width);
+							for(auto i=0u;i<shadowLength;i++){
+								windowArea.set(0u, i, 0x000000|(255-20*i/(shadowLength-1))<<24, width);
 							}
 						break;
 						case driver::DesktopManager::Window::DockedType::left:
 							windowArea.draw_line(shadowLength+width-1, shadowLength, shadowLength+width-1, shadowLength+height-1, borderColour);
-							for(auto i=0;i<shadowLength;i++){
+							for(auto i=0u;i<shadowLength;i++){
 								windowArea.draw_line(
 									shadowLength+width+i, shadowLength+0,
 									shadowLength+width+i, shadowLength+height-1,
@@ -216,7 +361,7 @@ namespace tests::taskbar {
 						break;
 						case driver::DesktopManager::Window::DockedType::right:
 							windowArea.draw_line(shadowLength, shadowLength, shadowLength, shadowLength+height-1, borderColour);
-							for(auto i=0;i<shadowLength;i++){
+							for(auto i=0u;i<shadowLength;i++){
 								windowArea.draw_line(
 									i, shadowLength+0,
 									i, shadowLength+height-1,
@@ -234,13 +379,13 @@ namespace tests::taskbar {
 					// window->set_solid_area({shadowLength, shadowLength, shadowLength+width, shadowLength+height});
 					// clientArea.draw_rect(1, 1, width-1, height-1, solidBackgroundColour);
 
-					window->set_solid_area({0,0,0,0});
-					window->set_titlebar_area({0, 0, width, height});
+					taskbarWindow->set_solid_area({0,0,0,0});
+					taskbarWindow->set_titlebar_area({0, 0, (I32)width, (I32)height});
 					clientArea.draw_rect(0, 0, width, height, opaqueBackgroundColour);
 
 					clientArea.draw_rect_outline(0, 0, width, height, opaqueBorderColour);
 
-					for(auto i=0;i<shadowLength;i++){
+					for(auto i=0u;i<shadowLength;i++){
 						windowArea.set(shadowLength, shadowLength+height+i, 0x000000|(255-20+20*i/(shadowLength-1))<<24, width);
 					}
 				}
@@ -332,7 +477,10 @@ namespace tests::taskbar {
 		{
 			auto i=0u;
 			for(auto desktopWindow=desktopManager->get_window(i); desktopWindow; desktopWindow=desktopManager->get_window(++i)){
-				if(desktopWindow==window) continue;
+				if(desktopWindow==taskbarWindow) continue;
+				if(desktopWindow==previewWindow) continue;
+				if(!desktopWindow->is_visible()) continue;
+
 				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*desktopWindow)));
 				control->set_min_size(cleanTheme.get_minimum_button_width()*7/12, minButtonHeight);
 				control->set_max_size(maxButtonWidth, maxButtonHeight);
@@ -342,45 +490,53 @@ namespace tests::taskbar {
 		update_windowButton_states();
 
 		redraw();
-		window->redraw();
 
 		desktopManager->events.subscribe([](const driver::DesktopManager::Event &event){
-			if(event.type==driver::DesktopManager::Event::Type::windowAdded){
-				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*event.windowAdded.window)));
+			if(event.type==driver::DesktopManager::Event::Type::windowShown){
+				if(event.windowShown.window==taskbarWindow) return;
+				if(event.windowShown.window==previewWindow) return;
+
+				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*event.windowShown.window)));
 				control->set_min_size(cleanTheme.get_minimum_button_width()*7/12, minButtonHeight);
 				control->set_max_size(maxButtonWidth, maxButtonHeight);
 				redraw();
-				window->redraw();
+				taskbarWindow->redraw();
 
-			}else if(event.type==driver::DesktopManager::Event::Type::windowRemoved){
-				if(event.windowRemoved.window==lastFocusedWindow){
+			}else if(event.type==driver::DesktopManager::Event::Type::windowHidden||event.type==driver::DesktopManager::Event::Type::windowRemoved){
+				auto removedWindow = event.type==driver::DesktopManager::Event::Type::windowHidden?event.windowHidden.window:event.windowRemoved.window;
+
+				if(removedWindow==lastFocusedWindow){
 					lastFocusedWindow = nullptr;
 				}
 
 				for(auto i=0u;i<windowButtons.length;i++){
-					if(&windowButtons[i]->window==event.windowRemoved.window){
+					if(&windowButtons[i]->window==removedWindow){
 						buttonContainer.remove_control(*windowButtons[i]);
 						windowButtons.remove(i);
 						redraw();
-						window->redraw();
+						taskbarWindow->redraw();
 						break;
 					}
 				}
 
 			}else if(event.type==driver::DesktopManager::Event::Type::windowFocused){
-				if(event.windowFocused.window==window) return; // ignore focusing the taskbar itself
+				if(event.windowFocused.window==taskbarWindow) return; // ignore focusing the taskbar itself
+				if(event.windowFocused.window==previewWindow) return;
 
 				lastFocusedWindow = event.windowFocused.window;
 				update_windowButton_states();
 			}
 		});
 
-		window->events.subscribe([](const driver::DesktopManager::Window::Event &event){
+		taskbarWindow->events.subscribe([](const driver::DesktopManager::Window::Event &event){
 			if(event.type==driver::DesktopManager::Window::Event::Type::resizeRequested){
 				_set_orientation(event.resizeRequested.width<event.resizeRequested.height);
 
 			}else if(event.type==driver::DesktopManager::Window::Event::Type::clientAreaChanged){
 				redraw();
+
+			}else if(event.type==driver::DesktopManager::Window::Event::Type::mouseLeft){
+				gui.on_mouse_left();
 
 			}else if(event.type==driver::DesktopManager::Window::Event::Type::mouseMoved){
 				gui.on_mouse_moved(event.mouseMoved.x, event.mouseMoved.y);
@@ -392,5 +548,7 @@ namespace tests::taskbar {
 				gui.on_mouse_released(event.mouseReleased.x, event.mouseReleased.y, event.mouseReleased.button);
 			}
 		});
+
+		taskbarWindow->show();
 	}
 }
