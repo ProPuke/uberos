@@ -613,33 +613,23 @@ namespace driver {
 			U32 corner[cornerRadius+1];
 			U32 cornerInner[cornerRadius-1+1];
 
-			static const U32 leftShadow = enableTransparency?8:0;
-			static const U32 rightShadow = enableTransparency?8:0;
-			static const U32 topShadow = enableTransparency?8:0;
-			static const U32 bottomShadow = enableTransparency?8:0;
-
-			static const U8 shadowIntensity = 20; // max intensity
-			static const U8 topShadowIntensity = 128; // scaling down of top shadow (by inner extension)
-			static const U8 leftShadowIntensity = 192; // scaling down of left shadow (by inner extension)
-			static const U8 rightShadowIntensity = 192; // scaling down of right shadow (by inner extension)
-
 			const char *status = "";
 
 			/**/ StandardWindow(const char *title, U32 width, U32 height):
-				Super(title, maths::max(minStandardWindowWidth,width)+leftShadow+rightShadow, maths::max(minStandardWindowHeight,height)+topShadow+bottomShadow),
+				Super(title, maths::max(theme.get_window_min_width(),width)+theme.get_window_left_margin()+theme.get_window_right_margin(), maths::max(theme.get_window_min_height(),height)+theme.get_window_top_margin()+theme.get_window_bottom_margin()),
 				closeButton(gui, {0,0,0,0}, 0xff0000, ""),
 				maximiseButton(gui, {0,0,0,0}, 0xff8800, "")
 			{
-				leftMargin = leftShadow;
-				topMargin = topShadow;
-				rightMargin = rightShadow;
-				bottomMargin = bottomShadow;
+				leftMargin = theme.get_window_left_margin();
+				topMargin = theme.get_window_top_margin();
+				rightMargin = theme.get_window_right_margin();
+				bottomMargin = theme.get_window_bottom_margin();
 
 				closeButton.icon = &ui2d::image::widgets::close;
 				maximiseButton.icon = &ui2d::image::widgets::maximise;
 
-				minSize.x = minStandardWindowWidth;
-				minSize.y = minStandardWindowHeight;
+				minSize.x = theme.get_window_min_width();
+				minSize.y = theme.get_window_min_height();
 
 				width = maths::max(minSize.x, width);
 				height = maths::max(minSize.y, height);
@@ -652,7 +642,7 @@ namespace driver {
 					}
 				}
 
-				_set_titlebar_area({(I32)leftShadow, (I32)topShadow, (I32)leftShadow+(I32)width, (I32)topShadow+titlebarHeight});
+				_set_titlebar_area(theme.get_window_titlebar_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}));
 
 				gui.redraw(false);
 
@@ -692,7 +682,7 @@ namespace driver {
 			void redraw_area(graphics2d::Rect) override;
 
 			void set_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) override {
-				Super::set_size_limits(maths::max(minStandardWindowWidth, minWidth), maths::max(minStandardWindowHeight, minHeight), maxWidth, maxHeight);
+				Super::set_size_limits(maths::max(theme.get_window_min_width(), minWidth), maths::max(theme.get_window_min_height(), minHeight), maxWidth, maxHeight);
 			}
 
 			void _set_titlebar_area(graphics2d::Rect rect) override {
@@ -709,157 +699,41 @@ namespace driver {
 			}
 
 			void _draw_decorations() override {
-				auto rect = get_border_rect();
-				const auto borderColour = draggingCursor?0xd0b0b0:windowBorderColour;
-				const auto titlebarBgColour = draggingCursor?0xfff9f9:_draw_focused?0xf9f9f9:windowBackgroundColour;
-				const auto titlebarTextColour = _draw_focused?0x333333:0x999999;
-				const auto statusbarTextColour = _draw_focused?0x666666:0xaaaaaa;
-
-				U32 innerAaCorner[2+1];
-				graphics2d::create_diagonal_corner(2, innerAaCorner);
-
-				if(enableTransparency){
-					{ // draw border minus corners
-						graphicsDisplay->buffer.draw_line(rect.x1+cornerRadius, rect.y1, rect.x2-1-cornerRadius, rect.y1, borderColour);
-						graphicsDisplay->buffer.draw_line(rect.x1+cornerRadius, rect.y2-1, rect.x2-1-cornerRadius, rect.y2-1, borderColour);
-						graphicsDisplay->buffer.draw_line(rect.x1, rect.y1+cornerRadius, rect.x1, rect.y2-cornerRadius, borderColour);
-						graphicsDisplay->buffer.draw_line(rect.x2-1, rect.y1+cornerRadius, rect.x2-1, rect.y2-cornerRadius, borderColour);
-					}
-
-				}else{
-					graphicsDisplay->buffer.draw_rect_outline(rect.x1, rect.y1, get_width(), get_height(), borderColour, 1, corner, corner, corner, corner);
-					graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, corner, corner, nullptr, nullptr);
-				}
-
-				{ // draw titlebar divide
-					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+titlebarHeight-1, rect.x2-2, rect.y1+titlebarHeight-1, _draw_focused?borderColour:windowBackgroundColour);
-				}
-
-				{ // draw statusbar divide
-					graphicsDisplay->buffer.draw_line(rect.x1+1, rect.y1+get_height()-1-21-1, rect.x2-2, rect.y1+get_height()-statusbarHeight, _draw_focused?0xcccccc:0xdddddd);
-				}
-
-				if(enableTransparency){
-					{ // undraw any previous corners with transparency, otherwise we get line doubling on the aa pixels
-						graphicsDisplay->buffer.draw_rect(rect.x1, rect.y1, cornerRadius, cornerRadius, 0xff000000);
-						graphicsDisplay->buffer.draw_rect(rect.x2-cornerRadius, rect.y1, cornerRadius, cornerRadius, 0xff000000);
-						graphicsDisplay->buffer.draw_rect(rect.x1, rect.y2-cornerRadius, cornerRadius, cornerRadius, 0xff000000);
-						graphicsDisplay->buffer.draw_rect(rect.x2-cornerRadius, rect.y2-cornerRadius, cornerRadius, cornerRadius, 0xff000000);
-
-						// put shadows under corners
-						for(auto y=0;y<cornerRadius;y++){
-							auto width = 1+cornerRadius-1-y;
-							for(auto x=0;x<width;x++){
-								graphicsDisplay->buffer.set(rect.x1+x, rect.y1+y, 0x000000|(255-(get_shadow_intensity_at(rect.x1+x, rect.y1+y)*shadowIntensity/255)<<24));
-								graphicsDisplay->buffer.set(rect.x2-1-x, rect.y1+y, 0x000000|(255-(get_shadow_intensity_at(rect.x2-1-x, rect.y1+y)*shadowIntensity/255)<<24));
-								graphicsDisplay->buffer.set(rect.x1+x, rect.y2-1-y, 0x000000|(255-(get_shadow_intensity_at(rect.x1+x, rect.y2-1-y)*shadowIntensity/255)<<24));
-								graphicsDisplay->buffer.set(rect.x2-1-x, rect.y2-1-y, 0x000000|(255-(get_shadow_intensity_at(rect.x2-1-x, rect.y2-1-y)*shadowIntensity/255)<<24));
-							}
-						}
-					}
-
-					{ // draw titlebar block
-						if(_draw_focused){
-							graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, innerAaCorner, innerAaCorner, nullptr, nullptr);
-						}else{
-							graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, innerAaCorner, innerAaCorner, nullptr, nullptr);
-							// for(auto y=0;y<titlebarHeight-2;y++){
-							// 	graphicsDisplay->buffer.set(rect.x1+1+graphicsDisplay->get_left_margin(rect.y1+1+y), (U32)rect.y1+1+y, graphics2d::blend_rgb(0xf9f9f9, titlebarBgColour, min(1.0f, y/(float)(titlebarHeight/4-3))), get_width()-2-graphicsDisplay->get_left_margin(rect.y1+1+y)-graphicsDisplay->get_right_margin(rect.y1+1+y));
-							// }
-						}
-					}
-
-					{ // draw statusbar block
-						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, windowBackgroundColour, nullptr, nullptr, innerAaCorner, innerAaCorner);
-					}
-
-					{ // draw aa corners
-						for(auto y=0;y<5;y++){
-							for(auto x=0;x<5;x++){
-								graphicsDisplay->buffer.set_blended(rect.x1+x, rect.y1+y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
-								graphicsDisplay->buffer.set_blended(rect.x2-1-x, rect.y1+y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
-								graphicsDisplay->buffer.set_blended(rect.x1+x, rect.y2-1-y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
-								graphicsDisplay->buffer.set_blended(rect.x2-1-x, rect.y2-1-y, graphics2d::premultiply_colour((borderColour&0x00ffffff)|((255-corner5x5Graphic[y*5+x])<<24)));
-							}
-						}
-					}
-
-				}else{
-					{ // draw titlebar block
-						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y1+1, get_width()-2, titlebarHeight-2, titlebarBgColour, cornerInner, cornerInner, nullptr, nullptr);
-					}
-
-					{ // draw statusbar block
-						graphicsDisplay->buffer.draw_rect(rect.x1+1, rect.y2-statusbarHeight+1, get_width()-2, statusbarHeight-2, windowBackgroundColour, nullptr, nullptr, cornerInner, cornerInner);
-					}
-				}
-
-				{ // draw titlebar text
-					const auto centredIndent = (I32)maths::max(titlebarAreaIndentLeft, titlebarAreaIndentRight); // matching indent for both sides, to centre
-					const auto fullWidth = titlebarArea.width()-titlebarAreaIndentLeft-titlebarAreaIndentRight; // the full width, from left to right widgets
-					const auto centredWidth = titlebarArea.width()-centredIndent*2; // a smaller width that sits comfortably in the centre (so same indent on both sides)
-					auto fontSettings = graphics2d::Buffer::FontSettings{.font=*graphics2d::font::default_sans, .size=14, .clipped=true, .maxLines=1};
-					
-					auto textSize = graphicsDisplay->buffer.measure_text(fontSettings, title, fullWidth);
-					while(textSize.clipped&&fontSettings.size>12){
-						fontSettings.size--;
-						textSize = graphicsDisplay->buffer.measure_text(fontSettings, title, fullWidth);
-					}
-
-					if(!textSize.clipped&&textSize.blockWidth<=centredWidth){ // fits in the centre column
-						graphicsDisplay->buffer.draw_text(fontSettings, title, titlebarArea.x1+centredIndent+(centredWidth-textSize.blockWidth)/2, titlebarArea.y1+(titlebarHeight-2)/2+textSize.capHeight-textSize.blockHeight/2, centredWidth, titlebarTextColour);
-
-					}else if(textSize.clipped){ // doesn't even fit in the full width
-						graphicsDisplay->buffer.draw_text(fontSettings, title, titlebarArea.x1+titlebarAreaIndentLeft+(fullWidth-textSize.blockWidth)/2, titlebarArea.y1+(titlebarHeight-2)/2+textSize.capHeight-textSize.blockHeight/2, fullWidth, titlebarTextColour);
-
-					}else{ // fits in the full width, but exceeds the centre column, so left or right align within the area
-						if(titlebarAreaIndentRight>titlebarAreaIndentLeft){
-							// sit against right
-							graphicsDisplay->buffer.draw_text(fontSettings, title, titlebarArea.x2-titlebarAreaIndentRight-textSize.blockWidth, titlebarArea.y1+(titlebarHeight-2)/2+textSize.capHeight-textSize.blockHeight/2, fullWidth, titlebarTextColour);
-						}else{
-							// sit against left
-							graphicsDisplay->buffer.draw_text(fontSettings, title, titlebarArea.x1+titlebarAreaIndentLeft, titlebarArea.y1+(titlebarHeight-2)/2+textSize.capHeight-textSize.blockHeight/2, fullWidth, titlebarTextColour);
-						}
-					}
-				}
+				theme.draw_window_frame(graphicsDisplay->buffer, {0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}, {
+					.isFocused = _draw_focused,
+					.title = title,
+					.status = status,
+					.titlebarAreaIndentLeft = titlebarAreaIndentLeft,
+					.titlebarAreaIndentRight = titlebarAreaIndentRight,
+				});
 
 				closeButton.opacity = _draw_focused?0xff:0x66;
 				maximiseButton.opacity = _draw_focused?0xff:0x66;
 				minimiseButton.opacity = _draw_focused?0xff:0x66;
 
 				{ // draw widget divide
-					graphicsDisplay->buffer.draw_line(closeButton.rect.x1-widgetSpacing-1, titlebarArea.y1+widgetSpacing+1, closeButton.rect.x1-widgetSpacing-1, titlebarArea.y2-widgetSpacing-1, graphics2d::blend_colours(titlebarBgColour, _draw_focused?0xdd000000:0xee000000));
+					graphicsDisplay->buffer.draw_line(closeButton.rect.x1-widgetSpacing-1, titlebarArea.y1+widgetSpacing+1, closeButton.rect.x1-widgetSpacing-1, titlebarArea.y2-widgetSpacing-1, theme.get_window_titlebar_divider_colour({.isFocused = _draw_focused}));
 				}
 
 				gui.redraw(false);
-
-				{ // draw statusbar text
-					// auto lineHeight = 14*5/4;
-					graphicsDisplay->buffer.draw_text({.font=*graphics2d::font::default_sans, .size=14}, status, rect.x1+4, rect.y2-7, get_width(), statusbarTextColour);
-				}
 			}
 
 			void redraw_decorations() override {
-				auto rect = get_border_rect();
-
 				_draw_decorations();
+
+				// we assume the border is the gap between the interaction area (the main window body) and the inner client area
+				const auto interactArea = theme.get_window_interact_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+				const auto clientArea = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+
 				//top
-				// graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), cornerRadius}.offset(rect.x1, rect.y1));
-				graphicsDisplay->update_area(graphics2d::Rect{0, 0, (I32)get_width(), titlebarHeight}.offset(rect.x1, rect.y1));
+				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, interactArea.y1, interactArea.x2, clientArea.y2});
 				//left
-				graphicsDisplay->update_area(graphics2d::Rect{0, cornerRadius, 1, (I32)get_height()-cornerRadius}.offset(rect.x1, rect.y1));
+				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, clientArea.y1, clientArea.x1, clientArea.y2});
 				//right
-				graphicsDisplay->update_area(graphics2d::Rect{(I32)get_width()-1, cornerRadius, (I32)get_width(), (I32)get_height()-cornerRadius}.offset(rect.x1, rect.y1));
+				graphicsDisplay->update_area(graphics2d::Rect{clientArea.x2, clientArea.y1, interactArea.x2, clientArea.y2});
 				//bottom
-				// graphicsDisplay->update_area(graphics2d::Rect{0, (I32)get_height()-1, (I32)get_width(), (I32)get_height()}.offset(rect.x1, rect.y1));
-				graphicsDisplay->update_area(graphics2d::Rect{0, (I32)get_height()-(I32)statusbarHeight, (I32)get_width(), (I32)get_height()}.offset(rect.x1, rect.y1));
+				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, clientArea.x2, interactArea.x2, interactArea.y2});
 			}
-
-			static const auto titlebarHeight = 30u;
-			static const auto statusbarHeight = 23u;
-
-			static const auto minStandardWindowWidth = titlebarHeight*5;
-			static const auto minStandardWindowHeight = titlebarHeight+statusbarHeight-1;
 
 			void _draw_frame() {
 				// auto rect = get_border_rect();
@@ -870,97 +744,30 @@ namespace driver {
 				auto &display = *graphicsDisplay;
 
 				_draw_decorations();
-				_draw_shadow();
+				{
+					for(auto i=0u;i<sizeof(graphicsDisplay->topLeftCorner)/sizeof(graphicsDisplay->topLeftCorner[0]);i++){
+						graphicsDisplay->topLeftCorner[i] = 0;
+						graphicsDisplay->topRightCorner[i] = 0;
+						graphicsDisplay->bottomLeftCorner[i] = 0;
+						graphicsDisplay->bottomRightCorner[i] = 0;
+					}
+					graphicsDisplay->solidArea = theme.get_window_solid_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+					graphicsDisplay->interactArea = theme.get_window_interact_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});	
+				}
 
-				clientArea = display.buffer.cropped(leftShadow+1, topShadow+titlebarHeight, rightShadow+1, bottomShadow+23);
+				const auto clientRect = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+				clientArea = display.buffer.region(clientRect.x1, clientRect.y1, clientRect.width(), clientRect.height());
 				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, windowBackgroundColour);
 				gui.redraw(false);
 			}
 
-			auto get_shadow_intensity_at(I32 x, I32 y) -> U8 {
-				U8 intensity = 255;
-
-				//we lengthen it inward when the intensity is turned down (so it fades in nicely at the bottom)
-				auto topShadowLength = (I32)topShadow * 255/(I32)topShadowIntensity;
-				auto leftShadowLength = (I32)leftShadow * 255/(I32)leftShadowIntensity;
-				auto rightShadowLength = (I32)rightShadow * 255/(I32)rightShadowIntensity;
-
-				if(x<(I32)leftShadowLength&&x<(I32)graphicsDisplay->get_width()/2){
-					intensity = intensity * (x+1)/leftShadowLength;
-
-				}else if(x>=(I32)graphicsDisplay->get_width()-rightShadowLength&&x>=(I32)graphicsDisplay->get_width()/2){
-					intensity = intensity * (leftShadow+get_width()+rightShadow-x)/rightShadowLength;
-				}
-
-				{
-					if(y<(I32)topShadow){
-						intensity = intensity * (y+1)/topShadowLength;
-
-					}else if(y>=(I32)topShadow+(I32)get_height()){
-						intensity = intensity * (topShadow+get_height()+bottomShadow-y)/bottomShadow;
-					}
-				}
-
-				// const auto topShadow = bottomShadow*2; // top fade twice of bottom
-
-				// if(y<(I32)topShadow){
-				// 	// use for top fade, as well
-				// 	intensity = intensity * (y+1)/topShadow;
-
-				// }else if(y>=get_height()){
-				// 	intensity = intensity * (get_height()+bottomShadow-y)/bottomShadow;
-				// }
-
-				return intensity;
-			}
-
-			void _draw_shadow() {
-				if(!enableTransparency) return;
-
-				for(auto i=0u;i<sizeof(graphicsDisplay->topLeftCorner)/sizeof(graphicsDisplay->topLeftCorner[0]);i++){
-					graphicsDisplay->topLeftCorner[i] = 0;
-					graphicsDisplay->topRightCorner[i] = 0;
-					graphicsDisplay->bottomLeftCorner[i] = 0;
-					graphicsDisplay->bottomRightCorner[i] = 0;
-				}
-				graphicsDisplay->solidArea = {(I32)leftShadow+cornerRadius, (I32)topShadow, (I32)leftShadow+(I32)get_width()-cornerRadius, (I32)topShadow+(I32)get_height()-(I32)bottomShadow};
-				graphicsDisplay->interactArea = get_border_rect();
-
-				auto &buffer = graphicsDisplay->buffer;
-				for(auto y=0u; y<buffer.height; y++){
-					for(auto x=0u; x<leftShadow; x++){
-						buffer.set(x, y, 0x000000|(255-(get_shadow_intensity_at(x, y)*shadowIntensity/255)<<24));
-					}
-					for(auto x=0u; x<rightShadow; x++){
-						buffer.set(leftShadow+get_width()+rightShadow-1-x, y, 0x000000|(255-(get_shadow_intensity_at(x, y)*shadowIntensity/255)<<24));
-					}
-				}
-
-				for(auto y=0u; y<topShadow; y++){
-					for(auto x=0u;x<get_width();x++){
-						buffer.set(leftShadow+x, y, 0x000000|(255-(get_shadow_intensity_at(leftShadow+x, y)*shadowIntensity/255)<<24));
-					}
-				}
-
-				for(auto y=0u; y<bottomShadow; y++){
-					// buffer.set(leftShadow, get_height()+y, 0x000000|(255-(get_shadow_intensity_at(leftShadow, get_height()+y)*shadowIntensity/255)<<24), get_width());
-
-					for(auto x=0u;x<get_width();x++){
-						buffer.set(leftShadow+x, topShadow+get_height()+y, 0x000000|(255-(get_shadow_intensity_at(leftShadow+x, (I32)topShadow+get_height()+y)*shadowIntensity/255)<<24));
-					}
-				}
-
-				// shadowDisplay = displayManager->create_display(nullptr, DisplayManager::DisplayLayer::regular, graphicsDisplay->x+5, graphicsDisplay->x+5, graphicsDisplay->get_width(), graphicsDisplay->get_height());
-				// // shadowDisplay->mode = DisplayManager::DisplayMode::transparent;
-				// shadowDisplay->solidArea.clear();
-				// shadowDisplay->isDecoration = true;
-				// shadowDisplay->buffer.draw_rect(0, 0, shadowDisplay->get_width(), shadowDisplay->get_height(), 0x80000000, corner, corner, corner, corner);
-				// shadowDisplay->place_below(*graphicsDisplay);
-				// shadowDisplay->update();
-			}
-
 			void redraw_shadow() {
 				auto &buffer = graphicsDisplay->buffer;
+
+				const auto leftShadow = theme.get_window_left_margin();
+				const auto rightShadow = theme.get_window_right_margin();
+				const auto topShadow = theme.get_window_top_margin();
+				const auto bottomShadow = theme.get_window_bottom_margin();
 
 				graphicsDisplay->update_area({(I32)leftShadow, 0, (I32)buffer.width-(I32)rightShadow, (I32)topShadow});
 				graphicsDisplay->update_area({0, 0, (I32)leftShadow, (I32)buffer.height});
@@ -1311,7 +1118,7 @@ namespace driver {
 			auto y = windowArea.height()*1/5;
 
 			if(previous){
-				const auto newY = previous->get_y()-windowArea.y1+(I32)StandardWindow::titlebarHeight;
+				const auto newY = previous->get_y()-windowArea.y1+theme.get_window_titlebar_area({0,0,(I32)previous->graphicsDisplay->buffer.width,(I32)previous->graphicsDisplay->buffer.height}).y2;
 				if(newY<windowArea.height()*3/4){
 					y = newY;
 				}
@@ -1962,11 +1769,12 @@ namespace driver {
 			graphicsDisplay->buffer.draw_rect((graphics2d::Rect){0,0,(I32)graphicsDisplay->buffer.width,(I32)graphicsDisplay->buffer.height}, 0xff000000);
 		}
 
-		clientArea = graphicsDisplay->buffer.cropped(leftMargin+1, topMargin+titlebarHeight, rightMargin+1, bottomMargin+23);
+		const auto clientAreaRect = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+		clientArea = graphicsDisplay->buffer.region(clientAreaRect.x1, clientAreaRect.y1, clientAreaRect.width(), clientAreaRect.height());
 		clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, windowBackgroundColour);
 		gui.buffer = graphicsDisplay->buffer;
 
-		_set_titlebar_area({(I32)leftMargin, (I32)topMargin, (I32)leftMargin+(I32)get_width(), (I32)topMargin+(I32)titlebarHeight});
+		_set_titlebar_area(theme.get_window_titlebar_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}));
 
 		_draw_frame();
 
