@@ -726,7 +726,7 @@ namespace driver {
 				const auto clientArea = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
 
 				//top
-				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, interactArea.y1, interactArea.x2, clientArea.y2});
+				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, interactArea.y1, interactArea.x2, clientArea.y1});
 				//left
 				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, clientArea.y1, clientArea.x1, clientArea.y2});
 				//right
