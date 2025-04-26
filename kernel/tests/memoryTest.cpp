@@ -48,8 +48,14 @@ namespace tests::memoryTest {
 				leftPos = clientArea.draw_text(fontSettings, to_string(memory::get_heap_block_count()), x, leftPos.y, width, 0x222222, leftPos.x);
 				leftPos = clientArea.draw_text(fontSettings, " blocks free)\n", x, leftPos.y, width, 0x222222, leftPos.x);
 
-				x = clientArea.width/2+margin;
-				auto rightPos = clientArea.draw_text(fontSettings, "Reserved low memory: ", x, y, width, 0x222222);
+				auto rightPos = leftPos;
+
+				if(window->get_width()>=510){
+					x = clientArea.width/2+margin;
+					rightPos.y = y;
+				}
+
+				rightPos = clientArea.draw_text(fontSettings, "Reserved low memory: ", x, rightPos.y, width, 0x222222);
 				rightPos = clientArea.draw_text(fontSettings, to_string((UPtr)(memory::code.address)/1024), x, rightPos.y, width, 0x222222, rightPos.x);
 				rightPos = clientArea.draw_text(fontSettings, "KiB\n", x, rightPos.y, width, 0x222222, rightPos.x);
 				rightPos = clientArea.draw_text(fontSettings, "Total kernel size: ", x, rightPos.y, width, 0x222222, rightPos.x);
