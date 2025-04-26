@@ -69,4 +69,8 @@ extern "C" void __cxa_guard_abort (volatile __guard *guard) {
 	*(int*)guard = 0;
 }
 
+void abort() {
+	halt();
+}
+
 }
