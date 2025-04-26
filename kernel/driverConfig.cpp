@@ -16,6 +16,7 @@
 #include <drivers/x86/input/Ps2Mouse.hpp>
 #include <drivers/x86/interrupt/Pic8259.hpp>
 #include <drivers/x86/processor/X86.hpp>
+#include <drivers/x86/storage/Ide.hpp>
 #include <drivers/x86/system/Acpi.hpp>
 #include <drivers/x86/system/Apic.hpp>
 #include <drivers/x86/system/Gdt.hpp>
@@ -62,6 +63,7 @@ namespace driver {
 	DRIVER(input    ::Ps2Mouse            , onDemand);
 	DRIVER(interrupt::Pic8259             , onDemand);
 	DRIVER(processor::X86                 , onDemand);
+	DRIVER(storage  ::Ide                 , automatic);
 	DRIVER(system   ::Acpi                , onDemand);
 	DRIVER(system   ::Apic                , automatic);
 	DRIVER(system   ::Gdt                 , onDemand);
