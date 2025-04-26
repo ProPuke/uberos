@@ -41,11 +41,11 @@ constexpr inline auto bit_rightmost_position(U64 i) -> U8 { return i==0?0:bit_co
 constexpr inline auto sign_extend(U32 number, U8 numbits) -> U32 { return number&(1<<(numbits-1))?number|~((1<<numbits)-1):number; }
 constexpr inline auto sign_extend(U64 number, U8 numbits) -> U64 { return number&(1<<(numbits-1))?number|~((1<<numbits)-1):number; }
 
-template <typename T, typename... T2> T min(T x) { return x; }
-template <typename T, typename... T2> T min(T x, T y, T2...others) { return min(x< y?x:y, others...); }
+template <typename T, typename... T2> constexpr const T& min(const T &x) { return x; }
+template <typename T, typename... T2> constexpr const T& min(const T &x, const T &y, const T2&...others) { return min(x< y?x:y, others...); }
 
-template <typename T, typename... T2> T max(T x) { return x; }
-template <typename T, typename... T2> T max(T x, T y, T2...others) { return max(x>=y?x:y, others...); }
+template <typename T, typename... T2> constexpr const T& max(const T &x) { return x; }
+template <typename T, typename... T2> constexpr const T& max(const T &x, const T &y, const T2&...others) { return max(x>=y?x:y, others...); }
 
 auto utoa(U16) -> const char*;
 auto itoa(I16) -> const char*;
