@@ -13,7 +13,7 @@ namespace driver {
 		DRIVER_INSTANCE(CpuScheduler, 0xfe8dac43, "cpuSched", "CPU Scheduler", Scheduler)
 
 		auto _on_start() -> Try<> override;
-		auto _on_stop() -> Try<> override { return {"Thread scheduler drivers cannot be stopped"}; };
+		auto _on_stop() -> Try<> override { return Failure{"Thread scheduler drivers cannot be stopped"}; };
 
 		auto can_stop_driver() -> bool override { return false; }
 		auto can_restart_driver() -> bool override { return false; }

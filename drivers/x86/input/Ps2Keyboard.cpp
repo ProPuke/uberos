@@ -22,7 +22,7 @@ namespace driver::input {
 		U8 irq;
 
 		auto read_expected(U8 response) -> Try<> {
-			if(ps2->read_data()!=response) return {"Communication failed"};
+			if(ps2->read_data()!=response) return Failure{"Communication failed"};
 
 			return {};
 		}
@@ -109,10 +109,10 @@ namespace driver::input {
 
 	auto Ps2Keyboard::_on_start() -> Try<> {
 		ps2 = drivers::find_and_activate<system::Ps2>(this);
-		if(!ps2) return {"PS/2 not available"};
+		if(!ps2) return Failure{"PS/2 not available"};
 
-		if(!ps2->has_port(Ps2::Port::port1)) return {"PS/2 port 1 not present"};
-		if(ps2->get_port_device(Ps2::Port::port1)) return {"PS/2 port 1 already in use"};
+		if(!ps2->has_port(Ps2::Port::port1)) return Failure{"PS/2 port 1 not present"};
+		if(ps2->get_port_device(Ps2::Port::port1)) return Failure{"PS/2 port 1 already in use"};
 
 		auto port2Device = ps2->get_port_device(Ps2::Port::port2);
 		defer {
@@ -140,7 +140,7 @@ namespace driver::input {
 		// send_ps2_command(Ps2Command::enableReporting);
 		// TRY(read_ack());
 
-		if(!ps2->_install_port_device(Ps2::Port::port1, *this)) return {"Unable to install PS/2 port 1 device"};
+		if(!ps2->_install_port_device(Ps2::Port::port1, *this)) return Failure{"Unable to install PS/2 port 1 device"};
 		
 		TRY(api.subscribe_irq(irq));
 

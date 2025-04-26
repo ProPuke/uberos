@@ -24,7 +24,7 @@ namespace driver::input {
 		I32 scale = 1;
 
 		auto read_expected(U8 response) -> Try<> {
-			if(ps2->read_data()!=response) return {"Communication failed"};
+			if(ps2->read_data()!=response) return Failure{"Communication failed"};
 
 			return {};
 		}
@@ -109,10 +109,10 @@ namespace driver::input {
 
 	auto Ps2Mouse::_on_start() -> Try<> {
 		ps2 = drivers::find_and_activate<Ps2>(this);
-		if(!ps2) return {"PS/2 not available"};
+		if(!ps2) return Failure{"PS/2 not available"};
 
-		if(!ps2->has_port(Ps2::Port::port2)) return {"PS/2 port 2 not present"};
-		if(ps2->get_port_device(Ps2::Port::port2)) return {"PS/2 port 2 already in use"};
+		if(!ps2->has_port(Ps2::Port::port2)) return Failure{"PS/2 port 2 not present"};
+		if(ps2->get_port_device(Ps2::Port::port2)) return Failure{"PS/2 port 2 already in use"};
 		
 		irq = ps2->irq2();
 
@@ -202,7 +202,7 @@ namespace driver::input {
 				break;
 				default:
 					log.print_info("unknown device type: ", format::Hex16{deviceId});
-					return {"device not identified as a mouse"};
+					return Failure{"device not identified as a mouse"};
 			}
 		}
 
@@ -220,7 +220,7 @@ namespace driver::input {
 		// 	log.print_info(format::Hex8{data});
 		// }
 
-		if(!ps2->_install_port_device(Ps2::Port::port2, *this)) return {"Unable to install PS/2 port 2 device"};
+		if(!ps2->_install_port_device(Ps2::Port::port2, *this)) return Failure{"Unable to install PS/2 port 2 device"};
 
 		TRY(api.subscribe_irq(irq));
 

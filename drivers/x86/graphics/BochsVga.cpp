@@ -150,10 +150,10 @@ namespace driver::graphics {
 
 	auto BochsVga::_on_start() -> Try<> {
 		auto pci = drivers::find_and_activate<driver::system::Pci>(this);
-		if(!pci) return {"PCI unavailable"};
+		if(!pci) return Failure{"PCI unavailable"};
 
 		auto pciDevice = pci->find_device_by_id(0x11111234)?:pci->find_device_by_id(0xbeef80ee);
-		if(!pciDevice) return {"device not present"};
+		if(!pciDevice) return Failure{"device not present"};
 
 		TRY(api.subscribe_ioPort(ioIndex));
 		TRY(api.subscribe_ioPort(ioData));
@@ -163,7 +163,7 @@ namespace driver::graphics {
 
 		if(id!=0xb0c5){
 			log.print_warning("unrecognised version: ", format::Hex16{id});
-			return {"unrecognised version"};
+			return Failure{"unrecognised version"};
 		}
 
 		// check framebuffer address first before enabling, so we don't trample other drivers
@@ -203,8 +203,8 @@ namespace driver::graphics {
 	}
 
 	auto BochsVga::set_mode(U32 framebufferId, U32 index) -> Try<> {
-		if(framebufferId>0) return {"Invalid framebuffer id"};
-		if(index>=sizeof(modes)/(sizeof(modes[0]))) return {"Invalid mode id"};
+		if(framebufferId>0) return Failure{"Invalid framebuffer id"};
+		if(index>=sizeof(modes)/(sizeof(modes[0]))) return Failure{"Invalid mode id"};
 
 		auto &mode = modes[index];
 
@@ -212,9 +212,9 @@ namespace driver::graphics {
 	}
 
 	auto BochsVga::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> Try<> {
-		if(framebufferId>0) return {"Invalid framebuffer id"};
+		if(framebufferId>0) return Failure{"Invalid framebuffer id"};
 
-		if(width&7) return {"Horizontal resolution must be a multiple of 8"};
+		if(width&7) return Failure{"Horizontal resolution must be a multiple of 8"};
 
 		U16 bpp = 32;
 		switch(format){
@@ -240,8 +240,8 @@ namespace driver::graphics {
 		auto requestWidth = min<U32>(width, maxWidth) & ~7;
 		auto requestHeight = min<U32>(height, maxHeight);
 
-		if(requestWidth<1||requestHeight<1) return {"Mode not supported"};
-		if(!acceptSuggestion&&(requestWidth!=width||requestHeight!=height||requestBpp!=bpp||width*height*(bpp/8)>maxMemory)) return {"Mode not supported"};
+		if(requestWidth<1||requestHeight<1) return Failure{"Mode not supported"};
+		if(!acceptSuggestion&&(requestWidth!=width||requestHeight!=height||requestBpp!=bpp||width*height*(bpp/8)>maxMemory)) return Failure{"Mode not supported"};
 
 		if(width*height*(bpp/8)>maxMemory){
 			const auto totalPixels = maxMemory/(requestBpp/8);
@@ -267,7 +267,7 @@ namespace driver::graphics {
 
 			assign_framebuffer(initialWidth, initialHeight, initialBpp);
 
-			return {"Mode not supported"};
+			return Failure{"Mode not supported"};
 		}
 
 		assign_framebuffer(appliedWidth, appliedHeight, appliedBpp);

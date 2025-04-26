@@ -233,7 +233,7 @@ namespace driver::graphics {
 
 					// auto gdt = drivers::find_and_activate<driver::system::Gdt>(&Graphics::Vbe::instance);
 					// if(!gdt){
-					// 	return {"Unable to connect to GDT"};
+					// 	return Failure{"Unable to connect to GDT"};
 					// }
 
 					// protectedModeInfo->biosDataSelector = gdt->add_entry((U32)biosData, vesa_data_size-1, 0b10010010, driver::system::Gdt::DescriptorSize::_16bit, false);
@@ -380,7 +380,7 @@ namespace driver::graphics {
 				);
 
 				if(result){
-					return {"Unable to switch to mode"}; // ?
+					return Failure{"Unable to switch to mode"}; // ?
 				}
 
 				return {};
@@ -428,7 +428,7 @@ namespace driver::graphics {
 
 		auto info = vbe::initRealmode();
 		if(!info){
-			return {"Unable to initialise VBE"};
+			return Failure{"Unable to initialise VBE"};
 		}
 
 		for(auto modeIndex = info->videoModes.get(); *modeIndex!=0xff; modeIndex++) {
@@ -524,8 +524,8 @@ namespace driver::graphics {
 	}
 
 	auto Vbe::set_mode(U32 framebufferId, U32 index) -> Try<> {
-		if(framebufferId>0) return {"Invalid framebuffer id"};
-		if(index>=modes.length) return {"Invalid mode id"};
+		if(framebufferId>0) return Failure{"Invalid framebuffer id"};
+		if(index>=modes.length) return Failure{"Invalid mode id"};
 
 		auto &mode = modes[index];
 

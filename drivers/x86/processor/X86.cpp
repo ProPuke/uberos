@@ -124,7 +124,7 @@ namespace driver::processor {
 	}
 
 	auto X86::_on_start() -> Try<> {
-		if(::processor::driver&&::processor::driver!=this) return {"A CPU driver is already active"};
+		if(::processor::driver&&::processor::driver!=this) return Failure{"A CPU driver is already active"};
 
 		arch::x86::cpuInfo::get_vendor_string(vendorStringData);
 

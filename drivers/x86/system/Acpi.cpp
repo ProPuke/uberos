@@ -143,7 +143,7 @@ namespace driver::system {
 	auto Acpi::_on_start() -> Try<> {
 		rsdp = find_rsdp();
 		if(!rsdp){
-			return {"No valid RSDP found"};
+			return Failure{"No valid RSDP found"};
 		}
 
 		if(rsdp->revision==0){
@@ -173,7 +173,7 @@ namespace driver::system {
 		// }
 
 		if(!rootTableHeader){
-			return {"ACPI descriptor table not found (no valid XSDT or RSDT found)"};
+			return Failure{"ACPI descriptor table not found (no valid XSDT or RSDT found)"};
 		}
 
 		{
@@ -186,7 +186,7 @@ namespace driver::system {
 				rootTableHeader = nullptr;
 				xsdt = nullptr;
 				rsdt = nullptr;
-				return {"ACPI descriptor table was not valid "};
+				return Failure{"ACPI descriptor table was not valid "};
 			}
 		}
 

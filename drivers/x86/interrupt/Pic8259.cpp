@@ -157,7 +157,7 @@ namespace driver::interrupt {
 			}
 		}
 
-		return {"No remaining IRQ available"};
+		return Failure{"No remaining IRQ available"};
 	}
 
 	void Pic8259::set_offset(U8 offset1, U8 offset2) {

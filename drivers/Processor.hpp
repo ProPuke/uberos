@@ -18,7 +18,7 @@ namespace driver {
 		auto can_restart_driver() -> bool override { return false; }
 
 		auto _on_start() -> Try<> override {
-			if(::processor::driver&&::processor::driver!=this) return {"A CPU driver is already active"};
+			if(::processor::driver&&::processor::driver!=this) return Failure{"A CPU driver is already active"};
 
 			::processor::driver = this;
 
@@ -26,7 +26,7 @@ namespace driver {
 		};
 
 		auto _on_stop() -> Try<> override {
-			return {"CPU drivers cannot be stopped"};
+			return Failure{"CPU drivers cannot be stopped"};
 		};
 
 		virtual auto get_active_id() -> U32 { return 0; } //currently active unique processor/core id

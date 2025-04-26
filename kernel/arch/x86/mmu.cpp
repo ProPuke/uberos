@@ -179,7 +179,7 @@ namespace mmu {
 				return kernelMapping._get_virtual_options(address);
 			#endif
 
-			return "Virtual memory not enabled";
+			return Failure{"Virtual memory not enabled"};
 		}
 
 		auto _get_physical(void *virtualAddress) -> Physical<void> {
@@ -529,10 +529,10 @@ namespace mmu {
 		auto pageIndex = (UPtr)virtualAddress>>12 & 0x3ff;
 
 		auto table = directory.entry[directoryIndex].get_table();
-		if(!table) return {"Page does not exist"};
+		if(!table) return Failure{"Page does not exist"};
 
 		auto &tableEntry = to_virtual(table).entry[pageIndex];
-		if(!tableEntry.isPresent) return {"Page does not exist"};
+		if(!tableEntry.isPresent) return Failure{"Page does not exist"};
 
 		MapOptions options;
 		options.isUserspace = tableEntry.isUserspaceAccessible;

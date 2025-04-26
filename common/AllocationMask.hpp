@@ -24,7 +24,7 @@ struct AllocationMask {
 	}
 
 	auto claim() -> Try<UPtr> {
-		if(earliestFree>=count) return {"No allocation pages remain"}; // none available
+		if(earliestFree>=count) return Failure{"No allocation pages remain"}; // none available
 
 		// // are we at the end of the list? just return that
 		// if(earliestFree==afterLastTaken){
@@ -70,7 +70,7 @@ struct AllocationMask {
 
 		//nothing found
 		afterLastTaken = earliestFree; // both now equal to count
-		return {"No allocation pages remain"};
+		return Failure{"No allocation pages remain"};
 	}
 
 	void release(UPtr index) {

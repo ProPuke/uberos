@@ -55,7 +55,7 @@ namespace driver {
 			if(!mailbox::send_messages(tags)){
 				//TODO:error in some way?
 				state = State::failed;
-				return {"Error sending to mailbox"};
+				return Failure{"Error sending to mailbox"};
 			}
 
 			// Setup the GPIO pin 14 && 15

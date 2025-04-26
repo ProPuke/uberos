@@ -22,17 +22,17 @@ namespace driver::graphics {
 		graphics2d::BufferFormat defaultFormat;
 
 		auto init_multiboot1(multiboot1_info &multiboot) -> Try<> {
-			if(!multiboot.framebuffer_addr) return {"no multiboot framebuffer was provided"};
+			if(!multiboot.framebuffer_addr) return Failure{"no multiboot framebuffer was provided"};
 
 			switch(multiboot.framebuffer_type){
 				case MULTIBOOT1_FRAMEBUFFER_TYPE_INDEXED:
-					return {"multiboot framebuffer is indexes, which is not supported "}; // :( We should probably support this mapped as RGB332 or grey8 something?
+					return Failure{"multiboot framebuffer is indexes, which is not supported "}; // :( We should probably support this mapped as RGB332 or grey8 something?
 				break;
 				case MULTIBOOT1_FRAMEBUFFER_TYPE_RGB:
 					// okay!
 				break;
 				case MULTIBOOT1_FRAMEBUFFER_TYPE_EGA_TEXT:
-					return {"no graphical multiboot framebuffer was provided"};
+					return Failure{"no graphical multiboot framebuffer was provided"};
 				break;
 			}
 	
@@ -66,7 +66,7 @@ namespace driver::graphics {
 						}
 					}
 	
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 				case 24:
 					if(
@@ -94,7 +94,7 @@ namespace driver::graphics {
 						}
 					}
 	
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 				case 32:
 					if(
@@ -122,10 +122,10 @@ namespace driver::graphics {
 						}
 					}
 	
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 				default:
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 			}
 	
@@ -144,17 +144,17 @@ namespace driver::graphics {
 		}
 
 		auto init_multiboot2(multiboot2_tag_framebuffer &multiboot) -> Try<> {
-			if(!multiboot.common.framebuffer_addr) return {"no multiboot framebuffer was provided"};
+			if(!multiboot.common.framebuffer_addr) return Failure{"no multiboot framebuffer was provided"};
 
 			switch(multiboot.common.framebuffer_type){
 				case MULTIBOOT2_FRAMEBUFFER_TYPE_INDEXED:
-					return {"multiboot framebuffer is indexes, which is not supported "}; // :( We should probably support this mapped as RGB332 or grey8 something?
+					return Failure{"multiboot framebuffer is indexes, which is not supported "}; // :( We should probably support this mapped as RGB332 or grey8 something?
 				break;
 				case MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
 					// okay!
 				break;
 				case MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
-					return {"no graphical multiboot framebuffer was provided"};
+					return Failure{"no graphical multiboot framebuffer was provided"};
 				break;
 			}
 	
@@ -188,7 +188,7 @@ namespace driver::graphics {
 						}
 					}
 	
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 				case 24:
 					if(
@@ -216,7 +216,7 @@ namespace driver::graphics {
 						}
 					}
 	
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 				case 32:
 					if(
@@ -244,10 +244,10 @@ namespace driver::graphics {
 						}
 					}
 	
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 				default:
-					return {"unsupported 16bit framebuffer rgb configuration"};
+					return Failure{"unsupported 16bit framebuffer rgb configuration"};
 				break;
 			}
 	
@@ -274,7 +274,7 @@ namespace driver::graphics {
 			return init_multiboot1(*multiboot1);
 
 		}else{
-			return {"multiboot not available"};
+			return Failure{"multiboot not available"};
 		}
 	}
 
@@ -296,8 +296,8 @@ namespace driver::graphics {
 	}
 
 	auto MultibootFramebuffer::set_mode(U32 framebufferId, U32 index) -> Try<> {
-		if(framebufferId>0) return {"Invalid framebuffer id"};
-		if(index>0) return {"Invalid mode id"};
+		if(framebufferId>0) return Failure{"Invalid framebuffer id"};
+		if(index>0) return Failure{"Invalid mode id"};
 
 		// nothing to do, keeping mode 0
 		return {};

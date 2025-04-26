@@ -29,7 +29,7 @@ namespace driver::clock {
 	auto CmosRtc::_on_start() -> Try<> {
 		auto acpi = drivers::find_and_activate<system::Acpi>(this);
 
-		if(acpi&&acpi->has_cmos_rtc()==Maybe::no) return {"CMOS RTC not available"};
+		if(acpi&&acpi->has_cmos_rtc()==Maybe::no) return Failure{"CMOS RTC not available"};
 
 		return {};
 	}

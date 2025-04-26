@@ -7,7 +7,7 @@
 namespace driver {
 	inline auto Timer::find_and_claim_timer(Callback onTerminated, void *onTerminatedData) -> Try<ClaimedTimer> {
 		auto timer = drivers::find_and_activate<driver::Timer>();
-		if(!timer) return {"No timers available"};
+		if(!timer) return Failure{"No timers available"};
 
 		// does the default activated timer have any claimables?
 		if(auto timerId = timer->claim_timer(); timerId) {
@@ -33,12 +33,12 @@ namespace driver {
 		}
 
 		// nothing found ¯\_(ツ)_/¯
-		return {"No timers available"};
+		return Failure{"No timers available"};
 	}
 
 	inline auto Timer::claim_timer() -> Try<U8> {
 		auto id = timersInUse.get_first_false();
-		if(id==~0) return {"No timers available"};
+		if(id==~0) return Failure{"No timers available"};
 
 		timersInUse.set(id, true);
 

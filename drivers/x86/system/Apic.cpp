@@ -11,7 +11,7 @@ namespace driver::system {
 	}
 
 	auto Apic::_on_start() -> Try<> {
-		if(!check_supported()) return {"Not supported by this CPU"};
+		if(!check_supported()) return Failure{"Not supported by this CPU"};
 
 		// arch::x86::msr::get();
 

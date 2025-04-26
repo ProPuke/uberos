@@ -72,7 +72,7 @@ namespace driver {
 		}
 
 		auto Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 width, U32 height, graphics2d::BufferFormat format, bool acceptSuggestion) -> Try<> {
-			if(framebufferId>0) return {"Invalid mode id"};
+			if(framebufferId>0) return Failure{"Invalid mode id"};
 
 			auto section = log.section("set_mode(", framebufferId, ", ", width, "x", height, ", ", format, ")...");
 
@@ -94,7 +94,7 @@ namespace driver {
 
 			tags[3].tag = mailbox::PropertyTag::null_tag;
 
-			if(!send_messages(tags)) return {"Unable to initialise"};
+			if(!send_messages(tags)) return Failure{"Unable to initialise"};
 
 			auto assignBitdepth = tags[2].data.bitsPerPixel;
 
@@ -107,12 +107,12 @@ namespace driver {
 
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 
-			if(!send_messages(tags)) return {"Unable to allocate framebuffer"};
+			if(!send_messages(tags)) return Failure{"Unable to allocate framebuffer"};
 
 			if(assignBitdepth!=bitdepth){
 				log.print_warning("Warning: Unable to allocate framebuffer with bitdepth ", bitdepth);
 				if(!assignBitdepth){
-					return {"Unable to use this bit depth"};
+					return Failure{"Unable to use this bit depth"};
 				}
 				
 				if(!acceptSuggestion){
@@ -122,7 +122,7 @@ namespace driver {
 						log.print_warning("a ", framebuffer.buffer.width, "x", framebuffer.buffer.height, " ", bitdepth, " bit buffer was suggested, instead");
 					}
 
-					return {"Specified mode is not available"};
+					return Failure{"Specified mode is not available"};
 				}
 
 				bitdepth = assignBitdepth;
@@ -137,7 +137,7 @@ namespace driver {
 						format = graphics2d::BufferFormat::rgba8;
 					break;
 					default:
-						return {"Bit depth not supported"};
+						return Failure{"Bit depth not supported"};
 				}
 
 				log.print_info("accepting a bitdepth of ", bitdepth);
@@ -153,7 +153,7 @@ namespace driver {
 			tags[0].tag = mailbox::PropertyTag::get_bytes_per_row;
 			tags[1].tag = mailbox::PropertyTag::null_tag;
 
-			if(!send_messages(tags)) return {"Something went wrong requesting framebuffer pitch"};
+			if(!send_messages(tags)) return Failure{"Something went wrong requesting framebuffer pitch"};
 
 			auto pitch = tags[0].data.bytesPerRow;
 
@@ -177,7 +177,7 @@ namespace driver {
 
 			if(pitch!=framebuffer.buffer.width*bitdepth/8){
 				log.print_error("Error: Custom pitch of ", tags[0].data.bytesPerRow, " required for framebuffer. This is not supported");
-				return {"Requested pitch is not supported"};
+				return Failure{"Requested pitch is not supported"};
 			}
 
 			if(framebuffer.buffer.width!=width||framebuffer.buffer.height!=height){
@@ -185,7 +185,7 @@ namespace driver {
 
 				if(!acceptSuggestion){
 					log.print_warning("a resolution of ", framebuffer.buffer.width, "x", framebuffer.buffer.height, " was suggested, instead");
-					return {"Resolution not supported"};
+					return Failure{"Resolution not supported"};
 				}
 				log.print_info("accepting a resolution of ", framebuffer.buffer.width, "x", framebuffer.buffer.height);
 			}
@@ -247,7 +247,7 @@ namespace driver {
 
 		auto Raspi_videocore_mailbox::set_mode(U32 framebufferId, U32 index) -> Try<> {
 			auto mode = get_mode(framebufferId, index);
-			if(!mode.width) return {"Mode not supported"}; // ?
+			if(!mode.width) return Failure{"Mode not supported"}; // ?
 
 			return set_mode(framebufferId, mode.width, mode.height, mode.format, false);
 		}

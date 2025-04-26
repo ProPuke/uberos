@@ -62,7 +62,7 @@ namespace driver {
 
 			return set_mode(framebufferId, *bestCandidate);
 		}else{
-			return {"Could not find matching suitable mode"};
+			return Failure{"Could not find matching suitable mode"};
 		}
 	}
 }

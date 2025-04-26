@@ -1059,11 +1059,11 @@ namespace driver {
 			}
 		}
 
-		if(framebuffers.length<1) return {"No graphics displays available"};
+		if(framebuffers.length<1) return Failure{"No graphics displays available"};
 
 		_update_framebuffer_positions();
 
-		if(totalArea.width()<1||totalArea.height()<1) return {"No graphics drivers in a valid state"}; // drivers exist, but were all transitioning, so no actual display size available
+		if(totalArea.width()<1||totalArea.height()<1) return Failure{"No graphics drivers in a valid state"}; // drivers exist, but were all transitioning, so no actual display size available
 
 		drivers::events.subscribe(_on_driver_event);
 		driver::Graphics::allEvents.subscribe(_on_graphics_event);

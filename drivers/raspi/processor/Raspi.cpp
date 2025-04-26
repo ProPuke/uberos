@@ -20,7 +20,7 @@ namespace driver {
 		}
 
 		auto Raspi::_on_start() -> Try<> {
-			if(::processor::driver&&::processor::driver!=this) return {"A CPU driver is already active"};
+			if(::processor::driver&&::processor::driver!=this) return Failure{"A CPU driver is already active"};
 
 			::processor::driver = this;
 

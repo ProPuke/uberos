@@ -85,7 +85,7 @@ auto DriverApi::subscribe_available_irq(Bitmask256 bitmask) -> Try<U8> {
 		return {irqRequest.result};
 	}
 
-	return {"No subscribable IRQs available"};
+	return Failure{"No subscribable IRQs available"};
 }
 
 void DriverApi::unsubscribe_irq(U8 irq) {
@@ -108,14 +108,14 @@ auto DriverApi::subscribe_memory(Physical<void> start, size_t size, mmu::Caching
 	auto &driver = this->driver();
 
 	if(start<memory::heap+memory::heapSize&&start+size>memory::heap){
-		return {"Memory not available - Overlaps heap"};
+		return Failure{"Memory not available - Overlaps heap"};
 	}
 
 	// deny if this memory is already in use by an active driver
 	for(auto &otherDriver:drivers::iterate<Driver>()){
 		if(&otherDriver==&driver||!otherDriver.api.is_active()) continue;
 
-		if(otherDriver.api.is_subscribed_to_memory(start, size)) return {"Memory not available - Already in use"};
+		if(otherDriver.api.is_subscribed_to_memory(start, size)) return Failure{"Memory not available - Already in use"};
 	}
 
 	// grow existing subscriptions if it overlaps or comes before an entry
@@ -213,7 +213,7 @@ auto DriverApi::subscribe_pci(PciDevice &pciDevice, PciOptions pciOptions) -> Tr
 	if(is_subscribed_to_pci(pciDevice)) return {};
 
 	for(auto &driver:drivers::iterate<Driver>()){
-		if(driver.api.is_subscribed_to_pci(pciDevice)) return {"PCI device not available - already in use"};
+		if(driver.api.is_subscribed_to_pci(pciDevice)) return Failure{"PCI device not available - already in use"};
 	}
 
 	subscribedPciDevices.push_back(&pciDevice);
@@ -259,7 +259,7 @@ auto DriverApi::is_subscribed_to_pci(PciDevice &pciDevice) -> bool {
 		if(is_subscribed_to_ioPort(ioPort)) return ioPort;
 
 		for(auto &other:drivers::iterate<Driver>()){
-			if(other.api.is_subscribed_to_ioPort(ioPort)) return {"I/O port not available - already in use"};
+			if(other.api.is_subscribed_to_ioPort(ioPort)) return Failure{"I/O port not available - already in use"};
 		}
 
 		//TODO: insert ordered

@@ -418,7 +418,7 @@ namespace driver::system {
 			structTablesLength = eps1->structTableLength;
 		}
 
-		if(!structTables) return {"not found"};
+		if(!structTables) return Failure{"not found"};
 
 		for(auto addr=(U8*)structTables;addr<(U8*)structTables+structTablesLength;){
 			auto table = (StructureTable*)addr;

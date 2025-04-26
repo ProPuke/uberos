@@ -161,7 +161,7 @@ namespace driver {
 				config.enableCnf = true;
 				registers->write_config(config);
 
-				if(!registers->read_config().enableCnf) return {"Unable to enable"};
+				if(!registers->read_config().enableCnf) return Failure{"Unable to enable"};
 
 				return {};
 			}
@@ -181,7 +181,7 @@ namespace driver {
 			auto enable_legacyReplacement() -> Try<> {
 				auto capabilities = registers->read_capabilities();
 
-				if(!capabilities.supportsLegacyReplacement) return {"Legacy mode not supported"};
+				if(!capabilities.supportsLegacyReplacement) return Failure{"Legacy mode not supported"};
 
 				auto config = registers->read_config();
 				config.enableLegacyReplacementMapping = true;
@@ -199,11 +199,11 @@ namespace driver {
 
 		auto Hpet::_on_start() -> Try<> {
 			acpi = drivers::find_and_activate<system::Acpi>(this);
-			if(!acpi) return {"ACPI unavailable"};
+			if(!acpi) return Failure{"ACPI unavailable"};
 
 			auto entry = acpi->find_entry_with_signature("HPET");
 			auto table = (DescriptionTable*)entry.get();
-			if(!table) return {"HPET not present"};
+			if(!table) return Failure{"HPET not present"};
 
 			memset(irqToClockId, -1, sizeof(irqToClockId));
 
@@ -235,7 +235,7 @@ namespace driver {
 				if(!irqRequest){
 					clockCount = i;
 					log.print_warning("Not enough supported IRQs for all timers - Count dropped to ", clockCount);
-					if(clockCount<1) return {"Not enough IRQs for timers"};
+					if(clockCount<1) return Failure{"Not enough IRQs for timers"};
 					break;
 				}
 
@@ -253,7 +253,7 @@ namespace driver {
 					auto config = registers->timer[i].read_config();
 					if(config.interruptRoute!=irq){
 						log.print_error("Unable to set timer ", i, " to irq ", irq);
-						return {"Failed setting timer irq"};
+						return Failure{"Failed setting timer irq"};
 					}
 				}
 

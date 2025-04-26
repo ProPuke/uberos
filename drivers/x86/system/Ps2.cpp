@@ -45,7 +45,7 @@ namespace driver::system {
 		}
 
 		auto read_expected(U16 io, U8 response) -> Try<> {
-			if(read8(io)!=response) return {"Communication failed"};
+			if(read8(io)!=response) return Failure{"Communication failed"};
 
 			return {};
 		}
@@ -58,7 +58,7 @@ namespace driver::system {
 	auto Ps2::_on_start() -> Try<> {
 		auto acpi = drivers::find_and_activate<system::Acpi>(this);
 
-		if(acpi&&acpi->has_ps2()==Maybe::no) return {"PS/2 ports not available"};
+		if(acpi&&acpi->has_ps2()==Maybe::no) return Failure{"PS/2 ports not available"};
 
 		TRY(api.subscribe_ioPort(ioData));
 		TRY(api.subscribe_ioPort(ioStatus));
@@ -83,7 +83,7 @@ namespace driver::system {
 		write_data(config&~((U8)Config::first_irq_mask|(U8)Config::second_irq_mask|(U8)Config::translation));
 
 		write_command(Command::test_controller);
-		if(read_data()!=0x55) return {"Self-test failed"};
+		if(read_data()!=0x55) return Failure{"Self-test failed"};
 
 		auto isDual = config&(U8)Config::disable_second_clock;
 

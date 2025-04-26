@@ -46,7 +46,7 @@ namespace exceptions {
 					}
 				}
 
-				return {"IRQ not available"};
+				return Failure{"IRQ not available"};
 
 				found:
 				;

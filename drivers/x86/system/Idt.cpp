@@ -100,7 +100,7 @@ namespace driver::system {
 		gdt = drivers::find_and_activate<driver::system::Gdt>(this);
 
 		if(!gdt){
-			return {"GDT not found"}; //TODO: better message
+			return Failure{"GDT not found"}; //TODO: better message
 		}
 
 		return {};

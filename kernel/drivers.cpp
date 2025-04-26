@@ -93,7 +93,7 @@ namespace drivers {
 			if(disabledDevice){
 				TRY(start_driver(*disabledDevice));
 			}
-			return {"Unable to start driver"};
+			return Failure{"Unable to start driver"};
 		}
 
 		events.trigger({
@@ -106,7 +106,7 @@ namespace drivers {
 
 	auto stop_driver(Driver &driver) -> Try<> {
 		if(!driver.api.is_active()) return {};
-		if(!driver.can_stop_driver()) return {"This driver cannot be stopped"};
+		if(!driver.can_stop_driver()) return Failure{"This driver cannot be stopped"};
 
 		auto section = log.section("STOP ", driver.type->name);
 
@@ -118,7 +118,7 @@ namespace drivers {
 		if(!driver.api.is_disabled()){
 			//TODO: driver might have enter a failed state while stopping. Should report this in some other way, since the driver IS now technically stopped?
 			log.print_error("Failed stopping ", driver.type->name);
-			return {"Unable to stop driver"};
+			return Failure{"Unable to stop driver"};
 		}
 
 		events.trigger({
@@ -134,7 +134,7 @@ namespace drivers {
 			return start_driver(driver);
 		}
 
-		if(!driver.can_restart_driver()) return {"This driver cannot be restarted"};
+		if(!driver.can_restart_driver()) return Failure{"This driver cannot be restarted"};
 
 		auto section = log.section("RESTART ", driver.type->name);
 
@@ -153,7 +153,7 @@ namespace drivers {
 
 		if(!driver.api.is_active()){
 			log.print_error("Failed restarting ", driver.type->name);
-			return {"Unable to restart driver"};
+			return Failure{"Unable to restart driver"};
 		}
 
 		events.trigger({
