@@ -107,7 +107,7 @@ struct ListOrdered {
 			resize(length+1+length/2);
 		}
 
-		memmove(&data[index+1], memmove(&data[index]), (length++-index)*sizeof(Type));
+		memmove(&data[index+1], &data[index], (length++-index)*sizeof(Type));
 	}
 
 	void clear(){
