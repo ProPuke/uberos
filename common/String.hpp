@@ -6,97 +6,167 @@
 
 template <typename Type>
 struct String {
-	static const size_t localBufferSize = max<size_t>(8, 16/sizeof(Type));
+	static const inline auto localBufferSize = max<U32>(8, 16/sizeof(Type));
 
 	U32 length = 0;
-	Type *data = localData;
 	union {
-		U32 allocated;
+		struct {
+			Type *data;
+			U32 allocated; // not including null byte
+		};
 		Type localData[localBufferSize];
 	};
 
 	constexpr /**/ String() {
-		data[0] = '\0';
+		localData[0] = '\0';
 	}
 
-	template<typename ...Params>
-	/**/ String(Params ...params){
-		U32 requiredLength = //TODO:total max length of all params
+	/**/ String(const char *data){
+		localData[0] = '\0';
 
-		//TODO: append each with toString()
+		if(data){
+			append(data);
+		}
 	}
+
+	// template<typename ...Params>
+	// /**/ String(Params ...params){
+	// 	U32 requiredLength = //TODO:total max length of all params
+
+	// 	//TODO: append each with toString()
+	// }
 
 	/**/~String(){
-		if(data!=localData){
+		if(!is_local_string()){
 			delete data;
 		}
 	}
 
 	void resize(U32 newSize){
-		newSize = max(max(length, localBufferSize), newSize);
-		if(newSize==allocated) return;
+		const auto isLocal = is_local_string();
 
-		if(newSize==localBufferSize){
+		if(newSize+1<=localBufferSize){
+			if(isLocal) return; // nothing to do
+
 			memcpy(localData, data, length);
+			localData[length] = '\0';
 			return;
 		}
 
-		auto newData = new Type[allocated=newSize];
-		memcpy(newData, data, length);
+		if(isLocal){
+			data = new Type[(allocated=newSize)+1];
+			memcpy(data, localData, length);
+			data[length] = '\0';
 
-		if(allocated!=localBufferSize){
+		}else{
+			if(newSize==allocated) return;
+
+			auto newData = new Type[(allocated=newSize)+1];
+			memcpy(newData, data, min(length, newSize));
+			newData[length] = '\0';
+
 			delete data;
+			data = newData;
 		}
-
-		data = newData;
-		allocated = newSize;
 	}
 
 	void append(Type c){
-		if(data==localData){
-			if(length+1>localBufferSize-1){
-				resize(length+1+length);
+		if(is_local_string()){
+			if(length+1+1>localBufferSize){
+				resize(length+1);
+			}
+
+		}else{
+			if(length+1>allocated){
+				resize(length+1);
 			}
 		}
-		if(length+1>=allocated){
-			resize(length+1+length/2);
-		}
+
+		auto data = get_data();
 		data[length++] = c;
+		data[length] = '\0';
 	}
 
 	void append(const char *source){
 		auto sourceLength = strlen(source);
+		if(sourceLength<1) return;
 
-		if(length+sourceLength>=allocated){
-			resize(length+sourceLength+1);
+		if(is_local_string()){
+			if(length+sourceLength+1>localBufferSize){
+				resize(length+sourceLength);
+			}
+
+		}else{
+			if(length+sourceLength+1>allocated){
+				resize(length+sourceLength);
+			}
 		}
-		memcpy(&data[length], source, sourceLength);
+
+		memcpy(&get_data()[length], source, sourceLength+1);
 		length += sourceLength;
 	}
 
 	void append(const String &source){
-		if(length+source.length>=allocated){
-			resize(length+source.length+1);
+		if(source.length<1) return;
+
+		if(is_local_string()){
+			if(length+source.length+1>localBufferSize){
+				resize(length+source.length);
+			}
+
+		}else{
+			if(length+source.length+1>allocated){
+				resize(length+source.length);
+			}
 		}
-		memcpy(&data[length], source.data, source.length);
+
+		memcpy(&get_data()[length], source.get_data(), source.length+1);
 		length += source.length;
 	}
 
 	void insert(U32 index, Type c){
-		if(length+1>=allocated){
-			//TODO:optimise:resize current involves a memmove, meaning there are 2 memmoves() rather than just 1
-			resize(length+1+length/2);
+		if(is_local_string()){
+			if(length+1+1>localBufferSize){
+				resize(length+1);
+			}
+
+		}else{
+			if(length+1>allocated){
+				resize(length+1);
+			}
 		}
 
-		memmove(&data[index+1], memmove(&data[index]), length++-index);
+		auto data = get_data();
+
+		//TODO:optimise the right side is moved twice, once by resize(), then here again. Ideally we would resize without the full memcpy
+		memmove(&data[index+1], memmove(&data[index]), length++-index+1);
+		data[index] = c;
 	}
 
-	auto operator[](size_t i) const -> Type { return data[i]; }
-	auto operator[](size_t i) -> Type& { return data[i]; }
+	auto operator[](size_t i) const -> Type  { return get_data()[i]; }
+	auto operator[](size_t i) /* */ -> Type& { return get_data()[i]; }
 
-	operator==(const String &b) const {
+	auto operator==(const String &b) const -> bool {
 		if(length!=b.length) return false;
-		return memcmp(a.data, b.data, a.length*sizeof(Type))==0;
+		return memcmp(get_data(), b.get_data(), length*sizeof(Type))==0;
+	}
+
+	auto operator==(const Type *b) const -> bool {
+		auto bLength = strlen(b);
+		if(length!=bLength) return false;
+		return memcmp(get_data(), b, bLength*sizeof(Type))==0;
+	}
+
+	auto is_local_string() const -> bool {
+		return length+1<=localBufferSize;
+	}
+
+	auto get_data() const -> const char * {
+		return is_local_string()?localData:data;
+	}
+
+	auto get_data() /* */ -> /* */ char * {
+		return is_local_string()?localData:data;
 	}
 };
 
