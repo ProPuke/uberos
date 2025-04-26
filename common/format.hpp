@@ -26,6 +26,10 @@ namespace format {
 			Hex64(volatile void *pointer):value((U64)pointer){}
 		#endif
 	};
+	template <UPtr length>
+	struct FixedLengthString {
+		const char *string;
+	};
 }
 
 #include <common/stdlib.hpp>
@@ -34,6 +38,12 @@ template<> inline auto to_string(format::Hex8  x) -> const char* { return (x.ful
 template<> inline auto to_string(format::Hex16 x) -> const char* { return (x.full?to_string_hex(x.value):to_string_hex_trim(x.value))+(x.head?0:2); }
 template<> inline auto to_string(format::Hex32 x) -> const char* { return (x.full?to_string_hex(x.value):to_string_hex_trim(x.value))+(x.head?0:2); }
 template<> inline auto to_string(format::Hex64 x) -> const char* { return (x.full?to_string_hex(x.value):to_string_hex_trim(x.value))+(x.head?0:2); }
+template<UPtr length> inline auto to_string(format::FixedLengthString<length> x) -> const char* {
+	static char buffer[length+1];
+	memcpy(buffer, x.string, length);
+	buffer[length] = '\0';
+	return buffer;
+}
 
 #ifdef _64BIT
 	template<typename Type>
