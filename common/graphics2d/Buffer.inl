@@ -530,6 +530,31 @@ namespace graphics2d {
 		}
 	}
 
+	inline void Buffer::draw_line_blended(U32 x1, U32 y1, U32 x2, U32 y2, U32 colour) {
+		const I32 xVec = (I32)x2-(I32)x1;
+		const I32 yVec = (I32)y2-(I32)y1;
+		const I32 xLength = maths::abs(xVec);
+		const I32 yLength = maths::abs(yVec);
+
+		if(xLength>=yLength){
+			const auto dir = maths::sign((I32)x2-(I32)x1);
+			for(auto step=0;step<=xLength;step++){
+				const auto phase = step/(float)xLength;
+				const auto x = x1+step*dir;
+				const auto y = y1 + phase*yVec;
+				set_blended(x, y, colour);
+			}
+		}else{
+			const auto dir = maths::sign((I32)y2-(I32)y1);
+			for(auto step=0;step<=yLength;step++){
+				const auto phase = step/(float)yLength;
+				const auto y = y1+step*dir;
+				const auto x = x1 + phase*xVec;
+				set_blended(x, y, colour);
+			}
+		}
+	}
+
 	inline void Buffer::draw_line_aa(U32 x1, U32 y1, U32 x2, U32 y2, U32 colour) {
 		auto xVec = (I32)x2-(I32)x1;
 		auto yVec = (I32)y2-(I32)y1;
@@ -724,6 +749,44 @@ namespace graphics2d {
 			for(auto offsetY=0u; offsetY<height; offsetY++)
 			for(auto offsetX=0u; offsetX<width; offsetX++) {
 				set(x+offsetX, y+offsetY, image.get((imageWidth-1)*offsetX/(width-1), (imageHeight-1)*offsetY/(height-1)));
+			}
+		}
+	}
+
+	inline void Buffer::draw_scaled_buffer_blended(U32 x, U32 y, U32 width, U32 height, Buffer &image, U32 imageX, U32 imageY, U32 imageWidth, U32 imageHeight, DrawScaledBufferOptions options, U8 opacity) {
+		if(options.minFiltered){
+			for(auto offsetY=0u; offsetY<height; offsetY++)
+			for(auto offsetX=0u; offsetX<width; offsetX++) {
+				auto r = 0;
+				auto g = 0;
+				auto b = 0;
+				auto a = 0;
+
+				const auto samplesX = maths::max(1u, (imageWidth*(offsetX+1)/width)-(imageWidth*offsetX/width));
+				const auto samplesY = maths::max(1u, (imageHeight*(offsetY+1)/height)-(imageHeight*offsetY/height));
+				const auto samples = samplesX*samplesY;
+
+				for(auto sampleY=0u; sampleY<samplesY; sampleY++)
+				for(auto sampleX=0u; sampleX<samplesX; sampleX++) {
+					const auto sample = image.get(imageX+imageWidth*offsetX/width+sampleX, imageY+imageHeight*offsetY/height+sampleY);
+					a += sample>>24 & 0xff;
+					r += sample>>16 & 0xff;
+					g += sample>> 8 & 0xff;
+					b += sample>> 0 & 0xff;
+				}
+
+				r /= samples;
+				g /= samples;
+				b /= samples;
+				a /= samples;
+
+				set_blended(x+offsetX, y+offsetY, a<<24 | r<<16 | g<<8 | b<<0, opacity);
+			}
+
+		}else{
+			for(auto offsetY=0u; offsetY<height; offsetY++)
+			for(auto offsetX=0u; offsetX<width; offsetX++) {
+				set_blended(x+offsetX, y+offsetY, image.get(imageX+imageWidth*offsetX/width, imageY+imageHeight*offsetY/height), opacity);
 			}
 		}
 	}

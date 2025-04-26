@@ -2,6 +2,7 @@
 
 #include <drivers/Keyboard.hpp>
 #include <drivers/Mouse.hpp>
+#include <drivers/ThemeManager.hpp>
 
 #include <kernel/drivers.hpp>
 #include <kernel/DriverReference.hpp>
@@ -10,9 +11,8 @@
 #include <common/graphics2d.hpp>
 #include <common/graphics2d/font.hpp>
 #include <common/maths.hpp>
+#include <common/ui2d/control/TitlebarButton.hpp>
 #include <common/ui2d/Gui.hpp>
-#include <common/ui2d/theme/Clean.hpp>
-#include <common/ui2d/control/ColouredButton.hpp>
 
 namespace ui2d::image {
 	namespace cursors {
@@ -24,18 +24,31 @@ namespace ui2d::image {
 		extern graphics2d::Buffer size_nesw;
 		extern graphics2d::Buffer size_nwse;
 	}
-
-	namespace widgets {
-		extern graphics2d::Buffer close;
-		extern graphics2d::Buffer maximise;
-		extern graphics2d::Buffer minimise;
-	}
 }
 
 namespace driver {
 	namespace {
-		DriverReference<DisplayManager> displayManager{nullptr, [](void*){
+		ui2d::Theme *theme = nullptr;
 
+		DriverReference<DisplayManager> displayManager{nullptr, [](void*){
+			displayManager = drivers::find_and_activate<DisplayManager>();
+			if(!displayManager) {
+				DesktopManager::instance.api.fail_driver("Display manager no longer available");
+			}
+		}, nullptr};
+
+		DriverReference<ThemeManager> themeManager{nullptr, [](void*){
+			themeManager = drivers::find_and_activate<ThemeManager>();
+			if(!themeManager) {
+				DesktopManager::instance.api.fail_driver("Theme manager no longer available");
+			}
+
+			theme = &themeManager->get_theme();
+			themeManager->events.subscribe([](const ThemeManager::Event &event) {
+				if(event.type==ThemeManager::Event::Type::themeChanged){
+					theme = &themeManager->get_theme();
+				}
+			});
 		}, nullptr};
 
 		void update_focused_window();
@@ -46,7 +59,6 @@ namespace driver {
 
 		struct Cursor;
 
-		const U32 windowBackgroundColour = 0xeeeeee;
 		const U32 windowBorderColour = 0xbcbcbc;
 		const U32 edgeSnapDistance = 16;
 
@@ -55,8 +67,6 @@ namespace driver {
 		struct Window;
 
 		extern Window *focusedWindow;
-
-		ui2d::theme::Clean theme;
 
 		struct Window: LListItem<Window>, virtual DesktopManager::Window {
 			U64 timeCreated = time::now();
@@ -84,7 +94,7 @@ namespace driver {
 				typedef ui2d::Gui Super;
 
 				/**/ Gui():
-					Super(graphics2d::Buffer(), driver::theme)
+					Super(graphics2d::Buffer(), *driver::theme)
 				{}
 
 				void update_area(graphics2d::Rect rect) {
@@ -590,12 +600,12 @@ namespace driver {
 		struct StandardWindow: Window, DesktopManager::StandardWindow {
 			typedef driver::Window Super;
 
-			ui2d::control::ColouredButton closeButton;
-			ui2d::control::ColouredButton maximiseButton;
-			struct MinimiseButton: ui2d::control::ColouredButton {
-				/**/ MinimiseButton(): ui2d::control::ColouredButton(window().gui, {0,0,0,0}, 0xffff00, "") {
-					icon = &ui2d::image::widgets::minimise;
-				}
+			ui2d::control::TitlebarButton closeButton;
+			ui2d::control::TitlebarButton maximiseButton;
+			struct MinimiseButton: ui2d::control::TitlebarButton {
+				/**/ MinimiseButton():
+					ui2d::control::TitlebarButton(window().gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xffff00:0xffffff, "")
+				{}
 
 				void on_clicked() override {
 					window().minimise();
@@ -607,8 +617,6 @@ namespace driver {
 			U32 titlebarAreaIndentLeft = 0;
 			U32 titlebarAreaIndentRight = 0;
 
-			static const auto widgetSpacing = 4;
-
 			static const auto cornerRadius = enableTransparency?5:2;
 			U32 corner[cornerRadius+1];
 			U32 cornerInner[cornerRadius-1+1];
@@ -616,20 +624,21 @@ namespace driver {
 			const char *status = "";
 
 			/**/ StandardWindow(const char *title, U32 width, U32 height):
-				Super(title, maths::max(theme.get_window_min_width(),width)+theme.get_window_left_margin()+theme.get_window_right_margin(), maths::max(theme.get_window_min_height(),height)+theme.get_window_top_margin()+theme.get_window_bottom_margin()),
-				closeButton(gui, {0,0,0,0}, 0xff0000, ""),
-				maximiseButton(gui, {0,0,0,0}, 0xff8800, "")
+				Super(title, maths::max(theme->get_window_min_width(),width)+theme->get_window_left_margin()+theme->get_window_right_margin(), maths::max(theme->get_window_min_height(),height)+theme->get_window_top_margin()+theme->get_window_bottom_margin()),
+				closeButton(gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xff0000:0xffffff, ""),
+				maximiseButton(gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xff8800:0xffffff, "")
 			{
-				leftMargin = theme.get_window_left_margin();
-				topMargin = theme.get_window_top_margin();
-				rightMargin = theme.get_window_right_margin();
-				bottomMargin = theme.get_window_bottom_margin();
+				leftMargin = theme->get_window_left_margin();
+				topMargin = theme->get_window_top_margin();
+				rightMargin = theme->get_window_right_margin();
+				bottomMargin = theme->get_window_bottom_margin();
 
-				closeButton.icon = &ui2d::image::widgets::close;
-				maximiseButton.icon = &ui2d::image::widgets::maximise;
+				minimiseButton.icon = &theme->get_window_titlebar_widget_minimise();
+				closeButton.icon = &theme->get_window_titlebar_widget_close();
+				maximiseButton.icon = &theme->get_window_titlebar_widget_maximise();
 
-				minSize.x = theme.get_window_min_width();
-				minSize.y = theme.get_window_min_height();
+				minSize.x = theme->get_window_min_width();
+				minSize.y = theme->get_window_min_height();
 
 				width = maths::max(minSize.x, width);
 				height = maths::max(minSize.y, height);
@@ -642,7 +651,7 @@ namespace driver {
 					}
 				}
 
-				_set_titlebar_area(theme.get_window_titlebar_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}));
+				_set_titlebar_area(theme->get_window_titlebar_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}));
 
 				gui.redraw(false);
 
@@ -657,7 +666,7 @@ namespace driver {
 			}
 
 			auto get_background_colour() -> U32 override {
-				return windowBackgroundColour;
+				return theme->get_window_background_colour();
 			}
 
 			auto get_border_colour() -> U32 override {
@@ -682,24 +691,29 @@ namespace driver {
 			void redraw_area(graphics2d::Rect) override;
 
 			void set_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) override {
-				Super::set_size_limits(maths::max(theme.get_window_min_width(), minWidth), maths::max(theme.get_window_min_height(), minHeight), maxWidth, maxHeight);
+				Super::set_size_limits(maths::max(theme->get_window_min_width(), minWidth), maths::max(theme->get_window_min_height(), minHeight), maxWidth, maxHeight);
 			}
 
 			void _set_titlebar_area(graphics2d::Rect rect) override {
 				Super::_set_titlebar_area(rect);
 
-				const auto size = titlebarArea.height()-widgetSpacing*2;
+				const auto widgetMargin = (I32)theme->get_window_titlebar_widget_margin();
+				const auto spacing = (I32)theme->get_window_titlebar_widget_spacing();
+				const auto largeSpacing = (I32)theme->get_window_titlebar_widget_large_spacing();
+				const auto size = titlebarArea.height()-widgetMargin*2;
 
-				closeButton.rect = {titlebarArea.x2-widgetSpacing-size, titlebarArea.y1+widgetSpacing, titlebarArea.x2-widgetSpacing, titlebarArea.y2-widgetSpacing};
-				maximiseButton.rect = {closeButton.rect.x1-widgetSpacing-1-widgetSpacing-size, titlebarArea.y1+widgetSpacing, closeButton.rect.x1-widgetSpacing-1-widgetSpacing, titlebarArea.y2-widgetSpacing};
-				minimiseButton.rect = {maximiseButton.rect.x1-widgetSpacing-size, titlebarArea.y1+widgetSpacing, maximiseButton.rect.x1-widgetSpacing, titlebarArea.y2-widgetSpacing};
+				closeButton.rect = {titlebarArea.x2-widgetMargin-size, titlebarArea.y1+widgetMargin, titlebarArea.x2-widgetMargin, titlebarArea.y2-widgetMargin};
+				maximiseButton.rect = {closeButton.rect.x1-largeSpacing-size, titlebarArea.y1+widgetMargin, closeButton.rect.x1-largeSpacing, titlebarArea.y2-widgetMargin};
+				minimiseButton.rect = {maximiseButton.rect.x1-spacing-size, titlebarArea.y1+widgetMargin, maximiseButton.rect.x1-spacing, titlebarArea.y2-widgetMargin};
 
-				titlebarAreaIndentLeft = maths::max(0, widgetSpacing-1);
-				titlebarAreaIndentRight = titlebarArea.x2-minimiseButton.rect.x1+maths::max(0, widgetSpacing-1);
+				titlebarAreaIndentLeft = maths::max(0, widgetMargin-1);
+				titlebarAreaIndentRight = titlebarArea.x2-minimiseButton.rect.x1+maths::max(0, widgetMargin-1);
 			}
 
 			void _draw_decorations() override {
-				theme.draw_window_frame(graphicsDisplay->buffer, {0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}, {
+				const auto widgetMargin = theme->get_window_titlebar_widget_margin();
+
+				theme->draw_window_frame(graphicsDisplay->buffer, {0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}, {
 					.isFocused = _draw_focused,
 					.title = title,
 					.status = status,
@@ -707,12 +721,18 @@ namespace driver {
 					.titlebarAreaIndentRight = titlebarAreaIndentRight,
 				});
 
+				closeButton.focused = _draw_focused;
+				maximiseButton.focused = _draw_focused;
+				minimiseButton.focused = _draw_focused;
+
 				closeButton.opacity = _draw_focused?0xff:0x66;
 				maximiseButton.opacity = _draw_focused?0xff:0x66;
 				minimiseButton.opacity = _draw_focused?0xff:0x66;
 
+				const auto largeSpacing = (I32)theme->get_window_titlebar_widget_large_spacing();
+
 				{ // draw widget divide
-					graphicsDisplay->buffer.draw_line(closeButton.rect.x1-widgetSpacing-1, titlebarArea.y1+widgetSpacing+1, closeButton.rect.x1-widgetSpacing-1, titlebarArea.y2-widgetSpacing-1, theme.get_window_titlebar_divider_colour({.isFocused = _draw_focused}));
+					graphicsDisplay->buffer.draw_line_blended(closeButton.rect.x1-largeSpacing/2, titlebarArea.y1+widgetMargin+1, closeButton.rect.x1-largeSpacing/2, titlebarArea.y2-widgetMargin-1, theme->get_window_titlebar_divider_colour({.isFocused = _draw_focused}));
 				}
 
 				gui.redraw(false);
@@ -722,8 +742,8 @@ namespace driver {
 				_draw_decorations();
 
 				// we assume the border is the gap between the interaction area (the main window body) and the inner client area
-				const auto interactArea = theme.get_window_interact_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
-				const auto clientArea = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+				const auto interactArea = theme->get_window_interact_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+				const auto clientArea = theme->get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
 
 				//top
 				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, interactArea.y1, interactArea.x2, clientArea.y1});
@@ -732,7 +752,7 @@ namespace driver {
 				//right
 				graphicsDisplay->update_area(graphics2d::Rect{clientArea.x2, clientArea.y1, interactArea.x2, clientArea.y2});
 				//bottom
-				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, clientArea.x2, interactArea.x2, interactArea.y2});
+				graphicsDisplay->update_area(graphics2d::Rect{interactArea.x1, clientArea.y2, interactArea.x2, interactArea.y2});
 			}
 
 			void _draw_frame() {
@@ -751,23 +771,23 @@ namespace driver {
 						graphicsDisplay->bottomLeftCorner[i] = 0;
 						graphicsDisplay->bottomRightCorner[i] = 0;
 					}
-					graphicsDisplay->solidArea = theme.get_window_solid_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
-					graphicsDisplay->interactArea = theme.get_window_interact_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});	
+					graphicsDisplay->solidArea = theme->get_window_solid_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+					graphicsDisplay->interactArea = theme->get_window_interact_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});	
 				}
 
-				const auto clientRect = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+				const auto clientRect = theme->get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
 				clientArea = display.buffer.region(clientRect.x1, clientRect.y1, clientRect.width(), clientRect.height());
-				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, windowBackgroundColour);
+				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, theme->get_window_background_colour());
 				gui.redraw(false);
 			}
 
 			void redraw_shadow() {
 				auto &buffer = graphicsDisplay->buffer;
 
-				const auto leftShadow = theme.get_window_left_margin();
-				const auto rightShadow = theme.get_window_right_margin();
-				const auto topShadow = theme.get_window_top_margin();
-				const auto bottomShadow = theme.get_window_bottom_margin();
+				const auto leftShadow = theme->get_window_left_margin();
+				const auto rightShadow = theme->get_window_right_margin();
+				const auto topShadow = theme->get_window_top_margin();
+				const auto bottomShadow = theme->get_window_bottom_margin();
 
 				graphicsDisplay->update_area({(I32)leftShadow, 0, (I32)buffer.width-(I32)rightShadow, (I32)topShadow});
 				graphicsDisplay->update_area({0, 0, (I32)leftShadow, (I32)buffer.height});
@@ -1118,7 +1138,7 @@ namespace driver {
 			auto y = windowArea.height()*1/5;
 
 			if(previous){
-				const auto newY = previous->get_y()-windowArea.y1+theme.get_window_titlebar_area({0,0,(I32)previous->graphicsDisplay->buffer.width,(I32)previous->graphicsDisplay->buffer.height}).y2;
+				const auto newY = previous->get_y()-windowArea.y1+theme->get_window_titlebar_area({0,0,(I32)previous->graphicsDisplay->buffer.width,(I32)previous->graphicsDisplay->buffer.height}).y2;
 				if(newY<windowArea.height()*3/4){
 					y = newY;
 				}
@@ -1722,7 +1742,17 @@ namespace driver {
 
 	auto DesktopManager::_on_start() -> Try<> {
 		displayManager = drivers::find_and_activate<DisplayManager>(this);
-		if(!displayManager) return {"Display manager not available"};
+		if(!displayManager) return Failure{"Display manager not available"};
+
+		themeManager = drivers::find_and_activate<ThemeManager>(this);
+		if(!themeManager) return Failure{"Theme manager not available"};
+
+		theme = &themeManager->get_theme();
+		themeManager->events.subscribe([](const ThemeManager::Event &event) {
+			if(event.type==ThemeManager::Event::Type::themeChanged){
+				theme = &themeManager->get_theme();
+			}
+		});
 
 		drivers::events.subscribe(_on_drivers_event);
 
@@ -1769,12 +1799,12 @@ namespace driver {
 			graphicsDisplay->buffer.draw_rect((graphics2d::Rect){0,0,(I32)graphicsDisplay->buffer.width,(I32)graphicsDisplay->buffer.height}, 0xff000000);
 		}
 
-		const auto clientAreaRect = theme.get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+		const auto clientAreaRect = theme->get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
 		clientArea = graphicsDisplay->buffer.region(clientAreaRect.x1, clientAreaRect.y1, clientAreaRect.width(), clientAreaRect.height());
-		clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, windowBackgroundColour);
+		clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, theme->get_window_background_colour());
 		gui.buffer = graphicsDisplay->buffer;
 
-		_set_titlebar_area(theme.get_window_titlebar_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}));
+		_set_titlebar_area(theme->get_window_titlebar_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height}));
 
 		_draw_frame();
 
@@ -1888,7 +1918,7 @@ namespace driver {
 	}
 
 	auto DesktopManager::get_default_window_colour() -> U32 {
-		return windowBackgroundColour;
+		return theme->get_window_background_colour();
 	}
 
 	auto DesktopManager::get_default_window_border_colour() -> U32 {

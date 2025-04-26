@@ -38,6 +38,16 @@ namespace graphics2d {
 		;
 	}
 
+	inline auto multiply_colours(U32 colourA, U32 colourB) -> U32 {
+		const auto alphaB = 255-(colourB>>24);
+		return
+			(((colourA>> 0&0xff)*alphaB/255)*(colourB>> 0&0xff)/255)<< 0|
+			(((colourA>> 8&0xff)*alphaB/255)*(colourB>> 8&0xff)/255)<< 8|
+			(((colourA>>16&0xff)*alphaB/255)*(colourB>>16&0xff)/255)<<16|
+			(255-(255-(colourA>>24))*alphaB/255)<<24
+		;
+	}
+
 	inline auto blend_colours(U32 colourA, U32 colourB, U8 opacity) -> U32 {
 		const auto trans = 255-((255-colourB>>24)*opacity/255);
 		return

@@ -24,7 +24,7 @@ namespace ui2d {
 
 		Gui &gui;
 		graphics2d::Rect rect;
-		bool isVisible = false;
+		bool isVisible = true;
 		bool isHover = false;
 		bool isPressed = false;
 

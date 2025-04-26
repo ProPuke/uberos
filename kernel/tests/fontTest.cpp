@@ -33,7 +33,7 @@ namespace tests::fontTest {
 				.maxLines = 1
 			};
 
-			auto sizeWidth = clientArea.measure_text(sizeFontSettings, "888 ").blockWidth;
+			auto sizeWidth = clientArea.measure_text(sizeFontSettings, "888 ").rect.width();
 
 			auto fontSettings = graphics2d::Buffer::FontSettings{
 				.font = *graphics2d::font::default_sans,

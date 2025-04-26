@@ -8,10 +8,10 @@ namespace graphics2d {
 	auto Buffer::draw_text(FontSettings fontSettings, const char *text, I32 startX, I32 startY, U32 width, U32 colour, I32 cursorX) -> DrawTextResult {
 		auto x = FixedI32::whole(cursorX);
 		auto y = FixedI32::whole(startY);
-	
+
 		auto right = FixedI32::whole(startX + (I32)width);
 	
-		auto blockWidth = cursorX;
+		auto x2 = cursorX;
 	
 		auto scale = FixedI32::divide(fontSettings.size, fontSettings.font.size);
 	
@@ -85,20 +85,21 @@ namespace graphics2d {
 				}
 			}
 	
-			blockWidth = max(blockWidth, x.round());
+			x2 = max(x2, x.round());
 			if(lines>fontSettings.maxLines) {
 				clipped = true;
 				break;
 			}
 		}
 	
+		auto blockWidth = x2-startX;
 		auto blockHeight = y.round()-startY+capHeight;
-	
+
 		return {
 			x.round_up(), y.round_up(),
 			capHeight,
 			lineHeight,
-			blockWidth, blockHeight,
+			{startX, startY, startX+blockWidth, startY+blockHeight},
 			updatedArea,
 			lines,
 			clipped
@@ -178,12 +179,12 @@ namespace graphics2d {
 		}
 
 		auto blockHeight = y.round()+capHeight;
-	
+
 		return {
 			x.round_up(), y.round_up(),
 			capHeight,
 			lineHeight,
-			blockWidth, blockHeight,
+			{0, 0, blockWidth, blockHeight},
 			updatedArea,
 			lines,
 			clipped

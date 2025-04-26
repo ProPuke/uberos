@@ -12,7 +12,7 @@ namespace graphics2d {
 		I32 x, y; // the final x & y
 		I32 capHeight; // how far above is the top of a capital letter
 		U32 lineHeight;
-		I32 blockWidth, blockHeight; // the width and height of the rendered text block, excluding overhangs
+		Rect rect; // the width and height of the rendered text block, excluding overhangs
 		Rect updatedArea; // the actual area of pixels updated (including overhang)
 		U32 lines;
 		bool clipped; // did not fit within the maxLines limit
@@ -72,6 +72,7 @@ namespace graphics2d {
 		void draw_rect_blended(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_rect_outline(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_line(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
+		void draw_line_blended(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
 		void draw_line_aa(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
 		void draw_msdf(I32 x, I32 y, U32 width, U32 height, Buffer &source, I32 source_x, I32 source_y, U32 source_width, U32 source_height, U32 colour, U32 skipSourceLeft=0, U32 skipSourceTop=0, U32 skipSourceRight=0, U32 skipSourceBottom=0);
 
@@ -93,6 +94,7 @@ namespace graphics2d {
 			bool minFiltered = true;
 		};
 		void draw_scaled_buffer(U32 x, U32 y, U32 width, U32 height, Buffer &image, U32 imageX, U32 imageY, U32 imageWidth, U32 imageHeight, DrawScaledBufferOptions options);
+		void draw_scaled_buffer_blended(U32 x, U32 y, U32 width, U32 height, Buffer &image, U32 imageX, U32 imageY, U32 imageWidth, U32 imageHeight, DrawScaledBufferOptions options, U8 opacity = 0xff);
 		void draw_buffer_blended(I32 x, I32 y, U32 sourceX, U32 sourceY, U32 width, U32 height, Buffer &image, U8 opacity = 0xff);
 		void draw_4slice(I32 x, I32 y, U32 width, U32 height, Buffer &image);
 

@@ -1,8 +1,12 @@
 #include "Button.hpp"
 
+#include <kernel/logging.hpp>
+
 namespace ui2d {
 	namespace control {
 		void Button::redraw(bool flush) {
+			if(!isVisible) return;
+
 			switch(type){
 				case Type::regular:
 					gui.theme.draw_button(gui.buffer, rect, text, smallFont, icon, isHover, isHover&&isPressed);
@@ -29,9 +33,11 @@ namespace ui2d {
 			auto wasClicked = false;
 			auto wasReleased = false;
 
-			if(button==0&&rect.contains(x, y)){
+			if(button==0&&isPressed){
 				wasReleased = true;
+			}
 
+			if(rect.contains(x, y)){
 				if(isPressed){
 					switch(type){
 						case Type::regular:

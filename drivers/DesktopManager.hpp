@@ -55,7 +55,7 @@ namespace driver {
 			};
 		};
 
-		static inline EventEmitter<Event> allEvents;
+		EventEmitter<Event> allEvents;
 		EventEmitter<Event> events;
 		
 		auto _on_start() -> Try<> override;

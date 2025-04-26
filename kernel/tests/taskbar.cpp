@@ -4,13 +4,13 @@
 #include <drivers/DesktopManager.hpp>
 #include <drivers/Keyboard.hpp>
 #include <drivers/Mouse.hpp>
+#include <drivers/ThemeManager.hpp>
 
 #include <kernel/drivers.hpp>
 
 #include <common/ui2d/control/Area.hpp>
 #include <common/ui2d/control/Button.hpp>
 #include <common/ui2d/control/ColouredButton.hpp>
-#include <common/ui2d/theme/Clean.hpp>
 #include <common/ui2d/controlContainer/Box.hpp>
 #include <common/graphics2d.hpp>
 #include <common/graphics2d/font.hpp>
@@ -32,21 +32,35 @@ namespace tests::taskbar {
 		driver::DesktopManager *desktopManager = nullptr;
 		PodArray<ui2d::LayoutControl<WindowButton>*> windowButtons;
 		driver::DesktopManager::Window *lastFocusedWindow = nullptr;
+		ui2d::Theme *theme = nullptr;
+
+		DriverReference<driver::ThemeManager> themeManager{nullptr, [](void*){
+			themeManager = drivers::find_and_activate<driver::ThemeManager>();
+			if(!themeManager) {
+				//TODO: terminate?
+				return;
+			}
+
+			theme = &themeManager->get_theme();
+			themeManager->events.subscribe([](const driver::ThemeManager::Event &event) {
+				if(event.type==driver::ThemeManager::Event::Type::themeChanged){
+					theme = &themeManager->get_theme();
+				}
+			});
+		}, nullptr};
 
 		const auto width = 600;
 		const auto height = 150;
-		const auto transparentBackgroundColour = graphics2d::premultiply_colour(desktopManager->get_default_window_colour()|(0xff-0x44)<<24);
-		const auto opaqueBackgroundColour = graphics2d::premultiply_colour(desktopManager->get_default_window_colour()|0x44<<24);
+		U32 transparentBackgroundColour;
+		U32 opaqueBackgroundColour;
 		// const auto borderColour = desktopManager->get_default_window_border_colour();
 		const auto borderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0x88)<<24);
 		// const auto opaqueBorderColour = graphics2d::premultiply_colour(0xeeeeee|(255-0xdd)<<24);
 		const auto opaqueBorderColour = desktopManager->get_default_window_border_colour();
 
-		static ui2d::theme::Clean cleanTheme;
-
-		const auto maxButtonWidth = 200;
-		const auto maxButtonHeight = 50;
-		const auto minButtonHeight = cleanTheme.get_minimum_button_height()*2/3;
+		auto maxButtonWidth = 200;
+		auto maxButtonHeight = 50;
+		auto minButtonHeight = 20;
 
 		auto isVertical = false;
 
@@ -58,7 +72,6 @@ namespace tests::taskbar {
 		struct DesktopGui: ui2d::Gui {
 			typedef ui2d::Gui Super;
 	
-			ui2d::theme::Clean theme;
 			driver::DesktopManager::Window &window;
 	
 			/**/ DesktopGui(driver::DesktopManager::Window &window);
@@ -81,7 +94,7 @@ namespace tests::taskbar {
 		};
 
 		/**/ DesktopGui::DesktopGui(driver::DesktopManager::Window &window):
-			Super(window.get_client_area(), theme),
+			Super(window.get_client_area(), *taskbar::theme),
 			window(window)
 		{}
 
@@ -258,6 +271,14 @@ namespace tests::taskbar {
 		desktopManager = drivers::find_and_activate<driver::DesktopManager>();
 		if(!desktopManager) return;
 
+		themeManager = drivers::find_and_activate<driver::ThemeManager>();
+		if(!themeManager) return;
+		theme = &themeManager->get_theme();
+
+		transparentBackgroundColour = graphics2d::premultiply_colour(desktopManager->get_default_window_colour()|(0xff-0x44)<<24);
+		opaqueBackgroundColour = graphics2d::premultiply_colour(desktopManager->get_default_window_colour()|0x44<<24);
+		minButtonHeight = theme->get_minimum_button_height()*2/3;
+
 		lastFocusedWindow = desktopManager->get_focused_window();
 
 		const static auto shadowLength = 8u;
@@ -286,7 +307,7 @@ namespace tests::taskbar {
 		static auto &clockArea = box.add_control<ui2d::control::Area>();
 
 		launcherButton.icon = &ui2d::image::icons::super;
-		launcherButton.set_min_size(cleanTheme.get_minimum_button_width()/2, minButtonHeight);
+		launcherButton.set_min_size(theme->get_minimum_button_width()/2, minButtonHeight);
 
 		static auto _set_orientation = [](bool vertical) {
 			isVertical = vertical;
@@ -430,8 +451,8 @@ namespace tests::taskbar {
 					auto smallFontMeasurements = clientArea.measure_text(smallFontSettings, time);
 					auto largeFontMeasurements = clientArea.measure_text(largeFontSettings, time);
 
-					auto smallWidth = (U32)smallFontMeasurements.blockWidth+1;
-					auto largeWidth = (U32)largeFontMeasurements.blockWidth+1;
+					auto smallWidth = (U32)smallFontMeasurements.rect.width()+1;
+					auto largeWidth = (U32)largeFontMeasurements.rect.width()+1;
 					auto smallHeight = (U32)smallFontMeasurements.capHeight+3;
 					auto largeHeight = (U32)largeFontMeasurements.capHeight+3;
 					
@@ -460,14 +481,14 @@ namespace tests::taskbar {
 				}
 
 				for(auto button:windowButtons){
-					button->set_small_font(button->rect.width()<(I32)cleanTheme.get_minimum_button_width()*4/3);
+					button->set_small_font(button->rect.width()<(I32)theme->get_minimum_button_width()*4/3);
 				}
 
 				gui.buffer = clientArea;
 				if(clientArea.width>=clientArea.height){
-					launcherButton.set_max_size((I32)cleanTheme.get_minimum_button_width(), maths::min(maxButtonHeight, padding+(I32)clientArea.height-padding-padding));
+					launcherButton.set_max_size((I32)theme->get_minimum_button_width(), maths::min(maxButtonHeight, padding+(I32)clientArea.height-padding-padding));
 				}else{
-					launcherButton.set_max_size(maths::min(maxButtonWidth, (I32)clientArea.width-padding-padding), padding+(I32)(cleanTheme.get_minimum_button_width()*1/3+minButtonHeight));
+					launcherButton.set_max_size(maths::min(maxButtonWidth, (I32)clientArea.width-padding-padding), padding+(I32)(theme->get_minimum_button_width()*1/3+minButtonHeight));
 				}
 			}
 
@@ -482,7 +503,7 @@ namespace tests::taskbar {
 				if(!desktopWindow->is_visible()) continue;
 
 				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*desktopWindow)));
-				control->set_min_size(cleanTheme.get_minimum_button_width()*7/12, minButtonHeight);
+				control->set_min_size(theme->get_minimum_button_width()*7/12, minButtonHeight);
 				control->set_max_size(maxButtonWidth, maxButtonHeight);
 			}
 		}
@@ -497,7 +518,7 @@ namespace tests::taskbar {
 				if(event.windowShown.window==previewWindow) return;
 
 				auto &control = windowButtons.push_back(&buttonContainer.add_control<WindowButton>(std::ref(*event.windowShown.window)));
-				control->set_min_size(cleanTheme.get_minimum_button_width()*7/12, minButtonHeight);
+				control->set_min_size(theme->get_minimum_button_width()*7/12, minButtonHeight);
 				control->set_max_size(maxButtonWidth, maxButtonHeight);
 				redraw();
 				taskbarWindow->redraw();

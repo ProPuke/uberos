@@ -8,6 +8,8 @@ namespace ui2d {
 		{}
 
 		void ColouredButton::redraw(bool flush) {
+			if(!isVisible) return;
+
 			switch(type){
 				case Type::regular:
 					gui.theme.draw_coloured_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, isHover, isHover&&isPressed);
