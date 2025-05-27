@@ -342,8 +342,26 @@ struct __attribute__((packed)) Infoblock {
 	auto get_modelNumber() -> const char * { return _copy_string(modelNumber); }
 	auto get_currentMediaSerialNumber() -> const char * { return _copy_string(currentMediaSerialNumber); }
 
+	enum struct AccessMode {
+		lba48,
+		lba28,
+		chs
+	};
+
+	auto get_accessMode() -> AccessMode {
+		if(lba48Supported&&lba48SectorCount>=lbaSectorCount) {
+			return AccessMode::lba48;
+
+		}else if(lbaSupported){
+			return AccessMode::lba28;
+
+		}else{
+			return AccessMode::chs;
+		}
+	}
+
 	auto get_sector_count(bool &use48Bits, bool force = false) -> U64 {
-		if(lba48Supported &&lba48SectorCount>=lbaSectorCount) {
+		if(lba48Supported&&lba48SectorCount>=lbaSectorCount) {
 			use48Bits = true;
 			return lba48SectorCount;
 		}
@@ -355,27 +373,29 @@ struct __attribute__((packed)) Infoblock {
 	auto get_physical_sector_size() -> U32 {
 		if(!blockSizeValid1||blockSizeValid0) return 512; // invalid block size config
 
-		U32 blockSize = 512;
+		U32 sectorSize = 512;
 
 		if(logicalSectorNot512Bytes){
-			blockSize = logicalSectorSize*2;
+			sectorSize = logicalSectorSize*2;
 		}
 
 		if(multipleLogicalPerPhysicalSectors){
-			return blockSize << logicalSectorsPerPhysicalSector;
+			sectorSize <<= logicalSectorsPerPhysicalSector;
 		}
 
-		return blockSize;
+		return sectorSize;
 	}
 
 	auto get_sector_size() -> U32 {
 		if(!blockSizeValid1||blockSizeValid0) return 512; // invalid block size config
 
+		U32 sectorSize = 512;
+
 		if(logicalSectorNot512Bytes){
-			return logicalSectorSize*2;
+			sectorSize = logicalSectorSize*2;
 		}
 
-		return 512;
+		return sectorSize;
 	}
 
 	auto get_block_offset() -> U32 {
