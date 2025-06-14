@@ -14,6 +14,11 @@ namespace ui2d {
 			/**/ Area(Gui &gui, graphics2d::Rect rect):
 				Super(gui, rect)
 			{}
+
+			IVec2 minSize{0,0};
+			IVec2 maxSize{0,0};
+			auto get_min_size() -> IVec2 override { return minSize; }
+			auto get_max_size() -> IVec2 override { return maxSize; }
 		};
 	}
 }

@@ -21,7 +21,7 @@
 
 namespace ui2d::image {
 	namespace icons {
-		extern graphics2d::Buffer super;
+		extern graphics2d::MultisizeIcon super;
 	}
 }
 
@@ -94,7 +94,7 @@ namespace tests::taskbar {
 		};
 
 		/**/ DesktopGui::DesktopGui(driver::DesktopManager::Window &window):
-			Super(window.get_client_area(), *taskbar::theme),
+			Super(window.get_client_buffer(), taskbar::theme),
 			window(window)
 		{}
 
@@ -128,7 +128,7 @@ namespace tests::taskbar {
 		}
 
 		/**/ WindowButton::WindowButton(ui2d::Gui &gui, graphics2d::Rect rect, driver::DesktopManager::Window &window):
-			Super(gui, rect, graphics2d::premultiply_colour(0x55dddddd), window.get_title()),
+			Super(gui, rect, graphics2d::premultiply_colour(desktopManager->get_default_window_colour()|0x55<<24), window.get_title()),
 			window(window)
 		{
 			set_toggle(false);
@@ -176,7 +176,7 @@ namespace tests::taskbar {
 			if(!button) return;
 
 			#ifdef PREVIEW_INCLUDE_BORDER
-				auto &clientArea = button->window.get_window_area();
+				auto &clientArea = button->window.get_window_buffer();
 			#else
 				auto &clientArea = button->window.get_client_area();
 			#endif
@@ -252,7 +252,7 @@ namespace tests::taskbar {
 			#endif
 			previewWindow->set_interact_area({0,0,0,0});
 
-			auto previewWindowArea = previewWindow->get_window_area();
+			auto previewWindowArea = previewWindow->get_window_buffer();
 			#ifndef PREVIEW_INCLUDE_BORDER
 				previewWindowArea.draw_scaled_buffer(0, 0, previewWindowArea.width, previewWindowArea.height, clientArea, 0, 0, clientArea.width, clientArea.height, {});
 				previewWindowArea.draw_rect_outline({0,0,(I32)previewWindowArea.width,(I32)previewWindowArea.height}, 0x888888, 1, corner, corner, corner, corner);
@@ -306,7 +306,7 @@ namespace tests::taskbar {
 
 		static auto &clockArea = box.add_control<ui2d::control::Area>();
 
-		launcherButton.icon = &ui2d::image::icons::super;
+		launcherButton.icon = ui2d::image::icons::super;
 		launcherButton.set_min_size(theme->get_minimum_button_width()/2, minButtonHeight);
 
 		static auto _set_orientation = [](bool vertical) {
@@ -331,8 +331,8 @@ namespace tests::taskbar {
 				auto minSize = box.get_min_size();
 				auto maxSize = box.get_max_size();
 				taskbarWindow->set_size_limits(
-					maths::add_safe(minSize.x, (U32)padding*2u), maths::add_safe(minSize.y, (U32)padding*2u),
-					maths::add_safe(maxSize.x, (U32)padding*2u), maths::add_safe(maxSize.y, (U32)padding*2u)
+					minSize.x + padding*2, minSize.y + padding*2,
+					maths::add_safe(maxSize.x, padding*2), maths::add_safe(maxSize.y, padding*2)
 				);
 			}
 
@@ -343,8 +343,8 @@ namespace tests::taskbar {
 			{ auto guiFreeze = gui.freeze();
 				auto width = taskbarWindow->get_width();
 				auto height = taskbarWindow->get_height();
-				auto &clientArea = taskbarWindow->get_client_area();
-				auto &windowArea = taskbarWindow->get_window_area();
+				auto &clientArea = taskbarWindow->get_client_buffer();
+				auto &windowArea = taskbarWindow->get_window_buffer();
 
 				clientArea.draw_rect(0, 0, clientArea.width, clientArea.height, 0xff000000);
 

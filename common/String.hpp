@@ -71,18 +71,23 @@ struct String {
 	}
 
 	void append(Type c){
+		Type *data;
+
 		if(is_local_string()){
 			if(length+1+1>localBufferSize){
 				resize(length+1);
+				data = this->data;
+			}else{
+				data = this->localData;
 			}
 
 		}else{
 			if(length+1>allocated){
 				resize(length+1);
 			}
+			data = this->data;
 		}
 
-		auto data = get_data();
 		data[length++] = c;
 		data[length] = '\0';
 	}
@@ -91,52 +96,68 @@ struct String {
 		auto sourceLength = strlen(source);
 		if(sourceLength<1) return;
 
+		Type *data;
+
 		if(is_local_string()){
 			if(length+sourceLength+1>localBufferSize){
 				resize(length+sourceLength);
+				data = this->data;
+			}else{
+				data = this->localData;
 			}
 
 		}else{
 			if(length+sourceLength+1>allocated){
 				resize(length+sourceLength);
 			}
+			data = this->data;
 		}
 
-		memcpy(&get_data()[length], source, sourceLength+1);
+		memcpy(&data[length], source, sourceLength+1);
 		length += sourceLength;
 	}
 
 	void append(const String &source){
 		if(source.length<1) return;
 
+		Type *data;
+
 		if(is_local_string()){
 			if(length+source.length+1>localBufferSize){
 				resize(length+source.length);
+				data = this->data;
+			}else{
+				data = this->localData;
 			}
 
 		}else{
 			if(length+source.length+1>allocated){
 				resize(length+source.length);
 			}
+			data = this->data;
 		}
 
-		memcpy(&get_data()[length], source.get_data(), source.length+1);
+		memcpy(&data[length], source.get_data(), source.length+1);
 		length += source.length;
 	}
 
 	void insert(U32 index, Type c){
+		Type *data;
+
 		if(is_local_string()){
 			if(length+1+1>localBufferSize){
 				resize(length+1);
+				data = this->data;
+			}else{
+				data = this->localData;
 			}
 
 		}else{
 			if(length+1>allocated){
 				resize(length+1);
 			}
+			data = this->data;
 		}
-
-		auto data = get_data();
 
 		//TODO:optimise the right side is moved twice, once by resize(), then here again. Ideally we would resize without the full memcpy
 		memmove(&data[index+1], memmove(&data[index]), length++-index+1);

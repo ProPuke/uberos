@@ -106,10 +106,6 @@ namespace driver::system {
 		return {};
 	}
 
-	auto Idt::_on_stop() -> Try<> {
-		return {};
-	}
-
 	void Idt::set_gate_trap(U8 i, void *isr) {
 		Lock_Guard guard(lock);
 

@@ -25,6 +25,11 @@ struct Optional {
 	auto operator=(const Type &data) { present = true; this->data = data; return *this; }
 	auto operator=(const Type &&data) { present = true; this->data = data; return *this; }
 
+	auto get() /* */ -> /* */ Type& { return data; }
+	auto get() const -> const Type& { return data; }
+	auto get_or(/* */ Type &other) /* */ -> Type& { return present?data:other; }
+	auto get_or(const Type &other) const -> const Type& { return present?data:other; }
+
 	private:
 
 	bool present = false;

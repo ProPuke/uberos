@@ -15,22 +15,29 @@ namespace ui2d {
 		{}
 		virtual /**/~LayoutControlBase(){}
 
-		UVec2 size{0,0}; // *requested* size (use _get_rect() for actual effective)
-		UVec2 minSize{0,0};
-		UVec2 maxSize{(U32)~0,(U32)~0};
+		IVec2 size{0,0}; // *requested* size (use _get_rect() for actual effective)
+		IVec2 minSize{0,0};
+		IVec2 maxSize{0x7fff'ffff, 0x7fff'ffff};
 		float expandX = 1.0;
 		float expandY = 1.0;
 
-		virtual void set_size(U32 x, U32 y);
-		virtual auto get_min_size() -> UVec2 { return minSize; }
-		virtual void set_min_size(U32 x, U32 y);
-		virtual auto get_max_size() -> UVec2 { return maxSize; }
-		virtual void set_max_size(U32 x, U32 y);
-		virtual void set_fixed_size(U32 x, U32 y);
+		virtual void set_size(I32 x, I32 y);
+		virtual auto get_min_control_size() -> IVec2 { return {0, 0}; }
+		virtual auto get_max_control_size() -> IVec2 { return {0x7fff'ffff, 0x7fff'ffff}; }
+		virtual auto get_min_size() -> IVec2 { return max(minSize, get_min_control_size()); }
+		virtual auto get_max_size() -> IVec2 { return min(maxSize, get_max_control_size()); }
+		virtual void set_min_size(I32 x, I32 y);
+		virtual void set_max_size(I32 x, I32 y);
+		virtual void set_fixed_size(I32 x, I32 y);
 		virtual void set_expand(float x, float y);
+
+		virtual auto get_is_visible() -> bool = 0;
+		virtual void set_is_visible(bool set) = 0;
 
 		virtual auto _get_rect() -> graphics2d::Rect = 0;
 		virtual void set_rect(graphics2d::Rect) = 0;
+
+		virtual void layout(){}
 
 		virtual void redraw(bool flush = true) = 0;
 	};
@@ -40,11 +47,14 @@ namespace ui2d {
 		typedef Control Super;
 
 		template <typename ...Params>
-		/**/ LayoutControl(Gui &gui, LayoutContainer *container, Params ...params);
+		/**/ LayoutControl(Gui &gui, LayoutContainer *container, Params &&...params);
 
-		void set_size(U32 x, U32 y) override;
-		auto get_min_size() -> UVec2 override { return minSize; }
-		auto get_max_size() -> UVec2 override { return maxSize; }
+		void set_size(I32 x, I32 y) override;
+		auto get_min_control_size() -> IVec2 override { return Control::get_min_size(); }
+		auto get_max_control_size() -> IVec2 override { return Control::get_max_size(); }
+
+		auto get_is_visible() -> bool override { return Control::isVisible; }
+		void set_is_visible(bool set) { Control::isVisible = set; }
 
 		auto _get_rect() -> graphics2d::Rect override { return this->rect; }
 		void set_rect(graphics2d::Rect set) override { this->rect = set; }
@@ -59,20 +69,23 @@ namespace ui2d {
 
 		PodArray<LayoutControlBase*> children;
 
+		bool isVisible = true;
+
 		/**/ LayoutContainer(Gui &gui, LayoutContainer *container = nullptr):
 			Super(gui, container)
 		{}
 
 		template <typename ControlType, typename ...Params>
-		auto add_control(Params ...params) -> LayoutControl<ControlType>&;
+		auto add_control(Params &&...params) -> LayoutControl<ControlType>&;
 		template <typename ContainerType, typename ...Params>
-		auto add_container_control(Params ...params) -> ContainerType&;
+		auto add_container_control(Params &&...params) -> ContainerType&;
 		virtual void remove_control(LayoutControlBase&);
+
+		auto get_is_visible() -> bool override { return isVisible; }
+		void set_is_visible(bool set) { isVisible = set; }
 
 		virtual void _on_children_changed();
 		virtual void _on_resized();
-
-		virtual void layout();
 
 		void set_rect(graphics2d::Rect) override;
 

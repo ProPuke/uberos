@@ -65,7 +65,7 @@ namespace utils {
 					if(*text=='m') text++;
 				}
 
-				auto &clientArea = window->get_client_area();
+				auto &clientArea = window->get_client_buffer();
 
 				auto fontSettings = graphics2d::Buffer::FontSettings{
 					.font = *graphics2d::font::default_console,
@@ -116,7 +116,7 @@ namespace utils {
 				cursorX = leftMargin;
 				cursorY = lineHeight;
 				cursorColumn = 0;
-				auto &clientArea = window->get_client_area();
+				auto &clientArea = window->get_client_buffer();
 				columns = max(1u, clientArea.width / 500u);
 				columnWidth = clientArea.width / columns;
 

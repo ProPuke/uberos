@@ -1,4 +1,5 @@
 #pragma once
 
 inline void halt [[noreturn]] () { halt: asm volatile("cli"); goto halt; }
-inline void assert(bool test) { if(!test) halt(); }
+template <typename Type>
+inline auto assert(Type test) -> Type { if(!test) halt(); return test; }

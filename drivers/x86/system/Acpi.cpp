@@ -231,10 +231,6 @@ namespace driver::system {
 		return {};
 	}
 
-	auto Acpi::_on_stop() -> Try<> {
-		return {};
-	}
-
 	auto Acpi::get_entry_count() -> unsigned {
 		if(xsdt){
 			return xsdt->get_sdt_count();

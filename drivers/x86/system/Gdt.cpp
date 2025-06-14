@@ -110,10 +110,6 @@ namespace driver::system {
 		return {};
 	}
 
-	auto Gdt::_on_stop() -> Try<> {
-		return {};
-	}
-
 	void Gdt::set_entry(U32 i, U32 base, U32 limit, U8 access, DescriptorSize descriptorSize, bool granularity4k) {
 		Lock_Guard guard(lock);
 

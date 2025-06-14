@@ -1,8 +1,8 @@
 #pragma once
 
 #ifndef DEBUG
-	template<typename ...Params>
-	inline void assert(bool assertion, Params ...messageParams) {}
+	template<typename Type, typename ...Params>
+	inline auto assert(Type test, Params ...messageParams) -> Type { return test; }
 
 #else
 	#include <kernel/logging.hpp>
@@ -33,9 +33,9 @@
 
 		#define assert(ASSERTION, ...)  _assert(ASSERTION, __FILE__, __LINE__, ##__VA_ARGS__)
 
-		template<typename ...Params>
-		inline void _assert(bool assertion, const char *filename, unsigned linenumber, Params ...messageParams) {
-			if(assertion) return;
+		template<typename Type, typename ...Params>
+		inline auto _assert(Type test, const char *filename, unsigned linenumber, Params ...messageParams) -> Type {
+			if(assertion) return test;
 
 			logging::print_error("CRITICAL ERROR in ", filename, ':', linenumber, ' ', messageParams...);
 			while(true);

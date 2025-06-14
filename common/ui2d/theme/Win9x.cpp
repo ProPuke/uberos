@@ -6,10 +6,10 @@
 
 namespace ui2d::image {
 	namespace widgets {
-		extern graphics2d::Buffer close9;
-		extern graphics2d::Buffer maximise9;
-		extern graphics2d::Buffer restore9;
-		extern graphics2d::Buffer minimise9;
+		extern graphics2d::MultisizeIcon close;
+		extern graphics2d::MultisizeIcon maximise;
+		extern graphics2d::MultisizeIcon restore;
+		extern graphics2d::MultisizeIcon minimise;
 	}
 }
 
@@ -53,123 +53,123 @@ namespace ui2d {
 			auto statusbarHeight = 18;
 			// auto statusbarHeight = 20;
 
-			void draw_window_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled = true, U32 colour = 0xffffff);
-			void draw_button_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled = true, U32 colour = 0xffffff);
-			void draw_thin_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled = true, U32 colour = 0xffffff);
+			void draw_window_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled = true, U32 colour = theme::buttonFace);
+			void draw_button_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled = true, U32 colour = theme::buttonFace);
+			void draw_thin_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled = true, U32 colour = theme::buttonFace);
 
 			void draw_window_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled, U32 colour) {
 				if(rect.width()<5||rect.height()<5) return draw_thin_bevel(buffer, rect, isDown, filled, colour);
 
-				const auto buttonLight = graphics2d::multiply_colours(isDown?theme::buttonDkShadow:theme::buttonLight, colour);
-				const auto buttonHilight = graphics2d::multiply_colours(isDown?theme::buttonShadow:theme::buttonHilight, colour);
-				const auto buttonFace = graphics2d::multiply_colours(theme::buttonFace, colour);
-				const auto buttonShadow = graphics2d::multiply_colours(isDown?theme::buttonHilight:theme::buttonShadow, colour);
-				const auto buttonDkShadow = graphics2d::multiply_colours(isDown?theme::buttonLight:theme::buttonDkShadow, colour);
+				const auto face = graphics2d::blend_colours(theme::buttonFace, colour&0xffffff)|colour&0xff000000;
+				const auto light = graphics2d::apply_colour_difference(isDown?theme::buttonDkShadow:theme::buttonLight, theme::buttonFace, face);
+				const auto hilight = graphics2d::apply_colour_difference(isDown?theme::buttonShadow:theme::buttonHilight, theme::buttonFace, face);
+				const auto shadow = graphics2d::apply_colour_difference(isDown?theme::buttonHilight:theme::buttonShadow, theme::buttonFace, face);
+				const auto dhShadow = graphics2d::apply_colour_difference(isDown?theme::buttonLight:theme::buttonDkShadow, theme::buttonFace, face);
 
-				buffer.set(rect.x1, rect.y1, buttonLight, rect.width()-1);
-				buffer.set(rect.x2-1, rect.y1, buttonDkShadow, 1);
+				buffer.set(rect.x1, rect.y1, light, rect.width()-1);
+				buffer.set(rect.x2-1, rect.y1, dhShadow, 1);
 
-				buffer.set(rect.x1, rect.y1+1, buttonLight, 1);
-				buffer.set(rect.x1+1, rect.y1+1, buttonHilight, rect.width()-2-1);
-				buffer.set(rect.x2-2, rect.y1+1, buttonShadow, 1);
-				buffer.set(rect.x2-1, rect.y1+1, buttonDkShadow, 1);
+				buffer.set(rect.x1, rect.y1+1, light, 1);
+				buffer.set(rect.x1+1, rect.y1+1, hilight, rect.width()-2-1);
+				buffer.set(rect.x2-2, rect.y1+1, shadow, 1);
+				buffer.set(rect.x2-1, rect.y1+1, dhShadow, 1);
 
 				for(auto y=rect.y1+2; y<rect.y2-2; y++){
-					buffer.set(rect.x1, y, buttonLight, 1);
-					buffer.set(rect.x1+1, y, buttonHilight, 1);
+					buffer.set(rect.x1, y, light, 1);
+					buffer.set(rect.x1+1, y, hilight, 1);
 					if(filled){
-						buffer.set(rect.x1+2, y, buttonFace, rect.width()-2-2);
+						buffer.set(rect.x1+2, y, face, rect.width()-2-2);
 					}
-					buffer.set(rect.x2-2, y, buttonShadow, 1);
-					buffer.set(rect.x2-1, y, buttonDkShadow, 1);
+					buffer.set(rect.x2-2, y, shadow, 1);
+					buffer.set(rect.x2-1, y, dhShadow, 1);
 				}
 
-				buffer.set(rect.x1, rect.y2-2, buttonLight, 1);
-				buffer.set(rect.x1+1, rect.y2-2, buttonShadow, rect.width()-1-1);
-				buffer.set(rect.x2-1, rect.y2-2, buttonDkShadow, 1);
+				buffer.set(rect.x1, rect.y2-2, light, 1);
+				buffer.set(rect.x1+1, rect.y2-2, shadow, rect.width()-1-1);
+				buffer.set(rect.x2-1, rect.y2-2, dhShadow, 1);
 
-				buffer.set(rect.x1, rect.y2-1, buttonDkShadow, rect.width());
+				buffer.set(rect.x1, rect.y2-1, dhShadow, rect.width());
 			}
 
 			void draw_button_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled, U32 colour) {
 				if(rect.width()<5||rect.height()<5) return draw_thin_bevel(buffer, rect, isDown, filled, colour);
 
-				const auto buttonHilight = graphics2d::multiply_colours(isDown?theme::buttonDkShadow:theme::buttonHilight, colour);
-				const auto buttonLight = graphics2d::multiply_colours(isDown?theme::buttonShadow:theme::buttonLight, colour);
-				const auto buttonFace = graphics2d::multiply_colours(theme::buttonFace, colour);
-				const auto buttonShadow = graphics2d::multiply_colours(isDown?theme::buttonLight:theme::buttonShadow, colour);
-				const auto buttonDkShadow = graphics2d::multiply_colours(isDown?theme::buttonHilight:theme::buttonDkShadow, colour);
+				const auto face = graphics2d::blend_colours(theme::buttonFace, colour&0xffffff)|colour&0xff000000;
+				const auto hilight = graphics2d::apply_colour_difference(isDown?theme::buttonDkShadow:theme::buttonHilight, theme::buttonFace, face);
+				const auto light = graphics2d::apply_colour_difference(isDown?theme::buttonShadow:theme::buttonLight, theme::buttonFace, face);
+				const auto shadow = graphics2d::apply_colour_difference(isDown?theme::buttonLight:theme::buttonShadow, theme::buttonFace, face);
+				const auto dkShadow = graphics2d::apply_colour_difference(isDown?theme::buttonHilight:theme::buttonDkShadow, theme::buttonFace, face);
 
-				buffer.set(rect.x1, rect.y1, buttonHilight, rect.width()-1);
-				buffer.set(rect.x2-1, rect.y1, buttonDkShadow, 1);
+				buffer.set(rect.x1, rect.y1, hilight, rect.width()-1);
+				buffer.set(rect.x2-1, rect.y1, shadow, 1);
 
-				buffer.set(rect.x1, rect.y1+1, buttonHilight, 1);
-				buffer.set(rect.x1+1, rect.y1+1, buttonLight, rect.width()-2-1);
-				buffer.set(rect.x2-2, rect.y1+1, buttonShadow, 1);
-				buffer.set(rect.x2-1, rect.y1+1, buttonDkShadow, 1);
+				buffer.set(rect.x1, rect.y1+1, hilight, 1);
+				buffer.set(rect.x1+1, rect.y1+1, light, rect.width()-2-1);
+				buffer.set(rect.x2-2, rect.y1+1, shadow, 1);
+				buffer.set(rect.x2-1, rect.y1+1, dkShadow, 1);
 
 				for(auto y=rect.y1+2; y<rect.y2-2; y++){
-					buffer.set(rect.x1, y, buttonHilight, 1);
-					buffer.set(rect.x1+1, y, buttonLight, 1);
+					buffer.set(rect.x1, y, hilight, 1);
+					buffer.set(rect.x1+1, y, light, 1);
 					if(filled){
-						buffer.set(rect.x1+2, y, buttonFace, rect.width()-2-2);
+						buffer.set(rect.x1+2, y, face, rect.width()-2-2);
 					}
-					buffer.set(rect.x2-2, y, buttonShadow, 1);
-					buffer.set(rect.x2-1, y, buttonDkShadow, 1);
+					buffer.set(rect.x2-2, y, shadow, 1);
+					buffer.set(rect.x2-1, y, dkShadow, 1);
 				}
 
-				buffer.set(rect.x1, rect.y2-2, buttonHilight, 1);
-				buffer.set(rect.x1+1, rect.y2-2, buttonShadow, rect.width()-1-1);
-				buffer.set(rect.x2-1, rect.y2-2, buttonDkShadow, 1);
+				buffer.set(rect.x1, rect.y2-2, hilight, 1);
+				buffer.set(rect.x1+1, rect.y2-2, shadow, rect.width()-1-1);
+				buffer.set(rect.x2-1, rect.y2-2, dkShadow, 1);
 
-				buffer.set(rect.x1, rect.y2-1, buttonDkShadow, rect.width());
+				buffer.set(rect.x1, rect.y2-1, dkShadow, rect.width());
 			}
 
 			void draw_thin_bevel(graphics2d::Buffer &buffer, graphics2d::Rect rect, bool isDown, bool filled, U32 colour) {
 				if(rect.width()<4||rect.height()<4) return;
 
-				const auto buttonHighlight = graphics2d::multiply_colours(isDown?theme::buttonShadow:theme::buttonHilight, colour);
-				const auto buttonLight = graphics2d::multiply_colours(theme::buttonLight, colour);
-				// const auto buttonFace = graphics2d::multiply_colours(theme::buttonFace, colour);
-				const auto buttonShadow = graphics2d::multiply_colours(isDown?theme::buttonHilight:theme::buttonShadow, colour);
+				const auto face = graphics2d::blend_colours(theme::buttonFace, colour&0xffffff)|colour&0xff000000;
+				const auto hilight = graphics2d::apply_colour_difference(isDown?theme::buttonShadow:theme::buttonHilight, theme::buttonFace, face);
+				const auto light = graphics2d::apply_colour_difference(theme::buttonLight, theme::buttonFace, face);
+				const auto shadow = graphics2d::apply_colour_difference(isDown?theme::buttonHilight:theme::buttonShadow, theme::buttonFace, face);
 
-				buffer.set(rect.x1, rect.y1, buttonHighlight, rect.width()-1);
-				buffer.set(rect.x2-1, rect.y1, buttonLight, 1);
+				buffer.set(rect.x1, rect.y1, hilight, rect.width()-1);
+				buffer.set(rect.x2-1, rect.y1, light, 1);
 
-				buffer.set(rect.x1, rect.y1+1, buttonHighlight, 1);
-				buffer.set(rect.x1+1, rect.y1+1, buttonFace, rect.width()-1-1);
-				buffer.set(rect.x2-1, rect.y1+1, buttonShadow, 1);
+				buffer.set(rect.x1, rect.y1+1, hilight, 1);
+				buffer.set(rect.x1+1, rect.y1+1, face, rect.width()-1-1);
+				buffer.set(rect.x2-1, rect.y1+1, shadow, 1);
 
 				for(auto y=rect.y1+1; y<rect.y2-1; y++){
-					buffer.set(rect.x1, y, buttonHighlight, 1);
+					buffer.set(rect.x1, y, hilight, 1);
 					if(filled){
-						buffer.set(rect.x1+1, y, buttonFace, rect.width()-1-1);
+						buffer.set(rect.x1+1, y, face, rect.width()-1-1);
 					}
-					buffer.set(rect.x2-1, y, buttonShadow, 1);
+					buffer.set(rect.x2-1, y, shadow, 1);
 				}
 
-				buffer.set(rect.x1, rect.y2-1, buttonLight, 1);
-				buffer.set(rect.x1+1, rect.y2-1, buttonShadow, rect.width()-1);
+				buffer.set(rect.x1, rect.y2-1, light, 1);
+				buffer.set(rect.x1+1, rect.y2-1, shadow, rect.width()-1);
 			}
 		}
 
 		/**/ Win9x::Win9x() {}
 
-		auto Win9x::get_component_spacing() -> U32 { return 7; }
-		auto Win9x::get_section_spacing() -> U32 { return 11; }
+		auto Win9x::get_component_spacing() -> I32 { return 7; }
+		auto Win9x::get_section_spacing() -> I32 { return 11; }
 
-		auto Win9x::get_minimum_button_width() -> U32 {
+		auto Win9x::get_minimum_button_width() -> I32 {
 			return 100;
 		}
-		auto Win9x::get_minimum_button_height() -> U32 {
+		auto Win9x::get_minimum_button_height() -> I32 {
 			return 28;
 		}
 
-		void Win9x::draw_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
-			return draw_coloured_button(buffer, rect, 0xffffff, 0xffffff, 255, text, smallFont, icon, isHover, isDown);
+		void Win9x::draw_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool isHover, bool isDown) {
+			return draw_coloured_button(buffer, rect, 0xffffff, theme::buttonFace, 255, text, smallFont, icon, isHover, isDown);
 		}
 
-		void Win9x::draw_coloured_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
+		void Win9x::draw_coloured_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool isHover, bool isDown) {
 			if(rect.width()<5||rect.height()<5) return;
 
 			auto bgColour = graphics2d::blend_colours(backgroundColour, colour, opacity);
@@ -178,14 +178,16 @@ namespace ui2d {
 			auto contentRect = rect.cropped(3,3,3,3);
 			auto textRect = contentRect;
 
-			if(icon&&contentRect.height()>=4){
-				if((I32)icon->height<=contentRect.height()+2){
-					buffer.draw_buffer_blended(contentRect.x1-1+((contentRect.width()+2)-(I32)icon->width)/2, contentRect.y1-1+(contentRect.height()+2-(I32)icon->height)/2+(isDown?1:0), 0, 0, icon->width, icon->height, *icon, opacity);
-				}else{
-					const auto trim = 0; // trim pixels off the edges to ensure a tighter fit
-					const auto iconHeight = contentRect.height()+2;
-					const auto iconWidth = ((I32)icon->width-trim*2) * iconHeight/((I32)icon->height-trim*2);
-					buffer.draw_scaled_buffer_blended(contentRect.x1-1+((contentRect.width()+2)-iconWidth)/2, contentRect.y1-1, iconWidth, iconHeight, *icon, trim, trim, icon->width-trim*2, icon->height-trim*2, {}, opacity);
+			if(auto iconBuffer = icon.get_size_or_larger_or_smaller(contentRect.height()-2)){
+				if(iconBuffer->height>=4){
+					if((I32)iconBuffer->height<=contentRect.height()+2){
+						buffer.draw_buffer_blended(contentRect.x1-1+((contentRect.width()+2)-(I32)iconBuffer->width)/2, contentRect.y1-1+(contentRect.height()+2-(I32)iconBuffer->height)/2+(isDown?1:0), 0, 0, iconBuffer->width, iconBuffer->height, *iconBuffer, opacity);
+					}else{
+						const auto trim = 0; // trim pixels off the edges to ensure a tighter fit
+						const auto iconHeight = contentRect.height()+2;
+						const auto iconWidth = ((I32)iconBuffer->width-trim*2) * iconHeight/((I32)iconBuffer->height-trim*2);
+						buffer.draw_scaled_buffer_blended(contentRect.x1-1+((contentRect.width()+2)-iconWidth)/2, contentRect.y1-1, iconWidth, iconHeight, *iconBuffer, trim, trim, iconBuffer->width-trim*2, iconBuffer->height-trim*2, {}, opacity);
+					}
 				}
 			}
 
@@ -199,15 +201,15 @@ namespace ui2d {
 				.maxLines=1
 			};
 			const auto measurements = buffer.measure_text(fontSettings, text, textRect.width());
-			buffer.draw_text(fontSettings, text, textRect.x1+(textRect.width()-measurements.rect.width())/2, textRect.y1+(textRect.height()+measurements.lineHeight)/2+(isDown?1:0), textRect.width(), textColour);
+			buffer.draw_text(fontSettings, text, textRect.x1+(textRect.width()-measurements.rect.width())/2, textRect.y1+(textRect.height()+measurements.capHeight)/2+(isDown?1:0), textRect.width(), textColour);
 		}
 
-		void Win9x::draw_coloured_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
+		void Win9x::draw_coloured_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool toggleState, bool isHover, bool isDown) {
 			return draw_coloured_button(buffer, rect, backgroundColour, colour, opacity, text, smallFont, icon, isHover, isDown||toggleState);
 		}
 
-		void Win9x::draw_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
-			return draw_coloured_toggle_button(buffer, rect, 0xffffff, 0xffffff, 255, text, smallFont, icon, toggleState, isHover, isDown);
+		void Win9x::draw_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool toggleState, bool isHover, bool isDown) {
+			return draw_coloured_toggle_button(buffer, rect, 0xffffff, theme::buttonFace, 255, text, smallFont, icon, toggleState, isHover, isDown);
 		}
 
 		auto Win9x::get_window_min_width() -> U32 {
@@ -245,17 +247,17 @@ namespace ui2d {
 			return false;
 		}
 
-		auto Win9x::get_window_titlebar_widget_minimise() -> graphics2d::Buffer& {
-			return image::widgets::minimise9;
+		auto Win9x::get_window_titlebar_widget_minimise() -> graphics2d::MultisizeIcon& {
+			return image::widgets::minimise;
 		}
-		auto Win9x::get_window_titlebar_widget_maximise() -> graphics2d::Buffer& {
-			return image::widgets::maximise9;
+		auto Win9x::get_window_titlebar_widget_maximise() -> graphics2d::MultisizeIcon& {
+			return image::widgets::maximise;
 		}
-		auto Win9x::get_window_titlebar_widget_close() -> graphics2d::Buffer& {
-			return image::widgets::close9;
+		auto Win9x::get_window_titlebar_widget_close() -> graphics2d::MultisizeIcon& {
+			return image::widgets::close;
 		}
-		auto Win9x::get_window_titlebar_widget_restore() -> graphics2d::Buffer& {
-			return image::widgets::restore9;
+		auto Win9x::get_window_titlebar_widget_restore() -> graphics2d::MultisizeIcon& {
+			return image::widgets::restore;
 		}
 
 		auto Win9x::get_window_client_area(graphics2d::Rect rect) -> graphics2d::Rect {
@@ -333,6 +335,22 @@ namespace ui2d {
 			}, options.status, statusbarArea.x1+1, statusbarArea.y2-5, statusbarArea.width()-2, windowText);
 
 			// draw_window_bevel(buffer, clientArea.cropped(-2,-2,-2,-2), true);
+		}
+
+		auto Win9x::get_box_client_area(graphics2d::Rect rect, BoxType boxType) -> graphics2d::Rect {
+			auto spacing = get_component_spacing();
+			return rect.cropped(2+spacing, 2+spacing, 2+spacing, 2+spacing);
+		}
+
+		void Win9x::draw_box(graphics2d::Buffer &buffer, graphics2d::Rect rect, BoxType boxType) {
+			switch(boxType){
+				case BoxType::default_:
+					buffer.draw_rect_outline(rect, buttonShadow, 2);
+				break;
+				case BoxType::inset:
+					draw_thin_bevel(buffer, rect, true, false);
+				break;
+			}
 		}
 	}
 }

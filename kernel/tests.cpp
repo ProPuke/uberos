@@ -4,6 +4,7 @@
 #include "tests/keyboardTest.hpp"
 #include "tests/memoryTest.hpp"
 #include "tests/taskbar.hpp"
+#include "tests/driveList.hpp"
 
 namespace tests {
 	void run() {
@@ -11,5 +12,6 @@ namespace tests {
 		fontTest::run();
 		keyboardTest::run();
 		memoryTest::run();
+		driveList::run();
 	}
 }

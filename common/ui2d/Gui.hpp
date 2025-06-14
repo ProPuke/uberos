@@ -8,11 +8,11 @@ namespace ui2d {
 	struct Control;
 
 	struct Gui {
-		/*   */ /**/ Gui(graphics2d::Buffer, Theme&);
+		/*   */ /**/ Gui(graphics2d::Buffer, Theme*);
 		virtual /**/~Gui();
 
 		graphics2d::Buffer buffer;
-		Theme &theme;
+		Theme *theme;
 		U32 backgroundColour;
 		PodArray<Control*> controls;
 		U32 isFrozen = 0;

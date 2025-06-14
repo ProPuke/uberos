@@ -2,15 +2,11 @@
 
 #include "Control.hpp"
 
-namespace {
-	const auto windowBackgroundColour = 0xeeeeee;
-}
-
 namespace ui2d {
-	/**/ Gui:: Gui(graphics2d::Buffer buffer, Theme &theme):
+	/**/ Gui:: Gui(graphics2d::Buffer buffer, Theme *theme):
 		buffer(buffer),
 		theme(theme),
-		backgroundColour(windowBackgroundColour)
+		backgroundColour(theme->get_window_background_colour())
 	{}
 
 	/**/ Gui::~Gui(){}

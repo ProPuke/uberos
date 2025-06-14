@@ -34,21 +34,21 @@ namespace ui2d {
 			graphics2d::create_diagonal_corner(window::cornerRadius-1, window::cornerInner);
 		}
 
-		auto Clean::get_component_spacing() -> U32 { return 7; }
-		auto Clean::get_section_spacing() -> U32 { return 11; }
+		auto Clean::get_component_spacing() -> I32 { return 7; }
+		auto Clean::get_section_spacing() -> I32 { return 11; }
 
-		auto Clean::get_minimum_button_width() -> U32 {
+		auto Clean::get_minimum_button_width() -> I32 {
 			return 100;
 		}
-		auto Clean::get_minimum_button_height() -> U32 {
+		auto Clean::get_minimum_button_height() -> I32 {
 			return 28;
 		}
 
-		void Clean::draw_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
+		void Clean::draw_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool isHover, bool isDown) {
 			return draw_coloured_button(buffer, rect, window::backgroundColour, 0xdddddd, 0xff, text, smallFont, icon, isHover, isDown);
 		}
 
-		void Clean::draw_coloured_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
+		void Clean::draw_coloured_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool isHover, bool isDown) {
 			if(rect.width()<6||rect.height()<6) return;
 
 			// const auto trans = colour>>24;
@@ -82,16 +82,16 @@ namespace ui2d {
 			auto textWidth = min(textSize.rect.width(), innerRect.width()-padding-padding);
 			auto textHeight = min(textSize.rect.height(), innerRect.height()-padding-padding);
 
-			if(icon){
-				const auto iconSize = icon->height;
+			if(auto iconBuffer = icon.get_size_or_larger_or_smaller(innerRect.height())){
+				const auto iconSize = iconBuffer->height;
 				const auto iconOpacity = opacity*min(255u, (max(6u, iconSize)-6)*255/4)/255 * (isHover?255:77)/255;
-				buffer.draw_buffer_blended(innerRect.x1+innerRect.width()/2-icon->width/2, innerRect.y1+innerRect.height()/2-icon->height/2+(isDown?1:0), 0, 0, icon->width, icon->height, *icon, iconOpacity);
+				buffer.draw_buffer_blended(innerRect.x1+innerRect.width()/2-iconBuffer->width/2, innerRect.y1+innerRect.height()/2-iconBuffer->height/2+(isDown?1:0), 0, 0, iconBuffer->width, iconBuffer->height, *iconBuffer, iconOpacity);
 			}
 
 			buffer.draw_text(fontSettings, text, innerRect.x1+innerRect.width()/2-textWidth/2, innerRect.y1+innerRect.height()/2+textSize.capHeight-textHeight/2+(isDown?1:0), textWidth, textColour);
 		}
 
-		void Clean::draw_coloured_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
+		void Clean::draw_coloured_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool toggleState, bool isHover, bool isDown) {
 			if(true){
 				if(rect.width()<6||rect.height()<6) return;
 
@@ -139,9 +139,10 @@ namespace ui2d {
 				auto textHeight = min(textSize.rect.height(), innerRect.height()-padding-padding);
 
 				if(icon){
-					const auto iconSize = icon->height;
+					auto iconBuffer = icon.get_size_or_larger_or_smaller(innerRect.height());
+					const auto iconSize = iconBuffer->height;
 					const auto iconOpacity = opacity*min(255u, (max(6u, iconSize)-6)*255/4)/255 * (isHover?255:77)/255;
-					buffer.draw_buffer_blended(innerRect.x1+innerRect.width()/2-icon->width/2, innerRect.y1+innerRect.height()/2-icon->height/2+(isDown?1:0), 0, 0, icon->width, icon->height, *icon, iconOpacity);
+					buffer.draw_buffer_blended(innerRect.x1+innerRect.width()/2-iconBuffer->width/2, innerRect.y1+innerRect.height()/2-iconBuffer->height/2+(isDown?1:0), 0, 0, iconBuffer->width, iconBuffer->height, *iconBuffer, iconOpacity);
 				}
 
 				if(toggleState){
@@ -198,7 +199,7 @@ namespace ui2d {
 			}
 		}
 
-		void Clean::draw_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
+		void Clean::draw_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool toggleState, bool isHover, bool isDown) {
 			return draw_coloured_toggle_button(buffer, rect, window::backgroundColour, 0xdddddd, 0xff, text, smallFont, icon, toggleState, isHover, isDown);
 		}
 
@@ -413,6 +414,26 @@ namespace ui2d {
 				// shadowDisplay->buffer.draw_rect(0, 0, shadowDisplay->get_width(), shadowDisplay->get_height(), 0x80000000, corner, corner, corner, corner);
 				// shadowDisplay->place_below(*graphicsDisplay);
 				// shadowDisplay->update();
+			}
+		}
+
+		auto Clean::get_box_client_area(graphics2d::Rect rect, BoxType boxType) -> graphics2d::Rect {
+			auto spacing = get_component_spacing();
+			return rect.cropped(2+spacing, 2+spacing, 2+spacing, 2+spacing);
+		}
+
+		void Clean::draw_box(graphics2d::Buffer &buffer, graphics2d::Rect rect, BoxType boxType) {
+			U32 corners[3];
+			graphics2d::create_diagonal_corner(2, corners);
+
+			switch(boxType){
+				case BoxType::default_:
+					buffer.draw_rect_outline(rect, 0xcccccc, 1, corners, corners, corners, corners);
+				break;
+				case BoxType::inset:
+					//TODO: inset border?
+					buffer.draw_rect_outline(rect, 0xcccccc, 1, corners, corners, corners, corners);
+				break;
 			}
 		}
 	}

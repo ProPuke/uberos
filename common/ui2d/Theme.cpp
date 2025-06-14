@@ -4,10 +4,10 @@
 
 namespace ui2d::image {
 	namespace widgets {
-		extern graphics2d::Buffer close16;
-		extern graphics2d::Buffer maximise16;
-		extern graphics2d::Buffer restore16;
-		extern graphics2d::Buffer minimise16;
+		extern graphics2d::MultisizeIcon close;
+		extern graphics2d::MultisizeIcon maximise;
+		extern graphics2d::MultisizeIcon restore;
+		extern graphics2d::MultisizeIcon minimise;
 	}
 }
 
@@ -23,17 +23,17 @@ namespace ui2d {
 		bottomShadow(enableTransparency?8:0)
 	{}
 
-	auto Theme::get_window_titlebar_widget_minimise() -> graphics2d::Buffer& {
-		return image::widgets::minimise16;
+	auto Theme::get_window_titlebar_widget_minimise() -> graphics2d::MultisizeIcon& {
+		return image::widgets::minimise;
 	}
-	auto Theme::get_window_titlebar_widget_maximise() -> graphics2d::Buffer& {
-		return image::widgets::maximise16;
+	auto Theme::get_window_titlebar_widget_maximise() -> graphics2d::MultisizeIcon& {
+		return image::widgets::maximise;
 	}
-	auto Theme::get_window_titlebar_widget_close() -> graphics2d::Buffer& {
-		return image::widgets::close16;
+	auto Theme::get_window_titlebar_widget_close() -> graphics2d::MultisizeIcon& {
+		return image::widgets::close;
 	}
-	auto Theme::get_window_titlebar_widget_restore() -> graphics2d::Buffer& {
-		return image::widgets::restore16;
+	auto Theme::get_window_titlebar_widget_restore() -> graphics2d::MultisizeIcon& {
+		return image::widgets::restore;
 	}
 
 	auto Theme::get_shadow_intensity_at(graphics2d::Rect rect, I32 x, I32 y) -> U8 {
@@ -95,11 +95,11 @@ namespace ui2d {
 		return bottomShadow;
 	}
 
-	void Theme::draw_titlebar_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool isHover, bool isDown) {
+	void Theme::draw_titlebar_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool isHover, bool isDown) {
 		draw_coloured_button(buffer, rect, backgroundColour, colour, opacity, text, smallFont, icon, isHover, isDown);
 	}
 
-	void Theme::draw_titlebar_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::Buffer *icon, bool toggleState, bool isHover, bool isDown) {
+	void Theme::draw_titlebar_toggle_button(graphics2d::Buffer &buffer, graphics2d::Rect rect, U32 backgroundColour, U32 colour, U8 opacity, const char *text, bool smallFont, graphics2d::MultisizeIcon icon, bool toggleState, bool isHover, bool isDown) {
 		draw_coloured_toggle_button(buffer, rect, backgroundColour, colour, opacity, text, smallFont, icon, toggleState, isHover, isDown);
 	}
 }

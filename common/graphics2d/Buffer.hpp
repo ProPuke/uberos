@@ -11,7 +11,7 @@ namespace graphics2d {
 	struct DrawTextResult {
 		I32 x, y; // the final x & y
 		I32 capHeight; // how far above is the top of a capital letter
-		U32 lineHeight;
+		I32 lineHeight;
 		Rect rect; // the width and height of the rendered text block, excluding overhangs
 		Rect updatedArea; // the actual area of pixels updated (including overhang)
 		U32 lines;
@@ -68,9 +68,11 @@ namespace graphics2d {
 		void draw_rect(Rect rect, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
 		void draw_rect_blended(Rect rect, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect_blended(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
 		void draw_rect_outline(Rect rect, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect_outline(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, borderWidth, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
+		void draw_rect_outline_blended(Rect rect, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr) { draw_rect_outline(rect.x1, rect.y1, rect.x2-rect.x1, rect.y2-rect.y1, colour, borderWidth, topLeftCorners, topRightCorners, bottomLeftCorners, bottomRightCorners); }
 		void draw_rect(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_rect_blended(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_rect_outline(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
+		void draw_rect_outline_blended(U32 x, U32 y, U32 width, U32 height, U32 colour, U32 borderWidth = 1, U32 topLeftCorners[] = nullptr, U32 topRightCorners[] = nullptr, U32 bottomLeftCorners[] = nullptr, U32 bottomRightCorners[] = nullptr);
 		void draw_line(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
 		void draw_line_blended(U32 x, U32 y, U32 x2, U32 y2, U32 colour);
 		void draw_line_aa(U32 x, U32 y, U32 x2, U32 y2, U32 colour);

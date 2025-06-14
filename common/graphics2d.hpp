@@ -38,6 +38,16 @@ namespace graphics2d {
 		;
 	}
 
+	inline auto apply_colour_difference(U32 colour, U32 from, U32 to) -> U32 {
+		// apply the difference from `from` -> `to` to `colour` (colour * to/from)
+		return
+			(U8)maths::min(0xffu, (colour>> 0&0xff)*(to>> 0&0xff)/(from>> 0&0xff))<< 0|
+			(U8)maths::min(0xffu, (colour>> 8&0xff)*(to>> 8&0xff)/(from>> 8&0xff))<< 8|
+			(U8)maths::min(0xffu, (colour>>16&0xff)*(to>>16&0xff)/(from>>16&0xff))<<16|
+			(U8)maths::min(0xffu, 255-(255-colour>>24&0xff)*(255-to>>24&0xff)/maths::max(1u, 255-from>>24&0xff))<<24
+		;
+	}
+
 	inline auto multiply_colours(U32 colourA, U32 colourB) -> U32 {
 		const auto alphaB = 255-(colourB>>24);
 		return

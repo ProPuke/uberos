@@ -8,7 +8,7 @@ namespace time {
 	constinit AutomaticDriverReference<driver::Timer> timer;
 
 	void init() {
-		timer = drivers::find_and_activate<driver::Timer>();
+		timer.get();
 	}
 
 	auto now() -> U64 {

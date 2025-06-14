@@ -1,7 +1,7 @@
 #include "LayoutControl.hpp"
 
 namespace ui2d {
-	void LayoutControlBase::set_size(U32 x, U32 y) {
+	void LayoutControlBase::set_size(I32 x, I32 y) {
 		if(size.x==x&&size.y==y) return;
 
 		auto oldEffectiveX = maths::clamp(size.x, minSize.x, maxSize.x);
@@ -18,7 +18,7 @@ namespace ui2d {
 		}
 	}
 
-	void LayoutControlBase::set_min_size(U32 x, U32 y) {
+	void LayoutControlBase::set_min_size(I32 x, I32 y) {
 		if(minSize.x==x&&minSize.y==y) return;
 
 		minSize.x = x;
@@ -27,7 +27,7 @@ namespace ui2d {
 		if(container) container->_on_children_changed();
 	}
 
-	void LayoutControlBase::set_max_size(U32 x, U32 y) {
+	void LayoutControlBase::set_max_size(I32 x, I32 y) {
 		if(maxSize.x==x&&maxSize.y==y) return;
 
 		maxSize.x = x;
@@ -36,7 +36,7 @@ namespace ui2d {
 		if(container) container->_on_children_changed();
 	}
 
-	void LayoutControlBase::set_fixed_size(U32 x, U32 y) {
+	void LayoutControlBase::set_fixed_size(I32 x, I32 y) {
 		if(minSize.x==x&&minSize.y==y&&maxSize.x==x&&maxSize.y==y) return;
 
 		minSize.x = x;

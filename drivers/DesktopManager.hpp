@@ -177,8 +177,9 @@ namespace driver {
 			virtual auto get_y() -> I32 = 0;
 			virtual auto get_width() -> U32 = 0;
 			virtual auto get_height() -> U32 = 0;
-			virtual auto get_window_area() -> graphics2d::Buffer& = 0;
-			virtual auto get_client_area() -> graphics2d::Buffer& = 0;
+			virtual auto get_window_buffer() -> graphics2d::Buffer& = 0;
+			virtual auto get_client_buffer() -> graphics2d::Buffer& = 0;
+			virtual auto get_client_area() -> graphics2d::Rect = 0;
 			virtual void raise() = 0;
 			virtual void focus() = 0;
 			virtual auto is_top() -> bool = 0;
@@ -191,6 +192,7 @@ namespace driver {
 			virtual void move_to(I32 x, I32 y) = 0;
 			virtual void resize_to(U32 width, U32 height) = 0;
 			virtual void set_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) = 0;
+			virtual void set_client_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) = 0;
 			virtual void set_layer(Layer) = 0;
 			virtual void set_max_docked_size(U32 width, U32 height) = 0;
 			virtual void move_and_resize_to(I32 x, I32 y, U32 width, U32 height) = 0;

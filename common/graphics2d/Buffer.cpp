@@ -18,7 +18,7 @@ namespace graphics2d {
 		auto lines = 1u;
 		auto clipped = false;
 
-		const auto lineHeight = (U32)(fontSettings.font.lineHeight * fontSettings.size + 0.5) + fontSettings.lineSpacing;
+		const auto lineHeight = (I32)(fontSettings.font.lineHeight * fontSettings.size + 0.5);
 		const auto capHeight = (I32)(fontSettings.font.capHeight * fontSettings.size + 0.5);
 		// const auto ascend = (I32)(fontSettings.font.ascender * fontSettings.size + 0.5);
 		// const auto descend = (I32)(fontSettings.font.descender * fontSettings.size + 0.5);
@@ -32,7 +32,7 @@ namespace graphics2d {
 					if(lines>fontSettings.maxLines) break;
 
 					x = FixedI32::whole(startX);
-					y += lineHeight;
+					y += lineHeight+fontSettings.lineSpacing;
 				break;
 				default: {
 					auto character = fontSettings.font.get_character(*c);
@@ -49,7 +49,7 @@ namespace graphics2d {
 						if(lines>fontSettings.maxLines) break;
 						
 						x = FixedI32::whole(startX);
-						y += lineHeight;
+						y += lineHeight+fontSettings.lineSpacing;
 					}
 
 					if(character->atlasWidth&&character->atlasHeight){
@@ -93,7 +93,7 @@ namespace graphics2d {
 		}
 	
 		auto blockWidth = x2-startX;
-		auto blockHeight = y.round()-startY+capHeight;
+		auto blockHeight = y.round()+(I32)capHeight;
 
 		return {
 			x.round_up(), y.round_up(),
@@ -118,7 +118,7 @@ namespace graphics2d {
 		auto lines = 1u;
 		auto clipped = false;
 
-		const auto lineHeight = (U32)(fontSettings.font.lineHeight * fontSettings.size + 0.5) + fontSettings.lineSpacing;
+		const auto lineHeight = (I32)(fontSettings.font.lineHeight * fontSettings.size + 0.5);
 		const auto capHeight = (I32)(fontSettings.font.capHeight * fontSettings.size + 0.5);
 		// const auto ascend = (I32)(fontSettings.font.ascender * fontSettings.size + 0.5);
 		// const auto descend = (I32)(fontSettings.font.descender * fontSettings.size + 0.5);
@@ -132,7 +132,7 @@ namespace graphics2d {
 					if(lines>fontSettings.maxLines) break;
 
 					x = FixedI32::whole(0);
-					y += lineHeight;
+					y += lineHeight+fontSettings.lineSpacing;
 				break;
 				default: {
 					auto character = fontSettings.font.get_character(*c);
@@ -149,7 +149,7 @@ namespace graphics2d {
 						if(lines>fontSettings.maxLines) break;
 						
 						x = FixedI32::whole(0);
-						y += lineHeight;
+						y += lineHeight+fontSettings.lineSpacing;
 					}
 	
 					if(character->atlasWidth&&character->atlasHeight){
@@ -178,7 +178,7 @@ namespace graphics2d {
 			}
 		}
 
-		auto blockHeight = y.round()+capHeight;
+		auto blockHeight = y.round()+(I32)capHeight;
 
 		return {
 			x.round_up(), y.round_up(),

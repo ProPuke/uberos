@@ -1,4 +1,6 @@
 import * as pngs from "https://deno.land/x/pngs@0.1.1/mod.ts";
+// import * as resvg from "https://deno.land/x/resvg_wasm@0.2.0/mod.ts";
+// import * as svg2png from 'https://esm.sh/svg2png-wasm@0.6.1';
 
 const dir = Deno.args[0];
 const relativeDir = dir.replace(/^\.\.\/common\/ui2d(\/|$)/, '');
@@ -26,9 +28,26 @@ function convert_image(image:pngs.DecodeResult):pngs.DecodeResult {
 	return image;
 }
 
-const imageData = await Deno.readFileSync(imagePath);
+let image:pngs.DecodeResult;
+
+if(imagePath.match(/\.svg$/)){
+	// const pngData = await resvg.render(await Deno.readTextFileSync(imagePath));
+	// await svg2png.initialize('./node_modules/svg2png-wasm/svg2png_wasm_bg.wasm');
+	// const pngData = await svg2png.svg2png(await Deno.readTextFileSync(imagePath));
+	// image = pngs.decode(pngData);
+
+	await new Deno.Command('inkscape', {args: [imagePath, '-o', `${dir}/_${imageName}.png`]}).output();
+	let imageData = await Deno.readFileSync(`${dir}/_${imageName}.png`);
+	Deno.removeSync(`${dir}/_${imageName}.png`);
+	image = pngs.decode(imageData);
+
+}else{
+	let imageData = await Deno.readFileSync(imagePath);
+	image = pngs.decode(imageData);
+}
+
 // const image = pngs.decode(imageData);
-const image = convert_image(pngs.decode(imageData));
+image = convert_image(image);
 const imageIdentifier = imageName.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_');
 
 let cppSource =

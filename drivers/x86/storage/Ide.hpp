@@ -13,7 +13,8 @@ namespace driver::storage {
 		auto get_drive_id(U32) -> U32 override;
 
 		auto does_drive_exist(U32) -> bool override;
-		auto get_drive_device(U32) -> Try<const char*> override;
+		auto get_drive_name(U32) -> Try<const char*> override;
+		auto get_drive_description(U32) -> Try<const char*> override;
 		auto get_drive_model(U32) -> Try<const char*> override;
 		auto get_drive_serialNumber(U32) -> Try<const char*> override;
 		auto get_drive_size(U32) -> Try<U64> override;

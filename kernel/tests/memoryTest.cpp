@@ -20,7 +20,7 @@ namespace tests::memoryTest {
 		window = &desktopManager->create_standard_window("Memory Status", 700, 600);
 
 		static auto redraw = [](){
-			auto &clientArea = window->get_client_area();
+			auto &clientArea = window->get_client_buffer();
 
 			clientArea.draw_rect(0, 0, window->get_width(), window->get_height(), window->get_background_colour());
 

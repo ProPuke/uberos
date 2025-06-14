@@ -6,7 +6,8 @@
 #endif
 
 namespace debug {
-	void assert(bool);
+	template <typename Type>
+	auto assert(Type test) -> Type;
 	template<typename Type>
 	inline auto assert_return(Type value) -> Type { assert(value); return value; }
 
@@ -15,7 +16,8 @@ namespace debug {
 
 #ifdef DEBUG
 	namespace debug {
-		inline void assert(bool test) { if(!test) halt(); }
+		template <typename Type>
+		inline auto assert(Type test) -> Type { if(!test) halt(); return test; }
 		// inline void halt() { ::halt(); }
 		#ifdef KERNEL
 			inline void halt() { panic::panic().print_details("DEBUG HALT").print_stacktrace(); }
@@ -25,7 +27,8 @@ namespace debug {
 	}
 #else
 	namespace debug {
-		inline void assert(bool) {}
+		template <typename Type>
+		inline auto assert(Type test) -> Type { return test; }
 		inline void halt() {}
 	}
 #endif

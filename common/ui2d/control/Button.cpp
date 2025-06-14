@@ -1,18 +1,20 @@
 #include "Button.hpp"
 
-#include <kernel/logging.hpp>
-
 namespace ui2d {
 	namespace control {
+		auto Button::get_min_size() -> IVec2 {
+			return {8, 8};
+		}
+
 		void Button::redraw(bool flush) {
 			if(!isVisible) return;
 
 			switch(type){
 				case Type::regular:
-					gui.theme.draw_button(gui.buffer, rect, text, smallFont, icon, isHover, isHover&&isPressed);
+					gui.theme->draw_button(gui.buffer, rect, text, smallFont, icon, isHover, isHover&&isPressed);
 				break;
 				case Type::toggle:
-					gui.theme.draw_toggle_button(gui.buffer, rect, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
+					gui.theme->draw_toggle_button(gui.buffer, rect, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
 				break;
 			}
 

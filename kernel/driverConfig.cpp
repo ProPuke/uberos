@@ -1,6 +1,7 @@
 #include <drivers/CpuScheduler.hpp>
 #include <drivers/DesktopManager.hpp>
 #include <drivers/DisplayManager.hpp>
+#include <drivers/StorageManager.hpp>
 #include <drivers/ThemeManager.hpp>
 
 #ifdef ARCH_UEFI
@@ -48,6 +49,7 @@ namespace driver {
 	DRIVER(           CpuScheduler  , onDemand);
 	DRIVER(           DesktopManager, onDemand);
 	DRIVER(           DisplayManager, onDemand);
+	DRIVER(           StorageManager, onDemand);
 	DRIVER(           ThemeManager  , onDemand);
 
 	#ifdef ARCH_UEFI

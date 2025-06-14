@@ -96,7 +96,7 @@ namespace tests::keyboardTest {
 
 		static auto redraw = [](){
 			U32 corner[] = {1, (U32)-1};
-			auto &clientArea = window->get_client_area();
+			auto &clientArea = window->get_client_buffer();
 
 			keySize = min(
 				((I32)clientArea.width-padding*2)/29,
@@ -199,7 +199,7 @@ namespace tests::keyboardTest {
 
 		driver::Keyboard::allEvents.subscribe([](const driver::Keyboard::Event &event, void *_window){
 			auto &window = *(driver::DesktopManager::StandardWindow*)_window;
-			auto &clientArea = window.get_client_area();
+			auto &clientArea = window.get_client_buffer();
 
 			static char statusBuffer[256] = "";
 			static char typeBuffer[32] = "Typed: ";

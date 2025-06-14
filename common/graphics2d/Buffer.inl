@@ -505,6 +505,108 @@ namespace graphics2d {
 		}
 	}
 
+	inline void Buffer::draw_rect_outline_blended(U32 startX, U32 startY, U32 width, U32 height, U32 colour, U32 borderWidth, U32 topLeftCorners[], U32 topRightCorners[], U32 bottomLeftCorners[], U32 bottomRightCorners[]) {
+		if(width<1||height<1) return;
+		if(borderWidth<1) return;
+
+		U32 topLeftRadius = 0; if(topLeftCorners) while(topLeftRadius[topLeftCorners]!=~0u) topLeftRadius++;
+		U32 topRightRadius = 0; if(topRightCorners) while(topRightRadius[topRightCorners]!=~0u) topRightRadius++;
+		U32 bottomLeftRadius = 0; if(bottomLeftCorners) while(bottomLeftRadius[bottomLeftCorners]!=~0u) bottomLeftRadius++;
+		U32 bottomRightRadius = 0; if(bottomRightCorners) while(bottomRightRadius[bottomRightCorners]!=~0u) bottomRightRadius++;
+
+		// clip height at bottom
+		const U32 clippedHeight = max(0, min<I32>(startY+height, (I32)this->height)-(I32)startY);
+
+		U32 y = 0;
+
+		I32 lastLeft1 = startX;
+		I32 lastLeft2 = startX+width;
+		I32 lastRight1 = lastLeft1;
+		I32 lastRight2 = lastLeft2;
+
+		for(;y<height/2&&y<borderWidth&&y<clippedHeight;y++){
+			I32 left = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			I32 right = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			// clip right at right
+			I32 clippedRight = min<I32>(startX+right, (I32)this->width)-(I32)startX;
+
+			if(left<clippedRight){
+				set_blended(startX+left, startY+y, colour, clippedRight-left);
+			}
+
+			lastLeft1 = left;
+			lastLeft2 = right;
+			lastRight1 = left;
+			lastRight2 = right;
+		}
+
+		for(;y<height&&y<height-borderWidth&&y<clippedHeight;y++){
+			I32 left1 = maths::min(width-1, maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0));
+			I32 left2 = maths::min(width, left1+borderWidth);
+			I32 right2 = maths::max<I32>(0, (I32)width-(I32)maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0));
+			I32 right1 = maths::max<I32>(0, (I32)right2-(I32)borderWidth);
+
+			// clip right at right
+			I32 maxRight = (I32)this->width-(I32)startX;
+
+			{
+				I32 left  = maths::min(left1, lastLeft2);
+				I32 right = maths::min(maths::max(left2, lastLeft1), maxRight);
+				if(left<right){
+					set_blended(startX+left, startY+y, colour, right-left);
+				}
+			}
+			
+			{
+				I32 left  = maths::min(right1, lastRight2);
+				I32 right = maths::min(maths::max(right2, lastRight1), maxRight);
+				if(left<right){
+					set_blended(startX+left, startY+y, colour, right-left);
+				}
+			}
+
+			lastLeft1 = left1;
+			lastLeft2 = left2;
+			lastRight1 = right1;
+			lastRight2 = right2;
+		}
+
+		bool topRow = true;
+		for(;y<clippedHeight;y++){
+			I32 left1 = maths::max(topLeftCorners&&y<topLeftRadius?topLeftCorners[y]:0, bottomLeftCorners&&height-1-y<bottomLeftRadius?bottomLeftCorners[height-1-y]:0);
+			I32 right2 = width-maths::max(topRightCorners&&y<topRightRadius?topRightCorners[y]:0, bottomRightCorners&&height-1-y<bottomRightRadius?bottomRightCorners[height-1-y]:0);
+
+			// clip right at right
+			right2 = min<I32>(startX+right2, (I32)this->width)-(I32)startX;
+
+			if(topRow){
+				if(lastLeft2<left1){
+					set_blended(startX+left1, startY-1+y, colour, left1-lastLeft2);
+				}
+
+				if(right2<lastRight1){
+					set_blended(startX+lastRight1, startY-1+y, colour, lastRight1-right2);
+				}
+
+				{
+					U32 left = maths::max(left1, lastLeft2);
+					U32 right = maths::min(right2, lastRight2);
+					if(left<right){
+						set_blended(startX+left, startY+y, colour, right-left);
+					}
+				}
+				
+				topRow = false;
+
+			}else{
+				if(left1<right2){
+					set_blended(startX+left1, startY+y, colour, right2-left1);
+				}
+			}
+		}
+	}
+
 	inline void Buffer::draw_line(U32 x1, U32 y1, U32 x2, U32 y2, U32 colour) {
 		const I32 xVec = (I32)x2-(I32)x1;
 		const I32 yVec = (I32)y2-(I32)y1;
@@ -754,7 +856,13 @@ namespace graphics2d {
 	}
 
 	inline void Buffer::draw_scaled_buffer_blended(U32 x, U32 y, U32 width, U32 height, Buffer &image, U32 imageX, U32 imageY, U32 imageWidth, U32 imageHeight, DrawScaledBufferOptions options, U8 opacity) {
+		if(width<1||height<1) return;
+
 		if(options.minFiltered){
+			auto samplesX = maths::max(1u, (imageWidth+width-1)/width);
+			auto samplesY = maths::max(1u, (imageHeight+height-1)/height);
+			const auto samples = samplesX*samplesY;
+
 			for(auto offsetY=0u; offsetY<height; offsetY++)
 			for(auto offsetX=0u; offsetX<width; offsetX++) {
 				auto r = 0;
@@ -762,9 +870,9 @@ namespace graphics2d {
 				auto b = 0;
 				auto a = 0;
 
-				const auto samplesX = maths::max(1u, (imageWidth*(offsetX+1)/width)-(imageWidth*offsetX/width));
-				const auto samplesY = maths::max(1u, (imageHeight*(offsetY+1)/height)-(imageHeight*offsetY/height));
-				const auto samples = samplesX*samplesY;
+				// const auto samplesX = maths::max(1u, (imageWidth*(offsetX+1)/width)-(imageWidth*offsetX/width));
+				// const auto samplesY = maths::max(1u, (imageHeight*(offsetY+1)/height)-(imageHeight*offsetY/height));
+				// const auto samples = samplesX*samplesY;
 
 				for(auto sampleY=0u; sampleY<samplesY; sampleY++)
 				for(auto sampleX=0u; sampleX<samplesX; sampleX++) {

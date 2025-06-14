@@ -87,14 +87,14 @@ namespace driver {
 				sizeE
 			};
 
-			UVec2 minSize{32,32};
-			UVec2 maxSize{(U32)~0, (U32)~0};
+			IVec2 minSize{32,32};
+			IVec2 maxSize{0x7fff'ffff,0x7fff'ffff};
 
 			struct Gui: ui2d::Gui {
 				typedef ui2d::Gui Super;
 
 				/**/ Gui():
-					Super(graphics2d::Buffer(), *driver::theme)
+					Super(graphics2d::Buffer(), driver::theme)
 				{}
 
 				void update_area(graphics2d::Rect rect) {
@@ -128,12 +128,16 @@ namespace driver {
 				return graphicsDisplay->get_height()-topMargin-bottomMargin;
 			}
 
-			auto get_window_area() -> graphics2d::Buffer& override {
+			auto get_window_buffer() -> graphics2d::Buffer& override {
 				return graphicsDisplay->buffer;
 			}
 
-			auto get_client_area() -> graphics2d::Buffer& override {
+			auto get_client_buffer() -> graphics2d::Buffer& override {
 				return clientArea;
+			}
+
+			auto get_client_area() -> graphics2d::Rect override {
+				return {(I32)leftMargin, (I32)topMargin, (I32)graphicsDisplay->get_width()-(I32)rightMargin, (I32)graphicsDisplay->get_height()-(I32)bottomMargin};
 			}
 
 			virtual auto get_cursor_area_at(I32 x, I32 y) -> CursorArea {
@@ -259,19 +263,32 @@ namespace driver {
 				//TODO: resize if already docked
 			}
 
+			//FIXME: this will be wrong if the theme changes after (should we store if we had a client or a window size limit set last and recalc on theme change?)
+			void set_client_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) override {
+				const auto clientArea = get_client_area();
+				const auto width = get_width();
+				const auto height = get_height();
+
+				
+				set_size_limits(
+					maths::add_safe(minWidth, clientArea.x1+(width-clientArea.x2)), maths::add_safe(minHeight, clientArea.y1+(height-clientArea.y2)),
+					maths::add_safe(maxWidth, clientArea.x1+(width-clientArea.x2)), maths::add_safe(maxHeight, clientArea.y1+(height-clientArea.y2))
+				);
+			}
+
 			void set_size_limits(U32 minWidth, U32 minHeight, U32 maxWidth, U32 maxHeight) override {
-				if(minSize.x==minWidth&&minSize.y==minHeight&&maxSize.x==maxWidth&&maxSize.y==maxHeight) return;
+				if((U32)minSize.x==minWidth&&(U32)minSize.y==minHeight&&(U32)maxSize.x==maxWidth&&(U32)maxSize.y==maxHeight) return;
 
 				minSize.x = minWidth;
 				minSize.y = minHeight;
 				maxSize.x = std::max(minWidth, maxWidth);
 				maxSize.y = std::max(minHeight, maxHeight);
 
-				const auto currentWidth = (U32)get_width();
-				const auto currentHeight = (U32)get_height();
+				const auto currentWidth = get_width();
+				const auto currentHeight = get_height();
 
-				const auto newWidth = maths::clamp(currentWidth, minSize.x, maxSize.x);
-				const auto newHeight = maths::clamp(currentHeight, minSize.y, maxSize.y);
+				const auto newWidth = maths::clamp(currentWidth, (U32)minSize.x, (U32)maxSize.x);
+				const auto newHeight = maths::clamp(currentHeight, (U32)minSize.y, (U32)maxSize.y);
 
 				if(newWidth!=currentWidth||newHeight!=currentHeight){
 					resize_to(newWidth, newHeight);
@@ -398,8 +415,8 @@ namespace driver {
 		}
 
 		void Window::resize_to(U32 width, U32 height) {
-			width = maths::clamp(width, minSize.x, maxSize.x);
-			height = maths::clamp(height, minSize.y, maxSize.y);
+			width = maths::clamp(width, (U32)minSize.x, (U32)maxSize.x);
+			height = maths::clamp(height, (U32)minSize.y, (U32)maxSize.y);
 
 			auto oldWidth = get_width();
 			auto oldHeight = get_height();
@@ -424,8 +441,8 @@ namespace driver {
 		void Window::move_and_resize_to(I32 x, I32 y, U32 width, U32 height) {
 			isAutomaticPlacement = false;
 
-			width = maths::clamp(width, minSize.x, maxSize.x);
-			height = maths::clamp(height, minSize.y, maxSize.y);
+			width = maths::clamp(width, (U32)minSize.x, (U32)maxSize.x);
+			height = maths::clamp(height, (U32)minSize.y, (U32)maxSize.y);
 
 			auto oldWidth = get_width();
 			auto oldHeight = get_height();
@@ -506,14 +523,14 @@ namespace driver {
 
 			switch(dockedType){
 				case DockedType::top:
-					maxSize.x = (U32)~0;
+					maxSize.x = 0x7fff'ffff;
 					move_and_resize_to(
 						windowArea.x1, windowArea.y1,
 						windowArea.width(), max(16, min(windowArea.height()/2-4, (I32)maxDockedHeight))
 					);
 				break;
 				case DockedType::bottom: {
-					maxSize.x = (U32)~0;
+					maxSize.x = 0x7fff'ffff;
 					const auto height = max(16, min(windowArea.height()/2-4, (I32)maxDockedHeight));
 					move_and_resize_to(
 						windowArea.x1, windowArea.y2-height,
@@ -521,14 +538,14 @@ namespace driver {
 					);
 				} break;
 				case DockedType::left:
-					maxSize.y = (U32)~0;
+					maxSize.y = 0x7fff'ffff;
 					move_and_resize_to(
 						windowArea.x1, windowArea.y1,
 						max(16, min(windowArea.width()/2-4, (I32)maxDockedWidth)), windowArea.height()
 					);
 				break;
 				case DockedType::right: {
-					maxSize.y = (U32)~0;
+					maxSize.y = 0x7fff'ffff;
 					const auto width = max(16, min(windowArea.width()/2-4, (I32)maxDockedWidth));
 					move_and_resize_to(
 						windowArea.x2-width, windowArea.y1,
@@ -536,8 +553,8 @@ namespace driver {
 					);
 				} break;
 				case DockedType::full:
-					maxSize.x = (U32)~0;
-					maxSize.y = (U32)~0;
+					maxSize.x = 0x7fff'ffff;
+					maxSize.y = 0x7fff'ffff;
 					move_and_resize_to(
 						windowArea.x1, windowArea.y1,
 						windowArea.width(), windowArea.height()
@@ -604,7 +621,7 @@ namespace driver {
 			ui2d::control::TitlebarButton maximiseButton;
 			struct MinimiseButton: ui2d::control::TitlebarButton {
 				/**/ MinimiseButton():
-					ui2d::control::TitlebarButton(window().gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xffff00:0xffffff, "")
+					ui2d::control::TitlebarButton(window().gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xffff00:theme->get_window_background_colour(), "")
 				{}
 
 				void on_clicked() override {
@@ -625,23 +642,23 @@ namespace driver {
 
 			/**/ StandardWindow(const char *title, U32 width, U32 height):
 				Super(title, maths::max(theme->get_window_min_width(),width)+theme->get_window_left_margin()+theme->get_window_right_margin(), maths::max(theme->get_window_min_height(),height)+theme->get_window_top_margin()+theme->get_window_bottom_margin()),
-				closeButton(gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xff0000:0xffffff, ""),
-				maximiseButton(gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xff8800:0xffffff, "")
+				closeButton(gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xff0000:theme->get_window_background_colour(), ""),
+				maximiseButton(gui, {0,0,0,0}, theme->has_window_titlebar_widget_coloured()?0xff8800:theme->get_window_background_colour(), "")
 			{
 				leftMargin = theme->get_window_left_margin();
 				topMargin = theme->get_window_top_margin();
 				rightMargin = theme->get_window_right_margin();
 				bottomMargin = theme->get_window_bottom_margin();
 
-				minimiseButton.icon = &theme->get_window_titlebar_widget_minimise();
-				closeButton.icon = &theme->get_window_titlebar_widget_close();
-				maximiseButton.icon = &theme->get_window_titlebar_widget_maximise();
+				minimiseButton.icon = theme->get_window_titlebar_widget_minimise();
+				closeButton.icon = theme->get_window_titlebar_widget_close();
+				maximiseButton.icon = theme->get_window_titlebar_widget_maximise();
 
 				minSize.x = theme->get_window_min_width();
 				minSize.y = theme->get_window_min_height();
 
-				width = maths::max(minSize.x, width);
-				height = maths::max(minSize.y, height);
+				width = maths::max((U32)minSize.x, width);
+				height = maths::max((U32)minSize.y, height);
 
 				if(graphicsDisplay){
 					clientArea = graphicsDisplay->buffer.cropped(leftMargin, topMargin, rightMargin, bottomMargin);
@@ -710,6 +727,10 @@ namespace driver {
 				titlebarAreaIndentRight = titlebarArea.x2-minimiseButton.rect.x1+maths::max(0, widgetMargin-1);
 			}
 
+			auto get_client_area() -> graphics2d::Rect override {
+				return theme->get_window_client_area({0, 0, (I32)graphicsDisplay->buffer.width, (I32)graphicsDisplay->buffer.height});
+			}
+
 			void _draw_decorations() override {
 				const auto widgetMargin = theme->get_window_titlebar_widget_margin();
 
@@ -758,8 +779,8 @@ namespace driver {
 			void _draw_frame() {
 				// auto rect = get_border_rect();
 
-				// U32 corner[4] = {3, 1, 1, (U32)~0};
-				// U32 cornerInner[3] = {2, 1, (U32)~0};
+				// U32 corner[4] = {3, 1, 1, 0x7fff'ffff};
+				// U32 cornerInner[3] = {2, 1, 0x7fff'ffff};
 
 				auto &display = *graphicsDisplay;
 
@@ -823,7 +844,7 @@ namespace driver {
 				}
 			}
 
-			auto get_window_area() -> graphics2d::Buffer& override {
+			auto get_window_buffer() -> graphics2d::Buffer& override {
 				return graphicsDisplay->buffer;
 			}
 
@@ -1622,8 +1643,8 @@ namespace driver {
 										resizeRequested: { requestedWidth, requestedHeight }
 									});
 
-									const auto newWidth = maths::clamp(requestedWidth, grabbedWindow.window->minSize.x, grabbedWindow.window->maxSize.x);
-									const auto newHeight = maths::clamp(requestedHeight, grabbedWindow.window->minSize.y, grabbedWindow.window->maxSize.y);
+									const auto newWidth = maths::clamp(requestedWidth, (U32)grabbedWindow.window->minSize.x, (U32)grabbedWindow.window->maxSize.x);
+									const auto newHeight = maths::clamp(requestedHeight, (U32)grabbedWindow.window->minSize.y, (U32)grabbedWindow.window->maxSize.y);
 
 									grabbedWindow.window->move_and_resize_to(
 										grabbedWindow.window->get_x()-(isLeft?newWidth-grabbedWindow.window->get_width():0),
@@ -1698,30 +1719,34 @@ namespace driver {
 							});
 						}
 						window->_on_mouse_moved(cursor->x-window->graphicsDisplay->x, cursor->y-window->graphicsDisplay->y);
+						const auto clientArea = window->get_client_area();
 						window->events.trigger({
 							type: Window::Event::Type::mouseMoved,
-							mouseMoved: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.moved.x, event.moved.y }
+							mouseMoved: { event.instance, cursor->x-window->graphicsDisplay->x-clientArea.x1, cursor->y-window->graphicsDisplay->y-clientArea.y1, event.moved.x, event.moved.y }
 						});
 						cursor->lastHoveredWindow = window;
 					} break;
-					case driver::Mouse::Event::Type::pressed:
+					case driver::Mouse::Event::Type::pressed: {
 						window->_on_mouse_pressed(cursor->x-window->graphicsDisplay->x, cursor->y-window->graphicsDisplay->y, event.pressed.button);
+						const auto clientArea = window->get_client_area();
 						window->events.trigger({
 							type: StandardWindow::Event::Type::mousePressed,
-							mousePressed: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.pressed.button }
+							mousePressed: { event.instance, cursor->x-window->graphicsDisplay->x-clientArea.x1, cursor->y-window->graphicsDisplay->y-clientArea.y1, event.pressed.button }
 						});
-					break;
-					case driver::Mouse::Event::Type::released:
+					} break;
+					case driver::Mouse::Event::Type::released: {
 						window->_on_mouse_released(cursor->x-window->graphicsDisplay->x, cursor->y-window->graphicsDisplay->y, event.released.button);
+						const auto clientArea = window->get_client_area();
 						window->events.trigger({
 							type: StandardWindow::Event::Type::mouseReleased,
-							mouseReleased: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.released.button }
+							mouseReleased: { event.instance, cursor->x-window->graphicsDisplay->x-clientArea.x1, cursor->y-window->graphicsDisplay->y-clientArea.y1, event.released.button }
 						});
-					break;
+					} break;
 					case driver::Mouse::Event::Type::scrolled: {
+						const auto clientArea = window->get_client_area();
 						window->events.trigger({
 							type: Window::Event::Type::mouseScrolled,
-							mouseScrolled: { event.instance, cursor->x-window->get_x(), cursor->y-window->get_y(), event.scrolled.distance }
+							mouseScrolled: { event.instance, cursor->x-window->graphicsDisplay->x-clientArea.x1, cursor->y-window->graphicsDisplay->y-clientArea.y1, event.scrolled.distance }
 						});
 					} break;
 				}
@@ -1818,8 +1843,8 @@ namespace driver {
 	}
 
 	void StandardWindow::resize_to(U32 width, U32 height) {
-		width = maths::clamp(width, minSize.x, maxSize.x);
-		height = maths::clamp(height, minSize.y, maxSize.y);
+		width = maths::clamp(width, (U32)minSize.x, (U32)maxSize.x);
+		height = maths::clamp(height, (U32)minSize.y, (U32)maxSize.y);
 
 		auto oldWidth = get_width();
 		auto oldHeight = get_height();
@@ -1833,8 +1858,8 @@ namespace driver {
 	void StandardWindow::move_and_resize_to(I32 x, I32 y, U32 width, U32 height) {
 		isAutomaticPlacement = false;
 
-		width = maths::clamp(width, minSize.x, maxSize.x);
-		height = maths::clamp(height, minSize.y, maxSize.y);
+		width = maths::clamp(width, (U32)minSize.x, (U32)maxSize.x);
+		height = maths::clamp(height, (U32)minSize.y, (U32)maxSize.y);
 
 		auto oldWidth = get_width();
 		auto oldHeight = get_height();

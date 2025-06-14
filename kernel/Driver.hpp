@@ -35,7 +35,7 @@ struct DriverType {
 	static TYPE instance;
 
 #define DRIVER_DECLARE_TYPE(ID, NAME, DESCRIPTION) static inline DriverType typeInstance{ID, NAME, DESCRIPTION};
-#define DRIVER_DECLARE_INIT() do { typeInstance.parentType = type; type = &typeInstance; } while(false)
+#define DRIVER_DECLARE_INIT() do { typeInstance.parentType = Driver::type; Driver::type = &typeInstance; } while(false)
 
 template <typename Type>
 struct DriverReference;

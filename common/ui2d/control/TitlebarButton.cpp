@@ -11,10 +11,10 @@ namespace ui2d {
 
 			switch(type){
 				case Type::regular:
-					gui.theme.draw_titlebar_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, isHover, isHover&&isPressed);
+					gui.theme->draw_titlebar_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, isHover, isHover&&isPressed);
 				break;
 				case Type::toggle:
-					gui.theme.draw_titlebar_toggle_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
+					gui.theme->draw_titlebar_toggle_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
 				break;
 			}
 

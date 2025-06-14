@@ -1,5 +1,5 @@
-#!/bin/bash
+#!/bin/sh
 
-boop debug x86-ibm-bios debug&
+# boop debug x86-ibm-bios debug debug-memory&
 # gdb -ex "file ../build/x86-ibm-bios/boot.img" -ex "set architecture i386:x86-64" -ex "target remote :1234"
 gdb -ex "file ../build/x86-ibm-bios/boot.img" -ex "layout src" -ex "set disassembly-flavor intel" -ex "layout split" -ex "target remote :1234"

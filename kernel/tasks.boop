@@ -27,7 +27,8 @@ set common_c       = {../common/**/*.c}
 set common_cpp     = {../common/**/*.cpp}
 set common_headers = {../common/**/*.hpp} {../common/**/*.h} {../common/**/*.inl}
 set extra_objs     =
-set images         = {../common/ui2d/**/*.png}
+set images         = {../common/ui2d/**/*.png} {../common/ui2d/**/*.svg}
+set icons          = {../common/ui2d/**/*.icon}
 set msdf_atlas_gen = ../tools/msdf-atlas-gen/bin/msdf-atlas-gen
 
 flag uart0
@@ -44,7 +45,8 @@ flag debug-memory
 	set directives = {directives} -D MEMORY_CHECKS
 
 flag not debug
-	set directives = {directives} -O2
+	set directives = {directives} -g -O2
+	# set directives = {directives} -O2
 	set lflags = {lflags} -O2
 
 flag raspi1
@@ -413,7 +415,7 @@ flag x86-ibm-bios
 	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d guest_errors,trace,int
 	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -no-reboot -d int,cpu_reset -D /dev/stdout
 	# set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d int,cpu_reset -D /dev/stdout
-	set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d int,cpu_reset
+	set qemu = qemu-system-i386 -device usb-ehci,id=ehci -d cpu_reset -drive file=disk.img,if=ide,media=disk,format=raw -cdrom disk2.img
 	# set target = i386-elf
 	set kernel_filename = boot.img
 
@@ -654,11 +656,12 @@ task build
 	provides {outputdir}/{kernel_filename}
 	provides {outputdir}/boot/{kernel_filename}
 	requires task build-images
+	requires task build-icons
 	requires task build-fonts
 	requires task build-source
 	requires task build-boot
 
-	set objs = {kernel_c as *.c.o} {kernel_asm as *.S.o} {kernel_cpp as *.cpp.o} {common_c as *.c.o} {common_asm as *.S.o} {common_cpp as *.cpp.o} {images as *.png.o}
+	set objs = {kernel_c as *.c.o} {kernel_asm as *.S.o} {kernel_cpp as *.cpp.o} {common_c as *.c.o} {common_asm as *.S.o} {common_cpp as *.cpp.o} {images as *.image.o} {icons as *.icon.o}
 	set obj_begin = {crti_obj} {crtbegin_obj}
 	set obj_end = {crtend_obj} {crtn_obj}
 
@@ -695,11 +698,21 @@ task build-images
 	each image in {images}
 		requires {image}
 		requires {common_headers} {support_headers}
-		# provides {image}.o
+		provides {image as *.image.o}
 
 		run ../tools/pack-image.sh {image.dir} {image.file} {image}.cpp
-		run {cxx} -c {image}.cpp -o {image}.o
+		run {cxx} -c {image}.cpp -o {image as *.image.o}
 		rm {image}.cpp
+
+task build-icons
+	each icon in {icons}
+		requires {icon}
+		requires {common_headers} {support_headers}
+		provides {icon as *.icon.o}
+
+		run ../tools/pack-icon.sh {icon.dir} {icon.name} {icon}.cpp
+		run {cxx} -c {icon}.cpp -o {icon as *.icon.o}
+		rm {icon}.cpp
 
 task build-fonts
 	run {msdf_atlas_gen} -size 32 -errorcorrection auto-full -scanline -font fonts/Open_Sans/OpenSans-Regular.ttf -format text -type msdf -imageout ../common/graphics2d/font/OpenSans.msdf.txt -json ../common/graphics2d/font/OpenSans.msdf.json

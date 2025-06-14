@@ -1,19 +1,16 @@
 #pragma once
 
 #include <drivers/Hardware.hpp>
+#include <drivers/ResidentService.hpp>
 
 #include <common/Box.hpp>
 #include <common/Maybe.hpp>
 
 namespace driver::system {
-	struct Acpi final: Hardware {
-		DRIVER_INSTANCE(Acpi, 0xb3de6156, "acpi", "Advanced Configuration and Power Interface", Hardware)
+	struct Acpi final: ResidentService<Hardware> {
+		DRIVER_INSTANCE(Acpi, 0xb3de6156, "acpi", "Advanced Configuration and Power Interface", ResidentService<Hardware>)
 
 		auto _on_start() -> Try<> override;
-		auto _on_stop() -> Try<> override;
-
-		auto can_stop_driver() -> bool override { return false; }
-		auto can_restart_driver() -> bool override { return false; }
 
 		struct __attribute__((packed)) TableHeader {
 			char signature[4];

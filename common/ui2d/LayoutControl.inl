@@ -19,8 +19,8 @@ namespace ui2d {
 	}
 
 	template <typename ControlType, typename ...Params>
-	inline auto LayoutContainer::add_control(Params ...params) -> LayoutControl<ControlType>& {
-		const auto control = new LayoutControl<ControlType>(gui, this, params...);
+	inline auto LayoutContainer::add_control(Params &&...params) -> LayoutControl<ControlType>& {
+		const auto control = new LayoutControl<ControlType>(gui, this, std::forward<Params>(params)...);
 		children.push_back(control);
 		control->container = this;
 		_on_children_changed();
@@ -28,8 +28,8 @@ namespace ui2d {
 	}
 
 	template <typename ContainerType, typename ...Params>
-	inline auto LayoutContainer::add_container_control(Params ...params) -> ContainerType& {
-		const auto control = new ContainerType(gui, this, params...);
+	inline auto LayoutContainer::add_container_control(Params &&...params) -> ContainerType& {
+		const auto control = new ContainerType(gui, this, std::forward<Params>(params)...);
 		children.push_back(control);
 		control->container = this;
 		_on_children_changed();
@@ -46,10 +46,6 @@ namespace ui2d {
 
 	inline void LayoutContainer::_on_resized() {
 		layout();
-	}
-
-	inline void LayoutContainer::layout() {
-		;
 	}
 
 	inline void LayoutContainer::set_rect(graphics2d::Rect rect) {
@@ -69,21 +65,17 @@ namespace ui2d {
 
 	template <typename Control>
 	template <typename ...Params>
-	/**/ LayoutControl<Control>::LayoutControl(Gui &gui, LayoutContainer *container, Params ...params):
+	/**/ LayoutControl<Control>::LayoutControl(Gui &gui, LayoutContainer *container, Params &&...params):
 		Super(gui, {0,0,0,0}, params...),
 		LayoutControlBase(gui, container)
 	{
-		auto min = Super::get_min_size();
-		minSize.x = min.x;
-		minSize.y = min.y;
-
 		if(container){
 			container->_on_children_changed();
 		}
 	}
 
 	template <typename Control>
-	void LayoutControl<Control>::set_size(U32 x, U32 y) {
+	void LayoutControl<Control>::set_size(I32 x, I32 y) {
 		if(size.x==x&&size.y==y) return;
 
 		auto oldEffectiveX = maths::clamp(size.x, minSize.x, maxSize.x);

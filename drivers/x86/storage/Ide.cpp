@@ -3,9 +3,11 @@
 #include "ide/InfoBlock.hpp"
 
 #include <drivers/x86/system/Pci.hpp>
+#include <drivers/StorageManager.hpp>
 
 #include <kernel/arch/x86/ioPort.hpp>
 #include <kernel/arch/x86/PciDevice.hpp>
+#include <kernel/DriverReference.hpp>
 #include <kernel/drivers.hpp>
 
 #include <common/ListUnordered.hpp>
@@ -214,7 +216,7 @@ namespace driver::storage {
 			}
 
 			auto read_prdt(Bus bus) -> U32 {
-				return read8(0x04);
+				return read32(0x04);
 			}
 
 			auto write_prdt(U32 value) {
@@ -253,9 +255,9 @@ namespace driver::storage {
 				return arch::x86::ioPort::read8(ioControl);
 			}
 
-			void select_drive(Drive drive) {
+			void select_drive(Drive drive, U8 extra = 0) {
 				//TODO:OPTIMISE: no need to select drive and pause if we're already on it
-				write8(Register::driveSelect, 0xa0|((U8)drive<<4));
+				write8(Register::driveSelect, 0xa0|((U8)drive<<4)|extra);
 				pause();
 			}
 
@@ -307,24 +309,59 @@ namespace driver::storage {
 		U32 nextId = 1;
 
 		struct AtaDisk {
-			/**/ AtaDisk(IdeChannel &ideChannel, Drive drive, U32 id, const char *name):
+			/**/ AtaDisk(IdeChannel &ideChannel, Drive drive, U32 id, const char *name, const char *description):
 				ideChannel(ideChannel),
 				drive(drive),
 				id(id),
-				deviceName(name)
+				deviceName(name),
+				deviceDescription(description)
 			{}
+			virtual /**/~AtaDisk(){}
 
 			IdeChannel &ideChannel;
 			Drive drive;
 			U32 id;
 			String8 deviceName;
+			String8 deviceDescription;
 			String8 model;
 			String8 serialNumber;
+			U64 sectorSize = 512;
 			U64 size = 0;
 
 			virtual auto eject() -> Try<bool> { return Failure{"not supported"}; }
-			virtual auto is_present() -> Try<bool> { return false; }
+			virtual auto is_present() -> Try<bool> { return true; }
 			virtual auto is_removable() -> Try<bool> { return false; }
+
+			virtual auto read_data(U64 address, size_t length) -> Try<> {
+				auto sector = address/sectorSize;
+				auto sectorOffset = address%sectorSize;
+				auto sectorCount = (sectorOffset + length + (sectorSize-1)) / sectorSize;
+
+				TRY(ideChannel.wait_for_status(1000*1000));
+
+				if(sector>0x0fffffff){
+					//lba48
+					ideChannel.select_drive(drive, 0x40);
+					ideChannel.write8(Register::sectorCount, 0);
+					ideChannel.write8(Register::sectorCount, sectorCount);
+					ideChannel.write8(Register::lbaHigh  , sector>>40);
+					ideChannel.write8(Register::lbaMedium, sector>>32);
+					ideChannel.write8(Register::lbaLow   , sector>>24);
+					ideChannel.write8(Register::lbaHigh  , sector>>16);
+					ideChannel.write8(Register::lbaMedium, sector>> 8);
+					ideChannel.write8(Register::lbaLow   , sector>> 0);
+
+				}else{
+					//lba28
+					ideChannel.select_drive(drive, 0x40 | (sector >> 24));
+					ideChannel.write8(Register::sectorCount, sectorCount);
+					ideChannel.write8(Register::lbaHigh  , sector>>16);
+					ideChannel.write8(Register::lbaMedium, sector>> 8);
+					ideChannel.write8(Register::lbaLow   , sector>> 0);
+				}
+
+				return {};
+			}
 		};
 
 		struct AtapiDisk: AtaDisk {
@@ -332,8 +369,8 @@ namespace driver::storage {
 
 			bool isRemovable = false;
 
-			/**/ AtapiDisk(IdeChannel &ideChannel, Drive drive, U32 id, const char *name):
-				Super(ideChannel, drive, id, name)
+			/**/ AtapiDisk(IdeChannel &ideChannel, Drive drive, U32 id, const char *name, const char *description):
+				Super(ideChannel, drive, id, name, description)
 			{}
 
 			auto eject() -> Try<bool> override {
@@ -402,6 +439,16 @@ namespace driver::storage {
 		}
 
 		Lock<LockType::flat> lock;
+
+		AutomaticDriverReference<StorageManager> storageManager;
+
+		const char *driveNames[4] = {};
+		const char *driveDescriptions[4] = {
+			"Parallel-ATA primary master drive",
+			"Parallel-ATA primary slave drive",
+			"Parallel-ATA secondary master drive",
+			"Parallel-ATA secondary slave drive",
+		};
 	}
 
 	auto Ide::_on_start() -> Try<> {
@@ -412,6 +459,15 @@ namespace driver::storage {
 
 		auto pciDevice = pci->find_device_by_subclass(system::Pci::Subclass::ideController);
 		if(!pciDevice) return Failure{"device not present"};
+
+		auto storageManager = storage::storageManager.get();
+		if(!storageManager) return Failure{"StorageManager unavailable"};
+
+		if(!driveNames[0]){
+			for(auto i=0;i<4;i++){
+				driveNames[i] = storageManager->allocate_name({prefix:"pata", systemMapping:true}, *this);
+			}
+		}
 
 		TRY(api.subscribe_pci(*pciDevice, {.busMastering=true, .interrupts=true}));
 
@@ -503,6 +559,9 @@ namespace driver::storage {
 				channel.command(Command::identifyDevice);
 				pause();
 
+				auto &driveName = driveNames[(U32)bus<<1|(U32)drive];
+				auto &driveDescription = driveDescriptions[(U32)bus<<1|(U32)drive];
+
 				bool isAtapi = false;
 
 				if(auto status = channel.wait_for_status()){
@@ -518,7 +577,7 @@ namespace driver::storage {
 							isAtapi = false;
 		
 						}else{
-							log.print_warning("pata", (C8)('1'+(U8)bus), (C8)('a'+(U8)drive), " - Unrecognised device type: ", format::Hex16(signature));
+							log.print_warning(driveName, " - Unrecognised device type: ", format::Hex16(signature));
 							continue;
 						}
 
@@ -553,17 +612,13 @@ namespace driver::storage {
 				const char *protocol;
 
 				if(isAtapi){
-					auto atapiDisk = new AtapiDisk{channel, drive, nextId++, "pata1a"};
+					auto atapiDisk = new AtapiDisk{channel, drive, nextId++, driveName, driveDescription};
 					disk = atapiDisk;
-					disk->deviceName[4] += (U8)bus;
-					disk->deviceName[5] += (U8)drive;
 					atapiDisk->isRemovable = !!infoBlock.atapi.removableMediaDevice;
 					protocol = "ATAPI";
 
 				}else{
-					disk = new AtaDisk{channel, drive, nextId++, "pata1a"};
-					disk->deviceName[4] += (U8)bus;
-					disk->deviceName[5] += (U8)drive;
+					disk = new AtaDisk{channel, drive, nextId++, driveName, driveDescription};
 					protocol = "ATA";
 				}
 
@@ -573,27 +628,36 @@ namespace driver::storage {
 				bool _48bitSectorCount;
 				auto sectorCount = infoBlock.get_sector_count(_48bitSectorCount);
 
+				disk->sectorSize = infoBlock.get_sector_size();
 				disk->size = infoBlock.get_sector_size()*sectorCount;
 
-				{
-					auto section = log.section(disk->deviceName.get_data(), " (", protocol, ')');
+				log.print_info("found ", driveName, " sectorSize = ", disk->sectorSize);
 
-					log.print_info("model: ", disk->model.get_data());
-					log.print_info("serialNumber: ", disk->serialNumber.get_data());
-					if(disk->size>0){
-						log.print_info("size: ", disk->size/1024/1024, "MiB");
-					}
-					if(TRY_RESULT(disk->is_removable())){
-						log.print_info("removable media");
-						if(auto present = disk->is_present()){
-							log.print_info(present.result?"media present":"media not present");
-						}else{
-							log.print_info("error querying media");
-						}
-					}
+				switch(infoBlock.get_accessMode()){
+					case Infoblock::AccessMode::lba48:
+					case Infoblock::AccessMode::lba28:
+					break;
+					case Infoblock::AccessMode::chs:
+						log.print_warning(driveName, " - Drive does not support LBA. Skipping.");
+						delete disk;
+						goto getNextDrive;
+					break;
 				}
 
+				log.print_info("found ", driveName, ' ', protocol, " drive (", disk->model.get_data(), ')');
+
 				disks.push(disk);
+				TRY(storageManager->set_allocation_id(driveName, disk->id));
+
+				// if(TRY_RESULT_OR(disk->is_removable(), false)){
+				// 	//TODO: detect other removable types
+				// 	storageManager->allocate_name({prefix:"cdrom", singular:true}, *this, disk->id);
+
+				// }else{
+				// 	storageManager->allocate_name({prefix:"hd", singular:true}, *this, disk->id);
+				// }
+
+				getNextDrive:;
 			}
 		}
 
@@ -615,7 +679,7 @@ namespace driver::storage {
 	auto Ide::get_drive_id(U32 index) -> U32 {
 		Lock_Guard guard(lock);
 
-		if(index>=disks.length) return 0;
+		if(index>=disks.length) return (U32)~0;
 
 		return disks[index]->id;
 	}
@@ -627,13 +691,22 @@ namespace driver::storage {
 		return !!disk;
 	}
 	
-	auto Ide::get_drive_device(U32 id) -> Try<const char*> {
+	auto Ide::get_drive_name(U32 id) -> Try<const char*> {
 		Lock_Guard guard(lock);
 		
 		auto disk = get_disk_by_id(id);
 		if(!disk) return Failure{"drive not present"};
 		
 		return disk->deviceName.get_data();
+	}
+	
+	auto Ide::get_drive_description(U32 id) -> Try<const char*> {
+		Lock_Guard guard(lock);
+		
+		auto disk = get_disk_by_id(id);
+		if(!disk) return Failure{"drive not present"};
+		
+		return disk->deviceDescription.get_data();
 	}
 	
 	auto Ide::get_drive_model(U32 id) -> Try<const char*> {

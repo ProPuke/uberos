@@ -12,10 +12,10 @@ namespace ui2d {
 
 			switch(type){
 				case Type::regular:
-					gui.theme.draw_coloured_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, isHover, isHover&&isPressed);
+					gui.theme->draw_coloured_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, isHover, isHover&&isPressed);
 				break;
 				case Type::toggle:
-					gui.theme.draw_coloured_toggle_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
+					gui.theme->draw_coloured_toggle_button(gui.buffer, rect, gui.backgroundColour, colour, opacity, text, smallFont, icon, toggleActive||(isHover&&isPressed), isHover, isHover&&isPressed);
 				break;
 			}
 			if(flush){

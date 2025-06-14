@@ -22,10 +22,12 @@ namespace ui2d {
 			{}
 
 			const char *text;
-			graphics2d::Buffer *icon = nullptr;
+			graphics2d::MultisizeIcon icon;
 			Type type = Type::regular;
 			bool toggleActive = false;
 			bool smallFont = false;
+
+			auto get_min_size() -> IVec2 override;
 
 			virtual void set_regular() { type = Type::regular; redraw(); }
 			virtual void set_toggle(bool active) { type = Type::toggle; toggleActive = active; redraw(); }

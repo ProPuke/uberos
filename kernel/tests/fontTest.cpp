@@ -23,7 +23,7 @@ namespace tests::fontTest {
 		static auto scale = 1u;
 
 		static auto redraw = [](){
-			auto &clientArea = window->get_client_area();
+			auto &clientArea = window->get_client_buffer();
 
 			clientArea.draw_rect(0, 0, window->get_width(), window->get_height(), window->get_background_colour());
 

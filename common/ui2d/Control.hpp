@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/graphics2d/Rect.hpp>
+#include <common/Optional.hpp>
 #include <common/ui2d/Gui.hpp>
 #include <common/ui2d/Vec2.hpp>
 
@@ -61,7 +62,8 @@ namespace ui2d {
 			}
 		}
 
-		virtual auto get_min_size() -> UVec2 { return {0,0}; }
+		virtual auto get_min_size() -> IVec2 { return {0, 0}; }
+		virtual auto get_max_size() -> IVec2 { return {0x7fff'ffff, 0x7fff'ffff}; }
 
 		virtual void redraw(bool flush = true) {}
 	};

@@ -4,6 +4,7 @@
 #include <drivers/Interrupt.hpp>
 #include <drivers/Processor.hpp>
 #include <drivers/Serial.hpp>
+#include <drivers/StorageManager.hpp>
 
 #include <kernel/arch/x86/PciDevice.hpp>
 #include <kernel/Driver.hpp>
@@ -357,6 +358,38 @@ namespace drivers {
 		}
 		if(auto irq = driver.as_type<driver::Interrupt>()){
 			log.print_info(indent, "   Provided IRQs: ", irq->min_irq, " - ", irq->max_irq);
+		}
+		if(auto storageManager = driver.as_type<driver::StorageManager>()){
+			auto driveCount = storageManager->get_drive_count();
+			for(auto i=0u;i<driveCount;i++){
+				if(!storageManager->does_drive_exist(i)) continue;
+
+				const auto size = TRY_RESULT_OR(storageManager->get_drive_size(i), 0);
+
+				log.print_info_start();
+				log.print_inline(indent, "   ");
+				if(storageManager->is_system_drive(i)){
+					log.print_inline(indent, "(system) ");
+				}
+				log.print_inline(TRY_RESULT_OR(storageManager->get_drive_name(i), "???"), ": ", TRY_RESULT_OR(storageManager->get_drive_model(i), "???"), " (", TRY_RESULT_OR(storageManager->get_drive_serialNumber(i), "???"), ')');
+
+				if(TRY_RESULT_OR(storageManager->is_drive_removable(i), false)){
+					log.print_inline(" - Removable drive");
+
+				}else if(size>0){
+					log.print_inline(" - ", size/1024/1024, "MiB");
+				}
+
+				if(!storageManager->is_system_drive(i)){
+					if(auto systemDrive = storageManager->get_drive_systemId(i)){
+						log.print_inline(" (mapped to ", TRY_RESULT_OR(storageManager->get_drive_name(systemDrive.result), "???"), ')');
+					}else{
+						log.print_inline(" (not mapped to a system drive)");
+					}
+				}
+
+				log.print_end();
+			}
 		}
 	}
 
